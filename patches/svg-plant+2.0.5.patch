@@ -1,0 +1,14 @@
+diff --git a/node_modules/svg-plant/package.json b/node_modules/svg-plant/package.json
+index b566e42..496c100 100644
+--- a/node_modules/svg-plant/package.json
++++ b/node_modules/svg-plant/package.json
+@@ -12,7 +12,8 @@
+   "exports": {
+     ".": {
+       "import": "./dist/svg-plant.es.js",
+-      "require": "./dist/svg-plant.umd.js"
++      "require": "./dist/svg-plant.umd.js",
++      "types": "./dist/types/main.d.ts"
+     }
+   },
+   "keywords": [

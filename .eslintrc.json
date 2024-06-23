@@ -1,0 +1,25 @@
+{
+  "extends": ["next/core-web-vitals"],
+  "rules": {
+    "import/order": [
+      "warn",
+      {
+        "newlines-between": "always",
+        "groups": [
+          "builtin",
+          "external",
+          "internal",
+          "parent",
+          "sibling",
+          "index"
+        ],
+        "pathGroups": [
+          {
+            "pattern": "@/",
+            "group": "internal"
+          }
+        ]
+      }
+    ]
+  }
+}
