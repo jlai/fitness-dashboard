@@ -9,21 +9,16 @@ import {
   TableFooter,
   Skeleton,
   IconButton,
-  Dialog,
-  DialogContent,
 } from "@mui/material";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
 import dayjs from "dayjs";
 import { Explore as LaunchIcon } from "@mui/icons-material";
 
-import { RequireScopes } from "@/components/require-scopes";
 import { ActivityLog, ActivityLogListResponse } from "@/api/activity/types";
 import { makeRequest } from "@/api/request";
 import { formatDuration, formatShortDateTime } from "@/utils/date-formats";
 import { useUnits } from "@/api/units";
-
-import { ActivityDetails } from "./activity-details";
 
 const NUMBER_FORMAT = new Intl.NumberFormat(undefined, {
   maximumFractionDigits: 2,
@@ -33,32 +28,7 @@ const DISTANCE_FORMAT = new Intl.NumberFormat(undefined, {
   maximumFractionDigits: 2,
 });
 
-export default function Activities() {
-  const [selectedActivityLog, setSelectedActivityLog] =
-    useState<ActivityLog | null>(null);
-
-  return (
-    <>
-      <ActivityList onShowActivityLog={setSelectedActivityLog} />
-      <Dialog
-        fullWidth
-        maxWidth="xl"
-        open={!!selectedActivityLog}
-        onClose={() => setSelectedActivityLog(null)}
-      >
-        <DialogContent>
-          <RequireScopes scopes={["loc"]}>
-            {selectedActivityLog && (
-              <ActivityDetails activityLog={selectedActivityLog} />
-            )}
-          </RequireScopes>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-}
-
-export function ActivityList({
+export default function ActivityLogList({
   onShowActivityLog,
 }: {
   onShowActivityLog: (activityLog: ActivityLog) => void;
