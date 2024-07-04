@@ -38,6 +38,10 @@ Once you create the application, it will be assigned a `OAuth 2.0 Client ID`. Cr
 NEXT_PUBLIC_FITBIT_OAUTH_CLIENT_ID=idgoeshere
 ```
 
+### Docker Compose
+
+If you prefer Docker Compose, you can start a development server with `compose up`.
+
 ### Installation
 
 Install the latest version of [nodejs](https://nodejs.org/).

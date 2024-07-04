@@ -1,0 +1,15 @@
+version: "2"
+services:
+  dashboard:
+    image: "node:current-alpine"
+    user: "node"
+    working_dir: /home/node/app
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - ./:/home/node/app
+    expose:
+      - "3000"
+    ports:
+      - "3000:3000"
+    command: "npm run dev"
