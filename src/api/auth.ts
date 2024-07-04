@@ -30,8 +30,8 @@ const FITBIT_OAUTH_SERVER = requiredVar(
 const FITBIT_OAUTH_CLIENT_ID = requiredVar(
   process.env.NEXT_PUBLIC_FITBIT_OAUTH_CLIENT_ID
 );
-const FITBIT_OAUTH_TOKEN_ENDPOINT = requiredVar(
-  process.env.NEXT_PUBLIC_FITBIT_OAUTH_TOKEN_ENDPOINT
+const FITBIT_OAUTH_AUTHORIZATION_ENDPOINT = requiredVar(
+  process.env.NEXT_PUBLIC_FITBIT_OAUTH_AUTHORIZATION_ENDPOINT
 );
 
 // Refresh when token is expiring soon
@@ -57,8 +57,9 @@ const AUTH_TOKEN_UPDATE_EVENT_TYPE = "authtokenupdated";
 const authClient = new OAuth2Client({
   server: FITBIT_OAUTH_SERVER,
   clientId: FITBIT_OAUTH_CLIENT_ID,
-  authorizationEndpoint: "/oauth2/authorize",
-  tokenEndpoint: FITBIT_OAUTH_TOKEN_ENDPOINT,
+  authorizationEndpoint: FITBIT_OAUTH_AUTHORIZATION_ENDPOINT,
+  revocationEndpoint: "/oauth2/revoke",
+  tokenEndpoint: "/oauth2/token",
 });
 
 /** Redirect to Fitbit account login */
@@ -118,9 +119,11 @@ export async function revokeAuthorization() {
 
   if (token) {
     try {
-      await authClient.revoke(token);
+      await authClient.revoke(token, "refresh_token");
     } catch (e) {
-      console.error("error revoking token");
+      if (e instanceof Error && !/HTTP Error 404/.test(e.message)) {
+        console.error("error revoking token", e);
+      }
     }
 
     clearToken();
