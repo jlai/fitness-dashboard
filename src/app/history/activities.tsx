@@ -8,15 +8,21 @@ import {
   TablePagination,
   TableFooter,
   Skeleton,
+  IconButton,
+  Dialog,
+  DialogContent,
 } from "@mui/material";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
 import dayjs from "dayjs";
+import { Launch as LaunchIcon } from "@mui/icons-material";
 
-import { ActivityLogListResponse } from "@/api/activity/types";
+import { ActivityLog, ActivityLogListResponse } from "@/api/activity/types";
 import { makeRequest } from "@/api/request";
 import { formatDuration, formatShortDateTime } from "@/utils/date-formats";
 import { useUnits } from "@/api/units";
+
+import { ActivityDetails } from "./activity-details";
 
 const NUMBER_FORMAT = new Intl.NumberFormat(undefined, {
   maximumFractionDigits: 2,
@@ -26,7 +32,33 @@ const DISTANCE_FORMAT = new Intl.NumberFormat(undefined, {
   maximumFractionDigits: 2,
 });
 
-export default function ActivityLog() {
+export default function Activities() {
+  const [selectedActivityLog, setSelectedActivityLog] =
+    useState<ActivityLog | null>(null);
+
+  return (
+    <>
+      <ActivityList onShowActivityLog={setSelectedActivityLog} />
+      <Dialog
+        maxWidth="xl"
+        open={!!selectedActivityLog}
+        onClose={() => setSelectedActivityLog(null)}
+      >
+        <DialogContent>
+          {selectedActivityLog && (
+            <ActivityDetails activityLog={selectedActivityLog} />
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+export function ActivityList({
+  onShowActivityLog,
+}: {
+  onShowActivityLog: (activityLog: ActivityLog) => void;
+}) {
   const [pageNumber, setPageNumber] = useState(0);
   const units = useUnits();
 
@@ -82,8 +114,16 @@ export default function ActivityLog() {
         <TableBody>
           {page?.activities.map((activity) => (
             <TableRow key={activity.logId}>
-              <TableCell>
-                {formatShortDateTime(dayjs(activity.startTime))}
+              <TableCell className="flex flex-row items-center gap-x-2">
+                <div>{formatShortDateTime(dayjs(activity.startTime))}</div>
+                {activity.distance && (
+                  <IconButton
+                    size="small"
+                    onClick={() => onShowActivityLog(activity)}
+                  >
+                    <LaunchIcon />
+                  </IconButton>
+                )}
               </TableCell>
               <TableCell>{activity.activityName}</TableCell>
               <TableCell>{NUMBER_FORMAT.format(activity.steps)}</TableCell>

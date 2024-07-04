@@ -37,6 +37,7 @@ export interface ActivityLog {
   }>;
   activityName: string;
   activityTypeId: number;
+  averageHeartRate?: number;
   calories: number;
   caloriesLink: string;
   duration: number;
@@ -52,6 +53,10 @@ export interface ActivityLog {
 
   distance?: number;
   distanceUnit: string;
+}
+
+export interface GetActivityLogResponse {
+  activityLog: ActivityLog;
 }
 
 // https://dev.fitbit.com/build/reference/web-api/activity/get-activity-log-list/

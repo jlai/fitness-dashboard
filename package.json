@@ -43,6 +43,7 @@
     "react-dom": "^18",
     "react-hook-form": "^7.52.0",
     "react-hydration-provider": "^2.1.0",
+    "react-use": "^17.5.0",
     "svg-plant": "^2.0.5",
     "wonka": "^6.3.4"
   },

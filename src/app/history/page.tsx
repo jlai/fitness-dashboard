@@ -11,7 +11,7 @@ import {
 import RequireLogin from "@/components/require-login";
 import { RequireScopes } from "@/components/require-scopes";
 
-import ActivityLog from "./activity-log";
+import ActivityLog from "./activities";
 import SleepLog from "./sleep-log";
 
 export default function HistoryPage() {
