@@ -9,17 +9,26 @@ import {
 } from "@mui/x-charts";
 import { useMemo } from "react";
 import { Typography } from "@mui/material";
+import dynamic from "next/dynamic";
 
 import { getActivityTcxQuery } from "@/api/activity/activities";
 import { Trackpoint, parseTcx } from "@/api/activity/tcx";
 import { useUnits } from "@/api/units";
-import { FRACTION_DIGITS_1 } from "@/utils/number-formats";
+import { FRACTION_DIGITS_0, FRACTION_DIGITS_1 } from "@/utils/number-formats";
 import { ActivityLog } from "@/api/activity";
+import { MAPLIBRE_STYLE_URL } from "@/config";
+
+const LazyActivityMap = dynamic(() => import("@/components/activity-map"));
 
 const TIME_FORMAT = new Intl.DateTimeFormat(undefined, {
   hour: "numeric",
   minute: "2-digit",
 });
+
+type LocalizedTrackpoint = {
+  time: Date;
+  altitudeLocalized: number;
+};
 
 const XAXIS_CONFIG: AxisConfig<ScaleName, Date, ChartsXAxisProps> = {
   id: "x",
@@ -29,25 +38,50 @@ const XAXIS_CONFIG: AxisConfig<ScaleName, Date, ChartsXAxisProps> = {
 };
 
 function HeartRateChart({ trackpoints }: { trackpoints: Array<Trackpoint> }) {
+  const valueFormatter = (value: number | null) =>
+    value ? `${FRACTION_DIGITS_0.format(value)} bpm` : "";
+
   return (
     <LineChart
       skipAnimation
       height={200}
       dataset={trackpoints}
       xAxis={[XAXIS_CONFIG]}
-      series={[{ dataKey: "heartBpm", showMark: false }]}
+      yAxis={[
+        {
+          scaleType: "linear",
+        },
+      ]}
+      series={[{ dataKey: "heartBpm", showMark: false, valueFormatter }]}
     />
   );
 }
 
-function ElevationChart({ trackpoints }: { trackpoints: Array<Trackpoint> }) {
+function ElevationChart({
+  trackpoints,
+  localizedMetersName,
+}: {
+  trackpoints: Array<Trackpoint>;
+  localizedMetersName: string;
+}) {
+  const valueFormatter = (value: number | null) =>
+    value ? `${FRACTION_DIGITS_0.format(value)} ${localizedMetersName}` : "";
+
   return (
     <LineChart
       skipAnimation
       height={200}
+      slotProps={{ legend: { hidden: true } }}
       dataset={trackpoints}
       xAxis={[XAXIS_CONFIG]}
-      series={[{ dataKey: "altitudeMeters", showMark: false }]}
+      yAxis={[
+        {
+          valueFormatter,
+        },
+      ]}
+      series={[
+        { dataKey: "altitudeLocalized", showMark: false, valueFormatter },
+      ]}
     />
   );
 }
@@ -62,13 +96,20 @@ export function ActivityDetails({ activityLog }: { activityLog: ActivityLog }) {
     [tcxString]
   );
 
-  const { hasElevation, hasHeartRate } = useMemo(() => {
+  const { hasElevation, hasHeartRate, localizedTrackpoints } = useMemo(() => {
     let hasElevation = false,
       hasHeartRate = false;
+
+    const localizedTrackpoints: Array<LocalizedTrackpoint> = [];
 
     for (const trackpoint of parsedTcx?.trackpoints ?? []) {
       if (trackpoint.altitudeMeters !== undefined) {
         hasElevation = true;
+
+        localizedTrackpoints.push({
+          time: trackpoint.time,
+          altitudeLocalized: units.localizedMeters(trackpoint.altitudeMeters),
+        });
       }
 
       if (trackpoint.heartBpm !== undefined) {
@@ -76,8 +117,8 @@ export function ActivityDetails({ activityLog }: { activityLog: ActivityLog }) {
       }
     }
 
-    return { hasElevation, hasHeartRate };
-  }, [parsedTcx]);
+    return { hasElevation, hasHeartRate, localizedTrackpoints };
+  }, [parsedTcx, units]);
 
   return (
     <div className="space-y-8">
@@ -88,9 +129,9 @@ export function ActivityDetails({ activityLog }: { activityLog: ActivityLog }) {
           {activityLog.distance && (
             <Typography variant="h5">
               {FRACTION_DIGITS_1.format(
-                units.localizedDistance(activityLog.distance)
+                units.localizedKilometers(activityLog.distance)
               )}{" "}
-              {units.localizedDistanceName}
+              {units.localizedKilometersName}
             </Typography>
           )}
           {activityLog.averageHeartRate && (
@@ -108,19 +149,23 @@ export function ActivityDetails({ activityLog }: { activityLog: ActivityLog }) {
 
       {parsedTcx && (
         <>
+          {MAPLIBRE_STYLE_URL && (
+            <div className="w-full h-[300px]">
+              <LazyActivityMap geojson={parsedTcx.geojson} />
+            </div>
+          )}
           {hasElevation && (
             <section>
-              <Typography variant="h5" className="mb-4">
-                Elevation (meters)
-              </Typography>
-              <ElevationChart trackpoints={parsedTcx.trackpoints} />
+              <Typography variant="h5">Elevation</Typography>
+              <ElevationChart
+                trackpoints={localizedTrackpoints}
+                localizedMetersName={units.localizedMetersName}
+              />
             </section>
           )}
           {hasHeartRate && (
             <section>
-              <Typography variant="h5" className="mb-4">
-                Heart rate (bpm)
-              </Typography>
+              <Typography variant="h5">Heart rate</Typography>
               <HeartRateChart trackpoints={parsedTcx.trackpoints} />
             </section>
           )}

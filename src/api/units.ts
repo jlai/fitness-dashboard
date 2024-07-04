@@ -4,6 +4,7 @@ import { queryClientAtom } from "jotai-tanstack-query";
 import { getUserProfileQuery } from "./user";
 
 const MILES_PER_KM = 0.621371;
+const FEET_PER_METER = 3.28084;
 const FLUID_OZ_PER_ML = 0.033814;
 const CUP_PER_ML = FLUID_OZ_PER_ML / 8;
 
@@ -11,14 +12,22 @@ export const unitsAtom = atom(async (get) => {
   const queryClient = get(queryClientAtom);
   const profile = await queryClient.fetchQuery(getUserProfileQuery());
 
-  const { distanceUnit, waterUnit, waterUnitName } = profile;
+  const {
+    distanceUnit: distanceUnitSystem,
+    waterUnit,
+    waterUnitName,
+  } = profile;
 
   return {
     // distance
-    distanceUnit: distanceUnit,
-    localizedDistance: (value: number) =>
-      localizedDistance(distanceUnit, value),
-    localizedDistanceName: localizedDistanceName(distanceUnit),
+    distanceUnit: distanceUnitSystem,
+    localizedMeters: (value: number) =>
+      distanceUnitSystem === "en_US" ? value * FEET_PER_METER : value,
+    localizedKilometers: (value: number) =>
+      distanceUnitSystem === "en_US" ? value * MILES_PER_KM : value,
+
+    localizedMetersName: distanceUnitSystem === "en_US" ? "ft" : "m",
+    localizedKilometersName: distanceUnitSystem === "en_US" ? "mi" : "km",
 
     waterUnit: waterUnit,
     localizedWaterUnitName: waterUnitName,
@@ -29,27 +38,6 @@ export const unitsAtom = atom(async (get) => {
 
 export function useUnits() {
   return useAtomValue(unitsAtom);
-}
-
-export function kilometersToMiles() {
-  return 0.621371;
-}
-
-export function localizedDistance(distanceUnit: string, value: number) {
-  switch (distanceUnit) {
-    case "en_US":
-      return value * MILES_PER_KM;
-    default:
-      return value;
-  }
-}
-
-export function localizedDistanceName(distanceUnit: string) {
-  if (distanceUnit === "en_US") {
-    return "miles";
-  } else {
-    return "km";
-  }
 }
 
 export function localizedWaterVolume(

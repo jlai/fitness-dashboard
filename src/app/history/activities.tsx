@@ -15,8 +15,9 @@ import {
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
 import dayjs from "dayjs";
-import { Launch as LaunchIcon } from "@mui/icons-material";
+import { Explore as LaunchIcon } from "@mui/icons-material";
 
+import { RequireScopes } from "@/components/require-scopes";
 import { ActivityLog, ActivityLogListResponse } from "@/api/activity/types";
 import { makeRequest } from "@/api/request";
 import { formatDuration, formatShortDateTime } from "@/utils/date-formats";
@@ -40,14 +41,17 @@ export default function Activities() {
     <>
       <ActivityList onShowActivityLog={setSelectedActivityLog} />
       <Dialog
+        fullWidth
         maxWidth="xl"
         open={!!selectedActivityLog}
         onClose={() => setSelectedActivityLog(null)}
       >
         <DialogContent>
-          {selectedActivityLog && (
-            <ActivityDetails activityLog={selectedActivityLog} />
-          )}
+          <RequireScopes scopes={["loc"]}>
+            {selectedActivityLog && (
+              <ActivityDetails activityLog={selectedActivityLog} />
+            )}
+          </RequireScopes>
         </DialogContent>
       </Dialog>
     </>
@@ -131,9 +135,9 @@ export function ActivityList({
                 {activity.distance ? (
                   <div>
                     {DISTANCE_FORMAT.format(
-                      units.localizedDistance(activity.distance)
+                      units.localizedKilometers(activity.distance)
                     )}{" "}
-                    {units.localizedDistanceName}
+                    {units.localizedKilometersName}
                   </div>
                 ) : (
                   "-"

@@ -3,7 +3,9 @@
 import { atomEffect } from "jotai-effect";
 import { toast } from "mui-sonner";
 
-import { getFreshAccessToken, FITBIT_API_URL } from "./auth";
+import { FITBIT_API_URL } from "@/config";
+
+import { getFreshAccessToken } from "./auth";
 
 const RATE_LIMIT_EXCEEDED_EVENT_TYPE = "fitbitratelimitexceeded";
 

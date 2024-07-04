@@ -10,29 +10,12 @@ import { atomEffect } from "jotai-effect";
 import { JwtPayload, jwtDecode } from "jwt-decode";
 
 import { singleAsync } from "@/utils/async";
-
-function requiredVar(value?: string) {
-  if (!value) {
-    throw new Error(`Environment variable missing`);
-  }
-  return value;
-}
-
-export const FITBIT_API_URL = requiredVar(
-  process.env.NEXT_PUBLIC_FITBIT_API_URL
-);
-const REDIRECT_URI = requiredVar(
-  process.env.NEXT_PUBLIC_FITBIT_OAUTH_REDIRECT_URI
-);
-const FITBIT_OAUTH_SERVER = requiredVar(
-  process.env.NEXT_PUBLIC_FITBIT_OAUTH_SERVER
-);
-const FITBIT_OAUTH_CLIENT_ID = requiredVar(
-  process.env.NEXT_PUBLIC_FITBIT_OAUTH_CLIENT_ID
-);
-const FITBIT_OAUTH_AUTHORIZATION_ENDPOINT = requiredVar(
-  process.env.NEXT_PUBLIC_FITBIT_OAUTH_AUTHORIZATION_ENDPOINT
-);
+import {
+  FITBIT_OAUTH_SERVER,
+  FITBIT_OAUTH_CLIENT_ID,
+  FITBIT_OAUTH_AUTHORIZATION_ENDPOINT,
+  OAUTH_CALLBACK_URI,
+} from "@/config";
 
 // Refresh when token is expiring soon
 const EXPIRING_SOON_MILLIS = 2 * 60 * 1000;
@@ -74,7 +57,7 @@ export async function redirectToLogin({
   sessionStorage.setItem(PKCE_CODEVERIFIER_STORAGE_KEY, codeVerifier);
 
   const url = await authClient.authorizationCode.getAuthorizeUri({
-    redirectUri: REDIRECT_URI!,
+    redirectUri: OAUTH_CALLBACK_URI!,
     scope: SCOPES,
     codeVerifier,
     extraParams: {
@@ -101,7 +84,7 @@ export async function handleAuthCallback() {
   const token = await authClient.authorizationCode.getTokenFromCodeRedirect(
     document.location.href,
     {
-      redirectUri: REDIRECT_URI,
+      redirectUri: OAUTH_CALLBACK_URI,
       codeVerifier,
     }
   );

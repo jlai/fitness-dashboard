@@ -39,14 +39,14 @@ export function GaugeDistanceTileContent() {
       (entry) => entry.activity === "total"
     )?.distance ?? 0;
 
-  const localizedTotalDistance = units.localizedDistance(totalDistance);
+  const localizedTotalDistance = units.localizedKilometers(totalDistance);
 
   return (
     <StatGauge
       iconSrc={distanceIconUrl}
       value={localizedTotalDistance}
-      valueMax={units.localizedDistance(dailySummary.goals.distance)}
-      valueUnits={units.localizedDistanceName}
+      valueMax={units.localizedKilometers(dailySummary.goals.distance)}
+      valueUnits={units.localizedKilometersName}
     />
   );
 }

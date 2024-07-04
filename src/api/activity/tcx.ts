@@ -1,3 +1,5 @@
+import { tcx as tcxToGeoJson } from "@tmcw/togeojson";
+
 export type Trackpoint = {
   time: Date;
   altitudeMeters?: number;
@@ -31,5 +33,6 @@ export function parseTcx(tcxString: string) {
 
   return {
     trackpoints,
+    geojson: tcxToGeoJson(tcxDocument),
   };
 }
