@@ -1,0 +1,2 @@
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' blob: https://static.cloudflareinsights.com/; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://asset-service.fitbit.com; connect-src 'self' https://api.fitbit.com https://api.protomaps.com https://protomaps.github.io; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content
