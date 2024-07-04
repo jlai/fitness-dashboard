@@ -7,7 +7,7 @@ import {
   generateCodeVerifier,
 } from "@badgateway/oauth2-client";
 import { atomEffect } from "jotai-effect";
-import { jwtDecode } from "jwt-decode";
+import { JwtPayload, jwtDecode } from "jwt-decode";
 
 import { singleAsync } from "@/utils/async";
 
@@ -210,6 +210,22 @@ export const syncFitbitTokenEffect = atomEffect((get, set) => {
     window.removeEventListener(AUTH_TOKEN_UPDATE_EVENT_TYPE, updateListener);
   };
 });
+
+type FitbitJwtPayload = JwtPayload & {
+  scopes?: string;
+};
+
+/**
+ * Get scopes for the current access token. Note that these use an internal name
+ * like 'wpro' rather than the public scope name 'profile'.
+ */
+export function getAccessTokenScopes() {
+  const token = getTokenFromStorage();
+  const accessToken =
+    token && (jwtDecode(token.accessToken) as FitbitJwtPayload);
+
+  return new Set(accessToken?.scopes?.split(" ") ?? []);
+}
 
 export const rawUserIdAtom = atom((get) => {
   const accessToken = get(fitbitTokenAtom)?.accessToken;

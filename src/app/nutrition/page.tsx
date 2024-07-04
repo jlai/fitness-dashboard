@@ -7,6 +7,7 @@ import dayjs from "dayjs";
 import NutritionLogger from "@/components/nutrition/nutrition-logger";
 import DayNavigator from "@/components/day-navigator";
 import RequireLogin from "@/components/require-login";
+import { RequireScopes } from "@/components/require-scopes";
 
 import FoodLog from "./food-log";
 
@@ -15,19 +16,24 @@ export default function FoodPage() {
 
   return (
     <RequireLogin>
-      <div className="space-y-8">
-        <Paper>
-          <Suspense>
-            <NutritionLogger />
-          </Suspense>
-        </Paper>
-        <DayNavigator selectedDay={selectedDay} onSelectDay={setSelectedDay} />
-        <Paper>
-          <Suspense>
-            <FoodLog day={selectedDay} />
-          </Suspense>
-        </Paper>
-      </div>
+      <RequireScopes scopes={["pro", "nut"]}>
+        <div className="space-y-8">
+          <Paper>
+            <Suspense>
+              <NutritionLogger />
+            </Suspense>
+          </Paper>
+          <DayNavigator
+            selectedDay={selectedDay}
+            onSelectDay={setSelectedDay}
+          />
+          <Paper>
+            <Suspense>
+              <FoodLog day={selectedDay} />
+            </Suspense>
+          </Paper>
+        </div>
+      </RequireScopes>
     </RequireLogin>
   );
 }

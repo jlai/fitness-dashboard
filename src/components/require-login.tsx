@@ -1,7 +1,5 @@
 "use client";
 
-import { Client } from "react-hydration-provider";
-
 import { useLoggedIn } from "@/api/auth";
 
 import LoginBox from "./login-box";
@@ -13,7 +11,11 @@ export default function RequireLogin({
 }) {
   const loggedIn = useLoggedIn();
 
-  return <Client>{loggedIn ? children : <LoginNotice />}</Client>;
+  if (!loggedIn) {
+    return <LoginNotice />;
+  }
+
+  return children;
 }
 
 function LoginNotice() {

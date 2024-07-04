@@ -9,6 +9,7 @@ import {
 } from "@mui/icons-material";
 
 import RequireLogin from "@/components/require-login";
+import { RequireScopes } from "@/components/require-scopes";
 
 import ActivityLog from "./activity-log";
 import SleepLog from "./sleep-log";
@@ -41,12 +42,16 @@ export default function HistoryPage() {
           </Box>
           <TabPanel value="activities">
             <Suspense>
-              <ActivityLog />
+              <RequireScopes scopes={["pro", "act"]}>
+                <ActivityLog />
+              </RequireScopes>
             </Suspense>
           </TabPanel>
           <TabPanel value="sleep">
             <Suspense>
-              <SleepLog />
+              <RequireScopes scopes={["pro", "sle"]}>
+                <SleepLog />
+              </RequireScopes>
             </Suspense>
           </TabPanel>
         </TabContext>
