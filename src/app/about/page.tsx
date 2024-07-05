@@ -66,6 +66,17 @@ export default function AboutPage() {
         </Accordion>
         <Accordion>
           <AccordionSummary expandIcon={<ArrowDropDown />}>
+            I keep getting signed out
+          </AccordionSummary>
+          <AccordionDetails>
+            The Fitbit API has limits on having active sessions in multiple
+            browsers, such as desktop + a device. You may have to re-login
+            whenever you switch browsers when the current login tokens expire
+            (every 8 hours or so).
+          </AccordionDetails>
+        </Accordion>
+        <Accordion>
+          <AccordionSummary expandIcon={<ArrowDropDown />}>
             Can I view my sleep score?
           </AccordionSummary>
           <AccordionDetails>
