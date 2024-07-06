@@ -3,9 +3,12 @@ import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
+  Button,
   Container,
   Typography,
 } from "@mui/material";
+
+import { PRIVACY_POLICY_LINK, TOS_LINK } from "@/config";
 
 export default function AboutPage() {
   return (
@@ -26,6 +29,13 @@ export default function AboutPage() {
           </b>{" "}
           Conversely, we can&quot;t provide support for Fitbit devices.
         </Typography>
+        {TOS_LINK && (
+          <Typography variant="body2">
+            <Button variant="text" href={TOS_LINK}>
+              View Terms of Service
+            </Button>
+          </Typography>
+        )}
       </section>
       <section className="space-y-4">
         <Typography variant="h4">Privacy</Typography>
@@ -39,6 +49,13 @@ export default function AboutPage() {
           Some features, such as displaying maps of runs, may send coordinates
           to third-party mapping services in order to fetch relevant map tiles.
         </Typography>
+        {PRIVACY_POLICY_LINK && (
+          <Typography variant="body2">
+            <Button variant="text" href={PRIVACY_POLICY_LINK}>
+              View Privacy Policy
+            </Button>
+          </Typography>
+        )}
       </section>
       <section>
         <Typography variant="h4" className="mb-4">

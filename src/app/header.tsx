@@ -1,5 +1,5 @@
 import { AppBar, Container, Typography, Chip, Link } from "@mui/material";
-import { Poppins, Fira_Sans } from "next/font/google";
+import { Poppins } from "next/font/google";
 import React from "react";
 import NextLink from "next/link";
 import {
@@ -10,7 +10,8 @@ import {
 } from "@mui/icons-material";
 
 export const poppins = Poppins({ weight: "400", subsets: ["latin"] });
-export const firaSans = Fira_Sans({ weight: "400", subsets: ["latin"] });
+
+import { HOST_WEBSITE_LINK, HOST_WEBSITE_NAME, WEBSITE_NAME } from "@/config";
 
 import AccountMenu from "./account-menu";
 
@@ -36,6 +37,29 @@ function NavLink({
   );
 }
 
+function SiteBranding({ className = "" }: { className: string }) {
+  return (
+    <div
+      className={`hidden md:flex flex-row items-center text-gray-500 ${className}`}
+    >
+      <div>
+        <div className={`${poppins.className} text-3xl`}>{WEBSITE_NAME}</div>
+        <div className={`${poppins.className} text-sm text-end`}>
+          hosted by{" "}
+          {HOST_WEBSITE_LINK ? (
+            <a href={HOST_WEBSITE_LINK} target="_blank" className="underline">
+              {HOST_WEBSITE_NAME}
+            </a>
+          ) : (
+            HOST_WEBSITE_NAME
+          )}
+        </div>
+      </div>
+      <Chip label="Preview" color="warning" variant="filled" className="ml-4" />
+    </div>
+  );
+}
+
 export default function Header() {
   return (
     <AppBar
@@ -48,21 +72,8 @@ export default function Header() {
       }}
     >
       <Container maxWidth="lg">
-        <div className="flex flex-row items-center gap-x-1 text-gray-500">
-          <Typography
-            variant="h4"
-            className="hidden md:flex flex-row flex-1 items-center"
-          >
-            <span className={poppins.className}>
-              {process.env.NEXT_PUBLIC_WEBSITE_NAME ?? "Dashboard"}
-            </span>
-            <Chip
-              label="Preview"
-              color="warning"
-              variant="filled"
-              className="ml-4"
-            />
-          </Typography>
+        <div className="flex flex-row items-center gap-x-2 text-gray-500">
+          <SiteBranding className="flex-1" />
           <div className="flex flex-row flex-1 items-center md:gap-x-2 md:mx-4">
             <NavLink href="/" icon={<DashboardIcon />}>
               Dashboard
