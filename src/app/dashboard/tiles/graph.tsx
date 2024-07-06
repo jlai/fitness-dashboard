@@ -3,10 +3,7 @@ import { BarChart } from "@mui/x-charts";
 import dayjs from "dayjs";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
-import {
-  ActivityTimeSeriesResource,
-  getActivityTimeSeriesQuery,
-} from "@/api/activity";
+import { TimeSeriesResource, getTimeSeriesQuery } from "@/api/activity";
 
 import { useSelectedDay } from "../state";
 
@@ -21,14 +18,10 @@ export default function GraphTileContent() {
   const endDay = day;
 
   const { data } = useSuspenseQuery({
-    ...getActivityTimeSeriesQuery<"activities-steps">(
-      ActivityTimeSeriesResource.Steps,
-      startDay,
-      endDay
-    ),
+    ...getTimeSeriesQuery("steps", startDay, endDay),
   });
 
-  const dataset = data?.["activities-steps"].map(({ dateTime, value }) => ({
+  const dataset = data?.map(({ dateTime, value }) => ({
     dateTime,
     value: Number(value),
   }));

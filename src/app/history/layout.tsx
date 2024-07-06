@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   DirectionsRun as ActivitesIcon,
   SingleBed as SleepIcon,
+  BarChart as GraphsIcon,
 } from "@mui/icons-material";
 import { usePathname } from "next/navigation";
 
@@ -15,13 +16,21 @@ export default function HistoryLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = usePathname().split("/")[2];
+  const pathname = usePathname().split("/")[2] ?? "graphs";
 
   return (
     <RequireLogin>
       <Paper>
         <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
           <Tabs aria-label="history tabs" value={pathname}>
+            <Tab
+              component={Link}
+              href="/history"
+              value="graphs"
+              label="Graphs"
+              icon={<GraphsIcon />}
+              iconPosition="start"
+            />
             <Tab
               component={Link}
               href="/history/activities"

@@ -7,6 +7,7 @@ const MILES_PER_KM = 0.621371;
 const FEET_PER_METER = 3.28084;
 const FLUID_OZ_PER_ML = 0.033814;
 const CUP_PER_ML = FLUID_OZ_PER_ML / 8;
+const POUNDS_PER_KG = 2.20462;
 
 export const unitsAtom = atom(async (get) => {
   const queryClient = get(queryClientAtom);
@@ -29,6 +30,12 @@ export const unitsAtom = atom(async (get) => {
     localizedMetersName: distanceUnitSystem === "en_US" ? "ft" : "m",
     localizedKilometersName: distanceUnitSystem === "en_US" ? "mi" : "km",
 
+    // weight
+    localizedKilograms: (value: number) =>
+      distanceUnitSystem === "en_US" ? value * POUNDS_PER_KG : value,
+    localizedKilogramName: distanceUnitSystem === "en_US" ? "lbs" : "kg",
+
+    // water
     waterUnit: waterUnit,
     localizedWaterUnitName: waterUnitName,
     localizedWaterVolume: (value: number) =>

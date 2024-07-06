@@ -5,20 +5,45 @@ import duration from "dayjs/plugin/duration";
 
 dayjs.extend(duration);
 
-const SHORT_DATE_TIME_THIS_YEAR = new Intl.DateTimeFormat(undefined, {
+const SHORT_DATE_OPTIONS: Intl.DateTimeFormatOptions = {
   day: "numeric",
   month: "short",
+};
+
+const TIME_FORMAT_OPTIONS: Intl.DateTimeFormatOptions = {
   hour: "numeric",
   minute: "2-digit",
+};
+
+const SHORT_DATE_THIS_YEAR = new Intl.DateTimeFormat(undefined, {
+  ...SHORT_DATE_OPTIONS,
+});
+
+const SHORT_DATE_OTHER_YEAR = new Intl.DateTimeFormat(undefined, {
+  ...SHORT_DATE_OPTIONS,
+  year: "numeric",
+});
+
+const SHORT_DATE_TIME_THIS_YEAR = new Intl.DateTimeFormat(undefined, {
+  ...SHORT_DATE_OPTIONS,
+  ...TIME_FORMAT_OPTIONS,
 });
 
 const SHORT_DATE_TIME_OTHER_YEAR = new Intl.DateTimeFormat(undefined, {
-  day: "numeric",
-  month: "short",
-  hour: "numeric",
-  minute: "2-digit",
+  ...SHORT_DATE_OPTIONS,
+  ...TIME_FORMAT_OPTIONS,
   year: "numeric",
 });
+
+export function formatShortDate(day: Dayjs) {
+  const today = dayjs();
+
+  if (day.isSame(today, "year")) {
+    return SHORT_DATE_THIS_YEAR.format(day.toDate());
+  }
+
+  return SHORT_DATE_OTHER_YEAR.format(day.toDate());
+}
 
 export function formatShortDateTime(day: Dayjs) {
   const today = dayjs();

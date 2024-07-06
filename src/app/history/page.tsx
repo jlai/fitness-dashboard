@@ -1,3 +1,5 @@
+import GraphPage from "./graphs/page";
+
 export default function HistoryOverviewPage() {
-  return "foo";
+  return <GraphPage />;
 }
