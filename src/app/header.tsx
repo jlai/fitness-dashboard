@@ -64,7 +64,7 @@ export default function Header() {
             />
           </Typography>
           <div className="flex flex-row flex-1 items-center md:gap-x-2 md:mx-4">
-            <NavLink href="/dashboard" icon={<DashboardIcon />}>
+            <NavLink href="/" icon={<DashboardIcon />}>
               Dashboard
             </NavLink>
             <NavLink href="/nutrition" icon={<FoodIcon />}>

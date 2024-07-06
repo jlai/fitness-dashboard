@@ -12,7 +12,7 @@ Technologies used:
 
 ## Live demo
 
-See https://exercise.quest/dashboard for a live deployment.
+See https://dashboard.exercise.quest for a live deployment.
 
 ## Running a local development server
 

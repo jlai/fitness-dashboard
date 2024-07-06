@@ -10,7 +10,8 @@ export default function LoginCallbackPage() {
 
   useEffect(() => {
     handleAuthCallback().then(() => {
-      router.replace("/dashboard");
+      // FIXME track redirect url
+      router.replace("/");
     });
   }, [router]);
 }
