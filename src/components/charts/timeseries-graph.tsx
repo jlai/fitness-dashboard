@@ -30,11 +30,21 @@ import {
 import { formatShortDate } from "@/utils/date-formats";
 import { useUnits } from "@/api/units";
 
+type DateRangeType = "last7" | "last30";
+
+const selectedRangeTypeAtom = atom<DateRangeType>("last7");
+
 const startDayAtom = atom(dayjs());
-const endDayAtom = atom((get) => get(startDayAtom).subtract(7, "days"));
+const endDayAtom = atom((get) => {
+  switch (get(selectedRangeTypeAtom)) {
+    case "last7":
+      return get(startDayAtom).subtract(7, "days");
+    case "last30":
+      return get(startDayAtom).subtract(30, "days");
+  }
+});
 
 const selectedSeriesAtom = atom<TimeSeriesResource>("steps");
-const selectedRangeTypeAtom = atom("last7");
 
 function SeriesSelector() {
   const [selectedSeries, setSelectedSeries] = useAtom(selectedSeriesAtom);
@@ -70,6 +80,7 @@ function GraphRangeSelector() {
       onChange={(event, value) => setSelectedRangeType(value)}
     >
       <ToggleButton value="last7">7 days</ToggleButton>
+      <ToggleButton value="last30">30 days</ToggleButton>
     </ToggleButtonGroup>
   );
 }
@@ -138,7 +149,9 @@ export function GraphView() {
               valueFormatter: (value) => formatShortDate(dayjs(value)),
             },
           ]}
-          yAxis={[{ scaleType: "linear" }]}
+          yAxis={[
+            { scaleType: "linear", valueFormatter: config.valueFormatter },
+          ]}
         >
           <BarPlot />
           <LinePlot />

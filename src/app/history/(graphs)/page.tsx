@@ -1,7 +1,5 @@
 "use client";
 
-import { atom } from "jotai";
-
 import RequireLogin from "@/components/require-login";
 import { GraphView } from "@/components/charts/timeseries-graph";
 

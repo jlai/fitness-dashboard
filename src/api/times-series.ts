@@ -1,5 +1,7 @@
-import { Dayjs } from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
 import { queryOptions } from "@tanstack/react-query";
+
+import { FRACTION_DIGITS_0, FRACTION_DIGITS_1 } from "@/utils/number-formats";
 
 import { formatAsDate } from "./datetime";
 import { makeRequest } from "./request";
@@ -24,6 +26,7 @@ interface TimeSeriesResourceConfig {
     dateTime: Date;
     value: any;
   }>;
+  valueFormatter?: (value: any) => string;
 }
 
 interface HeartTimeSeriesValue {
@@ -43,6 +46,7 @@ export const TIME_SERIES_CONFIGS: Record<
     requiredScopes: ["act"],
     chartType: "bar",
     getDataset: getNumericTimeSeriesDataset,
+    valueFormatter: FRACTION_DIGITS_0.format,
   },
   distance: {
     urlPrefix: "/1/user/-/activities/distance/date/",
@@ -51,6 +55,7 @@ export const TIME_SERIES_CONFIGS: Record<
     requiredScopes: ["act"],
     chartType: "bar",
     getDataset: getNumericTimeSeriesDataset,
+    valueFormatter: FRACTION_DIGITS_1.format,
   },
   steps: {
     urlPrefix: "/1/user/-/activities/steps/date/",
@@ -59,6 +64,7 @@ export const TIME_SERIES_CONFIGS: Record<
     requiredScopes: ["act"],
     chartType: "bar",
     getDataset: getNumericTimeSeriesDataset,
+    valueFormatter: FRACTION_DIGITS_0.format,
   },
   floors: {
     urlPrefix: "/1/user/-/activities/floors/date/",
@@ -67,6 +73,7 @@ export const TIME_SERIES_CONFIGS: Record<
     requiredScopes: ["act"],
     chartType: "bar",
     getDataset: getNumericTimeSeriesDataset,
+    valueFormatter: FRACTION_DIGITS_0.format,
   },
   // body
   weight: {
@@ -76,6 +83,7 @@ export const TIME_SERIES_CONFIGS: Record<
     requiredScopes: ["act"],
     chartType: "line",
     getDataset: getNumericTimeSeriesDataset,
+    valueFormatter: FRACTION_DIGITS_0.format,
   },
   // other
   ["resting-heart-rate"]: {
@@ -90,6 +98,7 @@ export const TIME_SERIES_CONFIGS: Record<
         value: entry.value.restingHeartRate ?? null,
       }));
     },
+    valueFormatter: FRACTION_DIGITS_0.format,
   },
 };
 
@@ -142,7 +151,7 @@ export function getNumericTimeSeriesDataset(
   data: Array<TimeSeriesEntry<unknown>>
 ) {
   return data.map(({ dateTime, value }) => ({
-    dateTime: new Date(dateTime),
+    dateTime: dayjs(dateTime).toDate(),
     value: Number(value),
   }));
 }
