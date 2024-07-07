@@ -7,9 +7,10 @@ import {
   LineChart,
   ScaleName,
 } from "@mui/x-charts";
-import { useMemo } from "react";
-import { Typography } from "@mui/material";
+import { useEffect, useMemo, useRef } from "react";
+import { Button, Typography } from "@mui/material";
 import dynamic from "next/dynamic";
+import { Download } from "@mui/icons-material";
 
 import { getActivityTcxQuery } from "@/api/activity/activities";
 import { Trackpoint, parseTcx } from "@/api/activity/tcx";
@@ -96,6 +97,27 @@ export function ActivityDetails({ activityLog }: { activityLog: ActivityLog }) {
     [tcxString]
   );
 
+  const downloadUrlRef = useRef<string | null>();
+
+  const tcxFilename = `${activityLog.logId}.tcx`;
+
+  const tcxDownloadUrl = useMemo(() => {
+    const file =
+      tcxString &&
+      new File([tcxString], tcxFilename, {
+        type: "application/vnd.garmin.tcx+xml",
+      });
+    downloadUrlRef.current = file && URL.createObjectURL(file);
+    return downloadUrlRef.current;
+  }, [tcxString, tcxFilename]);
+
+  useEffect(() => {
+    if (downloadUrlRef.current) {
+      URL.revokeObjectURL(downloadUrlRef.current);
+      downloadUrlRef.current = null;
+    }
+  });
+
   const { hasElevation, hasHeartRate, localizedTrackpoints } = useMemo(() => {
     let hasElevation = false,
       hasHeartRate = false;
@@ -144,6 +166,14 @@ export function ActivityDetails({ activityLog }: { activityLog: ActivityLog }) {
               {activityLog.calories} calories
             </Typography>
           )}
+          <Button
+            disabled={!tcxDownloadUrl}
+            href={tcxDownloadUrl ?? ""}
+            download={tcxFilename}
+          >
+            <Download />
+            TCX
+          </Button>
         </div>
       )}
 
