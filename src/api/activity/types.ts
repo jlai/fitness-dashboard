@@ -1,6 +1,6 @@
 // https://dev.fitbit.com/build/reference/web-api/activity/get-daily-activity-summary/
 export interface DailyActivitySummaryResponse {
-  goals: {
+  goals?: {
     activeMinutes: number;
     caloriesOut: number;
     distance: number;

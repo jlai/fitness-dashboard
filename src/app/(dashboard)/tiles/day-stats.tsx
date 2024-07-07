@@ -24,7 +24,7 @@ export function GaugeStepsTileContent() {
     <StatGauge
       iconSrc={stepsIconUrl}
       value={totalSteps}
-      valueMax={dailySummary.goals.steps}
+      valueMax={dailySummary.goals?.steps ?? 0}
       valueUnits="steps"
     />
   );
@@ -45,7 +45,7 @@ export function GaugeDistanceTileContent() {
     <StatGauge
       iconSrc={distanceIconUrl}
       value={localizedTotalDistance}
-      valueMax={units.localizedKilometers(dailySummary.goals.distance)}
+      valueMax={units.localizedKilometers(dailySummary.goals?.distance ?? 0)}
       valueUnits={units.localizedKilometersName}
     />
   );
@@ -55,7 +55,7 @@ export function GaugeCaloriesBurnedTileContent() {
   const dailySummary = useDailySummary();
 
   const burned = dailySummary.summary.caloriesOut;
-  const goal = dailySummary.goals.caloriesOut;
+  const goal = dailySummary.goals?.caloriesOut ?? 0;
 
   return (
     <StatGauge
@@ -71,7 +71,7 @@ export function GaugeFloorsTileContent() {
   const dailySummary = useDailySummary();
 
   const floors = dailySummary.summary.floors;
-  const goal = dailySummary.goals.floors;
+  const goal = dailySummary.goals?.floors ?? 0;
 
   return (
     <StatGauge
@@ -86,14 +86,14 @@ export function GaugeFloorsTileContent() {
 export function GaugeActiveMinutesTileContent() {
   const {
     summary: { fairlyActiveMinutes, veryActiveMinutes },
-    goals: { activeMinutes },
+    goals: { activeMinutes } = {},
   } = useDailySummary();
 
   return (
     <StatGauge
       iconSrc={activeMinutesIconUrl}
       value={fairlyActiveMinutes + veryActiveMinutes}
-      valueMax={activeMinutes}
+      valueMax={activeMinutes ?? 0}
       valueUnits="active mins"
     />
   );

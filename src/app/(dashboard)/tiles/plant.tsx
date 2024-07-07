@@ -33,7 +33,7 @@ export default function PlantTileContent() {
   const dailySummary = useDailySummary();
 
   const totalSteps = dailySummary.summary.steps;
-  const goalSteps = dailySummary.goals.steps;
+  const goalSteps = dailySummary.goals?.steps ?? 10000;
   const progress = Math.min(1.0, totalSteps / goalSteps);
 
   return (
