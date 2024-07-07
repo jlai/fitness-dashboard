@@ -107,6 +107,12 @@ export function ActivityDetails({ activityLog }: { activityLog: ActivityLog }) {
       new File([tcxString], tcxFilename, {
         type: "application/vnd.garmin.tcx+xml",
       });
+
+    if (downloadUrlRef.current) {
+      URL.revokeObjectURL(downloadUrlRef.current);
+      downloadUrlRef.current = null;
+    }
+
     downloadUrlRef.current = file && URL.createObjectURL(file);
     return downloadUrlRef.current;
   }, [tcxString, tcxFilename]);
