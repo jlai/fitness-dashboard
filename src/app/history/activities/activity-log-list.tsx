@@ -101,7 +101,7 @@ export default function ActivityLogList({
             <TableRow key={activity.logId}>
               <TableCell className="flex flex-row items-center gap-x-2">
                 <div>{formatShortDateTime(dayjs(activity.startTime))}</div>
-                {activity.distance && (
+                {["tracker", "mobile_run"].includes(activity.logType) && (
                   <IconButton
                     size="small"
                     onClick={() => onShowActivityLog(activity)}
