@@ -74,7 +74,7 @@ export default function DayNavigator({
   }, [selectedDay, onSelectDay]);
 
   const handleChange = useCallback(
-    (value: Dayjs | null, state: PickerSelectionState) => {
+    (value: Dayjs | null, state: PickerSelectionState | undefined) => {
       if (state === "finish") {
         if (value) {
           onSelectDay(value);
