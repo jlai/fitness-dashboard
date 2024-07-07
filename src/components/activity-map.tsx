@@ -35,11 +35,12 @@ export default function ActivityMap({
 }: {
   geojson: FeatureCollection;
 }) {
-  const boundingBox = bbox(geojson);
+  const feature = geojson.features[0];
+  const boundingBox = feature && bbox(geojson);
 
-  const coords = getCoords(geojson.features[0] as Feature<LineString>);
-  const startCoords = coords[0];
-  const endCoords = coords[coords.length - 1];
+  const coords = feature && getCoords(feature as Feature<LineString>);
+  const startCoords = coords?.[0];
+  const endCoords = coords?.[coords.length - 1];
 
   return (
     <Map

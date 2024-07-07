@@ -6,6 +6,7 @@ import { DateCalendar } from "@mui/x-date-pickers";
 import { ChevronLeft, ChevronRight, CalendarMonth } from "@mui/icons-material";
 import { IconButton, Popover, Typography } from "@mui/material";
 import localizedFormats from "dayjs/plugin/localizedFormat";
+import { PickerSelectionState } from "@mui/x-date-pickers/internals";
 
 dayjs.extend(localizedFormats);
 
@@ -72,6 +73,17 @@ export default function DayNavigator({
     onSelectDay(selectedDay.add(1, "day"));
   }, [selectedDay, onSelectDay]);
 
+  const handleChange = useCallback(
+    (value: Dayjs | null, state: PickerSelectionState) => {
+      if (state === "finish") {
+        if (value) {
+          onSelectDay(value);
+        }
+      }
+    },
+    [onSelectDay]
+  );
+
   const label = getLabel(selectedDay);
   const isToday = selectedDay.isSame(today, "day");
 
@@ -102,7 +114,7 @@ export default function DayNavigator({
         >
           <DateCalendar
             value={selectedDay}
-            onChange={onSelectDay}
+            onChange={handleChange}
             disableFuture
           />
         </Popover>

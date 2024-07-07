@@ -12,13 +12,15 @@ import {
 } from "@mui/material";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
-import dayjs from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
 import { Explore as LaunchIcon } from "@mui/icons-material";
 
 import { ActivityLog, ActivityLogListResponse } from "@/api/activity/types";
 import { makeRequest } from "@/api/request";
 import { formatDuration, formatShortDateTime } from "@/utils/date-formats";
 import { useUnits } from "@/api/units";
+import JumpTo from "@/components/jump-to";
+import { formatAsDate } from "@/api/datetime";
 
 const NUMBER_FORMAT = new Intl.NumberFormat(undefined, {
   maximumFractionDigits: 2,
@@ -34,15 +36,16 @@ export default function ActivityLogList({
   onShowActivityLog: (activityLog: ActivityLog) => void;
 }) {
   const [pageNumber, setPageNumber] = useState(0);
+  const [initialDay, setInitialDay] = useState(dayjs());
   const units = useUnits();
 
   const { data, hasNextPage, fetchNextPage, isFetching } = useInfiniteQuery({
-    queryKey: ["activities"],
+    queryKey: ["activities", formatAsDate(initialDay)],
     queryFn: async ({ pageParam }) => {
       const queryString =
         pageParam ||
         `limit=10&offset=0&sort=desc&beforeDate=${encodeURIComponent(
-          new Date().toISOString().replace("Z", "")
+          initialDay.toISOString().replace("Z", "")
         )}`;
 
       const response = await makeRequest(
@@ -68,6 +71,14 @@ export default function ActivityLogList({
       setPageNumber(newPageNumber);
     },
     [setPageNumber, fetchNextPage, numLoadedPages]
+  );
+
+  const changeInitialDay = useCallback(
+    (value: Dayjs | null) => {
+      setInitialDay(value ?? dayjs());
+      setPageNumber(0);
+    },
+    [setPageNumber, setInitialDay]
   );
 
   const page = data?.pages[pageNumber];
@@ -129,7 +140,11 @@ export default function ActivityLogList({
         </TableBody>
         <TableFooter>
           <TableRow>
+            <TableCell>
+              <JumpTo onPickDay={(day) => changeInitialDay(day)} />
+            </TableCell>
             <TablePagination
+              colSpan={5}
               count={
                 hasNextPage
                   ? -1
