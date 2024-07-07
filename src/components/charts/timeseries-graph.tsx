@@ -10,25 +10,38 @@ import {
 } from "@mui/material";
 import {
   BarPlot,
+  BarSeriesType,
   ChartsAxisHighlight,
+  ChartsGrid,
   ChartsTooltip,
   ChartsXAxis,
   ChartsYAxis,
   LinePlot,
+  LineSeriesType,
   ResponsiveChartContainer,
 } from "@mui/x-charts";
 import { useQuery } from "@tanstack/react-query";
 import { atom, useAtom, useAtomValue } from "jotai";
 import dayjs from "dayjs";
 import { useMemo } from "react";
+import {
+  AxisConfig,
+  ChartsYAxisProps,
+  DatasetType,
+  MakeOptional,
+  ScaleName,
+} from "@mui/x-charts/internals";
 
 import {
   TimeSeriesResource,
   getTimeSeriesQuery,
-  TIME_SERIES_CONFIGS,
+  TimeSeriesEntry,
+  HeartTimeSeriesValue,
+  HeartRateZone,
 } from "@/api/activity";
 import { formatShortDate } from "@/utils/date-formats";
 import { useUnits } from "@/api/units";
+import { FRACTION_DIGITS_1 } from "@/utils/number-formats";
 
 type DateRangeType = "last7" | "last30";
 
@@ -44,17 +57,17 @@ const endDayAtom = atom((get) => {
   }
 });
 
-const selectedSeriesAtom = atom<TimeSeriesResource>("steps");
+const selectedResourceAtom = atom<TimeSeriesResource>("steps");
 
 function SeriesSelector() {
-  const [selectedSeries, setSelectedSeries] = useAtom(selectedSeriesAtom);
+  const [selectedResource, setselectedResource] = useAtom(selectedResourceAtom);
 
   return (
     <FormControl>
       <Select<TimeSeriesResource>
-        value={selectedSeries}
+        value={selectedResource}
         onChange={(event) =>
-          setSelectedSeries(event.target.value as TimeSeriesResource)
+          setselectedResource(event.target.value as TimeSeriesResource)
         }
         size="small"
       >
@@ -63,6 +76,9 @@ function SeriesSelector() {
         <MenuItem value="calories">Calories</MenuItem>
         <MenuItem value="floors">Floors</MenuItem>
         <MenuItem value="weight">Weight</MenuItem>
+        <MenuItem value="resting-heart-rate">Resting Heart Rate</MenuItem>
+        <MenuItem value="heart-rate-zones">Heart Rate Zones</MenuItem>
+        <MenuItem value="water">Water</MenuItem>
       </Select>
     </FormControl>
   );
@@ -85,41 +101,224 @@ function GraphRangeSelector() {
   );
 }
 
-export function GraphView() {
+/**
+ * Transform timeseries entries into parsed values.
+ * Only supports extracting a single value, which will be stored as the "value"
+ * property on the dataset.
+ */
+function getSingleValueDataset<
+  EntryValueType = string,
+  OutputType = number | null
+>(
+  data: Array<TimeSeriesEntry<unknown>>,
+  transformValue: (value: EntryValueType) => OutputType
+) {
+  return data.map(({ dateTime, value }) => ({
+    dateTime: dayjs(dateTime).toDate(),
+    value: transformValue(value as EntryValueType),
+  }));
+}
+
+function useDataset(data?: Array<TimeSeriesEntry<unknown>>) {
   const units = useUnits();
+  const selectedResource = useAtomValue(selectedResourceAtom);
+
+  return useMemo(() => {
+    let dataset: DatasetType = [];
+    let series: Array<BarSeriesType | LineSeriesType> = [];
+    let yAxis: Array<
+      MakeOptional<AxisConfig<ScaleName, any, ChartsYAxisProps>, "id">
+    > = [{ scaleType: "linear" }];
+
+    if (!data) {
+      return {
+        dataset: [] as DatasetType,
+        series: [] as Array<BarSeriesType | LineSeriesType>,
+      };
+    }
+
+    switch (selectedResource) {
+      case "steps":
+        dataset = getSingleValueDataset(data, Number);
+        series = [
+          {
+            type: "bar",
+            label: "Steps",
+            dataKey: "value",
+          },
+        ];
+        break;
+      case "floors":
+        dataset = getSingleValueDataset(data, Number);
+        series = [
+          {
+            type: "bar",
+            label: "Floors",
+            dataKey: "value",
+          },
+        ];
+        yAxis = [{ tickMinStep: 1 }];
+        break;
+      case "water":
+        dataset = getSingleValueDataset(data, (value) =>
+          units.localizedWaterVolume(Number(value))
+        );
+        series = [
+          {
+            type: "bar",
+            label: "Water",
+            dataKey: "value",
+            valueFormatter: (value) =>
+              value
+                ? `${FRACTION_DIGITS_1.format(value)} ${
+                    units.localizedWaterUnitName
+                  }`
+                : "",
+          },
+        ];
+        yAxis = [
+          {
+            label: units.localizedWaterUnitName,
+          },
+        ];
+        break;
+      case "weight":
+        dataset = getSingleValueDataset(data, (value) =>
+          units.localizedKilograms(Number(value))
+        );
+        series = [
+          {
+            type: "line",
+            label: "Weight",
+            dataKey: "value",
+            connectNulls: true,
+            showMark: true,
+            valueFormatter: (value) =>
+              value
+                ? `${FRACTION_DIGITS_1.format(value)} ${
+                    units.localizedKilogramName
+                  }`
+                : "",
+          },
+        ];
+        yAxis = [
+          {
+            label: units.localizedKilogramName,
+          },
+        ];
+        break;
+      case "distance":
+        dataset = getSingleValueDataset(data, (value) =>
+          units.localizedKilometers(Number(value))
+        );
+        series = [
+          {
+            type: "bar",
+            label: "Distance",
+            dataKey: "value",
+            valueFormatter: (value) =>
+              value
+                ? `${FRACTION_DIGITS_1.format(value)} ${
+                    units.localizedKilometersName
+                  }`
+                : "",
+          },
+        ];
+        yAxis = [
+          {
+            label: units.localizedKilometersName,
+          },
+        ];
+        break;
+      case "calories":
+        dataset = getSingleValueDataset(data, Number);
+        series = [
+          {
+            type: "bar",
+            label: "Calories",
+            dataKey: "value",
+          },
+        ];
+        break;
+      case "resting-heart-rate":
+        dataset = getSingleValueDataset<HeartTimeSeriesValue>(
+          data,
+          (value) => value.restingHeartRate ?? null
+        );
+        series = [
+          {
+            type: "line",
+            label: "Resting Heart Rate",
+            dataKey: "value",
+            connectNulls: true,
+            showMark: true,
+          },
+        ];
+        break;
+      case "heart-rate-zones":
+        {
+          dataset = [];
+
+          for (const entry of data as Array<
+            TimeSeriesEntry<HeartTimeSeriesValue>
+          >) {
+            const zoneValues: Record<string, number> = {};
+
+            for (const zone of entry.value.heartRateZones) {
+              zoneValues[`zone-${zone.name}`] = zone.minutes;
+            }
+
+            dataset.push({
+              dateTime: dayjs(entry.dateTime).toDate(),
+              ...zoneValues,
+            });
+          }
+          series = [
+            {
+              type: "bar",
+              label: "Fat Burn",
+              stack: "zones",
+              dataKey: "zone-Fat Burn",
+              color: "#f5e12f",
+              valueFormatter: (value) => `${value} minutes`,
+            },
+            {
+              type: "bar",
+              label: "Cardio",
+              stack: "zones",
+              dataKey: "zone-Cardio",
+              color: "#f59f2f",
+              valueFormatter: (value) => `${value} minutes`,
+            },
+            {
+              type: "bar",
+              label: "Peak",
+              stack: "zones",
+              dataKey: "zone-Peak",
+              color: "#f5492f",
+              valueFormatter: (value) => `${value} minutes`,
+            },
+          ];
+          yAxis = [{ label: "mins" }];
+        }
+        break;
+    }
+
+    return { dataset, series, yAxis };
+  }, [data, selectedResource, units]);
+}
+
+export function GraphView() {
   const startDay = useAtomValue(startDayAtom);
   const endDay = useAtomValue(endDayAtom);
 
-  const selectedSeries = useAtomValue(selectedSeriesAtom);
+  const selectedResource = useAtomValue(selectedResourceAtom);
 
-  const config = TIME_SERIES_CONFIGS[selectedSeries];
   const { data } = useQuery(
-    getTimeSeriesQuery(selectedSeries, startDay, endDay)
+    getTimeSeriesQuery(selectedResource, startDay, endDay)
   );
 
-  const dataset = useMemo(() => {
-    if (!data) {
-      return [];
-    }
-
-    const dataset = config.getDataset(data);
-
-    // unit conversions
-    switch (selectedSeries) {
-      case "distance":
-        return dataset.map((entry) => ({
-          ...entry,
-          value: units.localizedKilometers(entry.value),
-        }));
-      case "weight":
-        return dataset.map((entry) => ({
-          ...entry,
-          value: units.localizedKilograms(entry.value),
-        }));
-    }
-
-    return dataset;
-  }, [data, config, units, selectedSeries]);
+  const { dataset, series, yAxis } = useDataset(data);
 
   return (
     <div>
@@ -133,15 +332,7 @@ export function GraphView() {
       <div className="w-full h-[400px]">
         <ResponsiveChartContainer
           dataset={dataset}
-          series={[
-            {
-              type: config.chartType,
-              dataKey: "value",
-              label: config.label,
-              connectNulls: true,
-              showMark: true,
-            },
-          ]}
+          series={series}
           xAxis={[
             {
               scaleType: "band",
@@ -149,9 +340,7 @@ export function GraphView() {
               valueFormatter: (value) => formatShortDate(dayjs(value)),
             },
           ]}
-          yAxis={[
-            { scaleType: "linear", valueFormatter: config.valueFormatter },
-          ]}
+          yAxis={yAxis}
         >
           <BarPlot />
           <LinePlot />
@@ -160,6 +349,7 @@ export function GraphView() {
           <ChartsYAxis />
           <ChartsAxisHighlight />
           <ChartsTooltip />
+          <ChartsGrid horizontal />
         </ResponsiveChartContainer>
       </div>
     </div>
