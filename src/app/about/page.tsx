@@ -31,7 +31,7 @@ export default function AboutPage() {
         </Typography>
         {TOS_LINK && (
           <Typography variant="body2">
-            <Button variant="text" href={TOS_LINK}>
+            <Button variant="text" href={TOS_LINK} target="_blank">
               View Terms of Service
             </Button>
           </Typography>
@@ -51,7 +51,7 @@ export default function AboutPage() {
         </Typography>
         {PRIVACY_POLICY_LINK && (
           <Typography variant="body2">
-            <Button variant="text" href={PRIVACY_POLICY_LINK}>
+            <Button variant="text" href={PRIVACY_POLICY_LINK} target="_blank">
               View Privacy Policy
             </Button>
           </Typography>
@@ -98,6 +98,27 @@ export default function AboutPage() {
           </AccordionSummary>
           <AccordionDetails>
             Sleep score is not available in the Fitbit API.
+          </AccordionDetails>
+        </Accordion>
+        <Accordion>
+          <AccordionSummary expandIcon={<ArrowDropDown />}>
+            Where can I leave feedback/suggestions or report bugs?
+          </AccordionSummary>
+          <AccordionDetails>
+            <Button
+              variant="text"
+              href="https://github.com/jlai/fitness-dashboard/discussions"
+              target="_blank"
+            >
+              Feature suggestions
+            </Button>
+            <Button
+              variant="text"
+              href="https://github.com/jlai/fitness-dashboard/issues"
+              target="_blank"
+            >
+              Bug reports
+            </Button>
           </AccordionDetails>
         </Accordion>
       </section>
