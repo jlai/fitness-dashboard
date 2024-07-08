@@ -17,6 +17,23 @@ import CreateSleepLogDialog, {
   createSleepLogDialogOpenAtom,
 } from "./create-sleep-log";
 
+function LogMenuItem({
+  onClick,
+  icon,
+  children,
+}: {
+  onClick: () => void;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <MenuItem onClick={onClick} className="py-4">
+      <ListItemIcon>{icon}</ListItemIcon>
+      <ListItemText>{children}</ListItemText>
+    </MenuItem>
+  );
+}
+
 export function LogFab() {
   const [showingCreateActivityLog, setShowingCreateActivityLog] = useAtom(
     createActivityLogDialogOpenAtom
@@ -47,6 +64,7 @@ export function LogFab() {
         <AddIcon />
       </Fab>
       <Menu
+        slotProps={{ paper: { sx: { borderRadius: "12px" } } }}
         {...bindMenu(popupState)}
         anchorOrigin={{
           vertical: -18,
@@ -57,18 +75,12 @@ export function LogFab() {
           horizontal: "right",
         }}
       >
-        <MenuItem onClick={showCreateActivityLog}>
-          <ListItemIcon>
-            <ActivityIcon />
-          </ListItemIcon>
-          <ListItemText>Log Activity</ListItemText>
-        </MenuItem>
-        <MenuItem onClick={showCreateSleepLog}>
-          <ListItemIcon>
-            <SleepIcon />
-          </ListItemIcon>
-          <ListItemText>Log Sleep</ListItemText>
-        </MenuItem>
+        <LogMenuItem icon={<ActivityIcon />} onClick={showCreateActivityLog}>
+          Log Activity
+        </LogMenuItem>
+        <LogMenuItem icon={<SleepIcon />} onClick={showCreateSleepLog}>
+          Log Sleep
+        </LogMenuItem>
       </Menu>
       {showingCreateActivityLog && <CreateActivityLogDialog />}
       {showingCreateSleepLog && <CreateSleepLogDialog />}
