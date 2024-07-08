@@ -1,6 +1,7 @@
 import { Button, Dialog, DialogContent, Typography } from "@mui/material";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import dayjs, { Dayjs } from "dayjs";
+import duration from "dayjs/plugin/duration";
 import { atom, useAtom } from "jotai";
 import { useCallback } from "react";
 import { useForm } from "react-hook-form";
@@ -14,6 +15,8 @@ import {
   LightModeOutlined as WakeIcon,
   BedtimeOutlined as SleepIcon,
 } from "@mui/icons-material";
+
+dayjs.extend(duration);
 
 import { getCreateSleepLogMutation } from "@/api/sleep";
 
@@ -45,7 +48,10 @@ function CreateSleepLog({ onSaveSuccess }: { onSaveSuccess?: () => void }) {
       startTime: dayjs().subtract(8, "hours"),
       endTime: dayjs(),
     },
+    mode: "onBlur",
   });
+
+  const { watch } = formContext;
 
   const queryClient = useQueryClient();
 
@@ -71,6 +77,8 @@ function CreateSleepLog({ onSaveSuccess }: { onSaveSuccess?: () => void }) {
     [createSleepLog, onSaveSuccess]
   );
 
+  const duration = dayjs.duration(watch("endTime").diff(watch("startTime")));
+
   return (
     <FormContainer<CreateSleepLogFormData>
       onSuccess={onSubmit}
@@ -90,12 +98,7 @@ function CreateSleepLog({ onSaveSuccess }: { onSaveSuccess?: () => void }) {
             disableFuture
             rules={RULES}
           />
-          <TimePickerElement
-            name="startTime"
-            label="Bed time"
-            disableFuture
-            rules={RULES}
-          />
+          <TimePickerElement name="startTime" label="Bed time" rules={RULES} />
         </div>
         <div className="flex flex-col gap-y-8">
           <div className="flex flex-row justify-center">
@@ -107,13 +110,14 @@ function CreateSleepLog({ onSaveSuccess }: { onSaveSuccess?: () => void }) {
             disableFuture
             rules={RULES}
           />
-          <TimePickerElement
-            name="endTime"
-            label="Wakeup time"
-            disableFuture
-            rules={RULES}
-          />
+          <TimePickerElement name="endTime" label="Wakeup time" rules={RULES} />
         </div>
+      </div>
+      <div className="flex flex-row justify-end mt-4">
+        <Typography variant="subtitle1">
+          Sleep duration{" "}
+          {duration.asSeconds() > 0 ? duration.format("H[h] m[m]") : "invalid"}
+        </Typography>
       </div>
       <div className="flex flex-row items-center justify-end mt-4">
         <Button type="submit">Save</Button>
