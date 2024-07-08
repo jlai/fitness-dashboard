@@ -1,7 +1,10 @@
-import { queryOptions } from "@tanstack/react-query";
+import { QueryClient, queryOptions } from "@tanstack/react-query";
+import { Dayjs } from "dayjs";
 
 import { makeRequest } from "../request";
 import { ONE_DAY_IN_MILLIS } from "../cache-settings";
+import mutationOptions from "../mutation-options";
+import { formatAsDate } from "../datetime";
 
 import { GetActivityLogResponse } from "./types";
 
@@ -26,5 +29,62 @@ export function getActivityTcxQuery(id: string) {
       return await response.text();
     },
     staleTime: Infinity,
+  });
+}
+
+export interface CreateActivityLogOptions {
+  activityId: number;
+  startTime: Dayjs;
+  durationMinutes: number;
+  distance?: number;
+  distanceUnit?: string;
+  manualCalories?: number;
+}
+
+export function getCreateActivityLogMutation(queryClient: QueryClient) {
+  return mutationOptions({
+    mutationFn: async (newActivityLog: CreateActivityLogOptions) => {
+      const {
+        activityId,
+        startTime,
+        durationMinutes,
+        manualCalories,
+        distance,
+        distanceUnit,
+      } = newActivityLog;
+
+      const params = new URLSearchParams();
+      params.set("activityId", `${activityId}`);
+      params.set("date", formatAsDate(startTime));
+      params.set("startTime", startTime.format("HH:mm"));
+      params.set("durationMillis", `${durationMinutes * 60 * 1000}`);
+
+      if (manualCalories) {
+        params.set("manualCalories", `${newActivityLog.manualCalories}`);
+      }
+
+      if ((distance || distance === 0) && distanceUnit) {
+        params.set("distance", `${distance}`);
+        params.set("distanceUnit", "mile");
+      }
+
+      const response = await makeRequest(
+        `/1/user/-/activities.json?${params.toString()}`,
+        {
+          method: "POST",
+        }
+      );
+
+      return response;
+    },
+    onSuccess: (data, variables) => {
+      queryClient.resetQueries({
+        queryKey: ["activity-log-list"],
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ["activity-daily-summary", formatAsDate(variables.startTime)],
+      });
+    },
   });
 }

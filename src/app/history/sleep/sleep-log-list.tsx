@@ -46,7 +46,7 @@ export default function SleepLogList() {
   const [pageNumber, setPageNumber] = useState(0);
 
   const { data, hasNextPage, fetchNextPage, isFetching } = useInfiniteQuery({
-    queryKey: ["sleeps"],
+    queryKey: ["sleep-log-list"],
     queryFn: async ({ pageParam }) => {
       const queryString =
         pageParam ||

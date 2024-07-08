@@ -45,6 +45,7 @@
     "react": "^18",
     "react-dom": "^18",
     "react-hook-form": "^7.52.0",
+    "react-hook-form-mui": "^7.0.1",
     "react-hydration-provider": "^2.1.0",
     "react-map-gl": "^7.1.7",
     "react-use": "^17.5.0",
@@ -53,6 +54,7 @@
   },
   "devDependencies": {
     "@babel/preset-env": "^7.24.7",
+    "@hookform/devtools": "^4.3.1",
     "@testing-library/react": "^16.0.0",
     "@types/jest": "^29.5.12",
     "@types/node": "^20",

@@ -40,7 +40,7 @@ export default function ActivityLogList({
   const units = useUnits();
 
   const { data, hasNextPage, fetchNextPage, isFetching } = useInfiniteQuery({
-    queryKey: ["activities", formatAsDate(initialDay)],
+    queryKey: ["activity-log-list", formatAsDate(initialDay)],
     queryFn: async ({ pageParam }) => {
       const queryString =
         pageParam ||

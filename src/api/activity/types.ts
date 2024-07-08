@@ -70,3 +70,17 @@ export interface ActivityLogListResponse {
     sort: "asc" | "desc";
   };
 }
+
+export interface ActivityType {
+  id: number;
+  name: string;
+  hasSpeed?: boolean;
+}
+
+export interface GetActivityTypesResponse {
+  categories: Array<{
+    id: number;
+    name: string;
+    activities: Array<ActivityType>;
+  }>;
+}
