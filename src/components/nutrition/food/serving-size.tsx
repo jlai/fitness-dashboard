@@ -5,6 +5,11 @@ import { useAtomValue } from "jotai";
 import { SyntheticEvent, useMemo, useState } from "react";
 
 import { Food, FoodUnit, foodUnitsByIdAtom } from "@/api/nutrition";
+import {
+  useController,
+  UseControllerProps,
+  useFormContext,
+} from "react-hook-form";
 
 export interface ServingSize {
   amount: number;
@@ -62,14 +67,14 @@ function extractServingSize(inputValue: string) {
   return { quantity: Number.isNaN(number) ? undefined : number, unitName };
 }
 
-export function FoodQuantityInput({
+export function FoodServingSizeInput({
   food,
-  servingSize,
-  onServingSizeChange,
+  value,
+  onChange,
 }: {
   food: Food | null;
-  servingSize: ServingSize | null;
-  onServingSizeChange: (servingSize: ServingSize) => void;
+  value: ServingSize | null;
+  onChange: (servingSize: ServingSize | null) => void;
 }) {
   const options = useServingOptions(food);
   const [inputValue, setInputValue] = useState("");
@@ -79,7 +84,7 @@ export function FoodQuantityInput({
     value: string | ServingSize | null
   ) => {
     if (value && typeof value === "object" && "unit" in value) {
-      onServingSizeChange(value);
+      onChange(value);
     }
   };
 
@@ -87,8 +92,8 @@ export function FoodQuantityInput({
     <Box>
       <Autocomplete
         freeSolo
-        value={servingSize}
-        inputValue={inputValue}
+        value={value}
+        inputValue={value ? inputValue : ""}
         onChange={updateSelectedQuantity}
         onInputChange={(event, value) => setInputValue(value)}
         disabled={options.length === 0}
@@ -123,5 +128,23 @@ export function FoodQuantityInput({
         }}
       />
     </Box>
+  );
+}
+
+export function FoodServingSizeElement({
+  foodFieldName,
+  ...controllerProps
+}: {
+  foodFieldName: string;
+} & UseControllerProps) {
+  const { watch } = useFormContext();
+  const { field } = useController(controllerProps);
+
+  return (
+    <FoodServingSizeInput
+      food={watch(foodFieldName)}
+      value={field.value}
+      onChange={field.onChange}
+    />
   );
 }

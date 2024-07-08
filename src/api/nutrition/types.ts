@@ -45,6 +45,7 @@ export enum MealType {
   Lunch = 3,
   AfternoonSnack = 4,
   Dinner = 5,
+  EveningSnack = 6,
   Anytime = 7,
 }
 
@@ -54,6 +55,7 @@ export const MEAL_TYPE_NAMES = {
   [MealType.Lunch]: "Lunch",
   [MealType.AfternoonSnack]: "Afternoon Snack",
   [MealType.Dinner]: "Dinner",
+  [MealType.EveningSnack]: "Evening Snack",
   [MealType.Anytime]: "Anytime",
 };
 

@@ -9,7 +9,7 @@ import {
   WaterDrop as WaterIcon,
 } from "@mui/icons-material";
 
-import FoodEntryPanel from "./food/food-entry-panel";
+import FoodEntryPanel from "./food/create-food-log";
 import WaterEntryPanel from "./water-entry-panel";
 import MealEntryPanel from "./meal/meal-entry-panel";
 

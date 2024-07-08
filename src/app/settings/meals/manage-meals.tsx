@@ -35,10 +35,14 @@ import {
   buildUpdateMealMutation,
 } from "@/api/nutrition";
 import MealSearch from "@/components/nutrition/meal/meal-search";
-import { FoodQuantityInput } from "@/components/nutrition/food/food-quantity-input";
-import FoodSearch from "@/components/nutrition/food/food-search";
+import { FoodServingSizeInput } from "@/components/nutrition/food/serving-size";
+import SearchFoods from "@/components/nutrition/food/food-search";
+import { useUnits } from "@/api/units";
 
 export default function ManageMeals() {
+  // Don't need this, just preload for now
+  useUnits();
+
   const [selectedMeal, setSelectedMeal] = useState<Meal | null>(null);
   const [draftMeal, setDraftMeal] = useState<Meal | null>(null);
 
@@ -92,6 +96,7 @@ export default function ManageMeals() {
     (meal: Meal) => {
       mutateDeleteMeal(meal.id).then(() => {
         toast.success(`Deleted meal ${meal.name}`);
+        setDraftMeal(null);
       });
     },
     [mutateDeleteMeal]
@@ -240,10 +245,11 @@ function FoodRow({
             {food.name} {food.brand ? ` (${food.brand})` : ""}
           </TableCell>
           <TableCell className="w-8">
-            <FoodQuantityInput
+            <FoodServingSizeInput
               food={food}
-              servingSize={getDefaultServingSize(food)}
-              onServingSizeChange={(servingSize) =>
+              value={getDefaultServingSize(food)}
+              onChange={(servingSize) =>
+                servingSize &&
                 onChange({
                   ...food,
                   amount: servingSize.amount,
@@ -304,7 +310,11 @@ function AddFoodPicker({ addFood }: { addFood: (food: Food) => void }) {
 
   return (
     <div className="flex flex-row items-center gap-x-4">
-      <FoodSearch className="flex-1" onSelectFood={setSelectedFoodToAdd} />
+      <SearchFoods
+        className="flex-1"
+        value={selectedFoodToAdd}
+        onChange={setSelectedFoodToAdd}
+      />
       <Button disabled={!selectedFoodToAdd} onClick={addSelectedFood}>
         Add food
       </Button>

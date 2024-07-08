@@ -22,6 +22,7 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
+import { useController, UseControllerProps } from "react-hook-form";
 
 import {
   buildFavoriteFoodsQuery,
@@ -147,12 +148,14 @@ function SearchOptionDisplay({
   );
 }
 
-export default function FoodLookup({
+export default function SearchFoods({
   className,
-  onSelectFood,
+  value,
+  onChange,
 }: {
   className?: string;
-  onSelectFood?: (food: Food | null) => void;
+  value: Food | null;
+  onChange?: (food: Food | null) => void;
 }) {
   const [inputValue, setInputValue] = useState("");
   const [searchString, setSearchString] = useState<string | null>(null);
@@ -182,17 +185,16 @@ export default function FoodLookup({
         return;
       }
 
-      onSelectFood?.(value);
+      onChange?.(value);
     },
-    [onSelectFood, inputValue]
+    [onChange, inputValue]
   );
 
   const handleInputChange = useCallback(
     (event: SyntheticEvent, value: string) => {
       setInputValue(value);
-      setSearchString(null);
     },
-    [setSearchString]
+    []
   );
 
   const handleEnter = useCallback(
@@ -218,12 +220,16 @@ export default function FoodLookup({
   return (
     <div className={className}>
       <Autocomplete
+        value={value}
         onKeyDown={handleEnter}
         inputValue={inputValue}
         getOptionDisabled={isSearchOption}
         onInputChange={handleInputChange}
         options={allOptions}
         onChange={handleChange}
+        isOptionEqualToValue={(option, value) =>
+          (option && value && option.foodId === value.foodId) ?? false
+        }
         getOptionLabel={(option) => {
           if (!option) {
             return "";
@@ -239,6 +245,7 @@ export default function FoodLookup({
         }}
         renderInput={(params) => (
           <TextField
+            type="search"
             label="Select a food"
             placeholder="Type to search ..."
             {...params}
@@ -289,4 +296,10 @@ export default function FoodLookup({
       />
     </div>
   );
+}
+
+export function SearchFoodsElement(controllerProps: UseControllerProps) {
+  const { field } = useController(controllerProps);
+
+  return <SearchFoods value={field.value} onChange={field.onChange} />;
 }

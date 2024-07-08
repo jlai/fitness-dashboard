@@ -25,6 +25,7 @@ export function buildSearchFoodsQuery(query: string) {
 
       return (await response.json()) as SearchFoodsResponse;
     },
+    staleTime: ONE_HOUR_IN_MILLIS,
   });
 }
 

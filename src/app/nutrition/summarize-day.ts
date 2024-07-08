@@ -30,6 +30,7 @@ export function groupByMealType(foods: Array<FoodLogEntry>) {
     MealType.Lunch,
     MealType.AfternoonSnack,
     MealType.Dinner,
+    MealType.EveningSnack,
     MealType.Anytime,
   ]) {
     mealTypeSummaries.set(mealType, {
