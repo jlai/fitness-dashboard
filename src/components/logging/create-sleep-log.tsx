@@ -15,10 +15,11 @@ import {
   LightModeOutlined as WakeIcon,
   BedtimeOutlined as SleepIcon,
 } from "@mui/icons-material";
-
-dayjs.extend(duration);
+import { renderTimeViewClock } from "@mui/x-date-pickers";
 
 import { getCreateSleepLogMutation } from "@/api/sleep";
+
+dayjs.extend(duration);
 
 export const createSleepLogDialogOpenAtom = atom(false);
 
@@ -98,7 +99,16 @@ function CreateSleepLog({ onSaveSuccess }: { onSaveSuccess?: () => void }) {
             disableFuture
             rules={RULES}
           />
-          <TimePickerElement name="startTime" label="Bed time" rules={RULES} />
+          <TimePickerElement
+            name="startTime"
+            label="Bed time"
+            viewRenderers={{
+              hours: renderTimeViewClock,
+              minutes: renderTimeViewClock,
+              seconds: renderTimeViewClock,
+            }}
+            rules={RULES}
+          />
         </div>
         <div className="flex flex-col gap-y-8">
           <div className="flex flex-row justify-center">
@@ -110,7 +120,16 @@ function CreateSleepLog({ onSaveSuccess }: { onSaveSuccess?: () => void }) {
             disableFuture
             rules={RULES}
           />
-          <TimePickerElement name="endTime" label="Wakeup time" rules={RULES} />
+          <TimePickerElement
+            name="endTime"
+            label="Wakeup time"
+            rules={RULES}
+            viewRenderers={{
+              hours: renderTimeViewClock,
+              minutes: renderTimeViewClock,
+              seconds: renderTimeViewClock,
+            }}
+          />
         </div>
       </div>
       <div className="flex flex-row justify-end mt-4">
