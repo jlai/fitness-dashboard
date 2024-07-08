@@ -7,7 +7,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "mui-sonner";
 
 import { Food, MealType } from "@/api/nutrition";
-import { getCreateFoodLogMutation } from "@/api/nutrition/manage";
+import { buildCreateFoodLogMutation } from "@/api/nutrition/manage";
 
 import MealTypeInput from "./meal-type-input";
 import FoodSearch from "./food-search";
@@ -23,7 +23,7 @@ export default function FoodEntryPanel() {
 
   const queryClient = useQueryClient();
   const { mutateAsync: createFood } = useMutation(
-    getCreateFoodLogMutation(queryClient)
+    buildCreateFoodLogMutation(queryClient)
   );
 
   const logFood = useCallback(() => {

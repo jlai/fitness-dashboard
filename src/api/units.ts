@@ -1,7 +1,7 @@
 import { atom, useAtomValue } from "jotai";
 import { queryClientAtom } from "jotai-tanstack-query";
 
-import { getUserProfileQuery } from "./user";
+import { buildUserProfileQuery } from "./user";
 
 const MILES_PER_KM = 0.621371;
 const FEET_PER_METER = 3.28084;
@@ -11,7 +11,7 @@ const POUNDS_PER_KG = 2.20462;
 
 export const unitsAtom = atom(async (get) => {
   const queryClient = get(queryClientAtom);
-  const profile = await queryClient.fetchQuery(getUserProfileQuery());
+  const profile = await queryClient.fetchQuery(buildUserProfileQuery());
 
   const {
     distanceUnit: distanceUnitSystem,

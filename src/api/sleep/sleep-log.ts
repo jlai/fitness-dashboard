@@ -10,7 +10,7 @@ interface CreateSleepLogOptions {
   endTime: Dayjs;
 }
 
-export function getCreateSleepLogMutation(queryClient: QueryClient) {
+export function buildCreateSleepLogMutation(queryClient: QueryClient) {
   return mutationOptions({
     mutationFn: async (newSleepLog: CreateSleepLogOptions) => {
       const { startTime, endTime } = newSleepLog;

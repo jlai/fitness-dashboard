@@ -8,7 +8,7 @@ import { ONE_DAY_IN_MILLIS } from "../cache-settings";
 
 import { GetMealResponse, GetMealsResponse, Meal, MealType } from "./types";
 
-export function getMealsQuery() {
+export function buildMealsQuery() {
   return queryOptions({
     queryKey: ["meals"],
     queryFn: async () => {
@@ -51,7 +51,7 @@ async function logFood(newFood: CreateFoodLogOptions) {
   return response;
 }
 
-export function getCreateFoodLogMutation(queryClient: QueryClient) {
+export function buildCreateFoodLogMutation(queryClient: QueryClient) {
   return mutationOptions({
     mutationFn: logFood,
     onSuccess: (data, variables) => {
@@ -65,7 +65,7 @@ export function getCreateFoodLogMutation(queryClient: QueryClient) {
   });
 }
 
-export function getCreateMultipleFoodLogsMutation(queryClient: QueryClient) {
+export function buildCreateMultipleFoodLogsMutation(queryClient: QueryClient) {
   return mutationOptions({
     mutationFn: async (foods: CreateFoodLogOptions[]) => {
       for (const food of foods) {
@@ -89,7 +89,7 @@ export interface CreateWaterLogOptions {
   day: Dayjs;
 }
 
-export function getCreateWaterLogMutation(queryClient: QueryClient) {
+export function buildCreateWaterLogMutation(queryClient: QueryClient) {
   return mutationOptions({
     mutationFn: async (newWaterLog: CreateWaterLogOptions) => {
       const params = new URLSearchParams();
@@ -126,7 +126,7 @@ function serializeMeal(meal: Meal) {
   });
 }
 
-export function getCreateMealMutation(queryClient: QueryClient) {
+export function buildCreateMealMutation(queryClient: QueryClient) {
   return mutationOptions({
     mutationFn: async (meal: Meal) => {
       const response = await makeRequest(`/1/user/-/meals.json`, {
@@ -146,7 +146,7 @@ export function getCreateMealMutation(queryClient: QueryClient) {
   });
 }
 
-export function getUpdateMealMutation(queryClient: QueryClient) {
+export function buildUpdateMealMutation(queryClient: QueryClient) {
   return mutationOptions({
     mutationFn: async (meal: Meal) => {
       const response = await makeRequest(`/1/user/-/meals/${meal.id}.json`, {
@@ -169,7 +169,7 @@ export function getUpdateMealMutation(queryClient: QueryClient) {
   });
 }
 
-export function getDeleteMealMutation(queryClient: QueryClient) {
+export function buildDeleteMealMutation(queryClient: QueryClient) {
   return mutationOptions({
     mutationFn: async (mealId: string) => {
       await makeRequest(`/1/user/-/meals/${mealId}.json`, {

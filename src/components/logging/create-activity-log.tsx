@@ -17,7 +17,7 @@ import {
   TimePickerElement,
 } from "react-hook-form-mui/date-pickers";
 
-import { getCreateActivityLogMutation } from "@/api/activity/activities";
+import { buildCreateActivityLogMutation } from "@/api/activity/activities";
 import { useUnits } from "@/api/units";
 
 import { ActivityTypeElement, ActivityTypeOption } from "./activity-type-input";
@@ -60,7 +60,7 @@ function CreateActivityLog({ onSaveSuccess }: { onSaveSuccess?: () => void }) {
   const queryClient = useQueryClient();
 
   const { mutateAsync: createActivityLog } = useMutation(
-    getCreateActivityLogMutation(queryClient)
+    buildCreateActivityLogMutation(queryClient)
   );
 
   const onSubmit = useCallback(

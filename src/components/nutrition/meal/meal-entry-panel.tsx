@@ -8,7 +8,7 @@ import {
   CreateFoodLogOptions,
   Meal,
   MealType,
-  getCreateMultipleFoodLogsMutation,
+  buildCreateMultipleFoodLogsMutation,
 } from "@/api/nutrition";
 
 import MealTypeInput from "../food/meal-type-input";
@@ -24,7 +24,7 @@ export default function MealEntryPanel() {
 
   const queryClient = useQueryClient();
   const { mutateAsync: logFoods } = useMutation(
-    getCreateMultipleFoodLogsMutation(queryClient)
+    buildCreateMultipleFoodLogsMutation(queryClient)
   );
 
   const logMeal = useCallback(() => {

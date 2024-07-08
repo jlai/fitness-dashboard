@@ -19,9 +19,9 @@ import { toast } from "mui-sonner";
 
 import { useUnits } from "@/api/units";
 import {
-  getCreateWaterLogMutation,
-  getFoodLogQuery,
-  getWaterGoalQuery,
+  buildCreateWaterLogMutation,
+  buildFoodLogQuery,
+  buildWaterGoalQuery,
 } from "@/api/nutrition";
 
 import NumericStat from "../numeric-stat";
@@ -121,7 +121,7 @@ export default function WaterEntryPanel() {
 
   const queryClient = useQueryClient();
   const { mutateAsync: createWaterLog } = useMutation(
-    getCreateWaterLogMutation(queryClient)
+    buildCreateWaterLogMutation(queryClient)
   );
 
   const addQuantity = useCallback(
@@ -200,7 +200,7 @@ function WaterToday() {
   const units = useUnits();
 
   const [{ data: foodLog }, { data: waterGoalMl }] = useSuspenseQueries({
-    queries: [getFoodLogQuery(day), getWaterGoalQuery()],
+    queries: [buildFoodLogQuery(day), buildWaterGoalQuery()],
   });
 
   const { localizedWaterUnitName, localizedWaterVolume } = units;

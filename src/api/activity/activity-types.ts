@@ -5,7 +5,7 @@ import { ONE_DAY_IN_MILLIS } from "../cache-settings";
 
 import { GetActivityTypesResponse } from "./types";
 
-export function getActivityTypesQuery() {
+export function buildActivityTypesQuery() {
   return queryOptions({
     queryKey: ["activity-types"],
     queryFn: async () => {

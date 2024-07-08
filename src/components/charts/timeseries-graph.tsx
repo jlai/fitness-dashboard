@@ -34,7 +34,7 @@ import {
 
 import {
   TimeSeriesResource,
-  getTimeSeriesQuery,
+  buildTimeSeriesQuery,
   TimeSeriesEntry,
   HeartTimeSeriesValue,
   HeartRateZone,
@@ -315,7 +315,7 @@ export function GraphView() {
   const selectedResource = useAtomValue(selectedResourceAtom);
 
   const { data } = useQuery(
-    getTimeSeriesQuery(selectedResource, startDay, endDay)
+    buildTimeSeriesQuery(selectedResource, startDay, endDay)
   );
 
   const { dataset, series, yAxis } = useDataset(data);

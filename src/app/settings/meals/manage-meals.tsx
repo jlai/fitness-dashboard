@@ -29,10 +29,10 @@ import {
   Food,
   Meal,
   MealFood,
-  getCreateMealMutation,
+  buildCreateMealMutation,
   getDefaultServingSize,
-  getDeleteMealMutation,
-  getUpdateMealMutation,
+  buildDeleteMealMutation,
+  buildUpdateMealMutation,
 } from "@/api/nutrition";
 import MealSearch from "@/components/nutrition/meal/meal-search";
 import { FoodQuantityInput } from "@/components/nutrition/food/food-quantity-input";
@@ -62,13 +62,13 @@ export default function ManageMeals() {
 
   const queryClient = useQueryClient();
   const { mutateAsync: mutateCreateMeal } = useMutation(
-    getCreateMealMutation(queryClient)
+    buildCreateMealMutation(queryClient)
   );
   const { mutateAsync: mutateUpdateMeal } = useMutation(
-    getUpdateMealMutation(queryClient)
+    buildUpdateMealMutation(queryClient)
   );
   const { mutateAsync: mutateDeleteMeal } = useMutation(
-    getDeleteMealMutation(queryClient)
+    buildDeleteMealMutation(queryClient)
   );
 
   const saveMeal = useCallback(

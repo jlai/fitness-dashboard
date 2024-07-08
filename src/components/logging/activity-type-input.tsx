@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { FieldError, useController, UseControllerProps } from "react-hook-form";
 
-import { getActivityTypesQuery } from "@/api/activity/activity-types";
+import { buildActivityTypesQuery } from "@/api/activity/activity-types";
 
 export interface ActivityTypeOption {
   id: number;
@@ -21,7 +21,9 @@ export function ActivityTypeInput({
   onChange: (value: ActivityTypeOption | null) => void;
   error?: FieldError;
 }) {
-  const { data: categorizedActivityTypes } = useQuery(getActivityTypesQuery());
+  const { data: categorizedActivityTypes } = useQuery(
+    buildActivityTypesQuery()
+  );
 
   const options = useMemo(() => {
     const options: Array<ActivityTypeOption> = [];

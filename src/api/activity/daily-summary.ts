@@ -5,9 +5,9 @@ import { makeRequest } from "../request";
 import { formatAsDate } from "../datetime";
 import { graduallyStale } from "../cache-settings";
 
-import { DailyActivitySummaryResponse } from "./types";
+import { GetDailyActivitySummaryResponse } from "./types";
 
-export function getDailySummaryQuery(day: Dayjs) {
+export function buildDailySummaryQuery(day: Dayjs) {
   const date = formatAsDate(day);
 
   return queryOptions({
@@ -17,7 +17,7 @@ export function getDailySummaryQuery(day: Dayjs) {
         `/1/user/-/activities/date/${date}.json`
       );
 
-      return (await response.json()) as DailyActivitySummaryResponse;
+      return (await response.json()) as GetDailyActivitySummaryResponse;
     },
     staleTime: graduallyStale(day),
   });

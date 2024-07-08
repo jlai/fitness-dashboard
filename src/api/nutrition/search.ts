@@ -9,7 +9,7 @@ import { Food, FoodUnit, SearchFoodsResponse } from "./types";
 
 type FoodList = Array<Food>;
 
-export function getSearchFoodsQuery(query: string) {
+export function buildSearchFoodsQuery(query: string) {
   return queryOptions({
     queryKey: ["search-foods", query],
     queryFn: async () => {
@@ -28,7 +28,7 @@ export function getSearchFoodsQuery(query: string) {
   });
 }
 
-export function getFavoriteFoodsQuery() {
+export function buildFavoriteFoodsQuery() {
   return queryOptions({
     queryKey: ["favorite-foods"],
     queryFn: async () => {
@@ -40,7 +40,7 @@ export function getFavoriteFoodsQuery() {
   });
 }
 
-export function getRecentFoodsQuery() {
+export function buildRecentFoodsQuery() {
   return queryOptions({
     queryKey: ["recent-foods"],
     queryFn: async () => {
@@ -52,7 +52,7 @@ export function getRecentFoodsQuery() {
   });
 }
 
-export function getFrequentFoodsQuery() {
+export function buildFrequentFoodsQuery() {
   return queryOptions({
     queryKey: ["frequent-foods"],
     queryFn: async () => {
@@ -64,7 +64,7 @@ export function getFrequentFoodsQuery() {
   });
 }
 
-export function getFoodUnitsQuery() {
+export function buildFoodUnitsQuery() {
   return queryOptions({
     queryKey: ["food-units"],
     queryFn: async () => {
@@ -78,7 +78,7 @@ export function getFoodUnitsQuery() {
 
 export const foodUnitsByIdAtom = atom(async (get) => {
   const queryClient = get(queryClientAtom);
-  const foodUnits = await queryClient.fetchQuery(getFoodUnitsQuery());
+  const foodUnits = await queryClient.fetchQuery(buildFoodUnitsQuery());
 
   const map = new Map<number, FoodUnit>();
   for (const foodUnit of foodUnits) {

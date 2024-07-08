@@ -21,7 +21,7 @@ import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 
 import { userTilesAtom } from "@/storage/tiles";
 import { redirectToLogin, revokeAuthorization, useLoggedIn } from "@/api/auth";
-import { getUserProfileQuery } from "@/api/user";
+import { buildUserProfileQuery } from "@/api/user";
 import { pollyEnabledAtom } from "@/storage/settings";
 import { startPollyAtom, stopPollyAtom } from "@/storage/polly";
 
@@ -48,7 +48,7 @@ function SettingsRow({
 }
 
 function LoginInfo() {
-  const { data: userProfile } = useSuspenseQuery(getUserProfileQuery());
+  const { data: userProfile } = useSuspenseQuery(buildUserProfileQuery());
 
   return <>You&apos;re currently logged in as {userProfile.fullName}</>;
 }

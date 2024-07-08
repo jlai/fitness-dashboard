@@ -12,7 +12,7 @@ import { Button, Typography } from "@mui/material";
 import dynamic from "next/dynamic";
 import { Download } from "@mui/icons-material";
 
-import { getActivityTcxQuery } from "@/api/activity/activities";
+import { buildActivityTcxQuery } from "@/api/activity/activities";
 import { Trackpoint, parseTcx } from "@/api/activity/tcx";
 import { useUnits } from "@/api/units";
 import { FRACTION_DIGITS_0, FRACTION_DIGITS_1 } from "@/utils/number-formats";
@@ -90,7 +90,9 @@ function ElevationChart({
 export function ActivityDetails({ activityLog }: { activityLog: ActivityLog }) {
   const units = useUnits();
 
-  const { data: tcxString } = useQuery(getActivityTcxQuery(activityLog.logId));
+  const { data: tcxString } = useQuery(
+    buildActivityTcxQuery(activityLog.logId)
+  );
 
   const parsedTcx = useMemo(
     () => (tcxString ? parseTcx(tcxString) : undefined),

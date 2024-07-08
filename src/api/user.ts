@@ -18,7 +18,7 @@ interface GetUserProfileResponse {
   };
 }
 
-export function getUserProfileQuery() {
+export function buildUserProfileQuery() {
   return queryOptions({
     queryKey: ["user-profile"],
     queryFn: async () => {

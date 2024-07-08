@@ -2,7 +2,7 @@ import Image from "next/image";
 import { Typography } from "@mui/material";
 import { useSuspenseQueries } from "@tanstack/react-query";
 
-import { getFoodLogQuery, getWaterGoalQuery } from "@/api/nutrition";
+import { buildFoodLogQuery, buildWaterGoalQuery } from "@/api/nutrition";
 import { useUnits } from "@/api/units";
 import NumericStat from "@/components/numeric-stat";
 
@@ -15,7 +15,7 @@ export default function WaterTileContent() {
   const units = useUnits();
 
   const [{ data: foodLog }, { data: waterGoalMl }] = useSuspenseQueries({
-    queries: [getFoodLogQuery(day), getWaterGoalQuery()],
+    queries: [buildFoodLogQuery(day), buildWaterGoalQuery()],
   });
 
   const { localizedWaterUnitName, localizedWaterVolume } = units;

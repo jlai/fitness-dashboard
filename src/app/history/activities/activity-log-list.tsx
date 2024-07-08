@@ -15,7 +15,7 @@ import { useCallback, useState } from "react";
 import dayjs, { Dayjs } from "dayjs";
 import { Explore as LaunchIcon } from "@mui/icons-material";
 
-import { ActivityLog, ActivityLogListResponse } from "@/api/activity/types";
+import { ActivityLog, GetActivityLogListResponse } from "@/api/activity/types";
 import { makeRequest } from "@/api/request";
 import { formatDuration, formatShortDateTime } from "@/utils/date-formats";
 import { useUnits } from "@/api/units";
@@ -51,7 +51,7 @@ export default function ActivityLogList({
       const response = await makeRequest(
         `/1/user/-/activities/list.json?${queryString}`
       );
-      return (await response.json()) as ActivityLogListResponse;
+      return (await response.json()) as GetActivityLogListResponse;
     },
     getNextPageParam: (lastPage) =>
       lastPage.pagination.next

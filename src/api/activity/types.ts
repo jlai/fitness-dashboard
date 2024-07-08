@@ -1,5 +1,5 @@
 // https://dev.fitbit.com/build/reference/web-api/activity/get-daily-activity-summary/
-export interface DailyActivitySummaryResponse {
+export interface GetDailyActivitySummaryResponse {
   goals?: {
     activeMinutes: number;
     caloriesOut: number;
@@ -60,7 +60,7 @@ export interface GetActivityLogResponse {
 }
 
 // https://dev.fitbit.com/build/reference/web-api/activity/get-activity-log-list/
-export interface ActivityLogListResponse {
+export interface GetActivityLogListResponse {
   activities: Array<ActivityLog>;
   pagination: {
     afterDate: string;

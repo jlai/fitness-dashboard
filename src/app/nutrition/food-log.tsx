@@ -13,7 +13,7 @@ import {
   FoodLogEntry,
   MEAL_TYPE_NAMES,
   MealType,
-  getFoodLogQuery,
+  buildFoodLogQuery,
 } from "@/api/nutrition";
 
 const NUTRIENT_FORMAT = new Intl.NumberFormat(undefined, {
@@ -118,7 +118,7 @@ function formatNutrientPropValue(
 }
 
 export default function FoodLog({ day }: { day: Dayjs }) {
-  const { data: foodLog } = useSuspenseQuery(getFoodLogQuery(day));
+  const { data: foodLog } = useSuspenseQuery(buildFoodLogQuery(day));
   const groupedMealTypes = useMemo(
     () => groupByMealType(foodLog.foods),
     [foodLog]

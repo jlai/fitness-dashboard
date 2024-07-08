@@ -8,7 +8,7 @@ import { formatAsDate } from "../datetime";
 
 import { GetActivityLogResponse } from "./types";
 
-export function getActivityQuery(id: string) {
+export function buildActivityQuery(id: string) {
   return queryOptions({
     queryKey: ["activity", id],
     queryFn: async () => {
@@ -20,7 +20,7 @@ export function getActivityQuery(id: string) {
   });
 }
 
-export function getActivityTcxQuery(id: string) {
+export function buildActivityTcxQuery(id: string) {
   return queryOptions({
     queryKey: ["activity-tcx", id],
     queryFn: async () => {
@@ -41,7 +41,7 @@ export interface CreateActivityLogOptions {
   manualCalories?: number;
 }
 
-export function getCreateActivityLogMutation(queryClient: QueryClient) {
+export function buildCreateActivityLogMutation(queryClient: QueryClient) {
   return mutationOptions({
     mutationFn: async (newActivityLog: CreateActivityLogOptions) => {
       const {

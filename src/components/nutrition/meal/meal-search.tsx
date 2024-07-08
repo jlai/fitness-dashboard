@@ -1,7 +1,7 @@
 import { Autocomplete, ListItem, ListItemText, TextField } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 
-import { Meal, getMealsQuery } from "@/api/nutrition";
+import { Meal, buildMealsQuery } from "@/api/nutrition";
 
 function getMealFoodNames(meal: Meal) {
   return meal.mealFoods
@@ -20,7 +20,7 @@ export default function MealSearch({
   selectedMeal: Meal | null;
   onSelectMeal: (meal: Meal | null) => void;
 }) {
-  const { data: meals } = useQuery(getMealsQuery());
+  const { data: meals } = useQuery(buildMealsQuery());
 
   const options = meals || [];
 

@@ -24,10 +24,10 @@ import {
 } from "@tanstack/react-query";
 
 import {
-  getFavoriteFoodsQuery,
-  getFrequentFoodsQuery,
-  getRecentFoodsQuery,
-  getSearchFoodsQuery,
+  buildFavoriteFoodsQuery,
+  buildFrequentFoodsQuery,
+  buildRecentFoodsQuery,
+  buildSearchFoodsQuery,
 } from "@/api/nutrition/search";
 import { Food } from "@/api/nutrition";
 
@@ -51,14 +51,14 @@ function isSearchOption(
 
 const filterOptions = createFilterOptions<FoodOption | SearchOption | null>();
 
-function getSavedFoodsQuery(queryClient: QueryClient) {
+function buildSavedFoodsQuery(queryClient: QueryClient) {
   return queryOptions({
     queryKey: ["saved-foods"],
     queryFn: async () => {
       const [favorites, frequents, recents] = await Promise.all([
-        queryClient.fetchQuery(getFavoriteFoodsQuery()),
-        queryClient.fetchQuery(getFrequentFoodsQuery()),
-        queryClient.fetchQuery(getRecentFoodsQuery()),
+        queryClient.fetchQuery(buildFavoriteFoodsQuery()),
+        queryClient.fetchQuery(buildFrequentFoodsQuery()),
+        queryClient.fetchQuery(buildRecentFoodsQuery()),
       ]);
 
       const allFoods = new Map<number, FoodOption>();
@@ -159,14 +159,14 @@ export default function FoodLookup({
 
   const queryClient = useQueryClient();
 
-  const { data: savedFoods } = useQuery(getSavedFoodsQuery(queryClient));
+  const { data: savedFoods } = useQuery(buildSavedFoodsQuery(queryClient));
 
   const {
     data: searchResults,
     isFetching: searchPending,
     isSuccess,
   } = useQuery({
-    ...getSearchFoodsQuery(searchString ?? ""),
+    ...buildSearchFoodsQuery(searchString ?? ""),
     enabled: !!searchString,
   });
 

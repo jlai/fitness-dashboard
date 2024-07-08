@@ -95,7 +95,7 @@ export type TimeSeriesResponse<ResourceName extends string, ValueType> = {
   [key in ResourceName]: Array<TimeSeriesEntry<ValueType>>;
 };
 
-export function getTimeSeriesQuery<ValueType = unknown>(
+export function buildTimeSeriesQuery<ValueType = unknown>(
   resource: TimeSeriesResource,
   startDay: Dayjs,
   endDay: Dayjs

@@ -2,7 +2,7 @@ import Image from "next/image";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Typography } from "@mui/material";
 
-import { getFoodLogQuery } from "@/api/nutrition";
+import { buildFoodLogQuery } from "@/api/nutrition";
 import NumericSTat from "@/components/numeric-stat";
 
 import { useSelectedDay } from "../state";
@@ -11,7 +11,7 @@ import foodIcon from "./assets/restaurant_24dp_FILL0_wght400_GRAD0_opsz24.svg";
 
 export function CalorieGoalTileContent() {
   const day = useSelectedDay();
-  const { data: foodLog } = useSuspenseQuery(getFoodLogQuery(day));
+  const { data: foodLog } = useSuspenseQuery(buildFoodLogQuery(day));
 
   const caloriesGoal = foodLog.goals?.calories;
   const caloriesConsumed = foodLog.summary.calories;

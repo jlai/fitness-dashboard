@@ -17,7 +17,7 @@ import {
 } from "@mui/icons-material";
 import { renderTimeViewClock } from "@mui/x-date-pickers";
 
-import { getCreateSleepLogMutation } from "@/api/sleep";
+import { buildCreateSleepLogMutation } from "@/api/sleep";
 
 dayjs.extend(duration);
 
@@ -57,7 +57,7 @@ function CreateSleepLog({ onSaveSuccess }: { onSaveSuccess?: () => void }) {
   const queryClient = useQueryClient();
 
   const { mutateAsync: createSleepLog } = useMutation(
-    getCreateSleepLogMutation(queryClient)
+    buildCreateSleepLogMutation(queryClient)
   );
 
   const onSubmit = useCallback(

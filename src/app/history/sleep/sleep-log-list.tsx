@@ -15,7 +15,7 @@ import dayjs from "dayjs";
 
 import { makeRequest } from "@/api/request";
 import { formatShortDateTime } from "@/utils/date-formats";
-import { SleepLog, SleepLogListResponse } from "@/api/sleep/types";
+import { SleepLog, GetSleepLogListResponse } from "@/api/sleep/types";
 import NumericStat from "@/components/numeric-stat";
 
 function formatSleepTimeRange(sleep: SleepLog) {
@@ -57,7 +57,7 @@ export default function SleepLogList() {
       const response = await makeRequest(
         `/1.2/user/-/sleep/list.json?${queryString}`
       );
-      return (await response.json()) as SleepLogListResponse;
+      return (await response.json()) as GetSleepLogListResponse;
     },
     getNextPageParam: (lastPage) =>
       lastPage.pagination.next
