@@ -27,11 +27,9 @@ export default function FoodPage() {
             selectedDay={selectedDay}
             onSelectDay={setSelectedDay}
           />
-          <Paper>
-            <Suspense>
-              <FoodLog day={selectedDay} />
-            </Suspense>
-          </Paper>
+          <Suspense>
+            <FoodLog day={selectedDay} />
+          </Suspense>
         </div>
       </RequireScopes>
     </RequireLogin>

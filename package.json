@@ -31,6 +31,7 @@
     "@turf/turf": "^7.0.0",
     "dayjs": "^1.11.11",
     "gridstack": "^10.2.0",
+    "immutable": "^4.3.6",
     "jotai": "^2.8.3",
     "jotai-effect": "^1.0.0",
     "jotai-tanstack-query": "^0.8.5",

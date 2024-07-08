@@ -1,13 +1,12 @@
 "use client";
 
-import { Suspense, useCallback, useState } from "react";
+import { useCallback, useState } from "react";
 import { Button } from "@mui/material";
 import dayjs from "dayjs";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "mui-sonner";
 
-import { Food, MealType } from "@/api/nutrition";
-import { buildCreateFoodLogMutation } from "@/api/nutrition/manage";
+import { Food, MealType, buildCreateFoodLogMutation } from "@/api/nutrition";
 
 import MealTypeInput from "./meal-type-input";
 import FoodSearch from "./food-search";

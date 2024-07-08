@@ -1,108 +1,54 @@
-import { Dayjs } from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
 import {
+  Button,
+  Checkbox,
+  FormControl,
+  FormControlLabel,
+  IconButton,
+  Paper,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableRow,
 } from "@mui/material";
-import { Fragment, useMemo } from "react";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { ChangeEvent, useCallback, useEffect, useMemo } from "react";
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
+import { EditOutlined as EditIcon } from "@mui/icons-material";
+import { atom, useAtom, useAtomValue, useSetAtom } from "jotai";
+import Immutable from "immutable";
 
 import {
   FoodLogEntry,
-  MEAL_TYPE_NAMES,
-  MealType,
+  buildDeleteFoodLogsMutation,
   buildFoodLogQuery,
 } from "@/api/nutrition";
+import { FRACTION_DIGITS_1 } from "@/utils/number-formats";
 
-const NUTRIENT_FORMAT = new Intl.NumberFormat(undefined, {
-  maximumFractionDigits: 1,
-});
+import { groupByMealType, MealTypeSummary } from "./summarize-day";
+import { useConfirm } from "material-ui-confirm";
+import { toast } from "mui-sonner";
 
-interface MealTypeSummary {
-  id: number;
-  name: string;
-  foods: FoodLogEntry[];
-  calories: number;
-  carbs: number;
-  fat: number;
-  fiber: number;
-  protein: number;
-  sodium: number;
-}
+const NUTRIENT_FORMAT = FRACTION_DIGITS_1;
 
-function groupByMealType(foods: Array<FoodLogEntry>) {
-  const mealTypeSummaries = new Map<number, MealTypeSummary>();
+const selectedFoodLogsAtom = atom<Immutable.Set<FoodLogEntry>>(
+  Immutable.Set([])
+);
 
-  const defaultNutrients = {
-    calories: 0,
-    carbs: 0,
-    fat: 0,
-    fiber: 0,
-    protein: 0,
-    sodium: 0,
-  };
-
-  for (const mealType of [
-    MealType.Breakfast,
-    MealType.MorningSnack,
-    MealType.Lunch,
-    MealType.AfternoonSnack,
-    MealType.Dinner,
-    MealType.Anytime,
-  ]) {
-    mealTypeSummaries.set(mealType, {
-      id: mealType,
-      name: MEAL_TYPE_NAMES[mealType]!,
-      foods: [],
-      ...defaultNutrients,
-    });
+const updateSelectedFoodLogAtom = atom(
+  null,
+  (get, set, foodLog: FoodLogEntry, shouldInclude: boolean) => {
+    const foodLogs = get(selectedFoodLogsAtom);
+    set(
+      selectedFoodLogsAtom,
+      shouldInclude ? foodLogs.add(foodLog) : foodLogs.remove(foodLog)
+    );
   }
-
-  const total = {
-    id: -1,
-    name: "Total",
-    foods: [],
-    ...defaultNutrients,
-  };
-
-  mealTypeSummaries.set(-1, total);
-
-  for (const food of foods) {
-    const summary = mealTypeSummaries.get(food.loggedFood.mealTypeId);
-    if (summary) {
-      summary.foods.push(food);
-
-      const {
-        loggedFood: { calories = 0 },
-        nutritionalValues: {
-          carbs = 0,
-          fat = 0,
-          fiber = 0,
-          protein = 0,
-          sodium = 0,
-        } = {},
-      } = food;
-
-      summary.calories += calories;
-      summary.carbs += carbs;
-      summary.fat += fat;
-      summary.fiber += fiber;
-      summary.protein += protein;
-      summary.sodium += sodium;
-
-      total.calories += calories;
-      total.carbs += carbs;
-      total.fat += fat;
-      total.fiber += fiber;
-      total.protein += protein;
-      total.sodium += sodium;
-    }
-  }
-
-  return mealTypeSummaries;
-}
+);
 
 function formatNutrientPropValue(
   nutritionalValues: FoodLogEntry["nutritionalValues"],
@@ -117,75 +63,146 @@ function formatNutrientPropValue(
   return undefined;
 }
 
-export default function FoodLog({ day }: { day: Dayjs }) {
-  const { data: foodLog } = useSuspenseQuery(buildFoodLogQuery(day));
-  const groupedMealTypes = useMemo(
-    () => groupByMealType(foodLog.foods),
-    [foodLog]
+function MealTypeRows({ summary }: { summary: MealTypeSummary }) {
+  return (
+    <>
+      <TableRow className="bg-slate-50">
+        <TableCell className="font-medium">{summary.name}</TableCell>
+        <TableCell></TableCell>
+        <TableCell>{NUTRIENT_FORMAT.format(summary.calories)}</TableCell>
+        {["carbs", "fat", "fiber", "protein", "sodium"].map((prop) => (
+          <TableCell key={prop}>
+            {formatNutrientPropValue(summary, prop)}
+          </TableCell>
+        ))}
+      </TableRow>
+      {summary.foods.map((foodLog) => (
+        <FoodRow key={foodLog.logId} foodLog={foodLog} />
+      ))}
+    </>
+  );
+}
+
+function FoodRow({ foodLog }: { foodLog: FoodLogEntry }) {
+  const {
+    logId,
+    loggedFood: { name, amount, unit, calories },
+    nutritionalValues,
+  } = foodLog;
+
+  const selectedFoodLogs = useAtomValue(selectedFoodLogsAtom);
+  const updateSelectedFoodLog = useSetAtom(updateSelectedFoodLogAtom);
+
+  const handleChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      updateSelectedFoodLog(foodLog, event.target.checked);
+    },
+    [foodLog, updateSelectedFoodLog]
   );
 
   return (
-    <div className="max-w-full overflow-x-auto">
-      <Table size="small">
-        <TableHead>
-          <TableRow>
-            <TableCell>Food</TableCell>
-            <TableCell>Amount</TableCell>
-            <TableCell>Calories</TableCell>
-            <TableCell>Carbs</TableCell>
-            <TableCell>Fat</TableCell>
-            <TableCell>Fiber</TableCell>
-            <TableCell>Protein</TableCell>
-            <TableCell>Sodium</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {[...groupedMealTypes.values()]
-            .filter((summary) => summary.foods.length > 0 || summary.id === -1)
-            .map((summary) => (
-              <Fragment key={summary.id}>
-                <TableRow className="bg-slate-50">
-                  <TableCell className="font-medium">{summary.name}</TableCell>
-                  <TableCell></TableCell>
-                  <TableCell>
-                    {NUTRIENT_FORMAT.format(summary.calories)}
-                  </TableCell>
-                  {["carbs", "fat", "fiber", "protein", "sodium"].map(
-                    (prop) => (
-                      <TableCell key={prop}>
-                        {formatNutrientPropValue(summary, prop)}
-                      </TableCell>
-                    )
-                  )}
-                </TableRow>
-                {summary.foods.map(
-                  ({
-                    logId,
-                    loggedFood: { name, amount, unit, calories },
-                    nutritionalValues,
-                  }) => (
-                    <TableRow key={logId}>
-                      <TableCell>
-                        <span className="ml-8">{name}</span>
-                      </TableCell>
-                      <TableCell>
-                        {amount} {amount === 1 ? unit?.name : unit?.plural}
-                      </TableCell>
-                      <TableCell>{NUTRIENT_FORMAT.format(calories)}</TableCell>
-                      {["carbs", "fat", "fiber", "protein", "sodium"].map(
-                        (prop) => (
-                          <TableCell key={prop}>
-                            {formatNutrientPropValue(nutritionalValues, prop)}
-                          </TableCell>
-                        )
-                      )}
-                    </TableRow>
-                  )
-                )}
-              </Fragment>
-            ))}
-        </TableBody>
-      </Table>
-    </div>
+    <TableRow key={logId}>
+      <TableCell className="flex flex-row items-center">
+        <FormControlLabel
+          control={
+            <Checkbox
+              size="small"
+              checked={selectedFoodLogs.has(foodLog)}
+              onChange={handleChange}
+            />
+          }
+          label={name}
+        />
+      </TableCell>
+      <TableCell className="group">
+        {amount} {amount === 1 ? unit?.name : unit?.plural}
+        <IconButton size="small" className="ms-2 invisible group-hover:visible">
+          <EditIcon />
+        </IconButton>
+      </TableCell>
+      <TableCell>{NUTRIENT_FORMAT.format(calories)}</TableCell>
+      {["carbs", "fat", "fiber", "protein", "sodium"].map((prop) => (
+        <TableCell key={prop}>
+          {formatNutrientPropValue(nutritionalValues, prop)}
+        </TableCell>
+      ))}
+    </TableRow>
+  );
+}
+
+export default function FoodLog({ day }: { day: Dayjs }) {
+  const [selectedFoodLogs, setSelectedFoodLogs] = useAtom(selectedFoodLogsAtom);
+
+  const confirm = useConfirm();
+  const queryClient = useQueryClient();
+  const { mutateAsync: deleteFoodLogs } = useMutation(
+    buildDeleteFoodLogsMutation(queryClient)
+  );
+
+  const { data: foodLogs } = useSuspenseQuery(buildFoodLogQuery(day));
+  const groupedMealTypes = useMemo(
+    () => groupByMealType(foodLogs.foods),
+    [foodLogs]
+  );
+
+  useEffect(() => {
+    // Clear when the food log list changes
+    setSelectedFoodLogs(Immutable.Set([]));
+  }, [foodLogs, setSelectedFoodLogs]);
+
+  const deleteSelected = useCallback(() => {
+    (async () => {
+      await confirm({ description: "Deleted selected food logs?" });
+
+      const deletes = selectedFoodLogs.map((foodLog) => ({
+        foodLogId: foodLog.logId,
+        day: dayjs(foodLog.logDate),
+      }));
+
+      await deleteFoodLogs([...deletes]);
+
+      toast.success("Deleted food logs");
+    })();
+  }, [selectedFoodLogs, deleteFoodLogs, confirm]);
+
+  return (
+    <>
+      <Paper className="max-w-full overflow-x-auto">
+        <Table size="small">
+          <TableHead>
+            <TableRow>
+              <TableCell>Food</TableCell>
+              <TableCell>Amount</TableCell>
+              <TableCell>Calories</TableCell>
+              <TableCell>Carbs</TableCell>
+              <TableCell>Fat</TableCell>
+              <TableCell>Fiber</TableCell>
+              <TableCell>Protein</TableCell>
+              <TableCell>Sodium</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {[...groupedMealTypes.values()]
+              .filter(
+                (summary) => summary.foods.length > 0 || summary.id === -1
+              )
+              .map((summary) => (
+                <MealTypeRows key={summary.id} summary={summary} />
+              ))}
+          </TableBody>
+        </Table>
+      </Paper>
+      <div className="flex flex-row items-center">
+        <Button
+          disabled={selectedFoodLogs.size === 0}
+          color="warning"
+          onClick={deleteSelected}
+        >
+          {selectedFoodLogs.size > 0
+            ? `Delete ${selectedFoodLogs.size} selected`
+            : "Delete selected"}
+        </Button>
+      </div>
+    </>
   );
 }

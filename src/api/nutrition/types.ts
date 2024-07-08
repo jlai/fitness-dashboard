@@ -24,7 +24,7 @@ export interface Food {
 
 export type FoodLogEntry = Food & {
   logDate: string;
-  logId: string;
+  logId: number;
   loggedFood: Food & {
     amount: number;
     mealTypeId: MealType;
