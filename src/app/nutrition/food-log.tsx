@@ -2,6 +2,7 @@ import dayjs, { Dayjs } from "dayjs";
 import {
   Button,
   Checkbox,
+  ClickAwayListener,
   Dialog,
   DialogActions,
   DialogContent,
@@ -9,13 +10,15 @@ import {
   FormControlLabel,
   IconButton,
   Paper,
+  Popper,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableRow,
+  Typography,
 } from "@mui/material";
-import { ChangeEvent, useCallback, useEffect, useMemo } from "react";
+import { ChangeEvent, useCallback, useEffect, useMemo, useState } from "react";
 import {
   useMutation,
   useQueryClient,
@@ -27,6 +30,7 @@ import Immutable from "immutable";
 import { useConfirm } from "material-ui-confirm";
 import { toast } from "mui-sonner";
 import { FormContainer } from "react-hook-form-mui";
+import { bindPopper, usePopupState } from "material-ui-popup-state/hooks";
 
 import { FRACTION_DIGITS_1 } from "@/utils/number-formats";
 import {
@@ -35,8 +39,13 @@ import {
   buildDeleteFoodLogsMutation,
   buildFoodLogQuery,
   buildUpdateFoodLogsMutation,
+  getDefaultServingSize,
 } from "@/api/nutrition";
 import { MealTypeElement } from "@/components/nutrition/food/meal-type-element";
+import {
+  FoodServingSizeElement,
+  ServingSize,
+} from "@/components/nutrition/food/serving-size";
 
 import { groupByMealType, MealTypeSummary } from "./summarize-day";
 
@@ -101,6 +110,10 @@ function FoodRow({ foodLog }: { foodLog: FoodLogEntry }) {
 
   const selectedFoodLogs = useAtomValue(selectedFoodLogsAtom);
   const updateSelectedFoodLog = useSetAtom(updateSelectedFoodLogAtom);
+  const popupState = usePopupState({
+    variant: "popper",
+    popupId: "edit-food-serving-popup",
+  });
 
   const handleChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
@@ -124,10 +137,39 @@ function FoodRow({ foodLog }: { foodLog: FoodLogEntry }) {
         />
       </TableCell>
       <TableCell className="group">
-        {amount} {amount === 1 ? unit?.name : unit?.plural}
-        <IconButton size="small" className="ms-2 invisible group-hover:visible">
-          <EditIcon />
-        </IconButton>
+        <div className="flex flex-row items-center">
+          <Typography
+            variant="body1"
+            sx={{
+              backgroundColor: popupState.isOpen
+                ? "rgb(252, 232, 3, 0.2)"
+                : undefined,
+            }}
+          >
+            {amount} {amount === 1 ? unit?.name : unit?.plural}
+          </Typography>
+          <IconButton
+            size="small"
+            className="ms-2 invisible group-hover:visible"
+            onClick={popupState.open}
+          >
+            <EditIcon />
+          </IconButton>
+        </div>
+        <Popper
+          {...bindPopper(popupState)}
+          modifiers={[
+            {
+              name: "arrow",
+              enabled: true,
+              options: {
+                element: popupState.anchorEl,
+              },
+            },
+          ]}
+        >
+          <EditServingSize foodLog={foodLog} closePopover={popupState.close} />
+        </Popper>
       </TableCell>
       <TableCell>{NUTRIENT_FORMAT.format(calories)}</TableCell>
       {["carbs", "fat", "fiber", "protein", "sodium"].map((prop) => (
@@ -241,8 +283,6 @@ function ChangeMealTypeDialog() {
 
   const onSubmit = useCallback(
     (values: ChangeMealTypeFormData) => {
-      console.log(selectedFoodLogs);
-
       updateFoodLogs(
         [...selectedFoodLogs.values()].map((foodLog) => ({
           foodLogId: foodLog.logId,
@@ -277,5 +317,69 @@ function ChangeMealTypeDialog() {
         </DialogActions>
       </FormContainer>
     </Dialog>
+  );
+}
+
+interface EditServingSizeFormData {
+  food: FoodLogEntry;
+  servingSize: ServingSize | null;
+}
+
+function EditServingSize({
+  foodLog,
+  closePopover,
+}: {
+  foodLog: FoodLogEntry;
+  closePopover: () => void;
+}) {
+  const queryClient = useQueryClient();
+  const { mutateAsync: updateFoodLogs } = useMutation(
+    buildUpdateFoodLogsMutation(queryClient)
+  );
+
+  const onSubmit = useCallback(
+    (values: EditServingSizeFormData) => {
+      const { servingSize } = values;
+
+      if (!servingSize) {
+        return;
+      }
+
+      updateFoodLogs([
+        {
+          foodLogId: foodLog.logId,
+          mealTypeId: foodLog.loggedFood.mealTypeId,
+          amount: servingSize.amount,
+          unitId: servingSize.unit.id,
+          day: dayjs(foodLog.logDate),
+        },
+      ]).then(() => {
+        toast.success("Updated amount");
+      });
+
+      closePopover();
+    },
+    [closePopover, foodLog, updateFoodLogs]
+  );
+
+  return (
+    <FormContainer<EditServingSizeFormData>
+      onSuccess={onSubmit}
+      defaultValues={{
+        food: foodLog.loggedFood,
+        servingSize: getDefaultServingSize(foodLog.loggedFood),
+      }}
+    >
+      <Paper className="p-4">
+        <ClickAwayListener onClickAway={closePopover}>
+          <div>
+            <FoodServingSizeElement name="servingSize" foodFieldName="food" />
+            <div className="flex flex-row items-center justify-end mt-4">
+              <Button type="submit">Save</Button>
+            </div>
+          </div>
+        </ClickAwayListener>
+      </Paper>
+    </FormContainer>
   );
 }

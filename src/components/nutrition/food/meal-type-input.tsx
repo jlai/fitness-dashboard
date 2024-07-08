@@ -26,6 +26,7 @@ export default function MealTypeInput({
         <MenuItem value={MealType.MorningSnack}>Morning Snack</MenuItem>
         <MenuItem value={MealType.Lunch}>Lunch</MenuItem>
         <MenuItem value={MealType.AfternoonSnack}>Afternoon Snack</MenuItem>
+        <MenuItem value={MealType.EveningSnack}>Evening Snack</MenuItem>
         <MenuItem value={MealType.Dinner}>Dinner</MenuItem>
       </Select>
     </FormControl>
