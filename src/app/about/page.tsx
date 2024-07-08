@@ -94,10 +94,10 @@ export default function AboutPage() {
         </Accordion>
         <Accordion>
           <AccordionSummary expandIcon={<ArrowDropDown />}>
-            Can I view my sleep score?
+            Can I edit activities or sleep logs?
           </AccordionSummary>
           <AccordionDetails>
-            Sleep score is not available in the Fitbit API.
+            Unfortunately this is not supported in the Fitbit Web API.
           </AccordionDetails>
         </Accordion>
         <Accordion>
