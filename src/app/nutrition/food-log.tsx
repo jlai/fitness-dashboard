@@ -2,7 +2,10 @@ import dayjs, { Dayjs } from "dayjs";
 import {
   Button,
   Checkbox,
-  FormControl,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   FormControlLabel,
   IconButton,
   Paper,
@@ -21,23 +24,29 @@ import {
 import { EditOutlined as EditIcon } from "@mui/icons-material";
 import { atom, useAtom, useAtomValue, useSetAtom } from "jotai";
 import Immutable from "immutable";
-
-import {
-  FoodLogEntry,
-  buildDeleteFoodLogsMutation,
-  buildFoodLogQuery,
-} from "@/api/nutrition";
-import { FRACTION_DIGITS_1 } from "@/utils/number-formats";
-
-import { groupByMealType, MealTypeSummary } from "./summarize-day";
 import { useConfirm } from "material-ui-confirm";
 import { toast } from "mui-sonner";
+import { FormContainer } from "react-hook-form-mui";
+
+import { FRACTION_DIGITS_1 } from "@/utils/number-formats";
+import {
+  FoodLogEntry,
+  MealType,
+  buildDeleteFoodLogsMutation,
+  buildFoodLogQuery,
+  buildUpdateFoodLogsMutation,
+} from "@/api/nutrition";
+import { MealTypeElement } from "@/components/nutrition/food/meal-type-element";
+
+import { groupByMealType, MealTypeSummary } from "./summarize-day";
 
 const NUTRIENT_FORMAT = FRACTION_DIGITS_1;
 
 const selectedFoodLogsAtom = atom<Immutable.Set<FoodLogEntry>>(
   Immutable.Set([])
 );
+
+const moveDialogOpenAtom = atom(false);
 
 const updateSelectedFoodLogAtom = atom(
   null,
@@ -132,6 +141,7 @@ function FoodRow({ foodLog }: { foodLog: FoodLogEntry }) {
 
 export default function FoodLog({ day }: { day: Dayjs }) {
   const [selectedFoodLogs, setSelectedFoodLogs] = useAtom(selectedFoodLogsAtom);
+  const setMoveDialogOpen = useSetAtom(moveDialogOpenAtom);
 
   const confirm = useConfirm();
   const queryClient = useQueryClient();
@@ -152,7 +162,7 @@ export default function FoodLog({ day }: { day: Dayjs }) {
 
   const deleteSelected = useCallback(() => {
     (async () => {
-      await confirm({ description: "Deleted selected food logs?" });
+      await confirm({ title: "Deleted selected food logs?" });
 
       const deletes = selectedFoodLogs.map((foodLog) => ({
         foodLogId: foodLog.logId,
@@ -192,7 +202,7 @@ export default function FoodLog({ day }: { day: Dayjs }) {
           </TableBody>
         </Table>
       </Paper>
-      <div className="flex flex-row items-center">
+      <div className="flex flex-row items-center gap-x-2">
         <Button
           disabled={selectedFoodLogs.size === 0}
           color="warning"
@@ -202,7 +212,70 @@ export default function FoodLog({ day }: { day: Dayjs }) {
             ? `Delete ${selectedFoodLogs.size} selected`
             : "Delete selected"}
         </Button>
+        <Button
+          disabled={selectedFoodLogs.size === 0}
+          onClick={() => setMoveDialogOpen(true)}
+        >
+          {selectedFoodLogs.size > 0
+            ? `Move ${selectedFoodLogs.size} selected`
+            : "Move selected"}
+        </Button>
       </div>
+      <ChangeMealTypeDialog />
     </>
+  );
+}
+
+interface ChangeMealTypeFormData {
+  mealType: MealType;
+}
+
+function ChangeMealTypeDialog() {
+  const [open, setOpen] = useAtom(moveDialogOpenAtom);
+  const queryClient = useQueryClient();
+  const [selectedFoodLogs, setSelectedFoodLogs] = useAtom(selectedFoodLogsAtom);
+
+  const { mutateAsync: updateFoodLogs } = useMutation(
+    buildUpdateFoodLogsMutation(queryClient)
+  );
+
+  const onSubmit = useCallback(
+    (values: ChangeMealTypeFormData) => {
+      console.log(selectedFoodLogs);
+
+      updateFoodLogs(
+        [...selectedFoodLogs.values()].map((foodLog) => ({
+          foodLogId: foodLog.logId,
+          mealTypeId: values.mealType,
+          unitId: foodLog.loggedFood.unit!.id,
+          amount: foodLog.loggedFood.amount,
+          day: dayjs(foodLog.logDate),
+        }))
+      ).then(() => {
+        toast.success("Moved food logs");
+        setSelectedFoodLogs(Immutable.Set());
+        setOpen(false);
+      });
+    },
+    [updateFoodLogs, selectedFoodLogs, setSelectedFoodLogs, setOpen]
+  );
+
+  return (
+    <Dialog open={open} onClose={() => setOpen(false)}>
+      <FormContainer
+        onSuccess={onSubmit}
+        defaultValues={{ mealType: MealType.Anytime }}
+      >
+        <DialogTitle>Move to a different time?</DialogTitle>
+        <DialogContent>
+          <div className="py-4">
+            <MealTypeElement name="mealType" />
+          </div>
+        </DialogContent>
+        <DialogActions>
+          <Button type="submit">Move</Button>
+        </DialogActions>
+      </FormContainer>
+    </Dialog>
   );
 }

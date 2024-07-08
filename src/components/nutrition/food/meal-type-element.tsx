@@ -9,6 +9,7 @@ const options = [
   { id: MealType.Lunch, label: "Lunch" },
   { id: MealType.AfternoonSnack, label: "Afternoon snack" },
   { id: MealType.Dinner, label: "Dinner" },
+  { id: MealType.EveningSnack, label: "Evening snack" },
 ];
 
 export function MealTypeElement({ name }: { name: string }) {

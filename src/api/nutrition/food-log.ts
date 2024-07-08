@@ -103,13 +103,23 @@ export function buildCreateMultipleFoodLogsMutation(queryClient: QueryClient) {
   });
 }
 
-export function buildUpdateFoodLogMutation(queryClient: QueryClient) {
+export function buildUpdateFoodLogsMutation(queryClient: QueryClient) {
   return mutationOptions({
-    mutationFn: updateFood,
+    mutationFn: async (updatedFoods: Array<UpdateFoodLogOptions>) => {
+      for (const updatedFood of updatedFoods) {
+        await updateFood(updatedFood);
+      }
+    },
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: ["food-log", formatAsDate(variables.day)],
-      });
+      const days = new Set(
+        variables.map((foodLog) => formatAsDate(foodLog.day))
+      );
+
+      for (const date of days) {
+        queryClient.invalidateQueries({
+          queryKey: ["food-log", date],
+        });
+      }
     },
   });
 }
