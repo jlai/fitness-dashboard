@@ -92,6 +92,21 @@ function buildSavedFoodsQuery(queryClient: QueryClient) {
   });
 }
 
+function ShrinkingChip({
+  icon,
+  label,
+}: {
+  icon: React.ReactElement;
+  label: string;
+}) {
+  return (
+    <>
+      <Chip className="hidden md:flex" label={label} icon={icon} />
+      <div className="md:hidden">{icon}</div>
+    </>
+  );
+}
+
 function FoodOptionDisplay({
   option,
 }: {
@@ -108,12 +123,23 @@ function FoodOptionDisplay({
   return (
     <div className="flex flex-row items-center w-full">
       <div className="flex-1">
-        {option.name} {option.brand && <span>({option.brand})</span>}
+        <span>
+          {option.name} {option.brand && <span>({option.brand})</span>}
+        </span>
+        <span className="text-slate-500 text-opacity-80 ms-2 text-xs">
+          {option.calories} cal
+        </span>
       </div>
-      <div className="text-slate-500 space-x-2">
-        {option.favorite && <Chip label="Favorite" icon={<FavoriteIcon />} />}
-        {option.recent && <Chip label="Recent" icon={<HistoryIcon />} />}
-        {option.frequent && <Chip label="Frequent" icon={<RepeatIcon />} />}
+      <div className="text-slate-500 flex flex-row md:gap-x-2 items-center">
+        {option.favorite && (
+          <ShrinkingChip label="Favorite" icon={<FavoriteIcon />} />
+        )}
+        {option.recent && (
+          <ShrinkingChip label="Recent" icon={<HistoryIcon />} />
+        )}
+        {option.frequent && (
+          <ShrinkingChip label="Frequent" icon={<RepeatIcon />} />
+        )}
       </div>
     </div>
   );
