@@ -22,6 +22,7 @@ const SAME_YEAR_FORMATTER = new Intl.DateTimeFormat(undefined, {
 const OTHER_YEAR_FORMATTER = new Intl.DateTimeFormat(undefined, {
   day: "numeric",
   month: "long",
+  year: "numeric",
 });
 
 function getLabel(day: Dayjs) {
