@@ -16,7 +16,10 @@ export type TimeSeriesResource =
   | "resting-heart-rate"
   | "heart-rate-zones"
   | "weight"
-  | "water";
+  | "fat"
+  | "bmi"
+  | "water"
+  | "calories-in";
 
 export interface HeartRateZone {
   caloriesOut: number;
@@ -62,11 +65,33 @@ export const TIME_SERIES_CONFIGS: Record<
     responseKey: "activities-floors",
     requiredScopes: ["act"],
   },
+
   // body
   weight: {
     urlPrefix: "/1/user/-/body/weight/date/",
     responseKey: "body-weight",
     requiredScopes: ["weight"],
+  },
+  fat: {
+    urlPrefix: "/1/user/-/body/fat/date/",
+    responseKey: "body-fat",
+    requiredScopes: ["weight"],
+  },
+  bmi: {
+    urlPrefix: "/1/user/-/body/bmi/date/",
+    responseKey: "body-bmi",
+    requiredScopes: ["weight"],
+  },
+  // nutrition
+  ["calories-in"]: {
+    urlPrefix: "/1/user/-/foods/log/caloriesIn/date/",
+    responseKey: "foods-log-caloriesIn",
+    requiredScopes: ["nut"],
+  },
+  ["water"]: {
+    urlPrefix: "/1/user/-/foods/log/water/date/",
+    responseKey: "foods-log-water",
+    requiredScopes: ["nut"],
   },
   // other
   ["resting-heart-rate"]: {
@@ -78,11 +103,6 @@ export const TIME_SERIES_CONFIGS: Record<
     urlPrefix: "/1/user/-/activities/heart/date/",
     responseKey: "activities-heart",
     requiredScopes: ["hr"],
-  },
-  ["water"]: {
-    urlPrefix: "/1/user/-/foods/log/water/date/",
-    responseKey: "foods-log-water",
-    requiredScopes: ["nut"],
   },
 };
 

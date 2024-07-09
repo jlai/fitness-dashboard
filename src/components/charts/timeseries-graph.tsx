@@ -7,6 +7,7 @@ import {
   MenuItem,
   Select,
   Typography,
+  Divider,
 } from "@mui/material";
 import {
   BarPlot,
@@ -18,6 +19,7 @@ import {
   ChartsYAxis,
   LinePlot,
   LineSeriesType,
+  MarkPlot,
   ResponsiveChartContainer,
 } from "@mui/x-charts";
 import { useQuery } from "@tanstack/react-query";
@@ -37,7 +39,6 @@ import {
   buildTimeSeriesQuery,
   TimeSeriesEntry,
   HeartTimeSeriesValue,
-  HeartRateZone,
 } from "@/api/activity";
 import { formatShortDate } from "@/utils/date-formats";
 import { useUnits } from "@/api/units";
@@ -75,9 +76,15 @@ function SeriesSelector() {
         <MenuItem value="distance">Distance</MenuItem>
         <MenuItem value="calories">Calories</MenuItem>
         <MenuItem value="floors">Floors</MenuItem>
-        <MenuItem value="weight">Weight</MenuItem>
+        <Divider />
+        <MenuItem value="weight">Weight (trend)</MenuItem>
+        <MenuItem value="fat">Fat (trend)</MenuItem>
+        <MenuItem value="bmi">BMI (trend)</MenuItem>
+        <Divider />
         <MenuItem value="resting-heart-rate">Resting Heart Rate</MenuItem>
         <MenuItem value="heart-rate-zones">Heart Rate Zones</MenuItem>
+        <Divider />
+        <MenuItem value="calories-in">Calories consumed</MenuItem>
         <MenuItem value="water">Water</MenuItem>
       </Select>
     </FormControl>
@@ -159,6 +166,23 @@ function useDataset(data?: Array<TimeSeriesEntry<unknown>>) {
         ];
         yAxis = [{ tickMinStep: 1 }];
         break;
+      case "calories-in":
+        dataset = getSingleValueDataset(data, (value) => Number(value));
+        series = [
+          {
+            type: "bar",
+            label: "Calories consumed",
+            dataKey: "value",
+            valueFormatter: (value) =>
+              value ? `${FRACTION_DIGITS_1.format(value)} cal` : "",
+          },
+        ];
+        yAxis = [
+          {
+            label: units.localizedWaterUnitName,
+          },
+        ];
+        break;
       case "water":
         dataset = getSingleValueDataset(data, (value) =>
           units.localizedWaterVolume(Number(value))
@@ -192,13 +216,51 @@ function useDataset(data?: Array<TimeSeriesEntry<unknown>>) {
             label: "Weight",
             dataKey: "value",
             connectNulls: true,
-            showMark: true,
+            showMark: false,
             valueFormatter: (value) =>
               value
                 ? `${FRACTION_DIGITS_1.format(value)} ${
                     units.localizedKilogramName
                   }`
                 : "",
+          },
+        ];
+        yAxis = [
+          {
+            label: units.localizedKilogramName,
+          },
+        ];
+        break;
+      case "fat":
+        dataset = getSingleValueDataset(data, (value) => Number(value));
+        series = [
+          {
+            type: "line",
+            label: "Fat",
+            dataKey: "value",
+            connectNulls: true,
+            showMark: false,
+            valueFormatter: (value) =>
+              value ? `${FRACTION_DIGITS_1.format(value)}%` : "",
+          },
+        ];
+        yAxis = [
+          {
+            label: units.localizedKilogramName,
+          },
+        ];
+        break;
+      case "bmi":
+        dataset = getSingleValueDataset(data, (value) => Number(value));
+        series = [
+          {
+            type: "line",
+            label: "BMI",
+            dataKey: "value",
+            connectNulls: true,
+            showMark: false,
+            valueFormatter: (value) =>
+              value ? FRACTION_DIGITS_1.format(value) : "",
           },
         ];
         yAxis = [
@@ -251,7 +313,7 @@ function useDataset(data?: Array<TimeSeriesEntry<unknown>>) {
             label: "Resting Heart Rate",
             dataKey: "value",
             connectNulls: true,
-            showMark: true,
+            showMark: ({ value }) => value !== null,
           },
         ];
         break;
@@ -349,6 +411,7 @@ export function GraphView() {
           <ChartsYAxis />
           <ChartsAxisHighlight />
           <ChartsTooltip />
+          <MarkPlot />
           <ChartsGrid horizontal />
         </ResponsiveChartContainer>
       </div>
