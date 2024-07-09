@@ -3,13 +3,13 @@
 import { Autocomplete, Box, TextField } from "@mui/material";
 import { useAtomValue } from "jotai";
 import { SyntheticEvent, useMemo, useState } from "react";
-
-import { Food, FoodUnit, foodUnitsByIdAtom } from "@/api/nutrition";
 import {
   useController,
   UseControllerProps,
   useFormContext,
 } from "react-hook-form";
+
+import { Food, FoodUnit, foodUnitsByIdAtom } from "@/api/nutrition";
 
 export interface ServingSize {
   amount: number;

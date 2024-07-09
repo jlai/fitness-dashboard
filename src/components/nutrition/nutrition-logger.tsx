@@ -9,9 +9,9 @@ import {
   WaterDrop as WaterIcon,
 } from "@mui/icons-material";
 
-import FoodEntryPanel from "./food/create-food-log";
-import WaterEntryPanel from "./water-entry-panel";
-import MealEntryPanel from "./meal/meal-entry-panel";
+import CreateFoodLog from "./food/create-food-log";
+import CreateWaterLog from "./water-entry-panel";
+import CreateMealLog from "./meal/create-meal-log";
 
 export default function NutritionLogger() {
   const [currentTab, setCurrentTab] = useState<"food" | "meal">("food");
@@ -48,17 +48,17 @@ export default function NutritionLogger() {
       </Box>
       <TabPanel value="food">
         <Suspense>
-          <FoodEntryPanel />
+          <CreateFoodLog />
         </Suspense>
       </TabPanel>
       <TabPanel value="meal">
         <Suspense>
-          <MealEntryPanel />
+          <CreateMealLog />
         </Suspense>
       </TabPanel>
       <TabPanel value="water">
         <Suspense>
-          <WaterEntryPanel />
+          <CreateWaterLog />
         </Suspense>
       </TabPanel>
     </TabContext>

@@ -34,6 +34,7 @@
     "immutable": "^4.3.6",
     "jotai": "^2.8.3",
     "jotai-effect": "^1.0.0",
+    "jotai-scope": "^0.6.0",
     "jotai-tanstack-query": "^0.8.5",
     "jwt-decode": "^4.0.0",
     "maplibre-gl": "^4.5.0",

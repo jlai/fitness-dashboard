@@ -50,9 +50,11 @@ function getLabel(day: Dayjs) {
 export default function DayNavigator({
   selectedDay,
   onSelectDay,
+  disableFuture,
 }: {
   selectedDay: Dayjs;
   onSelectDay: (day: Dayjs) => void;
+  disableFuture?: boolean;
 }) {
   const today = dayjs();
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
@@ -115,14 +117,14 @@ export default function DayNavigator({
           <DateCalendar
             value={selectedDay}
             onChange={handleChange}
-            disableFuture
+            disableFuture={disableFuture}
           />
         </Popover>
       </div>
       <IconButton
         aria-label="next day"
         onClick={selectNextDay}
-        disabled={isToday}
+        disabled={isToday && disableFuture}
       >
         <ChevronRight />
       </IconButton>

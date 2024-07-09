@@ -34,7 +34,7 @@ import {
   buildDeleteMealMutation,
   buildUpdateMealMutation,
 } from "@/api/nutrition";
-import MealSearch from "@/components/nutrition/meal/meal-search";
+import SearchMeals from "@/components/nutrition/meal/meal-search";
 import { FoodServingSizeInput } from "@/components/nutrition/food/serving-size";
 import SearchFoods from "@/components/nutrition/food/food-search";
 import { useUnits } from "@/api/units";
@@ -109,10 +109,10 @@ export default function ManageMeals() {
       </Typography>
       <div className="flex flex-row gap-x-8">
         <Suspense>
-          <MealSearch
+          <SearchMeals
             className="flex-1"
-            selectedMeal={selectedMeal}
-            onSelectMeal={selectMeal}
+            value={selectedMeal}
+            onChange={selectMeal}
           />
         </Suspense>
         <Divider orientation="vertical" flexItem />

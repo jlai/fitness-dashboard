@@ -264,6 +264,7 @@ export default function FoodLog({ day }: { day: Dayjs }) {
         </Button>
       </div>
       <ChangeMealTypeDialog />
+      <div className="mb-8"></div>
     </>
   );
 }

@@ -19,7 +19,11 @@ export default function GridControlBar() {
 
   return (
     <div className="flex flex-row items-center">
-      <DayNavigator selectedDay={selectedDay} onSelectDay={setSelectedDay} />
+      <DayNavigator
+        selectedDay={selectedDay}
+        onSelectDay={setSelectedDay}
+        disableFuture
+      />
       <div className="flex-grow"></div>
       <div>
         <Button

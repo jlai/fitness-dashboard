@@ -1,5 +1,6 @@
 import { Autocomplete, ListItem, ListItemText, TextField } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
+import { UseControllerProps, useController } from "react-hook-form";
 
 import { Meal, buildMealsQuery } from "@/api/nutrition";
 
@@ -11,14 +12,14 @@ function getMealFoodNames(meal: Meal) {
     .join(", ");
 }
 
-export default function MealSearch({
+export default function SearchMeals({
   className,
-  selectedMeal,
-  onSelectMeal,
+  value,
+  onChange,
 }: {
   className?: string;
-  selectedMeal: Meal | null;
-  onSelectMeal: (meal: Meal | null) => void;
+  value: Meal | null;
+  onChange: (meal: Meal | null) => void;
 }) {
   const { data: meals } = useQuery(buildMealsQuery());
 
@@ -27,11 +28,12 @@ export default function MealSearch({
   return (
     <div className={className}>
       <Autocomplete
-        value={selectedMeal}
-        onChange={(event, value) => onSelectMeal(value)}
+        value={value}
+        onChange={(event, value) => onChange(value)}
         disabled={meals === undefined}
         options={options}
         getOptionLabel={(meal) => meal.name}
+        isOptionEqualToValue={(option, value) => option.id === value.id}
         renderInput={(props) => <TextField label="Select a meal" {...props} />}
         renderOption={(props, option) => (
           <ListItem {...props} key={(props as any)["key"]}>
@@ -44,4 +46,10 @@ export default function MealSearch({
       />
     </div>
   );
+}
+
+export function SearchMealsElement(controllerProps: UseControllerProps) {
+  const { field } = useController(controllerProps);
+
+  return <SearchMeals value={field.value} onChange={field.onChange} />;
 }
