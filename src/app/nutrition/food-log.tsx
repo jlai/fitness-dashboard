@@ -8,7 +8,6 @@ import {
   DialogContent,
   DialogTitle,
   FormControlLabel,
-  IconButton,
   Paper,
   Popper,
   Table,
@@ -137,7 +136,10 @@ function FoodRow({ foodLog }: { foodLog: FoodLogEntry }) {
         />
       </TableCell>
       <TableCell className="group">
-        <div className="flex flex-row items-center">
+        <button
+          className="flex flex-row items-center"
+          onClick={popupState.open}
+        >
           <Typography
             variant="body1"
             sx={{
@@ -148,16 +150,13 @@ function FoodRow({ foodLog }: { foodLog: FoodLogEntry }) {
           >
             {amount} {amount === 1 ? unit?.name : unit?.plural}
           </Typography>
-          <IconButton
-            size="small"
-            className="ms-2 invisible group-hover:visible"
-            onClick={popupState.open}
-          >
+          <div className="ms-2 invisible group-hover:visible text-slate-500">
             <EditIcon />
-          </IconButton>
-        </div>
+          </div>
+        </button>
         <Popper
           {...bindPopper(popupState)}
+          disablePortal
           modifiers={[
             {
               name: "arrow",
@@ -376,6 +375,7 @@ function EditServingSize({
           <div>
             <FoodServingSizeElement name="servingSize" foodFieldName="food" />
             <div className="flex flex-row items-center justify-end mt-4">
+              <Button onClick={closePopover}>Cancel</Button>
               <Button type="submit">Save</Button>
             </div>
           </div>
