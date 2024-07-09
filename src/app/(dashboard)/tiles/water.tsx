@@ -3,7 +3,7 @@ import { Typography } from "@mui/material";
 import { useSuspenseQueries } from "@tanstack/react-query";
 
 import { buildFoodLogQuery, buildWaterGoalQuery } from "@/api/nutrition";
-import { useUnits } from "@/api/units";
+import { useUnits } from "@/config/units";
 import NumericStat from "@/components/numeric-stat";
 
 import { useSelectedDay } from "../state";
@@ -18,7 +18,7 @@ export default function WaterTileContent() {
     queries: [buildFoodLogQuery(day), buildWaterGoalQuery()],
   });
 
-  const { localizedWaterUnitName, localizedWaterVolume } = units;
+  const { localizedWaterVolumeName, localizedWaterVolume } = units;
 
   const waterConsumedMl = foodLog.summary.water;
   const waterConsumed = localizedWaterVolume(waterConsumedMl);
@@ -39,7 +39,10 @@ export default function WaterTileContent() {
       <div className="absolute p-2 inset-0">
         <div className="size-full flex flex-col justify-center">
           <div className="flex flex-col items-center">
-            <NumericStat value={waterRemaining} unit={localizedWaterUnitName} />
+            <NumericStat
+              value={waterRemaining}
+              unit={localizedWaterVolumeName}
+            />
             <Typography variant="body2" component="span">
               to drink
             </Typography>

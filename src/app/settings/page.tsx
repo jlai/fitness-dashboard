@@ -5,7 +5,9 @@ import {
   Button,
   Container,
   Link,
+  MenuItem,
   Paper,
+  Select,
   Switch,
   Table,
   TableBody,
@@ -17,12 +19,31 @@ import {
 import { useAtom, useSetAtom } from "jotai";
 import { RESET } from "jotai/utils";
 import { useConfirm } from "material-ui-confirm";
-import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import {
+  useQuery,
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
 
 import { userTilesAtom } from "@/storage/tiles";
-import { redirectToLogin, revokeAuthorization, useLoggedIn } from "@/api/auth";
-import { buildUserProfileQuery } from "@/api/user";
-import { pollyEnabledAtom } from "@/storage/settings";
+import {
+  getAccessTokenScopes,
+  redirectToLogin,
+  revokeAuthorization,
+  useLoggedIn,
+} from "@/api/auth";
+import {
+  buildUserProfileQuery,
+  DistanceUnitSystem,
+  WaterUnitSystem,
+  WeightUnitSystem,
+} from "@/api/user";
+import {
+  distanceUnitAtom,
+  pollyEnabledAtom,
+  waterUnitAtom,
+  weightUnitAtom,
+} from "@/storage/settings";
 import { startPollyAtom, stopPollyAtom } from "@/storage/polly";
 
 function SettingsRow({
@@ -48,9 +69,16 @@ function SettingsRow({
 }
 
 function LoginInfo() {
-  const { data: userProfile } = useSuspenseQuery(buildUserProfileQuery());
+  const { data: userProfile } = useQuery({
+    ...buildUserProfileQuery(),
+    enabled: getAccessTokenScopes().has("pro"),
+  });
 
-  return <>You&apos;re currently logged in as {userProfile.fullName}</>;
+  return (
+    userProfile && (
+      <>You&apos;re currently logged in as {userProfile.fullName}</>
+    )
+  );
 }
 
 function LoginSettings() {
@@ -102,6 +130,58 @@ function LoginSettings() {
         Unlink access to Fitbit account from this website (across all browser
         sessions)
       </SettingsRow>
+    </>
+  );
+}
+
+function UnitSettings() {
+  const [distanceUnit, setDistanceUnit] = useAtom(distanceUnitAtom);
+  const [weightUnit, setWeightUnit] = useAtom(weightUnitAtom);
+  const [waterUnit, setWaterUnit] = useAtom(waterUnitAtom);
+
+  return (
+    <>
+      <SettingsRow title="Unit settings">
+        This will not affect your Fitbit account, only the units used on this
+        website.
+      </SettingsRow>
+      <SettingsRow
+        title="Distance Units"
+        action={
+          <Select<DistanceUnitSystem>
+            value={distanceUnit}
+            onChange={(event) => setDistanceUnit(event.target.value as any)}
+          >
+            <MenuItem value="en_US">Miles</MenuItem>
+            <MenuItem value="METRIC">Kilometers</MenuItem>
+          </Select>
+        }
+      />
+      <SettingsRow
+        title="Weight Units"
+        action={
+          <Select<WeightUnitSystem>
+            value={weightUnit}
+            onChange={(event) => setWeightUnit(event.target.value as any)}
+          >
+            <MenuItem value="en_US">Pounds</MenuItem>
+            <MenuItem value="en_GB">Stones</MenuItem>
+            <MenuItem value="METRIC">Kilograms</MenuItem>
+          </Select>
+        }
+      />
+      <SettingsRow
+        title="Water Units"
+        action={
+          <Select<WaterUnitSystem>
+            value={waterUnit}
+            onChange={(event) => setWaterUnit(event.target.value as any)}
+          >
+            <MenuItem value="en_US">Fluid ounces</MenuItem>
+            <MenuItem value="METRIC">Milliliters</MenuItem>
+          </Select>
+        }
+      />
     </>
   );
 }
@@ -196,6 +276,9 @@ export default function SettingsPage() {
     <Container maxWidth="lg">
       <SettingsTable>
         <MainSettings />
+      </SettingsTable>
+      <SettingsTable>
+        <UnitSettings />
       </SettingsTable>
       {loggedIn && (
         <SettingsTable>

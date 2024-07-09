@@ -14,7 +14,7 @@ import { Download } from "@mui/icons-material";
 
 import { buildActivityTcxQuery } from "@/api/activity/activities";
 import { Trackpoint, parseTcx } from "@/api/activity/tcx";
-import { useUnits } from "@/api/units";
+import { useUnits } from "@/config/units";
 import { FRACTION_DIGITS_0, FRACTION_DIGITS_1 } from "@/utils/number-formats";
 import { ActivityLog } from "@/api/activity";
 import { MAPLIBRE_STYLE_URL } from "@/config";

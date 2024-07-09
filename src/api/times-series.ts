@@ -70,17 +70,17 @@ export const TIME_SERIES_CONFIGS: Record<
   weight: {
     urlPrefix: "/1/user/-/body/weight/date/",
     responseKey: "body-weight",
-    requiredScopes: ["weight"],
+    requiredScopes: ["wei"],
   },
   fat: {
     urlPrefix: "/1/user/-/body/fat/date/",
     responseKey: "body-fat",
-    requiredScopes: ["weight"],
+    requiredScopes: ["wei"],
   },
   bmi: {
     urlPrefix: "/1/user/-/body/bmi/date/",
     responseKey: "body-bmi",
-    requiredScopes: ["weight"],
+    requiredScopes: ["wei"],
   },
   // nutrition
   ["calories-in"]: {

@@ -8,7 +8,7 @@ import TileGrid from "./tile-grid";
 export default function DashboardPage() {
   return (
     <RequireLogin>
-      <RequireScopes scopes={["pro", "act", "nut"]}>
+      <RequireScopes scopes={["act", "nut"]}>
         <Dashboard />
       </RequireScopes>
     </RequireLogin>

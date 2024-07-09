@@ -5,7 +5,7 @@ import {
 } from "@mui/x-charts";
 import Image from "next/image";
 
-import { useUnits } from "@/api/units";
+import { useUnits } from "@/config/units";
 import NumericStat from "@/components/numeric-stat";
 
 import stepsIconUrl from "./assets/steps_24dp_FILL0_wght400_GRAD0_opsz24.svg";

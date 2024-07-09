@@ -17,7 +17,7 @@ import {
 import dayjs from "dayjs";
 import { toast } from "mui-sonner";
 
-import { useUnits } from "@/api/units";
+import { useUnits } from "@/config/units";
 import {
   buildCreateWaterLogMutation,
   buildFoodLogQuery,
@@ -203,7 +203,7 @@ function WaterToday() {
     queries: [buildFoodLogQuery(day), buildWaterGoalQuery()],
   });
 
-  const { localizedWaterUnitName, localizedWaterVolume } = units;
+  const { localizedWaterVolumeName, localizedWaterVolume } = units;
 
   const waterConsumed = localizedWaterVolume(foodLog.summary.water);
   const waterGoal = localizedWaterVolume(waterGoalMl);
@@ -212,11 +212,11 @@ function WaterToday() {
     <div className="flex flex-col items-center">
       <Typography variant="h5">Today</Typography>
       <div className="flex flex-row items-center gap-x-2">
-        <NumericStat value={waterConsumed} unit={localizedWaterUnitName} />{" "}
+        <NumericStat value={waterConsumed} unit={localizedWaterVolumeName} />{" "}
         <Typography variant="body1" className="text-2xl">
           /
         </Typography>
-        <NumericStat value={waterGoal} unit={localizedWaterUnitName} />
+        <NumericStat value={waterGoal} unit={localizedWaterVolumeName} />
       </div>
     </div>
   );

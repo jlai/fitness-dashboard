@@ -35,7 +35,7 @@ function NutritionPageContent() {
 export default function NutritionPage() {
   return (
     <RequireLogin>
-      <RequireScopes scopes={["pro", "nut"]}>
+      <RequireScopes scopes={["nut"]}>
         <ScopeProvider atoms={[selectedDayForPageAtom]}>
           <NutritionPageContent />
         </ScopeProvider>

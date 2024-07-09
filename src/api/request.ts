@@ -22,6 +22,7 @@ export async function makeRequest(uri: string, options?: RequestInit) {
     headers: {
       ...options?.headers,
       Authorization: `Bearer ${authToken}`,
+      "Accept-Language": "metric",
     },
   });
 

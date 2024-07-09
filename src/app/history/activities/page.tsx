@@ -14,7 +14,7 @@ export default function ActivityHistoryPage() {
     useState<ActivityLog | null>(null);
 
   return (
-    <RequireScopes scopes={["pro", "act"]}>
+    <RequireScopes scopes={["act"]}>
       <ActivityLogList onShowActivityLog={setSelectedActivityLog} />
       <Dialog
         fullWidth

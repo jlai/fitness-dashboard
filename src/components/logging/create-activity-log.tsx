@@ -18,7 +18,7 @@ import {
 } from "react-hook-form-mui/date-pickers";
 
 import { buildCreateActivityLogMutation } from "@/api/activity/activities";
-import { useUnits } from "@/api/units";
+import { useUnits } from "@/config/units";
 
 import { ActivityTypeElement, ActivityTypeOption } from "./activity-type-input";
 

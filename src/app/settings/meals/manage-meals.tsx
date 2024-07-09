@@ -37,7 +37,7 @@ import {
 import SearchMeals from "@/components/nutrition/meal/meal-search";
 import { FoodServingSizeInput } from "@/components/nutrition/food/serving-size";
 import SearchFoods from "@/components/nutrition/food/food-search";
-import { useUnits } from "@/api/units";
+import { useUnits } from "@/config/units";
 
 export default function ManageMeals() {
   // Don't need this, just preload for now

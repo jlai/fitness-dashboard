@@ -6,7 +6,7 @@ import SleepLogList from "./sleep-log-list";
 
 export default function SleepHistoryPage() {
   return (
-    <RequireScopes scopes={["pro", "sle"]}>
+    <RequireScopes scopes={["sle"]}>
       <SleepLogList />
     </RequireScopes>
   );

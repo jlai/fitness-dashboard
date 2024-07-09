@@ -39,10 +39,12 @@ import {
   buildTimeSeriesQuery,
   TimeSeriesEntry,
   HeartTimeSeriesValue,
+  TIME_SERIES_CONFIGS,
 } from "@/api/activity";
 import { formatShortDate } from "@/utils/date-formats";
-import { useUnits } from "@/api/units";
+import { useUnits } from "@/config/units";
 import { FRACTION_DIGITS_1 } from "@/utils/number-formats";
+import { RequireScopes } from "../require-scopes";
 
 type DateRangeType = "last7" | "last30";
 
@@ -179,7 +181,7 @@ function useDataset(data?: Array<TimeSeriesEntry<unknown>>) {
         ];
         yAxis = [
           {
-            label: units.localizedWaterUnitName,
+            label: units.localizedWaterVolumeName,
           },
         ];
         break;
@@ -195,14 +197,14 @@ function useDataset(data?: Array<TimeSeriesEntry<unknown>>) {
             valueFormatter: (value) =>
               value
                 ? `${FRACTION_DIGITS_1.format(value)} ${
-                    units.localizedWaterUnitName
+                    units.localizedWaterVolumeName
                   }`
                 : "",
           },
         ];
         yAxis = [
           {
-            label: units.localizedWaterUnitName,
+            label: units.localizedWaterVolumeName,
           },
         ];
         break;
@@ -220,14 +222,14 @@ function useDataset(data?: Array<TimeSeriesEntry<unknown>>) {
             valueFormatter: (value) =>
               value
                 ? `${FRACTION_DIGITS_1.format(value)} ${
-                    units.localizedKilogramName
+                    units.localizedKilogramsName
                   }`
                 : "",
           },
         ];
         yAxis = [
           {
-            label: units.localizedKilogramName,
+            label: units.localizedKilogramsName,
           },
         ];
         break;
@@ -246,7 +248,7 @@ function useDataset(data?: Array<TimeSeriesEntry<unknown>>) {
         ];
         yAxis = [
           {
-            label: units.localizedKilogramName,
+            label: units.localizedKilogramsName,
           },
         ];
         break;
@@ -265,7 +267,7 @@ function useDataset(data?: Array<TimeSeriesEntry<unknown>>) {
         ];
         yAxis = [
           {
-            label: units.localizedKilogramName,
+            label: units.localizedKilogramsName,
           },
         ];
         break;
@@ -382,6 +384,9 @@ export function GraphView() {
 
   const { dataset, series, yAxis } = useDataset(data);
 
+  const requiredScopes =
+    TIME_SERIES_CONFIGS[selectedResource]?.requiredScopes ?? [];
+
   return (
     <div>
       <div className="flex flex-row m-4 items-center gap-x-8">
@@ -392,28 +397,30 @@ export function GraphView() {
         </Typography>
       </div>
       <div className="w-full h-[400px]">
-        <ResponsiveChartContainer
-          dataset={dataset}
-          series={series}
-          xAxis={[
-            {
-              scaleType: "band",
-              dataKey: "dateTime",
-              valueFormatter: (value) => formatShortDate(dayjs(value)),
-            },
-          ]}
-          yAxis={yAxis}
-        >
-          <BarPlot />
-          <LinePlot />
+        <RequireScopes scopes={requiredScopes}>
+          <ResponsiveChartContainer
+            dataset={dataset}
+            series={series}
+            xAxis={[
+              {
+                scaleType: "band",
+                dataKey: "dateTime",
+                valueFormatter: (value) => formatShortDate(dayjs(value)),
+              },
+            ]}
+            yAxis={yAxis}
+          >
+            <BarPlot />
+            <LinePlot />
 
-          <ChartsXAxis />
-          <ChartsYAxis />
-          <ChartsAxisHighlight />
-          <ChartsTooltip />
-          <MarkPlot />
-          <ChartsGrid horizontal />
-        </ResponsiveChartContainer>
+            <ChartsXAxis />
+            <ChartsYAxis />
+            <ChartsAxisHighlight />
+            <ChartsTooltip />
+            <MarkPlot />
+            <ChartsGrid horizontal />
+          </ResponsiveChartContainer>
+        </RequireScopes>
       </div>
     </div>
   );

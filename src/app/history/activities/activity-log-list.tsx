@@ -18,7 +18,7 @@ import { Explore as LaunchIcon } from "@mui/icons-material";
 import { ActivityLog, GetActivityLogListResponse } from "@/api/activity/types";
 import { makeRequest } from "@/api/request";
 import { formatDuration, formatShortDateTime } from "@/utils/date-formats";
-import { useUnits } from "@/api/units";
+import { useUnits } from "@/config/units";
 import JumpTo from "@/components/jump-to";
 import { formatAsDate } from "@/api/datetime";
 import { isPossiblyTracked } from "@/api/activity/activities";
