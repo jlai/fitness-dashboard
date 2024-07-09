@@ -6,7 +6,7 @@ import { ONE_DAY_IN_MILLIS } from "../cache-settings";
 import mutationOptions from "../mutation-options";
 import { formatAsDate } from "../datetime";
 
-import { GetActivityLogResponse } from "./types";
+import { ActivityLog, GetActivityLogResponse } from "./types";
 
 export function buildActivityQuery(id: string) {
   return queryOptions({
@@ -24,7 +24,9 @@ export function buildActivityTcxQuery(id: string) {
   return queryOptions({
     queryKey: ["activity-tcx", id],
     queryFn: async () => {
-      const response = await makeRequest(`/1/user/-/activities/${id}.tcx`);
+      const response = await makeRequest(
+        `/1/user/-/activities/${id}.tcx?includePartialTCX=true`
+      );
 
       return await response.text();
     },
@@ -87,4 +89,11 @@ export function buildCreateActivityLogMutation(queryClient: QueryClient) {
       });
     },
   });
+}
+
+export function isPossiblyTracked(activity: ActivityLog) {
+  return (
+    (activity.logType === "mobile_run" || activity.logType === "tracker") &&
+    activity.distance
+  );
 }

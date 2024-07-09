@@ -2,6 +2,8 @@ import { tcx as tcxToGeoJson } from "@tmcw/togeojson";
 
 export type Trackpoint = {
   time: Date;
+  latitudeDegrees?: number;
+  longitudeDegrees?: number;
   altitudeMeters?: number;
   distanceMeters?: number;
   heartBpm?: number;
@@ -18,6 +20,15 @@ export function parseTcx(tcxString: string) {
 
   tcxDocument.querySelectorAll("Trackpoint").forEach((node) => {
     const time = new Date(node.querySelector("Time")?.textContent!);
+
+    const latitudeDegrees = parseOptionalNumber(
+      node.querySelector("Position LatitudeDegrees")?.textContent
+    );
+
+    const longitudeDegrees = parseOptionalNumber(
+      node.querySelector("Position LatitudeDegrees")?.textContent
+    );
+
     const altitudeMeters = parseOptionalNumber(
       node.querySelector("AltitudeMeters")?.textContent
     );
@@ -28,7 +39,14 @@ export function parseTcx(tcxString: string) {
       node.querySelector("HeartRateBpm Value")?.textContent
     );
 
-    trackpoints.push({ time, altitudeMeters, distanceMeters, heartBpm });
+    trackpoints.push({
+      time,
+      latitudeDegrees,
+      longitudeDegrees,
+      altitudeMeters,
+      distanceMeters,
+      heartBpm,
+    });
   });
 
   return {

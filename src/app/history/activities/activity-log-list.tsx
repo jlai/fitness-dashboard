@@ -21,6 +21,7 @@ import { formatDuration, formatShortDateTime } from "@/utils/date-formats";
 import { useUnits } from "@/api/units";
 import JumpTo from "@/components/jump-to";
 import { formatAsDate } from "@/api/datetime";
+import { isPossiblyTracked } from "@/api/activity/activities";
 
 const NUMBER_FORMAT = new Intl.NumberFormat(undefined, {
   maximumFractionDigits: 2,
@@ -99,16 +100,15 @@ export default function ActivityLogList({
         <TableBody>
           {page?.activities.map((activity) => (
             <TableRow key={activity.logId}>
-              <TableCell className="flex flex-row items-center gap-x-2">
-                <div>{formatShortDateTime(dayjs(activity.startTime))}</div>
-                {["tracker", "mobile_run"].includes(activity.logType) && (
-                  <IconButton
-                    size="small"
-                    onClick={() => onShowActivityLog(activity)}
-                  >
-                    <LaunchIcon />
-                  </IconButton>
-                )}
+              <TableCell>
+                <button onClick={() => onShowActivityLog(activity)}>
+                  <div className="flex flex-row items-center gap-x-2">
+                    <div>{formatShortDateTime(dayjs(activity.startTime))}</div>
+                    {isPossiblyTracked(activity) && (
+                      <LaunchIcon className="text-slate-500" />
+                    )}
+                  </div>
+                </button>
               </TableCell>
               <TableCell>{activity.activityName}</TableCell>
               <TableCell>{NUMBER_FORMAT.format(activity.steps)}</TableCell>

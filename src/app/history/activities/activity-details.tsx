@@ -7,7 +7,7 @@ import {
   LineChart,
   ScaleName,
 } from "@mui/x-charts";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button, Typography } from "@mui/material";
 import dynamic from "next/dynamic";
 import { Download } from "@mui/icons-material";
@@ -87,6 +87,25 @@ function ElevationChart({
   );
 }
 
+function useObjectUrl(object: File | Blob | null) {
+  const [objectUrl, setObjectUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!object) {
+      return;
+    }
+
+    const url = URL.createObjectURL(object);
+    setObjectUrl(url);
+
+    return () => {
+      URL.revokeObjectURL(url);
+    };
+  }, [object, setObjectUrl]);
+
+  return objectUrl;
+}
+
 export function ActivityDetails({ activityLog }: { activityLog: ActivityLog }) {
   const units = useUnits();
 
@@ -99,56 +118,47 @@ export function ActivityDetails({ activityLog }: { activityLog: ActivityLog }) {
     [tcxString]
   );
 
-  const downloadUrlRef = useRef<string | null>();
-
   const tcxFilename = `${activityLog.logId}.tcx`;
 
-  const tcxDownloadUrl = useMemo(() => {
-    const file =
-      tcxString &&
-      new File([tcxString], tcxFilename, {
-        type: "application/vnd.garmin.tcx+xml",
-      });
-
-    if (downloadUrlRef.current) {
-      URL.revokeObjectURL(downloadUrlRef.current);
-      downloadUrlRef.current = null;
-    }
-
-    downloadUrlRef.current = file && URL.createObjectURL(file);
-    return downloadUrlRef.current;
+  const tcxFile = useMemo(() => {
+    return tcxString
+      ? new File([tcxString], tcxFilename, {
+          type: "application/vnd.garmin.tcx+xml",
+        })
+      : null;
   }, [tcxString, tcxFilename]);
 
-  useEffect(() => {
-    if (downloadUrlRef.current) {
-      URL.revokeObjectURL(downloadUrlRef.current);
-      downloadUrlRef.current = null;
-    }
-  });
+  const tcxDownloadUrl = useObjectUrl(tcxFile);
 
-  const { hasElevation, hasHeartRate, localizedTrackpoints } = useMemo(() => {
-    let hasElevation = false,
-      hasHeartRate = false;
+  const { hasElevation, hasHeartRate, hasLocation, localizedTrackpoints } =
+    useMemo(() => {
+      let hasElevation = false,
+        hasHeartRate = false,
+        hasLocation = false;
 
-    const localizedTrackpoints: Array<LocalizedTrackpoint> = [];
+      const localizedTrackpoints: Array<LocalizedTrackpoint> = [];
 
-    for (const trackpoint of parsedTcx?.trackpoints ?? []) {
-      if (trackpoint.altitudeMeters !== undefined) {
-        hasElevation = true;
+      for (const trackpoint of parsedTcx?.trackpoints ?? []) {
+        if (trackpoint.altitudeMeters !== undefined) {
+          hasElevation = true;
 
-        localizedTrackpoints.push({
-          time: trackpoint.time,
-          altitudeLocalized: units.localizedMeters(trackpoint.altitudeMeters),
-        });
+          localizedTrackpoints.push({
+            time: trackpoint.time,
+            altitudeLocalized: units.localizedMeters(trackpoint.altitudeMeters),
+          });
+        }
+
+        if (trackpoint.heartBpm !== undefined) {
+          hasHeartRate = true;
+        }
+
+        if (trackpoint.latitudeDegrees !== undefined) {
+          hasLocation = true;
+        }
       }
 
-      if (trackpoint.heartBpm !== undefined) {
-        hasHeartRate = true;
-      }
-    }
-
-    return { hasElevation, hasHeartRate, localizedTrackpoints };
-  }, [parsedTcx, units]);
+      return { hasElevation, hasHeartRate, hasLocation, localizedTrackpoints };
+    }, [parsedTcx, units]);
 
   return (
     <div className="space-y-8">
@@ -187,7 +197,7 @@ export function ActivityDetails({ activityLog }: { activityLog: ActivityLog }) {
 
       {parsedTcx && (
         <>
-          {MAPLIBRE_STYLE_URL && (
+          {MAPLIBRE_STYLE_URL && hasLocation && (
             <div className="w-full h-[300px]">
               <LazyActivityMap geojson={parsedTcx.geojson} />
             </div>
