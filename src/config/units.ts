@@ -71,7 +71,7 @@ const GB_WEIGHT_UNIT_CONFIG: WeightUnitConfig = {
 
 const METRIC_WEIGHT_UNIT_CONFIG: WeightUnitConfig = {
   weightUnit: "METRIC",
-  localizedKilograms: (value: number) => value * POUNDS_PER_KG,
+  localizedKilograms: (value: number) => value,
   localizedKilogramsName: "kg",
 };
 
