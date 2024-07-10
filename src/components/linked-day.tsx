@@ -29,5 +29,12 @@ export default function LinkedDayElement({ name }: { name: string }) {
     },
   ];
 
-  return <ToggleButtonGroupElement name={name} exclusive options={options} />;
+  return (
+    <ToggleButtonGroupElement
+      name={name}
+      exclusive
+      enforceAtLeastOneSelected
+      options={options}
+    />
+  );
 }
