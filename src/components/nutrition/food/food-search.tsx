@@ -246,6 +246,7 @@ export default function SearchFoods({
   return (
     <div className={className}>
       <Autocomplete
+        loading={!savedFoods}
         value={value}
         onKeyDown={handleEnter}
         inputValue={inputValue}

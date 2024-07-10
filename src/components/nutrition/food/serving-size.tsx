@@ -10,6 +10,7 @@ import {
 } from "react-hook-form";
 
 import { Food, FoodUnit, foodUnitsByIdAtom } from "@/api/nutrition";
+import { loadable } from "jotai/utils";
 
 export interface ServingSize {
   amount: number;
@@ -27,7 +28,7 @@ function formatServing(option: ServingSize | string) {
 }
 
 function useServingOptions(food: Food | null) {
-  const foodUnitsById = useAtomValue(foodUnitsByIdAtom);
+  const loadingFoodUnitsById = useAtomValue(loadable(foodUnitsByIdAtom));
 
   return useMemo(() => {
     let options: Array<ServingSize> = [];
@@ -42,6 +43,12 @@ function useServingOptions(food: Food | null) {
         unit: serving.unit,
       }));
     } else {
+      if (loadingFoodUnitsById.state !== "hasData") {
+        return undefined;
+      }
+
+      const foodUnitsById = loadingFoodUnitsById.data;
+
       for (const unitId of food.units) {
         const unit = foodUnitsById.get(unitId);
         if (unit) {
@@ -51,7 +58,7 @@ function useServingOptions(food: Food | null) {
     }
 
     return options;
-  }, [food, foodUnitsById]);
+  }, [food, loadingFoodUnitsById]);
 }
 
 /**
@@ -96,9 +103,10 @@ export function FoodServingSizeInput({
         inputValue={value ? inputValue : ""}
         onChange={updateSelectedQuantity}
         onInputChange={(event, value) => setInputValue(value)}
-        disabled={options.length === 0}
+        loading={options === undefined}
+        disabled={options && options.length === 0}
         sx={{ minWidth: "300px" }}
-        options={options}
+        options={options ?? []}
         getOptionLabel={(option) => formatServing(option)}
         renderInput={(props) => <TextField {...props} label="Qty" />}
         renderOption={(props, option) => (
