@@ -7,7 +7,13 @@ import {
   TextField,
 } from "@mui/material";
 import { useAtomValue } from "jotai";
-import { SyntheticEvent, useCallback, useMemo, useState } from "react";
+import {
+  SyntheticEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import {
   useController,
   UseControllerProps,
@@ -75,7 +81,8 @@ export function FoodServingSizeInput({
   onChange: (servingSize: ServingSize | null) => void;
 }) {
   const options = useServingOptions(food);
-  const [inputValue, setInputValue] = useState("");
+  const [lastValue, setLastValue] = useState(value);
+  const [inputValue, setInputValue] = useState(formatServing(value));
 
   const updateSelectedQuantity = useCallback(
     (
@@ -85,15 +92,13 @@ export function FoodServingSizeInput({
     ) => {
       if (value && typeof value === "object" && "unit" in value) {
         onChange(value);
-        setInputValue(formatServing(value));
       }
 
       if (!value) {
         onChange(null);
-        setInputValue("");
       }
     },
-    [setInputValue, onChange]
+    [onChange]
   );
 
   // If the user blurs an incomplete number, use default unit
@@ -107,10 +112,18 @@ export function FoodServingSizeInput({
         const autoServing = { amount: parsed.quantity, unit: defaultUnit };
 
         onChange(autoServing);
-        setInputValue(formatServing(autoServing));
       }
     }
-  }, [inputValue, options, food, setInputValue, onChange]);
+  }, [inputValue, options, food, onChange]);
+
+  // Changes to value overwrite user's inputValue
+  useEffect(() => {
+    if (lastValue !== value) {
+      setLastValue(value);
+
+      setInputValue(formatServing(value));
+    }
+  }, [value, lastValue]);
 
   return (
     <Box>
@@ -161,6 +174,16 @@ export function FoodServingSizeInput({
   );
 }
 
+function validateServingSize(servingSize: ServingSize | null) {
+  if (!servingSize) {
+    return "No amount provided";
+  }
+
+  if (servingSize.amount <= 0) {
+    return "Amount cannot be zero or negative";
+  }
+}
+
 export function FoodServingSizeElement({
   foodFieldName,
   ...controllerProps
@@ -168,7 +191,10 @@ export function FoodServingSizeElement({
   foodFieldName: string;
 } & UseControllerProps) {
   const { watch } = useFormContext();
-  const { field } = useController(controllerProps);
+  const { field } = useController({
+    ...controllerProps,
+    rules: { validate: validateServingSize, ...controllerProps.rules },
+  });
 
   return (
     <FoodServingSizeInput

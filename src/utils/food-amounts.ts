@@ -5,7 +5,11 @@ export interface ServingSize {
   unit: FoodUnit;
 }
 
-export function formatServing(option: ServingSize | string) {
+export function formatServing(option: ServingSize | string | null) {
+  if (!option) {
+    return "";
+  }
+
   if (typeof option === "string") {
     return option;
   } else {
