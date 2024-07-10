@@ -95,9 +95,8 @@ export function useUnits() {
 
   const queryClient = useQueryClient();
 
-  const {
-    data: { distanceUnitSystem, weightUnitSystem, waterUnitSystem },
-  } = useSuspenseQuery({
+  // NOTE: this will only run once due to caching
+  const { data: profileUnits } = useSuspenseQuery({
     queryKey: ["units"],
     queryFn: async () => {
       let distanceUnitSystem = storedDistanceUnitSystem;
@@ -136,13 +135,13 @@ export function useUnits() {
   });
 
   const distanceUnitConfig =
-    distanceUnitSystem === "en_US"
+    (storedDistanceUnitSystem ?? profileUnits.distanceUnitSystem) === "en_US"
       ? US_DISTANCE_UNIT_CONFIG
       : METRIC_DISTANCE_UNIT_CONFIG;
 
   let weightUnitConfig: WeightUnitConfig;
 
-  switch (weightUnitSystem) {
+  switch (storedWeightUnitSystem ?? profileUnits.weightUnitSystem) {
     case "en_US":
       weightUnitConfig = US_WEIGHT_UNIT_CONFIG;
       break;
@@ -155,7 +154,7 @@ export function useUnits() {
   }
 
   const waterUnitConfig =
-    waterUnitSystem === "en_US"
+    (storedWaterUnitSystem ?? profileUnits.waterUnitSystem) === "en_US"
       ? US_WATER_UNIT_CONFIG
       : METRIC_WATER_UNIT_CONFIG;
 
