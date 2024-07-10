@@ -70,8 +70,9 @@ export default function CreateMealLog() {
         toast.success(`Logged meal: ${meal.name}`);
         formContext.reset({
           daySource, // keep same
+          mealType, // keep same
+
           meal: null,
-          mealType: MealType.Anytime,
         });
       });
     },

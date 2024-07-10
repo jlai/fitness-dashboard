@@ -64,10 +64,10 @@ export function CreateFoodLogForm() {
         toast.success(`Logged food: ${food.name}`);
         formContext.reset({
           food: null,
-          mealType: MealType.Anytime,
           servingSize: null,
 
-          // Stay on existing day
+          // Stay on existing day and mealType
+          mealType: values.mealType,
           daySource,
         });
       });
