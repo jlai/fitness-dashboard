@@ -15,6 +15,10 @@ const TIME_FORMAT_OPTIONS: Intl.DateTimeFormatOptions = {
   minute: "2-digit",
 };
 
+const SHORT_WEEKDAY = new Intl.DateTimeFormat(undefined, {
+  weekday: "short",
+});
+
 const SHORT_DATE_THIS_YEAR = new Intl.DateTimeFormat(undefined, {
   ...SHORT_DATE_OPTIONS,
 });
@@ -34,6 +38,16 @@ const SHORT_DATE_TIME_OTHER_YEAR = new Intl.DateTimeFormat(undefined, {
   ...TIME_FORMAT_OPTIONS,
   year: "numeric",
 });
+
+export function formatShortWeekDay(day: Dayjs) {
+  const today = dayjs();
+
+  if (day.isSame(today, "week")) {
+    return SHORT_WEEKDAY.format(day.toDate());
+  } else {
+    return formatShortDate(day);
+  }
+}
 
 export function formatShortDate(day: Dayjs) {
   const today = dayjs();
