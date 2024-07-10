@@ -2,11 +2,6 @@ import dayjs, { Dayjs } from "dayjs";
 import {
   Button,
   Checkbox,
-  ClickAwayListener,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   FormControlLabel,
   Paper,
   Popper,
@@ -17,55 +12,35 @@ import {
   TableRow,
   Typography,
 } from "@mui/material";
-import { ChangeEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, useCallback, useEffect, useMemo } from "react";
 import {
   useMutation,
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
 import { EditOutlined as EditIcon } from "@mui/icons-material";
-import { atom, useAtom, useAtomValue, useSetAtom } from "jotai";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import Immutable from "immutable";
 import { useConfirm } from "material-ui-confirm";
 import { toast } from "mui-sonner";
-import { FormContainer } from "react-hook-form-mui";
 import { bindPopper, usePopupState } from "material-ui-popup-state/hooks";
 
 import { FRACTION_DIGITS_1 } from "@/utils/number-formats";
 import {
   FoodLogEntry,
-  MealType,
   buildDeleteFoodLogsMutation,
   buildFoodLogQuery,
-  buildUpdateFoodLogsMutation,
-  getDefaultServingSize,
 } from "@/api/nutrition";
-import { MealTypeElement } from "@/components/nutrition/food/meal-type-element";
-import {
-  FoodServingSizeElement,
-  ServingSize,
-} from "@/components/nutrition/food/serving-size";
 
 import { groupByMealType, MealTypeSummary } from "./summarize-day";
+import {
+  selectedFoodLogsAtom,
+  updateSelectedFoodLogAtom,
+  moveDialogOpenAtom,
+} from "./atoms";
+import { EditServingSize, MoveFoodLogsDialog } from "./edit-food-log-dialogs";
 
 const NUTRIENT_FORMAT = FRACTION_DIGITS_1;
-
-const selectedFoodLogsAtom = atom<Immutable.Set<FoodLogEntry>>(
-  Immutable.Set([])
-);
-
-const moveDialogOpenAtom = atom(false);
-
-const updateSelectedFoodLogAtom = atom(
-  null,
-  (get, set, foodLog: FoodLogEntry, shouldInclude: boolean) => {
-    const foodLogs = get(selectedFoodLogsAtom);
-    set(
-      selectedFoodLogsAtom,
-      shouldInclude ? foodLogs.add(foodLog) : foodLogs.remove(foodLog)
-    );
-  }
-);
 
 function formatNutrientPropValue(
   nutritionalValues: FoodLogEntry["nutritionalValues"],
@@ -262,125 +237,8 @@ export default function FoodLog({ day }: { day: Dayjs }) {
             : "Move selected"}
         </Button>
       </div>
-      <ChangeMealTypeDialog />
+      <MoveFoodLogsDialog />
       <div className="mb-8"></div>
     </>
-  );
-}
-
-interface ChangeMealTypeFormData {
-  mealType: MealType;
-}
-
-function ChangeMealTypeDialog() {
-  const [open, setOpen] = useAtom(moveDialogOpenAtom);
-  const queryClient = useQueryClient();
-  const [selectedFoodLogs, setSelectedFoodLogs] = useAtom(selectedFoodLogsAtom);
-
-  const { mutateAsync: updateFoodLogs } = useMutation(
-    buildUpdateFoodLogsMutation(queryClient)
-  );
-
-  const onSubmit = useCallback(
-    (values: ChangeMealTypeFormData) => {
-      updateFoodLogs(
-        [...selectedFoodLogs.values()].map((foodLog) => ({
-          foodLogId: foodLog.logId,
-          mealTypeId: values.mealType,
-          unitId: foodLog.loggedFood.unit!.id,
-          amount: foodLog.loggedFood.amount,
-          day: dayjs(foodLog.logDate),
-        }))
-      ).then(() => {
-        toast.success("Moved food logs");
-        setSelectedFoodLogs(Immutable.Set());
-        setOpen(false);
-      });
-    },
-    [updateFoodLogs, selectedFoodLogs, setSelectedFoodLogs, setOpen]
-  );
-
-  return (
-    <Dialog open={open} onClose={() => setOpen(false)}>
-      <FormContainer
-        onSuccess={onSubmit}
-        defaultValues={{ mealType: MealType.Anytime }}
-      >
-        <DialogTitle>Move to a different time?</DialogTitle>
-        <DialogContent>
-          <div className="py-4">
-            <MealTypeElement name="mealType" />
-          </div>
-        </DialogContent>
-        <DialogActions>
-          <Button type="submit">Move</Button>
-        </DialogActions>
-      </FormContainer>
-    </Dialog>
-  );
-}
-
-interface EditServingSizeFormData {
-  food: FoodLogEntry;
-  servingSize: ServingSize | null;
-}
-
-function EditServingSize({
-  foodLog,
-  closePopover,
-}: {
-  foodLog: FoodLogEntry;
-  closePopover: () => void;
-}) {
-  const queryClient = useQueryClient();
-  const { mutateAsync: updateFoodLogs } = useMutation(
-    buildUpdateFoodLogsMutation(queryClient)
-  );
-
-  const onSubmit = useCallback(
-    (values: EditServingSizeFormData) => {
-      const { servingSize } = values;
-
-      if (!servingSize) {
-        return;
-      }
-
-      updateFoodLogs([
-        {
-          foodLogId: foodLog.logId,
-          mealTypeId: foodLog.loggedFood.mealTypeId,
-          amount: servingSize.amount,
-          unitId: servingSize.unit.id,
-          day: dayjs(foodLog.logDate),
-        },
-      ]).then(() => {
-        toast.success("Updated amount");
-      });
-
-      closePopover();
-    },
-    [closePopover, foodLog, updateFoodLogs]
-  );
-
-  return (
-    <FormContainer<EditServingSizeFormData>
-      onSuccess={onSubmit}
-      defaultValues={{
-        food: foodLog.loggedFood,
-        servingSize: getDefaultServingSize(foodLog.loggedFood),
-      }}
-    >
-      <Paper className="p-4">
-        <ClickAwayListener onClickAway={closePopover}>
-          <div>
-            <FoodServingSizeElement name="servingSize" foodFieldName="food" />
-            <div className="flex flex-row items-center justify-end mt-4">
-              <Button onClick={closePopover}>Cancel</Button>
-              <Button type="submit">Save</Button>
-            </div>
-          </div>
-        </ClickAwayListener>
-      </Paper>
-    </FormContainer>
   );
 }

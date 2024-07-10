@@ -1,4 +1,5 @@
-import { SelectElement } from "react-hook-form-mui";
+import { SelectElement, SelectElementProps } from "react-hook-form-mui";
+import { TextFieldProps } from "@mui/material";
 
 import { MealType } from "@/api/nutrition";
 
@@ -12,13 +13,19 @@ const options = [
   { id: MealType.EveningSnack, label: "Evening snack" },
 ];
 
-export function MealTypeElement({ name }: { name: string }) {
+export function MealTypeElement({
+  name,
+  fullWidth,
+}: {
+  name: string;
+  fullWidth?: boolean;
+}) {
   return (
     <SelectElement
       name={name}
       label="When"
-      SelectProps={{ autoWidth: true }}
       options={options}
+      fullWidth={fullWidth}
     />
   );
 }

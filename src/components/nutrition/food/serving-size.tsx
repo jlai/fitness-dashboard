@@ -8,9 +8,9 @@ import {
   UseControllerProps,
   useFormContext,
 } from "react-hook-form";
+import { loadable } from "jotai/utils";
 
 import { Food, FoodUnit, foodUnitsByIdAtom } from "@/api/nutrition";
-import { loadable } from "jotai/utils";
 
 export interface ServingSize {
   amount: number;
