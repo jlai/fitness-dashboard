@@ -46,14 +46,14 @@ const US_DISTANCE_UNIT_CONFIG: DistanceUnitConfig = {
   localizedMeters: (value: number) => value * FEET_PER_METER,
   localizedKilometers: (value: number) => value * MILES_PER_KM,
   localizedMetersName: "ft",
-  localizedKilometersName: "km",
+  localizedKilometersName: "mi",
 };
 
 const METRIC_DISTANCE_UNIT_CONFIG: DistanceUnitConfig = {
   distanceUnit: "METRIC",
   localizedMeters: (value: number) => value,
   localizedKilometers: (value: number) => value,
-  localizedMetersName: "ft",
+  localizedMetersName: "m",
   localizedKilometersName: "km",
 };
 
@@ -70,9 +70,9 @@ const GB_WEIGHT_UNIT_CONFIG: WeightUnitConfig = {
 };
 
 const METRIC_WEIGHT_UNIT_CONFIG: WeightUnitConfig = {
-  weightUnit: "en_US",
+  weightUnit: "METRIC",
   localizedKilograms: (value: number) => value * POUNDS_PER_KG,
-  localizedKilogramsName: "lbs",
+  localizedKilogramsName: "kg",
 };
 
 const US_WATER_UNIT_CONFIG: WaterUnitConfig = {
