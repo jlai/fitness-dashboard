@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { Button, Divider, Link } from "@mui/material";
+import { Button, Divider, Stack } from "@mui/material";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { toast } from "mui-sonner";
@@ -15,6 +15,7 @@ import {
 } from "@/api/nutrition";
 import LinkedDayElement, { DaySelectorSource } from "@/components/linked-day";
 import { selectedDayForPageAtom } from "@/state";
+import { FormRow, FormRows } from "@/components/forms/form-row";
 
 import { MealTypeElement } from "../food/meal-type-element";
 
@@ -82,25 +83,32 @@ export default function CreateMealLog() {
       formContext={formContext}
       onSuccess={logMeal}
     >
-      <div className="flex flex-row gap-x-8">
+      <Stack
+        direction="row"
+        spacing={4}
+        divider={<Divider orientation="vertical" flexItem />}
+      >
         <div className="flex-1">
-          <SearchMealsElement name="meal" />
-          <div className="flex flex-row items-center gap-x-4 mt-8">
-            <MealTypeElement name="mealType" />
-            <LinkedDayElement name="daySource" />
-            <div className="flex-grow min-w-0"></div>
-            <Button type="submit" disabled={!watch("meal")}>
-              Log meal
-            </Button>
-          </div>
+          <FormRows>
+            <FormRow>
+              <SearchMealsElement name="meal" />
+            </FormRow>
+            <FormRow>
+              <MealTypeElement name="mealType" />
+              <LinkedDayElement name="daySource" />
+              <div className="flex-grow min-w-0"></div>
+              <Button type="submit" disabled={!watch("meal")}>
+                Log meal
+              </Button>
+            </FormRow>
+          </FormRows>
         </div>
-        <Divider orientation="vertical" flexItem />
         <div>
-          <Button href="/settings/foods" LinkComponent={NextLink}>
+          <Button href="/settings/meals" LinkComponent={NextLink}>
             Manage meals
           </Button>
         </div>
-      </div>
+      </Stack>
     </FormContainer>
   );
 }

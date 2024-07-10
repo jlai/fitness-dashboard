@@ -12,4 +12,11 @@ export const theme = createTheme({
   typography: {
     fontFamily: `${mainFont.style.fontFamily}, Helvetica, Arial, san-serif`,
   },
+  components: {
+    MuiStack: {
+      defaultProps: {
+        useFlexGap: true,
+      },
+    },
+  },
 });

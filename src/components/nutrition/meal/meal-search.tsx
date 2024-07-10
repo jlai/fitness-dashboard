@@ -16,35 +16,37 @@ export default function SearchMeals({
   className,
   value,
   onChange,
+  fullWidth = true,
 }: {
   className?: string;
   value: Meal | null;
   onChange: (meal: Meal | null) => void;
+  fullWidth?: boolean;
 }) {
   const { data: meals } = useQuery(buildMealsQuery());
 
   const options = meals || [];
 
   return (
-    <div className={className}>
-      <Autocomplete
-        value={value}
-        onChange={(event, value) => onChange(value)}
-        disabled={meals === undefined}
-        options={options}
-        getOptionLabel={(meal) => meal.name}
-        isOptionEqualToValue={(option, value) => option.id === value.id}
-        renderInput={(props) => <TextField label="Select a meal" {...props} />}
-        renderOption={(props, option) => (
-          <ListItem {...props} key={(props as any)["key"]}>
-            <ListItemText
-              primary={option.name}
-              secondary={getMealFoodNames(option)}
-            />
-          </ListItem>
-        )}
-      />
-    </div>
+    <Autocomplete
+      className={className}
+      fullWidth={fullWidth}
+      value={value}
+      onChange={(event, value) => onChange(value)}
+      disabled={meals === undefined}
+      options={options}
+      getOptionLabel={(meal) => meal.name}
+      isOptionEqualToValue={(option, value) => option.id === value.id}
+      renderInput={(props) => <TextField label="Select a meal" {...props} />}
+      renderOption={(props, option) => (
+        <ListItem {...props} key={(props as any)["key"]}>
+          <ListItemText
+            primary={option.name}
+            secondary={getMealFoodNames(option)}
+          />
+        </ListItem>
+      )}
+    />
   );
 }
 

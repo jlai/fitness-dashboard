@@ -41,6 +41,7 @@ import {
 import { formatShortDate } from "@/utils/date-formats";
 
 import { RequireScopes } from "../require-scopes";
+import { FormRow, FormRows } from "../forms/form-row";
 
 import { useDataset } from "./dataset";
 import { CHART_RESOURCE_CONFIGS, CHART_RESOURCE_MENU_ITEMS } from "./resources";
@@ -160,13 +161,15 @@ export function GraphView() {
 
   return (
     <div>
-      <div className="flex flex-row m-4 items-center gap-x-8">
-        <SeriesSelector />
-        <GraphRangeSelector />
-        <Typography variant="caption">
-          (More date ranges coming soon...)
-        </Typography>
-      </div>
+      <FormRows margin={2}>
+        <FormRow>
+          <SeriesSelector />
+          <GraphRangeSelector />
+          <Typography variant="caption">
+            (More date ranges coming soon...)
+          </Typography>
+        </FormRow>
+      </FormRows>
       <div className="w-full h-[400px]">
         <RequireScopes scopes={requiredScopes}>
           <TimeSeriesChart dataset={dataset} series={series} yAxis={yAxis} />

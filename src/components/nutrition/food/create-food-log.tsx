@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback } from "react";
-import { Button, Divider } from "@mui/material";
+import { Button, Divider, Stack } from "@mui/material";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "mui-sonner";
 import { FormContainer, useForm } from "react-hook-form-mui";
@@ -16,6 +16,7 @@ import { selectedDayForPageAtom } from "@/state";
 import { SearchFoodsElement } from "./food-search";
 import { FoodServingSizeElement, ServingSize } from "./serving-size";
 import { MealTypeElement } from "./meal-type-element";
+import { FormRow, FormRows } from "@/components/forms/form-row";
 
 interface CreateFoodLogFormData {
   daySource: DaySelectorSource;
@@ -77,43 +78,44 @@ export function CreateFoodLogForm() {
       formContext={formContext}
       onSuccess={logFood}
     >
-      <div className="flex flex-col gap-y-8 w-full">
+      <FormRows>
         <SearchFoodsElement name="food" rules={{ required: true }} />
-        <div className="flex flex-row flex-wrap">
-          <div className="flex flex-row flex-1 items-center flex-wrap gap-x-4">
-            <FoodServingSizeElement
-              name="servingSize"
-              foodFieldName="food"
-              rules={{ required: true }}
-            />
-            <MealTypeElement name="mealType" />
-            <LinkedDayElement name="daySource" />
-            <div className="flex-1"></div>
-          </div>
+        <FormRow>
+          <FoodServingSizeElement
+            name="servingSize"
+            foodFieldName="food"
+            rules={{ required: true }}
+          />
+          <MealTypeElement name="mealType" />
+          <LinkedDayElement name="daySource" />
+          <div className="flex-1"></div>
           <Button
             type="submit"
             disabled={!watch("food") || !watch("servingSize")}
           >
             Log food
           </Button>
-        </div>
-      </div>
+        </FormRow>
+      </FormRows>
     </FormContainer>
   );
 }
 
 export default function CreateFoodLog() {
   return (
-    <div className="flex flex-row gap-x-8">
+    <Stack
+      direction="row"
+      spacing={4}
+      divider={<Divider orientation="vertical" flexItem />}
+    >
       <div className="flex-1">
         <CreateFoodLogForm />
       </div>
-      <Divider orientation="vertical" flexItem />
       <div>
         <Button href="/settings/foods" LinkComponent={NextLink}>
           Manage foods
         </Button>
       </div>
-    </div>
+    </Stack>
   );
 }
