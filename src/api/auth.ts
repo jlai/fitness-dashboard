@@ -210,6 +210,11 @@ export function getAccessTokenScopes() {
   return new Set(accessToken?.scopes?.split(" ") ?? []);
 }
 
+export function hasTokenScope(scope: string) {
+  const currentScopes = getAccessTokenScopes();
+  return currentScopes.has(scope) || currentScopes.has(`w${scope}`);
+}
+
 export const rawUserIdAtom = atom((get) => {
   const accessToken = get(fitbitTokenAtom)?.accessToken;
   return accessToken ? jwtDecode(accessToken).sub : undefined;

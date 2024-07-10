@@ -19,15 +19,11 @@ import {
 import { useAtom, useSetAtom } from "jotai";
 import { RESET } from "jotai/utils";
 import { useConfirm } from "material-ui-confirm";
-import {
-  useQuery,
-  useQueryClient,
-  useSuspenseQuery,
-} from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { userTilesAtom } from "@/storage/tiles";
 import {
-  getAccessTokenScopes,
+  hasTokenScope,
   redirectToLogin,
   revokeAuthorization,
   useLoggedIn,
@@ -71,7 +67,7 @@ function SettingsRow({
 function LoginInfo() {
   const { data: userProfile } = useQuery({
     ...buildUserProfileQuery(),
-    enabled: getAccessTokenScopes().has("pro"),
+    enabled: hasTokenScope("pro"),
   });
 
   return (

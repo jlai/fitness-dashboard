@@ -12,7 +12,7 @@ import {
   WaterUnitSystem,
   WeightUnitSystem,
 } from "@/api/user";
-import { getAccessTokenScopes } from "@/api/auth";
+import { hasTokenScope } from "@/api/auth";
 
 const MILES_PER_KM = 0.621371;
 const FEET_PER_METER = 3.28084;
@@ -105,7 +105,7 @@ export function useUnits() {
       let waterUnitSystem = storedWaterUnitSystem;
 
       if (!distanceUnitSystem || !weightUnitSystem || !waterUnitSystem) {
-        if (!getAccessTokenScopes().has("pro")) {
+        if (!hasTokenScope("pro")) {
           return {
             distanceUnitSystem: "METRIC",
             weightUnitSystem: "METRIC",
