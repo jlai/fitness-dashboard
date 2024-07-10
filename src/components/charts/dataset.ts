@@ -17,6 +17,7 @@ import {
   HeartTimeSeriesValue,
   TimeSeriesResource,
 } from "@/api/times-series";
+import { SleepLog } from "@/api/sleep";
 
 /**
  * Transform timeseries entries into parsed values.
@@ -78,6 +79,34 @@ export function useDataset(
         ];
         yAxis = [{ tickMinStep: 1 }];
         break;
+      case "sleep":
+        dataset = (data as unknown as Array<SleepLog>)
+          .map(({ endTime, minutesAsleep }) => ({
+            dateTime: dayjs(endTime).toDate(),
+            value: minutesAsleep,
+          }))
+          .reverse();
+        series = [
+          {
+            type: "bar",
+            label: "Sleep",
+            dataKey: "value",
+            valueFormatter: (value) =>
+              value
+                ? `${dayjs.duration(value, "minutes").format("H[h] mm[m]")}`
+                : "",
+          },
+        ];
+        yAxis = [
+          {
+            min: 0,
+            tickMinStep: 60,
+            tickMaxStep: 240,
+            valueFormatter: (value) =>
+              value ? `${dayjs.duration(value, "minutes").format("H:mm")}` : "",
+          },
+        ];
+        break;
       case "calories-in":
         dataset = getSingleValueDataset(data, (value) => Number(value));
         series = [
@@ -86,7 +115,7 @@ export function useDataset(
             label: "Calories consumed",
             dataKey: "value",
             valueFormatter: (value) =>
-              value ? `${FRACTION_DIGITS_1.format(value)} cal` : "",
+              value ? `${FRACTION_DIGITS_1.format(value)} Cal` : "",
           },
         ];
         yAxis = [

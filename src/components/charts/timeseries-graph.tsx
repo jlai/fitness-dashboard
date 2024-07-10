@@ -50,13 +50,13 @@ type DateRangeType = "last7" | "last30";
 
 const selectedRangeTypeAtom = atom<DateRangeType>("last7");
 
-const startDayAtom = atom(dayjs());
-const endDayAtom = atom((get) => {
+const endDayAtom = atom(dayjs());
+const startDayAtom = atom((get) => {
   switch (get(selectedRangeTypeAtom)) {
     case "last7":
-      return get(startDayAtom).subtract(7, "days");
+      return get(endDayAtom).subtract(7, "days");
     case "last30":
-      return get(startDayAtom).subtract(30, "days");
+      return get(endDayAtom).subtract(30, "days");
   }
 });
 

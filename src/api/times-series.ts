@@ -19,7 +19,8 @@ export type TimeSeriesResource =
   | "fat"
   | "bmi"
   | "water"
-  | "calories-in";
+  | "calories-in"
+  | "sleep";
 
 export interface HeartRateZone {
   caloriesOut: number;
@@ -103,6 +104,11 @@ export const TIME_SERIES_CONFIGS: Record<
     urlPrefix: "/1/user/-/activities/heart/date/",
     responseKey: "activities-heart",
     requiredScopes: ["hr"],
+  },
+  sleep: {
+    urlPrefix: "/1.2/user/-/sleep/date/",
+    responseKey: "sleep",
+    requiredScopes: ["sle"],
   },
 };
 

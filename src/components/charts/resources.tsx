@@ -13,6 +13,7 @@ export const CHART_RESOURCE_MENU_ITEMS: Array<TimeSeriesResource | "-"> = [
   "calories",
   "floors",
   "-",
+  "sleep",
   "resting-heart-rate",
   "heart-rate-zones",
   "-",
@@ -39,6 +40,9 @@ export const CHART_RESOURCE_CONFIGS: Record<
   },
   floors: {
     label: "Floors",
+  },
+  sleep: {
+    label: "Sleep",
   },
   "resting-heart-rate": {
     label: "Resting heart rate",
