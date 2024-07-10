@@ -6,7 +6,7 @@ import { Button } from "@mui/material";
 import RequireLogin from "@/components/require-login";
 import { RequireScopes } from "@/components/require-scopes";
 
-import ManageMeals from "./manage-meals";
+import ManageFoods from "./manage-foods";
 
 export default function MealSettingsPage() {
   const router = useRouter();
@@ -24,7 +24,7 @@ export default function MealSettingsPage() {
           </Button>
         </div>
 
-        <ManageMeals />
+        <ManageFoods />
       </RequireScopes>
     </RequireLogin>
   );

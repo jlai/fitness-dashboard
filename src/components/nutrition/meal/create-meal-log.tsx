@@ -1,10 +1,11 @@
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { Button, Divider, Link } from "@mui/material";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { toast } from "mui-sonner";
 import { FormContainer, useForm } from "react-hook-form-mui";
 import { useAtomValue } from "jotai";
+import NextLink from "next/link";
 
 import {
   CreateFoodLogOptions,
@@ -95,9 +96,9 @@ export default function CreateMealLog() {
         </div>
         <Divider orientation="vertical" flexItem />
         <div>
-          <Link href="/settings/meals" component={Button}>
+          <Button href="/settings/foods" LinkComponent={NextLink}>
             Manage meals
-          </Link>
+          </Button>
         </div>
       </div>
     </FormContainer>

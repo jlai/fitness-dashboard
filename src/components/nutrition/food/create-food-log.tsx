@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useState } from "react";
-import { Button } from "@mui/material";
+import { useCallback } from "react";
+import { Button, Divider } from "@mui/material";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "mui-sonner";
 import { FormContainer, useForm } from "react-hook-form-mui";
 import { useAtomValue } from "jotai";
 import dayjs from "dayjs";
+import NextLink from "next/link";
 
 import { Food, MealType, buildCreateFoodLogMutation } from "@/api/nutrition";
 import LinkedDayElement, { DaySelectorSource } from "@/components/linked-day";
@@ -23,7 +24,7 @@ interface CreateFoodLogFormData {
   servingSize: ServingSize | null;
 }
 
-export default function CreateFoodLog() {
+export function CreateFoodLogForm() {
   const formContext = useForm<CreateFoodLogFormData>({
     defaultValues: {
       daySource: "today",
@@ -98,5 +99,21 @@ export default function CreateFoodLog() {
         </div>
       </div>
     </FormContainer>
+  );
+}
+
+export default function CreateFoodLog() {
+  return (
+    <div className="flex flex-row gap-x-8">
+      <div className="flex-1">
+        <CreateFoodLogForm />
+      </div>
+      <Divider orientation="vertical" flexItem />
+      <div>
+        <Button href="/settings/foods" LinkComponent={NextLink}>
+          Manage foods
+        </Button>
+      </div>
+    </div>
   );
 }
