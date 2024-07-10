@@ -15,6 +15,7 @@ import {
   useState,
 } from "react";
 import {
+  FieldError,
   useController,
   UseControllerProps,
   useFormContext,
@@ -75,10 +76,12 @@ export function FoodServingSizeInput({
   food,
   value,
   onChange,
+  error,
 }: {
   food: Food | null;
   value: ServingSize | null;
   onChange: (servingSize: ServingSize | null) => void;
+  error?: FieldError;
 }) {
   const options = useServingOptions(food);
   const [lastValue, setLastValue] = useState(value);
@@ -143,7 +146,14 @@ export function FoodServingSizeInput({
         sx={{ minWidth: "300px" }}
         options={options ?? []}
         getOptionLabel={(option) => formatServing(option)}
-        renderInput={(props) => <TextField {...props} label="Amount" />}
+        renderInput={(props) => (
+          <TextField
+            {...props}
+            label="Amount"
+            error={!!error}
+            helperText={error?.message ?? ""}
+          />
+        )}
         renderOption={(props, option) => (
           <li {...props} key={`${option.amount} ${option.unit.id}`}>
             {formatServing(option)}
@@ -191,7 +201,7 @@ export function FoodServingSizeElement({
   foodFieldName: string;
 } & UseControllerProps) {
   const { watch } = useFormContext();
-  const { field } = useController({
+  const { field, fieldState } = useController({
     ...controllerProps,
     rules: { validate: validateServingSize, ...controllerProps.rules },
   });
@@ -201,6 +211,7 @@ export function FoodServingSizeElement({
       food={watch(foodFieldName)}
       value={field.value}
       onChange={field.onChange}
+      error={fieldState.error}
     />
   );
 }
