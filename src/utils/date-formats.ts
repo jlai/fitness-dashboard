@@ -40,13 +40,7 @@ const SHORT_DATE_TIME_OTHER_YEAR = new Intl.DateTimeFormat(undefined, {
 });
 
 export function formatShortWeekDay(day: Dayjs) {
-  const today = dayjs();
-
-  if (day.isSame(today, "week")) {
-    return SHORT_WEEKDAY.format(day.toDate());
-  } else {
-    return formatShortDate(day);
-  }
+  return SHORT_WEEKDAY.format(day.toDate());
 }
 
 export function formatShortDate(day: Dayjs) {
