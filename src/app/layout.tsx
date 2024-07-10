@@ -7,6 +7,8 @@ import { AppRouterCacheProvider } from "@mui/material-nextjs/v13-appRouter";
 import { ThemeProvider } from "@mui/material/styles";
 import { Suspense } from "react";
 
+import { CONTENT_SECURITY_POLICY } from "@/config/content-security-policy";
+
 import Header from "./header";
 import { theme } from "./theme";
 
@@ -31,6 +33,10 @@ export default function RootPageLayout({
 }>) {
   return (
     <html lang="en">
+      <meta
+        httpEquiv="Content-Security-Policy"
+        content={CONTENT_SECURITY_POLICY}
+      />
       <body className={`${roboto.className}`}>
         <HydrationProvider>
           <AppRouterCacheProvider options={{ key: "css" }}>
