@@ -8,15 +8,17 @@ import { FormContainer, useForm } from "react-hook-form-mui";
 import { useAtomValue } from "jotai";
 import dayjs from "dayjs";
 import NextLink from "next/link";
+import { DevTool } from "@hookform/devtools";
 
 import { Food, MealType, buildCreateFoodLogMutation } from "@/api/nutrition";
 import LinkedDayElement, { DaySelectorSource } from "@/components/linked-day";
 import { selectedDayForPageAtom } from "@/state";
+import { FormRow, FormRows } from "@/components/forms/form-row";
+import { ServingSize } from "@/utils/food-amounts";
 
 import { SearchFoodsElement } from "./food-search";
-import { FoodServingSizeElement, ServingSize } from "./serving-size";
+import { FoodServingSizeElement } from "./serving-size";
 import { MealTypeElement } from "./meal-type-element";
-import { FormRow, FormRows } from "@/components/forms/form-row";
 
 interface CreateFoodLogFormData {
   daySource: DaySelectorSource;
@@ -78,6 +80,7 @@ export function CreateFoodLogForm() {
       formContext={formContext}
       onSuccess={logFood}
     >
+      <DevTool control={formContext.control} />
       <FormRows>
         <SearchFoodsElement name="food" rules={{ required: true }} />
         <FormRow>

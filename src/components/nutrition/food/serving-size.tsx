@@ -1,8 +1,13 @@
 "use client";
 
-import { Autocomplete, Box, TextField } from "@mui/material";
+import {
+  Autocomplete,
+  AutocompleteChangeReason,
+  Box,
+  TextField,
+} from "@mui/material";
 import { useAtomValue } from "jotai";
-import { SyntheticEvent, useMemo, useState } from "react";
+import { SyntheticEvent, useCallback, useMemo, useState } from "react";
 import {
   useController,
   UseControllerProps,
@@ -10,22 +15,8 @@ import {
 } from "react-hook-form";
 import { loadable } from "jotai/utils";
 
-import { Food, FoodUnit, foodUnitsByIdAtom } from "@/api/nutrition";
-
-export interface ServingSize {
-  amount: number;
-  unit: FoodUnit;
-}
-
-function formatServing(option: ServingSize | string) {
-  if (typeof option === "string") {
-    return option;
-  } else {
-    return `${option.amount} ${
-      option.amount === 1 ? option.unit.name : option.unit.plural
-    }`;
-  }
-}
+import { Food, foodUnitsByIdAtom } from "@/api/nutrition";
+import { formatServing, ServingSize } from "@/utils/food-amounts";
 
 function useServingOptions(food: Food | null) {
   const loadingFoodUnitsById = useAtomValue(loadable(foodUnitsByIdAtom));
@@ -86,29 +77,60 @@ export function FoodServingSizeInput({
   const options = useServingOptions(food);
   const [inputValue, setInputValue] = useState("");
 
-  const updateSelectedQuantity = (
-    event: SyntheticEvent,
-    value: string | ServingSize | null
-  ) => {
-    if (value && typeof value === "object" && "unit" in value) {
-      onChange(value);
+  const updateSelectedQuantity = useCallback(
+    (
+      event: SyntheticEvent,
+      value: string | ServingSize | null,
+      reason: AutocompleteChangeReason
+    ) => {
+      if (value && typeof value === "object" && "unit" in value) {
+        onChange(value);
+        setInputValue(formatServing(value));
+      }
+
+      if (!value) {
+        onChange(null);
+        setInputValue("");
+      }
+    },
+    [setInputValue, onChange]
+  );
+
+  // If the user blurs an incomplete number, use default unit
+  const handleBlur = useCallback(() => {
+    const parsed = extractServingSize(inputValue);
+
+    if (parsed.quantity && !parsed.unitName) {
+      const defaultUnit = food?.defaultUnit ?? options?.[0]?.unit;
+
+      if (defaultUnit) {
+        const autoServing = { amount: parsed.quantity, unit: defaultUnit };
+
+        onChange(autoServing);
+        setInputValue(formatServing(autoServing));
+      }
     }
-  };
+  }, [inputValue, options, food, setInputValue, onChange]);
 
   return (
     <Box>
       <Autocomplete
         freeSolo
         value={value}
-        inputValue={value ? inputValue : ""}
+        inputValue={inputValue}
+        onBlur={handleBlur}
         onChange={updateSelectedQuantity}
-        onInputChange={(event, value) => setInputValue(value)}
+        onInputChange={(event, value, reason) => {
+          if (reason !== "reset") {
+            setInputValue(value);
+          }
+        }}
         loading={options === undefined}
         disabled={options && options.length === 0}
         sx={{ minWidth: "300px" }}
         options={options ?? []}
         getOptionLabel={(option) => formatServing(option)}
-        renderInput={(props) => <TextField {...props} label="Qty" />}
+        renderInput={(props) => <TextField {...props} label="Amount" />}
         renderOption={(props, option) => (
           <li {...props} key={`${option.amount} ${option.unit.id}`}>
             {formatServing(option)}
