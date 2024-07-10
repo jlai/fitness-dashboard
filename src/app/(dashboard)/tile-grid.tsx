@@ -2,7 +2,13 @@
 
 import { useEffect, useCallback, useRef } from "react";
 import { useAtom, useAtomValue } from "jotai";
-import { GridStack, GridStackNode } from "gridstack";
+import {
+  GridStack,
+  GridStackNode,
+  type GridStackNodesHandler,
+} from "gridstack";
+import { Delete as TrashIcon } from "@mui/icons-material";
+import { Typography } from "@mui/material";
 
 import { userTilesAtom } from "@/storage/tiles";
 
@@ -48,7 +54,21 @@ export default function TileGrid() {
     [userTiles, setUserTiles, editingGrid]
   );
 
+  const removeTiles = useCallback(
+    (event, nodes) => {
+      const removedIds = new Set(nodes.map((node) => node.id));
+      const updatedTiles = userTiles.filter((tile) => !removedIds.has(tile.id));
+
+      setUserTiles(updatedTiles);
+
+      console.log("removed", event, nodes);
+    },
+    [userTiles, setUserTiles]
+  ) as GridStackNodesHandler;
+
   useEffect(() => {
+    console.log("change");
+
     const grid = (gridRef.current =
       gridRef.current ||
       GridStack.init(
@@ -62,6 +82,7 @@ export default function TileGrid() {
             columnWidth: 150,
           },
           minRow: 1,
+          removable: "#grid-remove-target",
           disableDrag: true,
           disableResize: true,
         },
@@ -69,7 +90,14 @@ export default function TileGrid() {
       ));
 
     grid.on("change", updateTile);
-  }, [updateTile]);
+
+    grid.on("removed", removeTiles);
+
+    return () => {
+      gridRef.current?.off("change");
+      gridRef.current?.off("removed");
+    };
+  }, [userTiles, updateTile, removeTiles]);
 
   useEffect(() => {
     const grid = gridRef.current;
@@ -79,7 +107,7 @@ export default function TileGrid() {
 
     grid.setAnimation(false);
     grid.batchUpdate();
-    grid.removeAll();
+    grid.removeAll(false, false);
     for (const tile of userTiles) {
       const node = itemRefs.current.get(tile.id);
       if (tile) {
@@ -109,6 +137,18 @@ export default function TileGrid() {
 
   return (
     <div className="h-full w-full">
+      <section
+        className="my-8"
+        style={{ display: editingGrid ? "block" : "none" }}
+      >
+        <div
+          id="grid-remove-target"
+          className="w-full h-20 bg-red-50 border-dashed border-slate-300 border-2 rounded-2xl flex flex-row justify-center items-center gap-x-4"
+        >
+          <TrashIcon className="text-slate-400" />
+          <Typography variant="h5">Drag tiles here to remove</Typography>
+        </div>
+      </section>
       <section id="tile-grid" className="grid-stack w-full">
         {userTiles.map((item) => (
           <div
