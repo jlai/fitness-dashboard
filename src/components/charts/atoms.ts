@@ -42,11 +42,6 @@ export const rangeTypeChangedEffect = atomEffect((get, set) => {
   const rangeType = get(selectedRangeTypeAtom);
   let { startDay, endDay } = get.peek(selectedRangeAtom);
 
-  // If we're going from a large range, e.g. year -> week, reset to current day
-  if (endDay.diff(startDay, "days") > MAX_DAYS_IN_RANGE[rangeType]) {
-    startDay = dayjs();
-  }
-
   startDay = startDay.startOf(rangeType);
   endDay = startDay.endOf(rangeType);
 

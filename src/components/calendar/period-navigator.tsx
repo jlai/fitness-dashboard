@@ -3,7 +3,7 @@ import { IconButton, Popover, Stack, Typography } from "@mui/material";
 import dayjs, { Dayjs } from "dayjs";
 import quarterOfYearPlugin from "dayjs/plugin/quarterOfYear";
 import { bindPopover, usePopupState } from "material-ui-popup-state/hooks";
-import { StaticDatePicker } from "@mui/x-date-pickers";
+import { StaticDatePicker, StaticDatePickerProps } from "@mui/x-date-pickers";
 
 import { formatMonth, formatWeek } from "@/utils/date-formats";
 
@@ -19,13 +19,13 @@ export function PeriodNavigator({
   period,
   value,
   onChange,
-  pickerViews,
+  pickerOptions,
 }: {
   label: string;
   period: "day" | "week" | "month" | "quarter" | "year";
   value: DayjsRange;
   onChange: (updated: DayjsRange) => void;
-  pickerViews?: Array<"day" | "month" | "year">;
+  pickerOptions?: StaticDatePickerProps<Dayjs>;
 }) {
   const popupState = usePopupState({
     variant: "popover",
@@ -77,9 +77,11 @@ export function PeriodNavigator({
       </IconButton>
       <Popover {...bindPopover(popupState)}>
         <StaticDatePicker
+          disableFuture
           defaultValue={value.startDay}
           onAccept={onPickDate}
-          views={pickerViews}
+          onClose={popupState.close}
+          {...pickerOptions}
         />
       </Popover>
       <IconButton aria-label="next" onClick={onNavigateNext}>
@@ -102,7 +104,10 @@ export function MonthNavigator({
       period="month"
       value={value}
       onChange={onChange}
-      pickerViews={["month", "year"]}
+      pickerOptions={{
+        openTo: "month",
+        views: ["year", "month"],
+      }}
     />
   );
 }
@@ -144,7 +149,10 @@ export function QuarterNavigator({
       period="quarter"
       value={value}
       onChange={onChange}
-      pickerViews={["month", "year"]}
+      pickerOptions={{
+        openTo: "month",
+        views: ["year", "month"],
+      }}
     />
   );
 }
