@@ -25,9 +25,9 @@ import {
   FoodLogEntry,
   getDefaultServingSize,
 } from "@/api/nutrition";
+import { ServingSize } from "@/utils/food-amounts";
 
 import { moveDialogOpenAtom, selectedFoodLogsAtom } from "./atoms";
-import { ServingSize } from "@/utils/food-amounts";
 
 interface MoveFoodLogsFormData {
   mealType: MealType;

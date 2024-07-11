@@ -8,9 +8,10 @@ import {
   ScaleName,
 } from "@mui/x-charts";
 import { useEffect, useMemo, useState } from "react";
-import { Button, Typography } from "@mui/material";
+import { Button, Dialog, DialogContent, Typography } from "@mui/material";
 import dynamic from "next/dynamic";
 import { Download } from "@mui/icons-material";
+import { useAtom } from "jotai";
 
 import { buildActivityTcxQuery } from "@/api/activity/activities";
 import { Trackpoint, parseTcx } from "@/api/activity/tcx";
@@ -18,6 +19,9 @@ import { useUnits } from "@/config/units";
 import { FRACTION_DIGITS_0, FRACTION_DIGITS_1 } from "@/utils/number-formats";
 import { ActivityLog } from "@/api/activity";
 import { MAPLIBRE_STYLE_URL } from "@/config";
+import { RequireScopes } from "@/components/require-scopes";
+
+import { showingActivityLogDetailsDialogAtom } from "./atoms";
 
 const LazyActivityMap = dynamic(() => import("@/components/activity-map"));
 
@@ -220,5 +224,28 @@ export function ActivityDetails({ activityLog }: { activityLog: ActivityLog }) {
         </>
       )}
     </div>
+  );
+}
+
+export function ActivityLogDetailsDialog() {
+  const [showingActivityLog, setShowingActivityLog] = useAtom(
+    showingActivityLogDetailsDialogAtom
+  );
+
+  return (
+    <Dialog
+      fullWidth
+      maxWidth="xl"
+      open={!!showingActivityLog}
+      onClose={() => setShowingActivityLog(null)}
+    >
+      <DialogContent>
+        <RequireScopes scopes={["loc"]}>
+          {showingActivityLog && (
+            <ActivityDetails activityLog={showingActivityLog} />
+          )}
+        </RequireScopes>
+      </DialogContent>
+    </Dialog>
   );
 }

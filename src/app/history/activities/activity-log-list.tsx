@@ -8,12 +8,12 @@ import {
   TablePagination,
   TableFooter,
   Skeleton,
-  IconButton,
 } from "@mui/material";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
 import dayjs, { Dayjs } from "dayjs";
 import { Explore as LaunchIcon } from "@mui/icons-material";
+import { useSetAtom } from "jotai";
 
 import { ActivityLog, GetActivityLogListResponse } from "@/api/activity/types";
 import { makeRequest } from "@/api/request";
@@ -23,6 +23,8 @@ import JumpTo from "@/components/jump-to";
 import { formatAsDate } from "@/api/datetime";
 import { isPossiblyTracked } from "@/api/activity/activities";
 
+import { showingActivityLogDetailsDialogAtom } from "./atoms";
+
 const NUMBER_FORMAT = new Intl.NumberFormat(undefined, {
   maximumFractionDigits: 2,
 });
@@ -31,14 +33,47 @@ const DISTANCE_FORMAT = new Intl.NumberFormat(undefined, {
   maximumFractionDigits: 2,
 });
 
-export default function ActivityLogList({
-  onShowActivityLog,
-}: {
-  onShowActivityLog: (activityLog: ActivityLog) => void;
-}) {
+function ActivityLogRow({ activityLog }: { activityLog: ActivityLog }) {
+  const units = useUnits();
+  const showActivityLogDetails = useSetAtom(
+    showingActivityLogDetailsDialogAtom
+  );
+
+  return (
+    <TableRow key={activityLog.logId}>
+      <TableCell>
+        <button onClick={() => showActivityLogDetails(activityLog)}>
+          <div className="flex flex-row items-center gap-x-2">
+            <div>{formatShortDateTime(dayjs(activityLog.startTime))}</div>
+            {isPossiblyTracked(activityLog) && (
+              <LaunchIcon className="text-slate-500" />
+            )}
+          </div>
+        </button>
+      </TableCell>
+      <TableCell>{activityLog.activityName}</TableCell>
+      <TableCell>{NUMBER_FORMAT.format(activityLog.steps)}</TableCell>
+      <TableCell>
+        {activityLog.distance ? (
+          <div>
+            {DISTANCE_FORMAT.format(
+              units.localizedKilometers(activityLog.distance)
+            )}{" "}
+            {units.localizedKilometersName}
+          </div>
+        ) : (
+          "-"
+        )}
+      </TableCell>
+      <TableCell>{formatDuration(activityLog.duration)}</TableCell>
+      <TableCell>{NUMBER_FORMAT.format(activityLog.calories)}</TableCell>
+    </TableRow>
+  );
+}
+
+export default function ActivityLogList() {
   const [pageNumber, setPageNumber] = useState(0);
   const [initialDay, setInitialDay] = useState(dayjs());
-  const units = useUnits();
 
   const { data, hasNextPage, fetchNextPage, isFetching } = useInfiniteQuery({
     queryKey: ["activity-log-list", formatAsDate(initialDay)],
@@ -98,40 +133,13 @@ export default function ActivityLogList({
           </TableRow>
         </TableHead>
         <TableBody>
-          {page?.activities.map((activity) => (
-            <TableRow key={activity.logId}>
-              <TableCell>
-                <button onClick={() => onShowActivityLog(activity)}>
-                  <div className="flex flex-row items-center gap-x-2">
-                    <div>{formatShortDateTime(dayjs(activity.startTime))}</div>
-                    {isPossiblyTracked(activity) && (
-                      <LaunchIcon className="text-slate-500" />
-                    )}
-                  </div>
-                </button>
-              </TableCell>
-              <TableCell>{activity.activityName}</TableCell>
-              <TableCell>{NUMBER_FORMAT.format(activity.steps)}</TableCell>
-              <TableCell>
-                {activity.distance ? (
-                  <div>
-                    {DISTANCE_FORMAT.format(
-                      units.localizedKilometers(activity.distance)
-                    )}{" "}
-                    {units.localizedKilometersName}
-                  </div>
-                ) : (
-                  "-"
-                )}
-              </TableCell>
-              <TableCell>{formatDuration(activity.duration)}</TableCell>
-              <TableCell>{NUMBER_FORMAT.format(activity.calories)}</TableCell>
-            </TableRow>
+          {page?.activities.map((activityLog) => (
+            <ActivityLogRow key={activityLog.logId} activityLog={activityLog} />
           ))}
           {[...Array(10 - (page?.activities.length ?? 0)).fill(0)].map(
             (_, i) => (
               <TableRow key={`filler-${i}`}>
-                <TableCell colSpan={6}>
+                <TableCell colSpan={1000}>
                   {isFetching ? <Skeleton variant="text" /> : " "}
                 </TableCell>
               </TableRow>

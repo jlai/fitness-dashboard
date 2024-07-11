@@ -21,7 +21,6 @@ export default function WaterTileContent() {
   const { localizedWaterVolumeName, localizedWaterVolume } = units;
 
   const waterConsumedMl = foodLog.summary.water;
-  const waterConsumed = localizedWaterVolume(waterConsumedMl);
   const waterRemaining = localizedWaterVolume(waterGoalMl - waterConsumedMl);
 
   const ratio = Math.min(waterConsumedMl / waterGoalMl, 1.0);

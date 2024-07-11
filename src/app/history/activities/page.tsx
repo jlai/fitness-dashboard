@@ -1,35 +1,20 @@
 "use client";
 
-import { Dialog, DialogContent } from "@mui/material";
-import { useState } from "react";
+import { ScopeProvider } from "jotai-scope";
 
-import { ActivityLog } from "@/api/activity";
 import { RequireScopes } from "@/components/require-scopes";
 
-import { ActivityDetails } from "./activity-details";
+import { ActivityLogDetailsDialog } from "./activity-details";
 import ActivityLogList from "./activity-log-list";
+import { showingActivityLogDetailsDialogAtom } from "./atoms";
 
 export default function ActivityHistoryPage() {
-  const [selectedActivityLog, setSelectedActivityLog] =
-    useState<ActivityLog | null>(null);
-
   return (
     <RequireScopes scopes={["act"]}>
-      <ActivityLogList onShowActivityLog={setSelectedActivityLog} />
-      <Dialog
-        fullWidth
-        maxWidth="xl"
-        open={!!selectedActivityLog}
-        onClose={() => setSelectedActivityLog(null)}
-      >
-        <DialogContent>
-          <RequireScopes scopes={["loc"]}>
-            {selectedActivityLog && (
-              <ActivityDetails activityLog={selectedActivityLog} />
-            )}
-          </RequireScopes>
-        </DialogContent>
-      </Dialog>
+      <ScopeProvider atoms={[showingActivityLogDetailsDialogAtom]}>
+        <ActivityLogList />
+        <ActivityLogDetailsDialog />
+      </ScopeProvider>
     </RequireScopes>
   );
 }
