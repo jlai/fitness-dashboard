@@ -6,8 +6,8 @@ import {
   FormControl,
   MenuItem,
   Select,
-  Typography,
   Divider,
+  Box,
 } from "@mui/material";
 import {
   BarPlot,
@@ -42,25 +42,23 @@ import { formatShortDate } from "@/utils/date-formats";
 
 import { RequireScopes } from "../require-scopes";
 import { FormRow, FormRows } from "../forms/form-row";
+import {
+  DayjsRange,
+  MonthNavigator,
+  QuarterNavigator,
+  WeekNavigator,
+  YearNavigator,
+} from "../calendar/period-navigator";
 
 import { useDataset } from "./dataset";
 import { CHART_RESOURCE_CONFIGS, CHART_RESOURCE_MENU_ITEMS } from "./resources";
-
-type DateRangeType = "last7" | "last30";
-
-const selectedRangeTypeAtom = atom<DateRangeType>("last7");
-
-const endDayAtom = atom(dayjs());
-const startDayAtom = atom((get) => {
-  switch (get(selectedRangeTypeAtom)) {
-    case "last7":
-      return get(endDayAtom).subtract(7, "days");
-    case "last30":
-      return get(endDayAtom).subtract(30, "days");
-  }
-});
-
-const selectedResourceAtom = atom<TimeSeriesResource>("steps");
+import {
+  selectedRangeTypeAtom,
+  selectedRangeAtom,
+  selectedResourceAtom,
+  rangeTypeChangedEffect,
+  resourceChangedEffect,
+} from "./atoms";
 
 export function SeriesSelector() {
   const [selectedResource, setselectedResource] = useAtom(selectedResourceAtom);
@@ -89,34 +87,67 @@ export function SeriesSelector() {
 }
 
 function GraphRangeSelector() {
+  const resource = useAtomValue(selectedResourceAtom);
   const [selectedRangeType, setSelectedRangeType] = useAtom(
     selectedRangeTypeAtom
   );
+
+  const maxDays = TIME_SERIES_CONFIGS[resource].maxDays;
 
   return (
     <ToggleButtonGroup
       exclusive
       value={selectedRangeType}
-      onChange={(event, value) => setSelectedRangeType(value)}
+      onChange={(event, value) => value && setSelectedRangeType(value)}
     >
-      <ToggleButton value="last7">7 days</ToggleButton>
-      <ToggleButton value="last30">30 days</ToggleButton>
+      <ToggleButton value="week">Week</ToggleButton>
+      <ToggleButton value="month" disabled={maxDays < 31}>
+        Month
+      </ToggleButton>
+      <ToggleButton value="quarter" disabled={maxDays < 90}>
+        Quarter
+      </ToggleButton>
     </ToggleButtonGroup>
   );
+}
+
+function DateTimeRangeNavigator() {
+  const selectedRangeType = useAtomValue(selectedRangeTypeAtom);
+
+  const [selectedRange, setSelectedRange] = useAtom(selectedRangeAtom);
+
+  switch (selectedRangeType) {
+    case "week":
+      return (
+        <WeekNavigator value={selectedRange} onChange={setSelectedRange} />
+      );
+    case "month":
+      return (
+        <MonthNavigator value={selectedRange} onChange={setSelectedRange} />
+      );
+    case "quarter":
+      return (
+        <QuarterNavigator value={selectedRange} onChange={setSelectedRange} />
+      );
+    case "year":
+      return (
+        <YearNavigator value={selectedRange} onChange={setSelectedRange} />
+      );
+  }
 }
 
 export function TimeSeriesChart({
   dataset,
   series,
   yAxis,
-  formatDate = formatShortDate,
+  formatDate = (date: Date) => formatShortDate(dayjs(date)),
 }: {
   dataset: DatasetType;
   series: Array<BarSeriesType | LineSeriesType>;
   yAxis?: Array<
     MakeOptional<AxisConfig<ScaleName, any, ChartsYAxisProps>, "id">
   >;
-  formatDate?: (day: Dayjs) => string;
+  formatDate?: (date: Date) => string;
 }) {
   return (
     <ResponsiveChartContainer
@@ -126,7 +157,7 @@ export function TimeSeriesChart({
         {
           scaleType: "band",
           dataKey: "dateTime",
-          valueFormatter: (value) => formatDate(dayjs(value)),
+          valueFormatter: (value) => formatDate(value),
         },
       ]}
       yAxis={yAxis}
@@ -136,7 +167,7 @@ export function TimeSeriesChart({
 
       <ChartsXAxis />
       <ChartsYAxis />
-      <ChartsAxisHighlight />
+      <ChartsAxisHighlight y="band" />
       <ChartsTooltip />
       <MarkPlot />
       <ChartsGrid horizontal />
@@ -144,14 +175,38 @@ export function TimeSeriesChart({
   );
 }
 
-export function GraphView() {
-  const startDay = useAtomValue(startDayAtom);
-  const endDay = useAtomValue(endDayAtom);
+export function getFormatterForDayRange({ startDay, endDay }: DayjsRange) {
+  const options: Intl.DateTimeFormatOptions = {
+    day: "numeric",
+  };
 
+  if (startDay.isSame(endDay, "week")) {
+    options.weekday = "short";
+    options.month = "short";
+  } else if (startDay.isSame(endDay, "month")) {
+    // just the day
+  } else if (startDay.isSame(endDay, "year")) {
+    options.month = "numeric";
+  } else {
+    options.year = "numeric";
+  }
+
+  return new Intl.DateTimeFormat(undefined, options).format;
+}
+
+export function GraphView() {
+  useAtomValue(resourceChangedEffect);
+  useAtomValue(rangeTypeChangedEffect);
+
+  const dateTimeRange = useAtomValue(selectedRangeAtom);
   const selectedResource = useAtomValue(selectedResourceAtom);
 
   const { data } = useQuery(
-    buildTimeSeriesQuery(selectedResource, startDay, endDay)
+    buildTimeSeriesQuery(
+      selectedResource,
+      dateTimeRange.startDay,
+      dateTimeRange.endDay
+    )
   );
 
   const { dataset, series, yAxis } = useDataset(selectedResource, data);
@@ -165,14 +220,18 @@ export function GraphView() {
         <FormRow>
           <SeriesSelector />
           <GraphRangeSelector />
-          <Typography variant="caption">
-            (More date ranges coming soon...)
-          </Typography>
+          <Box flex={1} />
+          <DateTimeRangeNavigator />
         </FormRow>
       </FormRows>
       <div className="w-full h-[400px]">
         <RequireScopes scopes={requiredScopes}>
-          <TimeSeriesChart dataset={dataset} series={series} yAxis={yAxis} />
+          <TimeSeriesChart
+            dataset={dataset}
+            series={series}
+            yAxis={yAxis}
+            formatDate={getFormatterForDayRange(dateTimeRange)}
+          />
         </RequireScopes>
       </div>
     </div>

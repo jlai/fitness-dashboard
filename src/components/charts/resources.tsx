@@ -1,6 +1,3 @@
-import { Divider, MenuItem } from "@mui/material";
-import React, { type MouseEventHandler } from "react";
-
 import { TimeSeriesResource } from "@/api/times-series";
 
 export interface ChartResourceConfig {

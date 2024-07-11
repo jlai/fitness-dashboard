@@ -39,6 +39,7 @@ interface TimeSeriesResourceConfig {
   urlPrefix: string;
   responseKey: string;
   requiredScopes: Array<string>;
+  maxDays: number;
 }
 
 export const TIME_SERIES_CONFIGS: Record<
@@ -50,65 +51,76 @@ export const TIME_SERIES_CONFIGS: Record<
     urlPrefix: "/1/user/-/activities/calories/date/",
     responseKey: "activities-calories",
     requiredScopes: ["act"],
+    maxDays: 1095,
   },
   distance: {
     urlPrefix: "/1/user/-/activities/distance/date/",
     responseKey: "activities-distance",
     requiredScopes: ["act"],
+    maxDays: 1095,
   },
   steps: {
     urlPrefix: "/1/user/-/activities/steps/date/",
     responseKey: "activities-steps",
     requiredScopes: ["act"],
+    maxDays: 1095,
   },
   floors: {
     urlPrefix: "/1/user/-/activities/floors/date/",
     responseKey: "activities-floors",
     requiredScopes: ["act"],
+    maxDays: 1095,
   },
-
   // body
   weight: {
     urlPrefix: "/1/user/-/body/weight/date/",
     responseKey: "body-weight",
     requiredScopes: ["wei"],
+    maxDays: 1095,
   },
   fat: {
     urlPrefix: "/1/user/-/body/fat/date/",
     responseKey: "body-fat",
     requiredScopes: ["wei"],
+    maxDays: 1095,
   },
   bmi: {
     urlPrefix: "/1/user/-/body/bmi/date/",
     responseKey: "body-bmi",
     requiredScopes: ["wei"],
+    maxDays: 1095,
   },
   // nutrition
   ["calories-in"]: {
     urlPrefix: "/1/user/-/foods/log/caloriesIn/date/",
     responseKey: "foods-log-caloriesIn",
     requiredScopes: ["nut"],
+    maxDays: 1095,
   },
   ["water"]: {
     urlPrefix: "/1/user/-/foods/log/water/date/",
     responseKey: "foods-log-water",
     requiredScopes: ["nut"],
+    maxDays: 1095,
   },
   // other
   ["resting-heart-rate"]: {
     urlPrefix: "/1/user/-/activities/heart/date/",
     responseKey: "activities-heart",
     requiredScopes: ["hr"],
+    maxDays: 366,
   },
   ["heart-rate-zones"]: {
     urlPrefix: "/1/user/-/activities/heart/date/",
     responseKey: "activities-heart",
     requiredScopes: ["hr"],
+    maxDays: 366,
   },
   sleep: {
     urlPrefix: "/1.2/user/-/sleep/date/",
     responseKey: "sleep",
     requiredScopes: ["sle"],
+    maxDays: 100,
   },
 };
 

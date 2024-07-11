@@ -17,7 +17,7 @@ import {
 } from "@/api/activity";
 import { useDataset } from "@/components/charts/dataset";
 import { TimeSeriesChart } from "@/components/charts/timeseries-graph";
-import { formatShortWeekDay } from "@/utils/date-formats";
+import { SHORT_WEEKDAY } from "@/utils/date-formats";
 import {
   CHART_RESOURCE_CONFIGS,
   CHART_RESOURCE_MENU_ITEMS,
@@ -83,7 +83,7 @@ export default function GraphTileContent() {
             dataset={dataset}
             series={series}
             yAxis={yAxis}
-            formatDate={formatShortWeekDay}
+            formatDate={SHORT_WEEKDAY.format}
           />
         </RequireScopes>
       </div>
