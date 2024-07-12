@@ -8,7 +8,7 @@ import {
   Typography,
 } from "@mui/material";
 
-import { PRIVACY_POLICY_LINK, TOS_LINK } from "@/config";
+import { CONTACT_INFO_LINK, PRIVACY_POLICY_LINK, TOS_LINK } from "@/config";
 
 export default function AboutPage() {
   return (
@@ -119,6 +119,11 @@ export default function AboutPage() {
             >
               Bug reports
             </Button>
+            {CONTACT_INFO_LINK && (
+              <Button variant="text" href={CONTACT_INFO_LINK} target="_blank">
+                Contact
+              </Button>
+            )}
           </AccordionDetails>
         </Accordion>
       </section>

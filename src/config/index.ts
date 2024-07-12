@@ -39,6 +39,10 @@ export const HOST_WEBSITE_NAME = process.env.NEXT_PUBLIC_HOST_WEBSITE_NAME;
 export const HOST_WEBSITE_LINK =
   process.env.NEXT_PUBLIC_HOST_WEBSITE_LINK ?? "";
 
+/** Link to contact info page */
+export const CONTACT_INFO_LINK =
+  process.env.NEXT_PUBLIC_CONTACT_INFO_LINK ?? HOST_WEBSITE_LINK ?? "";
+
 /** Link to privacy policy */
 export const PRIVACY_POLICY_LINK = process.env.NEXT_PUBLIC_PRIVACY_POLICY_LINK;
 
