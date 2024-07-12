@@ -33,8 +33,8 @@ import {
 import { formatShortDate } from "@/utils/date-formats";
 
 import { RequireScopes } from "../require-scopes";
-import { FormRow, FormRows } from "../forms/form-row";
 import { DayjsRange } from "../calendar/period-navigator";
+import { HeaderBar } from "../layout/rows";
 
 import { useDataset } from "./dataset";
 import { CHART_RESOURCE_CONFIGS, CHART_RESOURCE_MENU_ITEMS } from "./resources";
@@ -164,14 +164,12 @@ export function GraphView() {
 
   return (
     <div>
-      <FormRows margin={2}>
-        <FormRow>
-          <SeriesSelector />
-          <GraphRangeSelector resource={selectedResource} />
-          <Box flex={1} />
-          <DateTimeRangeNavigator />
-        </FormRow>
-      </FormRows>
+      <HeaderBar>
+        <SeriesSelector />
+        <GraphRangeSelector resource={selectedResource} />
+        <Box flex={1} />
+        <DateTimeRangeNavigator />
+      </HeaderBar>
       <div className="w-full h-[400px]">
         <RequireScopes scopes={requiredScopes}>
           <TimeSeriesChart

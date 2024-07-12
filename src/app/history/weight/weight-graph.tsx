@@ -1,8 +1,7 @@
-import { Stack } from "@mui/material";
+"use client";
+
 import {
   AreaPlot,
-  BarPlot,
-  ChartsAxisHighlight,
   ChartsClipPath,
   ChartsGrid,
   ChartsReferenceLine,
@@ -16,7 +15,7 @@ import {
 } from "@mui/x-charts";
 import { useQueries } from "@tanstack/react-query";
 import dayjs from "dayjs";
-import { useAtom, useAtomValue } from "jotai";
+import { useAtomValue } from "jotai";
 import { ScopeProvider } from "jotai-scope";
 import { useId, useMemo } from "react";
 import { ChartsOverlay } from "@mui/x-charts/ChartsOverlay";
@@ -36,6 +35,7 @@ import { useUnits } from "@/config/units";
 import { FRACTION_DIGITS_1 } from "@/utils/number-formats";
 import { getFormatterForDayRange } from "@/components/charts/timeseries-graph";
 import { buildGetBodyWeightGoalQuery } from "@/api/body";
+import { HeaderBar } from "@/components/layout/rows";
 
 export default function ScopedAtomWeightGraph() {
   return (
@@ -138,11 +138,11 @@ export function LeanFatMassGraph() {
 
   return (
     <div>
-      <Stack direction="row" margin={2}>
+      <HeaderBar>
         <GraphRangeSelector resource="weight" />
         <div className="flex-1"></div>
         <DateTimeRangeNavigator />
-      </Stack>
+      </HeaderBar>
       <div className="w-full h-[400px]">
         <ResponsiveChartContainer
           series={series}

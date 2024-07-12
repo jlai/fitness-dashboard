@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  Box,
   Table,
   TableBody,
   TableCell,
@@ -26,7 +25,7 @@ import {
   FRACTION_DIGITS_1,
   PERCENT_FRACTION_DIGITS_1,
 } from "@/utils/number-formats";
-import { FormRow } from "@/components/forms/form-row";
+import { HeaderBar } from "@/components/layout/rows";
 
 function WeightLogRow({ logEntry: log }: { logEntry: WeightLog }) {
   const units = useUnits();
@@ -64,13 +63,11 @@ export default function WeightLogList() {
 
   return (
     <div>
-      <Box marginBlock={2}>
-        <FormRow>
-          <Typography variant="h4">Weight Logs</Typography>
-          <div className="flex-1"></div>
-          <MonthNavigator value={range} onChange={setRange} />
-        </FormRow>
-      </Box>
+      <HeaderBar>
+        <Typography variant="h4">Weight Logs</Typography>
+        <div className="flex-1"></div>
+        <MonthNavigator value={range} onChange={setRange} />
+      </HeaderBar>
       <TableContainer>
         <Table>
           <TableHead>

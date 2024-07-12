@@ -11,7 +11,7 @@ export default function WeightHistoryPage() {
       <section>
         <WeightGraph />
       </section>
-      <section className="p-4">
+      <section>
         <WeightLogList />
       </section>
     </RequireScopes>
