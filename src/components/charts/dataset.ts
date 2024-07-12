@@ -80,12 +80,7 @@ export function useDataset(
         yAxis = [{ tickMinStep: 1 }];
         break;
       case "sleep":
-        dataset = (data as unknown as Array<SleepLog>)
-          .map(({ endTime, minutesAsleep }) => ({
-            dateTime: dayjs(endTime).toDate(),
-            value: minutesAsleep,
-          }))
-          .reverse();
+        dataset = getSingleValueDataset(data, Number);
         series = [
           {
             type: "bar",

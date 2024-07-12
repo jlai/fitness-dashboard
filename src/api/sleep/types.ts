@@ -10,6 +10,10 @@ export interface GetSleepLogListResponse {
   };
 }
 
+export interface GetSleepLogTimeSeriesResponse {
+  sleep: Array<SleepLog>;
+}
+
 export interface SleepLogLevelData {
   dateTime: string;
   level: string;

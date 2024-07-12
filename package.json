@@ -38,6 +38,7 @@
     "jotai-scope": "^0.6.0",
     "jotai-tanstack-query": "^0.8.5",
     "jwt-decode": "^4.0.0",
+    "lodash": "^4.17.21",
     "maplibre-gl": "^4.5.0",
     "material-ui-confirm": "^3.0.16",
     "material-ui-popup-state": "^5.1.2",

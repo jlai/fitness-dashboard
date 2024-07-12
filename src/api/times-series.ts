@@ -6,6 +6,8 @@ import { FRACTION_DIGITS_0, FRACTION_DIGITS_1 } from "@/utils/number-formats";
 import { formatAsDate } from "./datetime";
 import { makeRequest } from "./request";
 import { ONE_MINUTE_IN_MILLIS } from "./cache-settings";
+import { GetSleepLogTimeSeriesResponse, SleepLog } from "./sleep";
+import { groupBy, sum, sumBy } from "lodash";
 
 // https://dev.fitbit.com/build/reference/web-api/activity-timeseries/get-activity-timeseries-by-date-range/#Resource-Options
 export type TimeSeriesResource =
@@ -40,6 +42,7 @@ interface TimeSeriesResourceConfig {
   responseKey: string;
   requiredScopes: Array<string>;
   maxDays: number;
+  extractData?: (responseBody: any) => Array<TimeSeriesEntry<any>>;
 }
 
 export const TIME_SERIES_CONFIGS: Record<
@@ -121,6 +124,18 @@ export const TIME_SERIES_CONFIGS: Record<
     responseKey: "sleep",
     requiredScopes: ["sle"],
     maxDays: 100,
+    extractData: (data: GetSleepLogTimeSeriesResponse) => {
+      const sleepsByDate = groupBy(data.sleep, (sleepLog) =>
+        formatAsDate(dayjs(sleepLog.endTime))
+      );
+
+      return Object.entries(sleepsByDate)
+        .map(([dateString, sleepLogs]) => ({
+          dateTime: dateString,
+          value: sumBy(sleepLogs, "minutesAsleep"),
+        }))
+        .toReversed();
+    },
   },
 };
 
@@ -156,20 +171,22 @@ export function buildTimeSeriesQuery<ValueType = unknown>(
         }
       );
 
-      const responseBody = (await response.json()) as TimeSeriesResponse<
-        string,
-        ValueType
-      >;
+      const defaultExtractData = (responseBody: any) => {
+        const data = (responseBody as TimeSeriesResponse<string, ValueType>)[
+          config.responseKey
+        ];
 
-      const data = responseBody[config.responseKey];
+        if (!data) {
+          throw new Error(
+            "key missing from response: ${config.responseKey}; keys: ${Object.keys(data)}"
+          );
+        }
 
-      if (!data) {
-        throw new Error(
-          "key missing from response: ${config.responseKey}; keys: ${Object.keys(data)}"
-        );
-      }
+        return data;
+      };
 
-      return data;
+      const extractData = config.extractData ?? defaultExtractData;
+      return extractData(await response.json());
     },
     staleTime: ONE_MINUTE_IN_MILLIS,
   });
