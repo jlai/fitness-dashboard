@@ -28,7 +28,7 @@ export function buildActivityQuery(id: string) {
   });
 }
 
-export function buildActivityTcxQuery(id: string) {
+export function buildActivityTcxQuery(id: number) {
   return queryOptions({
     queryKey: ["activity-tcx", id],
     queryFn: async () => {

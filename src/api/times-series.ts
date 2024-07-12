@@ -1,13 +1,11 @@
 import dayjs, { Dayjs } from "dayjs";
 import { queryOptions } from "@tanstack/react-query";
-
-import { FRACTION_DIGITS_0, FRACTION_DIGITS_1 } from "@/utils/number-formats";
+import { groupBy, sumBy } from "lodash";
 
 import { formatAsDate } from "./datetime";
 import { makeRequest } from "./request";
 import { ONE_MINUTE_IN_MILLIS } from "./cache-settings";
-import { GetSleepLogTimeSeriesResponse, SleepLog } from "./sleep";
-import { groupBy, sum, sumBy } from "lodash";
+import { GetSleepLogTimeSeriesResponse } from "./sleep";
 
 // https://dev.fitbit.com/build/reference/web-api/activity-timeseries/get-activity-timeseries-by-date-range/#Resource-Options
 export type TimeSeriesResource =
