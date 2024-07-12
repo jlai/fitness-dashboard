@@ -1,4 +1,8 @@
-import { QueryClient, queryOptions } from "@tanstack/react-query";
+import {
+  infiniteQueryOptions,
+  QueryClient,
+  queryOptions,
+} from "@tanstack/react-query";
 import { Dayjs } from "dayjs";
 
 import { makeRequest } from "../request";
@@ -6,7 +10,11 @@ import { ONE_DAY_IN_MILLIS } from "../cache-settings";
 import mutationOptions from "../mutation-options";
 import { formatAsDate } from "../datetime";
 
-import { ActivityLog, GetActivityLogResponse } from "./types";
+import {
+  ActivityLog,
+  GetActivityLogListResponse,
+  GetActivityLogResponse,
+} from "./types";
 
 export function buildActivityQuery(id: string) {
   return queryOptions({
@@ -96,4 +104,27 @@ export function isPossiblyTracked(activity: ActivityLog) {
     (activity.logType === "mobile_run" || activity.logType === "tracker") &&
     activity.distance
   );
+}
+
+export function buildGetActivityListInfiniteQuery(initialDay: Dayjs) {
+  return infiniteQueryOptions({
+    queryKey: ["activity-log-list", formatAsDate(initialDay)],
+    queryFn: async ({ pageParam }) => {
+      const queryString =
+        pageParam ||
+        `limit=10&offset=0&sort=desc&beforeDate=${encodeURIComponent(
+          initialDay.toISOString().replace("Z", "")
+        )}`;
+
+      const response = await makeRequest(
+        `/1/user/-/activities/list.json?${queryString}`
+      );
+      return (await response.json()) as GetActivityLogListResponse;
+    },
+    getNextPageParam: (lastPage) =>
+      lastPage.pagination.next
+        ? new URL(lastPage.pagination.next).search.replace(/^\?/, "")
+        : null,
+    initialPageParam: "",
+  });
 }

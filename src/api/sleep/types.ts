@@ -37,7 +37,7 @@ export interface SleepLog {
       wake?: SleepLogLevelSummary;
     };
   };
-  logId: string;
+  logId: number;
   logType: "auto_detected" | "manual";
   minutesAfterWakeup: number;
   minutesAsleep: number;

@@ -43,7 +43,7 @@ export interface ActivityLog {
   duration: number;
   elevationGain: number;
   lastModified: string;
-  logId: string;
+  logId: number;
   logType: "auto_detected" | "manual" | "mobile_run" | "tracker";
   originalDuration: number;
   originalStartTime: string;
