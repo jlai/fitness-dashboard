@@ -51,3 +51,11 @@ export interface SleepLog {
   timeInBed: number;
   type: "stages" | "classic";
 }
+
+// https://dev.fitbit.com/build/reference/web-api/sleep/get-sleep-goals/
+export interface GetSleepGoalResponse {
+  goal: {
+    minDuration: number;
+    updatedOn: string;
+  };
+}

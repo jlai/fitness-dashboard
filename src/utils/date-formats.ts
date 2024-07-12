@@ -15,6 +15,8 @@ const TIME_FORMAT_OPTIONS: Intl.DateTimeFormatOptions = {
   minute: "2-digit",
 };
 
+export const TIME = new Intl.DateTimeFormat(undefined, TIME_FORMAT_OPTIONS);
+
 export const SHORT_WEEKDAY = new Intl.DateTimeFormat(undefined, {
   weekday: "short",
 });

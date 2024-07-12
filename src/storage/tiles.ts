@@ -22,6 +22,14 @@ const defaultTiles: Array<UserTile> = [
   { id: "default-water", type: "water", w: 2, h: 2, x: 2, y: 2 },
   { id: "default-calorieGoal", type: "calorieGoal", w: 2, h: 2, x: 4, y: 2 },
   { id: "default-plant", type: "plant", w: 2, h: 2, x: 6, y: 0 },
+  { id: "default-sleep", type: "sleep", w: 2, h: 2, x: 6, y: 2 },
 ];
 
-export const userTilesAtom = atomWithStorage("dashboard-tiles", defaultTiles);
+export const userTilesAtom = atomWithStorage(
+  "dashboard-tiles",
+  defaultTiles,
+  undefined,
+  {
+    getOnInit: true,
+  }
+);

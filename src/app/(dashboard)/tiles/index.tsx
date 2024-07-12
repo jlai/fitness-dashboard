@@ -11,6 +11,7 @@ import {
 import { CalorieGoalTileContent } from "./calorie-goal";
 import Tile from "./tile";
 import GraphTileContent from "./graph";
+import { SleepTileContent } from "./sleep";
 
 interface TileDefinition {
   component: React.ComponentType;
@@ -65,6 +66,11 @@ export const TILE_TYPES: Record<string, TileDefinition> = {
     w: 1,
     h: 3,
   },
+  sleep: {
+    component: SleepTileContent,
+    w: 2,
+    h: 2,
+  },
 };
 
 export function LazyTile({ type }: { type: string }) {
@@ -74,7 +80,7 @@ export function LazyTile({ type }: { type: string }) {
   if (tileDef) {
     content = createElement(tileDef.component);
   } else {
-    content = <div>Error</div>;
+    content = <div>Unknown tile</div>;
   }
 
   return <Tile>{content}</Tile>;

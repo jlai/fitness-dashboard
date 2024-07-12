@@ -4,7 +4,7 @@ export default function NumericStat({
   value,
   unit,
   maximumFractionDigits = 0,
-  className = undefined,
+  className = "",
 }: {
   value: number;
   unit: string;

@@ -3,6 +3,7 @@ import { queryOptions } from "@tanstack/react-query";
 
 import { formatAsDate } from "../datetime";
 import { makeRequest } from "../request";
+import { ONE_DAY_IN_MILLIS } from "../cache-settings";
 
 import {
   GetBodyWeightGoalResponse,
@@ -17,6 +18,7 @@ export function buildGetBodyWeightGoalQuery() {
 
       return ((await response.json()) as GetBodyWeightGoalResponse).goal;
     },
+    staleTime: ONE_DAY_IN_MILLIS,
   });
 }
 

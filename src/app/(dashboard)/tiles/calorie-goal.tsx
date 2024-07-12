@@ -3,7 +3,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { Typography } from "@mui/material";
 
 import { buildFoodLogQuery } from "@/api/nutrition";
-import NumericSTat from "@/components/numeric-stat";
+import NumericStat from "@/components/numeric-stat";
 
 import { useSelectedDay } from "../state";
 
@@ -20,13 +20,13 @@ export function CalorieGoalTileContent() {
   const isPastGoal = caloriesRemaining < 0;
 
   return (
-    <div className="size-full max-h-full p-2">
+    <div className="size-full max-h-full p-4">
       <div className="size-full flex flex-col justify-center">
         <div className="flex flex-col flex-1 min-h-0 min-w-0 place-content-center items-center">
           <Image src={foodIcon} alt="" className="size-1/2" />
         </div>
         <div className="flex flex-col items-center">
-          <NumericSTat
+          <NumericStat
             value={Math.abs(caloriesRemaining)}
             unit="calories"
             maximumFractionDigits={0}

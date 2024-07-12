@@ -1,10 +1,11 @@
 import { QueryClient } from "@tanstack/query-core";
 import { Dayjs } from "dayjs";
-import { infiniteQueryOptions } from "@tanstack/react-query";
+import { infiniteQueryOptions, queryOptions } from "@tanstack/react-query";
 
 import { formatAsDate } from "../datetime";
 import mutationOptions from "../mutation-options";
 import { makeRequest } from "../request";
+import { graduallyStale } from "../cache-settings";
 
 import { GetSleepLogListResponse } from "./types";
 
@@ -37,6 +38,20 @@ export function buildCreateSleepLogMutation(queryClient: QueryClient) {
         queryKey: ["sleep-log-list"],
       });
     },
+  });
+}
+
+export function buildGetSleepLogByDateQuery(day: Dayjs) {
+  const date = formatAsDate(day);
+
+  return queryOptions({
+    queryKey: ["sleep-log", date],
+    queryFn: async () => {
+      const response = await makeRequest(`/1.2/user/-/sleep/date/${date}.json`);
+
+      return ((await response.json()) as GetSleepLogListResponse).sleep;
+    },
+    staleTime: graduallyStale(day),
   });
 }
 
