@@ -1,0 +1,183 @@
+import { Stack } from "@mui/material";
+import {
+  AreaPlot,
+  BarPlot,
+  ChartsAxisHighlight,
+  ChartsClipPath,
+  ChartsGrid,
+  ChartsReferenceLine,
+  ChartsTooltip,
+  ChartsXAxis,
+  ChartsYAxis,
+  LinePlot,
+  LineSeriesType,
+  MarkPlot,
+  ResponsiveChartContainer,
+} from "@mui/x-charts";
+import { useQueries } from "@tanstack/react-query";
+import dayjs from "dayjs";
+import { useAtom, useAtomValue } from "jotai";
+import { ScopeProvider } from "jotai-scope";
+import { useId, useMemo } from "react";
+import { ChartsOverlay } from "@mui/x-charts/ChartsOverlay";
+import { min } from "lodash";
+
+import { buildTimeSeriesQuery } from "@/api/times-series";
+import {
+  rangeTypeChangedEffect,
+  selectedRangeAtom,
+  selectedRangeTypeAtom,
+} from "@/components/charts/atoms";
+import {
+  DateTimeRangeNavigator,
+  GraphRangeSelector,
+} from "@/components/charts/navigators";
+import { useUnits } from "@/config/units";
+import { FRACTION_DIGITS_1 } from "@/utils/number-formats";
+import { getFormatterForDayRange } from "@/components/charts/timeseries-graph";
+import { buildGetBodyWeightGoalQuery } from "@/api/body";
+
+export default function ScopedAtomWeightGraph() {
+  return (
+    <ScopeProvider atoms={[selectedRangeAtom, selectedRangeTypeAtom]}>
+      <LeanFatMassGraph />
+    </ScopeProvider>
+  );
+}
+
+export function roundDownMinWeight(weight: number) {
+  return Math.floor(weight / 10) * 10;
+}
+
+export function LeanFatMassGraph() {
+  const { localizedKilograms, localizedKilogramsName } = useUnits();
+
+  useAtomValue(rangeTypeChangedEffect);
+
+  const range = useAtomValue(selectedRangeAtom);
+
+  const [{ data: weightData }, { data: fatData }, { data: goal }] = useQueries({
+    queries: [
+      buildTimeSeriesQuery("weight", range.startDay, range.endDay),
+      buildTimeSeriesQuery("fat", range.startDay, range.endDay),
+      buildGetBodyWeightGoalQuery(),
+    ],
+  });
+
+  const clipPathId = useId();
+
+  const { series, dates, minWeight } = useMemo(() => {
+    const valueFormatter = (value: number | null) =>
+      value
+        ? `${FRACTION_DIGITS_1.format(value)} ${localizedKilogramsName}`
+        : "";
+
+    const dates: Array<Date> = [];
+    const totalSeriesData: Array<number> = [];
+    const fatSeriesData: Array<number> = [];
+    const leanSeriesData: Array<number> = [];
+
+    if (weightData && fatData) {
+      if (weightData.length !== fatData.length) {
+        throw new Error("weight and fat data unequal length");
+      }
+
+      for (let i = 0; i < weightData?.length; i++) {
+        const weightKg = Number(weightData[i].value);
+        const percentFat = Number(fatData[i].value);
+        const leanKg = weightKg * (1.0 - percentFat / 100);
+        const fatKg = weightKg * (percentFat / 100);
+
+        dates.push(dayjs(weightData[i].dateTime).toDate());
+        totalSeriesData.push(localizedKilograms(weightKg));
+        leanSeriesData.push(localizedKilograms(leanKg));
+        fatSeriesData.push(localizedKilograms(fatKg));
+      }
+    }
+
+    const minWeight = roundDownMinWeight(min(leanSeriesData) ?? 0);
+
+    const series: Array<LineSeriesType> = [
+      {
+        type: "line",
+        label: "Total",
+        data: totalSeriesData,
+        valueFormatter,
+        showMark: false,
+        connectNulls: true,
+        color: "rgb(0, 0, 0)",
+      },
+      {
+        type: "line",
+        label: "Lean",
+        data: leanSeriesData,
+        stack: "mass",
+        valueFormatter,
+        showMark: false,
+        area: false,
+        connectNulls: true,
+        color: "rgb(149, 114, 204)",
+      },
+      {
+        type: "line",
+        label: "Fat",
+        data: fatSeriesData,
+        stack: "mass",
+        valueFormatter,
+        showMark: false,
+        area: true,
+        connectNulls: true,
+        color: "rgb(137, 205, 224)",
+      },
+    ];
+
+    return { series, dates, minWeight };
+  }, [fatData, localizedKilograms, localizedKilogramsName, weightData]);
+
+  const dateFormatter = getFormatterForDayRange(range);
+
+  return (
+    <div>
+      <Stack direction="row" margin={2}>
+        <GraphRangeSelector resource="weight" />
+        <div className="flex-1"></div>
+        <DateTimeRangeNavigator />
+      </Stack>
+      <div className="w-full h-[400px]">
+        <ResponsiveChartContainer
+          series={series}
+          xAxis={[
+            {
+              scaleType: "band",
+              data: dates,
+              valueFormatter: dateFormatter,
+            },
+          ]}
+          yAxis={[{ label: localizedKilogramsName, min: minWeight }]}
+        >
+          <g clipPath={`url(#${clipPathId})`}>
+            <AreaPlot />
+            <LinePlot />
+          </g>
+
+          {goal?.weight && (
+            <ChartsReferenceLine
+              y={localizedKilograms(goal.weight)}
+              lineStyle={{ strokeOpacity: 0.5, strokeDasharray: "5 5" }}
+              label="Goal"
+              labelAlign="end"
+            />
+          )}
+
+          <ChartsXAxis />
+          <ChartsYAxis />
+          <ChartsTooltip />
+          <ChartsClipPath id={clipPathId} />
+          <MarkPlot />
+          <ChartsGrid horizontal />
+          <ChartsOverlay loading={!weightData || !fatData} />
+        </ResponsiveChartContainer>
+      </div>
+    </div>
+  );
+}

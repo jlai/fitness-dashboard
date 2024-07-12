@@ -6,6 +6,7 @@ import {
   DirectionsRun as ActivitesIcon,
   SingleBed as SleepIcon,
   BarChart as GraphsIcon,
+  MonitorWeightOutlined as WeightIcon,
 } from "@mui/icons-material";
 import { usePathname } from "next/navigation";
 
@@ -45,6 +46,14 @@ export default function HistoryLayout({
               value="sleep"
               label="Sleep"
               icon={<SleepIcon />}
+              iconPosition="start"
+            />
+            <Tab
+              component={Link}
+              href="/history/weight"
+              value="weight"
+              label="Weight"
+              icon={<WeightIcon />}
               iconPosition="start"
             />
           </Tabs>

@@ -1,14 +1,6 @@
 "use client";
 
-import {
-  ToggleButtonGroup,
-  ToggleButton,
-  FormControl,
-  MenuItem,
-  Select,
-  Divider,
-  Box,
-} from "@mui/material";
+import { FormControl, MenuItem, Select, Divider, Box } from "@mui/material";
 import {
   BarPlot,
   BarSeriesType,
@@ -23,8 +15,8 @@ import {
   ResponsiveChartContainer,
 } from "@mui/x-charts";
 import { useQuery } from "@tanstack/react-query";
-import { atom, useAtom, useAtomValue } from "jotai";
-import dayjs, { Dayjs } from "dayjs";
+import { useAtom, useAtomValue } from "jotai";
+import dayjs from "dayjs";
 import {
   AxisConfig,
   ChartsYAxisProps,
@@ -42,23 +34,17 @@ import { formatShortDate } from "@/utils/date-formats";
 
 import { RequireScopes } from "../require-scopes";
 import { FormRow, FormRows } from "../forms/form-row";
-import {
-  DayjsRange,
-  MonthNavigator,
-  QuarterNavigator,
-  WeekNavigator,
-  YearNavigator,
-} from "../calendar/period-navigator";
+import { DayjsRange } from "../calendar/period-navigator";
 
 import { useDataset } from "./dataset";
 import { CHART_RESOURCE_CONFIGS, CHART_RESOURCE_MENU_ITEMS } from "./resources";
 import {
-  selectedRangeTypeAtom,
   selectedRangeAtom,
   selectedResourceAtom,
   rangeTypeChangedEffect,
   resourceChangedEffect,
 } from "./atoms";
+import { GraphRangeSelector, DateTimeRangeNavigator } from "./navigators";
 
 export function SeriesSelector() {
   const [selectedResource, setselectedResource] = useAtom(selectedResourceAtom);
@@ -86,56 +72,6 @@ export function SeriesSelector() {
   );
 }
 
-function GraphRangeSelector() {
-  const resource = useAtomValue(selectedResourceAtom);
-  const [selectedRangeType, setSelectedRangeType] = useAtom(
-    selectedRangeTypeAtom
-  );
-
-  const maxDays = TIME_SERIES_CONFIGS[resource].maxDays;
-
-  return (
-    <ToggleButtonGroup
-      exclusive
-      value={selectedRangeType}
-      onChange={(event, value) => value && setSelectedRangeType(value)}
-    >
-      <ToggleButton value="week">Week</ToggleButton>
-      <ToggleButton value="month" disabled={maxDays < 31}>
-        Month
-      </ToggleButton>
-      <ToggleButton value="quarter" disabled={maxDays < 90}>
-        Quarter
-      </ToggleButton>
-    </ToggleButtonGroup>
-  );
-}
-
-function DateTimeRangeNavigator() {
-  const selectedRangeType = useAtomValue(selectedRangeTypeAtom);
-
-  const [selectedRange, setSelectedRange] = useAtom(selectedRangeAtom);
-
-  switch (selectedRangeType) {
-    case "week":
-      return (
-        <WeekNavigator value={selectedRange} onChange={setSelectedRange} />
-      );
-    case "month":
-      return (
-        <MonthNavigator value={selectedRange} onChange={setSelectedRange} />
-      );
-    case "quarter":
-      return (
-        <QuarterNavigator value={selectedRange} onChange={setSelectedRange} />
-      );
-    case "year":
-      return (
-        <YearNavigator value={selectedRange} onChange={setSelectedRange} />
-      );
-  }
-}
-
 export function TimeSeriesChart({
   dataset,
   series,
@@ -147,7 +83,7 @@ export function TimeSeriesChart({
   yAxis?: Array<
     MakeOptional<AxisConfig<ScaleName, any, ChartsYAxisProps>, "id">
   >;
-  formatDate?: (date: Date) => string;
+  formatDate?: AxisConfig<"band", Date>["valueFormatter"];
 }) {
   return (
     <ResponsiveChartContainer
@@ -157,7 +93,7 @@ export function TimeSeriesChart({
         {
           scaleType: "band",
           dataKey: "dateTime",
-          valueFormatter: (value) => formatDate(value),
+          valueFormatter: formatDate,
         },
       ]}
       yAxis={yAxis}
@@ -175,7 +111,12 @@ export function TimeSeriesChart({
   );
 }
 
-export function getFormatterForDayRange({ startDay, endDay }: DayjsRange) {
+type DateValueFormatter = AxisConfig<"band", Date>["valueFormatter"];
+
+export function getFormatterForDayRange({
+  startDay,
+  endDay,
+}: DayjsRange): DateValueFormatter {
   const options: Intl.DateTimeFormatOptions = {
     day: "numeric",
   };
@@ -191,7 +132,14 @@ export function getFormatterForDayRange({ startDay, endDay }: DayjsRange) {
     options.year = "numeric";
   }
 
-  return new Intl.DateTimeFormat(undefined, options).format;
+  const tickFormat = new Intl.DateTimeFormat(undefined, options).format;
+  const tooltipFormat = new Intl.DateTimeFormat(undefined, {
+    month: "long",
+    ...options,
+  }).format;
+
+  return (value, context) =>
+    context.location === "tick" ? tickFormat(value) : tooltipFormat(value);
 }
 
 export function GraphView() {
@@ -219,7 +167,7 @@ export function GraphView() {
       <FormRows margin={2}>
         <FormRow>
           <SeriesSelector />
-          <GraphRangeSelector />
+          <GraphRangeSelector resource={selectedResource} />
           <Box flex={1} />
           <DateTimeRangeNavigator />
         </FormRow>
