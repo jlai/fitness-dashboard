@@ -1,23 +1,11 @@
 import { TableCell, TableRow } from "@mui/material";
 import dayjs from "dayjs";
 
-import { formatShortDateTime } from "@/utils/date-formats";
+import { formatShortDate } from "@/utils/date-formats";
 import { SleepLog } from "@/api/sleep/types";
 import NumericStat from "@/components/numeric-stat";
 import HistoryList from "@/components/history-list/history-list";
 import { buildGetSleepLogListInfiniteQuery } from "@/api/sleep";
-
-function formatSleepTimeRange(sleep: SleepLog) {
-  const format = new Intl.DateTimeFormat(undefined, {
-    weekday: "short",
-    hour: "numeric",
-  });
-
-  return format.formatRange(
-    dayjs(sleep.startTime).toDate(),
-    dayjs(sleep.endTime).toDate()
-  );
-}
 
 function SleepDuration({ minutesAsleep }: { minutesAsleep: number }) {
   const hours = Math.floor(minutesAsleep / 60);
@@ -35,18 +23,29 @@ function SleepLogListHeaderCells() {
   return (
     <>
       <TableCell>Date</TableCell>
-      <TableCell>Time</TableCell>
-      <TableCell>Duration</TableCell>
+      <TableCell className="text-end">Time</TableCell>
+      <TableCell className="text-end max-w-full">Duration</TableCell>
     </>
   );
 }
 
+const WEEKDAY_AND_TIME_FORMAT = new Intl.DateTimeFormat(undefined, {
+  weekday: "short",
+  hour: "numeric",
+  minute: "2-digit",
+});
+
 function SleepLogRow({ logEntry: sleep }: { logEntry: SleepLog }) {
+  const startTime = new Date(sleep.startTime);
+  const endTime = new Date(sleep.endTime);
+
   return (
-    <TableRow>
-      <TableCell>{formatShortDateTime(dayjs(sleep.startTime))}</TableCell>
-      <TableCell>{formatSleepTimeRange(sleep)}</TableCell>
-      <TableCell>
+    <TableRow className="w-full">
+      <TableCell>{formatShortDate(dayjs(endTime))}</TableCell>
+      <TableCell className="text-end">
+        {WEEKDAY_AND_TIME_FORMAT.formatRange(startTime, endTime)}
+      </TableCell>
+      <TableCell className="flex flex-row justify-end max-w-full">
         <SleepDuration minutesAsleep={sleep.minutesAsleep} />
       </TableCell>
     </TableRow>
