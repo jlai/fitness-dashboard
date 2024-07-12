@@ -98,19 +98,21 @@ function FoodRow({ foodLog }: { foodLog: FoodLogEntry }) {
 
   return (
     <TableRow key={logId}>
-      <TableCell className="flex flex-row items-center">
-        <FormControlLabel
-          control={
-            <Checkbox
-              size="small"
-              checked={selectedFoodLogs.has(foodLog)}
-              onChange={handleChange}
-            />
-          }
-          label={name}
-        />
+      <TableCell>
+        <div className="flex flex-row items-center">
+          <FormControlLabel
+            control={
+              <Checkbox
+                size="small"
+                checked={selectedFoodLogs.has(foodLog)}
+                onChange={handleChange}
+              />
+            }
+            label={name}
+          />
+        </div>
       </TableCell>
-      <TableCell className="group">
+      <TableCell className="group min-w-max">
         <button
           className="flex flex-row items-center"
           onClick={popupState.open}
