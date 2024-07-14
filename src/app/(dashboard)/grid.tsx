@@ -130,8 +130,8 @@ export function Grid<TUserData = any>({
       const newGrid = GridStack.init(options, gridRef.current);
       setGrid(newGrid);
 
-      newGrid.on("change", handleAdded);
-      newGrid.on("added", handleChange);
+      newGrid.on("change", handleChange);
+      newGrid.on("added", handleAdded);
       newGrid.on("removed", handleRemoved);
     }
   }, [options, handleChange, handleRemoved, handleAdded]);

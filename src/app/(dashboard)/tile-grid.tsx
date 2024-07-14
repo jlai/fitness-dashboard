@@ -113,6 +113,7 @@ export default function TileGrid() {
         disableDrag={!editingGrid}
         disableResize={!editingGrid}
         onChange={updateTiles}
+        onAdded={editingGrid ? updateTiles : undefined}
         onRemoved={removeTiles}
         render={renderTile}
       />
