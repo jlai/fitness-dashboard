@@ -103,7 +103,7 @@ export function TimeSeriesChart({
 
       <ChartsXAxis />
       <ChartsYAxis />
-      <ChartsAxisHighlight y="band" />
+      <ChartsAxisHighlight x="band" />
       <ChartsTooltip />
       <MarkPlot />
       <ChartsGrid horizontal />

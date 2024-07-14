@@ -16,8 +16,8 @@ import {
   TimeSeriesEntry,
   HeartTimeSeriesValue,
   TimeSeriesResource,
+  ActiveZoneMinutesTimeSeriesValue,
 } from "@/api/times-series";
-import { SleepLog } from "@/api/sleep";
 
 /**
  * Transform timeseries entries into parsed values.
@@ -252,6 +252,51 @@ export function useDataset(
             showMark: ({ value }) => value !== null,
           },
         ];
+        break;
+      case "active-zone-minutes":
+        {
+          dataset = [];
+
+          for (const entry of data as Array<
+            TimeSeriesEntry<ActiveZoneMinutesTimeSeriesValue>
+          >) {
+            const value = entry.value;
+
+            dataset.push({
+              dateTime: dayjs(entry.dateTime).toDate(),
+              fatBurnActiveZoneMInutes: value.fatBurnActiveZoneMinutes,
+              cardioActiveZoneMinutes: value.cardioActiveZoneMinutes,
+              peakActiveZoneMintues: value.peakActiveZoneMinutes,
+            });
+          }
+          series = [
+            {
+              type: "bar",
+              label: "Fat Burn",
+              stack: "zones",
+              dataKey: "fatBurnActiveZoneMInutes",
+              color: "#f5e12f",
+              valueFormatter: (value) => `${value} minutes`,
+            },
+            {
+              type: "bar",
+              label: "Cardio",
+              stack: "zones",
+              dataKey: "cardioActiveZoneMinutes",
+              color: "#f59f2f",
+              valueFormatter: (value) => `${value} minutes`,
+            },
+            {
+              type: "bar",
+              label: "Peak",
+              stack: "zones",
+              dataKey: "peakActiveZoneMintues",
+              color: "#f5492f",
+              valueFormatter: (value) => `${value} minutes`,
+            },
+          ];
+          yAxis = [{ label: "mins" }];
+        }
         break;
       case "heart-rate-zones":
         {

@@ -13,6 +13,7 @@ export const CHART_RESOURCE_MENU_ITEMS: Array<TimeSeriesResource | "-"> = [
   "sleep",
   "resting-heart-rate",
   "heart-rate-zones",
+  "active-zone-minutes",
   "-",
   "weight",
   "fat",
@@ -61,5 +62,8 @@ export const CHART_RESOURCE_CONFIGS: Record<
   },
   "calories-in": {
     label: "Calories logged",
+  },
+  "active-zone-minutes": {
+    label: "Active Zone Minutes",
   },
 };

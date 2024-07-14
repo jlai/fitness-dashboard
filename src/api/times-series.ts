@@ -20,7 +20,8 @@ export type TimeSeriesResource =
   | "bmi"
   | "water"
   | "calories-in"
-  | "sleep";
+  | "sleep"
+  | "active-zone-minutes";
 
 export interface HeartRateZone {
   caloriesOut: number;
@@ -28,6 +29,13 @@ export interface HeartRateZone {
   min: number;
   minutes: number;
   name: string;
+}
+
+export interface ActiveZoneMinutesTimeSeriesValue {
+  activeZoneMinutes: number;
+  fatBurnActiveZoneMinutes: number;
+  cardioActiveZoneMinutes: number;
+  peakActiveZoneMinutes: number;
 }
 
 export interface HeartTimeSeriesValue {
@@ -116,6 +124,12 @@ export const TIME_SERIES_CONFIGS: Record<
     responseKey: "activities-heart",
     requiredScopes: ["hr"],
     maxDays: 366,
+  },
+  ["active-zone-minutes"]: {
+    urlPrefix: "/1/user/-/activities/active-zone-minutes/date/",
+    responseKey: "activities-active-zone-minutes",
+    requiredScopes: ["act"],
+    maxDays: Infinity,
   },
   sleep: {
     urlPrefix: "/1.2/user/-/sleep/date/",
