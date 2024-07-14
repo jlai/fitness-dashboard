@@ -291,7 +291,15 @@ function EditFoodList() {
       <TableFooter>
         <TableRow>
           <TableCell colSpan={3}>
-            <AddFoodPicker addFood={(food) => append({ ...food, amount: 1 })} />
+            <AddFoodPicker
+              addFood={(food) =>
+                append({
+                  ...food,
+                  amount: food.defaultServingSize ?? 1,
+                  unit: food.defaultUnit,
+                })
+              }
+            />
           </TableCell>
         </TableRow>
       </TableFooter>
