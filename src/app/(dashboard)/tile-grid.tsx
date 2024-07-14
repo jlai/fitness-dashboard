@@ -1,31 +1,60 @@
 "use client";
 
-import { useEffect, useCallback, useRef } from "react";
 import { useAtom, useAtomValue } from "jotai";
-import {
-  GridStack,
-  GridStackNode,
-  type GridStackNodesHandler,
-} from "gridstack";
-import { Delete as TrashIcon } from "@mui/icons-material";
+import { useCallback, useMemo } from "react";
+import { GridStackNode, GridStackNodesHandler } from "gridstack";
 import { Typography } from "@mui/material";
+import { DeleteOutlineOutlined as TrashIcon } from "@mui/icons-material";
 
 import { userTilesAtom } from "@/storage/tiles";
 
-import { LazyTile } from "./tiles";
+import { Grid, GridStackReactWidget } from "./grid";
 import { editingGridAtom } from "./state";
+import { LazyTile } from "./tiles";
 
-import "gridstack/dist/gridstack.min.css";
-import "gridstack/dist/gridstack-extra.min.css";
+type GridData = {
+  type: string;
+};
+
+const GRID_OPTIONS = {
+  auto: false,
+  margin: 6,
+  float: true,
+  cellHeight: 150,
+  column: 8,
+  columnOpts: {
+    columnWidth: 150,
+  },
+  minRow: 1,
+  removable: "#grid-remove-target",
+  disableDrag: true,
+  disableResize: true,
+};
+
+function renderTile({ data }: GridStackReactWidget<GridData>) {
+  return <LazyTile type={data.type} />;
+}
 
 export default function TileGrid() {
-  const editingGrid = useAtomValue(editingGridAtom);
-  const gridRef = useRef<GridStack>();
-  const itemRefs = useRef(new Map<string, Element>());
-
   const [userTiles, setUserTiles] = useAtom(userTilesAtom);
+  const editingGrid = useAtomValue(editingGridAtom);
 
-  const updateTile = useCallback(
+  const layout = useMemo(
+    () =>
+      userTiles.map((tile) => ({
+        id: tile.id,
+        x: tile.x,
+        y: tile.y,
+        w: tile.w ?? 1, // support old tile configs
+        h: tile.h ?? 1, // support old tile configs
+        data: {
+          type: tile.type,
+        },
+      })),
+    [userTiles]
+  );
+
+  const updateTiles = useCallback(
     (event: Event, nodes: GridStackNode[]) => {
       const changesById = nodes.reduce(
         (acc, node) => (node.id !== undefined ? acc.set(node.id, node) : acc),
@@ -38,10 +67,10 @@ export default function TileGrid() {
         return node
           ? {
               ...tile,
-              x: node.x,
-              y: node.y,
-              w: node.w,
-              h: node.h,
+              x: node.x ?? tile.x,
+              y: node.y ?? tile.y,
+              w: node.w ?? tile.w,
+              h: node.h ?? tile.h,
             }
           : tile;
       });
@@ -60,85 +89,14 @@ export default function TileGrid() {
       const updatedTiles = userTiles.filter((tile) => !removedIds.has(tile.id));
 
       setUserTiles(updatedTiles);
-
-      console.log("removed", event, nodes);
     },
     [userTiles, setUserTiles]
   ) as GridStackNodesHandler;
 
-  useEffect(() => {
-    console.log("change");
-
-    const grid = (gridRef.current =
-      gridRef.current ||
-      GridStack.init(
-        {
-          auto: false,
-          margin: 6,
-          float: true,
-          cellHeight: 150,
-          column: 8,
-          columnOpts: {
-            columnWidth: 150,
-          },
-          minRow: 1,
-          removable: "#grid-remove-target",
-          disableDrag: true,
-          disableResize: true,
-        },
-        "#tile-grid"
-      ));
-
-    grid.on("change", updateTile);
-
-    grid.on("removed", removeTiles);
-
-    return () => {
-      gridRef.current?.off("change");
-      gridRef.current?.off("removed");
-    };
-  }, [userTiles, updateTile, removeTiles]);
-
-  useEffect(() => {
-    const grid = gridRef.current;
-    if (!grid) {
-      return;
-    }
-
-    grid.setAnimation(false);
-    grid.batchUpdate();
-    grid.removeAll(false, false);
-    for (const tile of userTiles) {
-      const node = itemRefs.current.get(tile.id);
-      if (tile) {
-        grid.addWidget(node, {
-          id: tile.id,
-          x: tile.x,
-          y: tile.y,
-          w: tile.w,
-          h: tile.h,
-        });
-      }
-    }
-    grid.batchUpdate(false);
-    grid.setAnimation(true);
-  }, [userTiles]);
-
-  useEffect(() => {
-    const grid = gridRef.current;
-
-    if (!grid) {
-      return;
-    }
-
-    grid.enableResize(editingGrid);
-    grid.enableMove(editingGrid);
-  }, [editingGrid]);
-
   return (
-    <div className="h-full w-full">
+    <>
       <section
-        className="my-8"
+        className="mb-4"
         style={{ display: editingGrid ? "block" : "none" }}
       >
         <div
@@ -149,25 +107,15 @@ export default function TileGrid() {
           <Typography variant="h5">Drag tiles here to remove</Typography>
         </div>
       </section>
-      <section id="tile-grid" className="grid-stack w-full">
-        {userTiles.map((item) => (
-          <div
-            key={item.id}
-            className="grid-stack-item"
-            ref={(node: Element | null) => {
-              if (node) {
-                itemRefs.current.set(item.id, node);
-              } else {
-                itemRefs.current.delete(item.id);
-              }
-            }}
-          >
-            <div className="grid-stack-item-content">
-              <LazyTile type={item.type} />
-            </div>
-          </div>
-        ))}
-      </section>
-    </div>
+      <Grid<GridData>
+        layout={layout}
+        options={GRID_OPTIONS}
+        disableDrag={!editingGrid}
+        disableResize={!editingGrid}
+        onChange={updateTiles}
+        onRemoved={removeTiles}
+        render={renderTile}
+      />
+    </>
   );
 }

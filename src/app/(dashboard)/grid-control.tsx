@@ -1,13 +1,15 @@
 "use client";
 
 import { useAtom } from "jotai";
-import { Button } from "@mui/material";
+import { Button, Stack } from "@mui/material";
 import { AppRegistration } from "@mui/icons-material";
 import { useCallback } from "react";
 
 import DayNavigator from "@/components/day-navigator";
+import { HeaderBar } from "@/components/layout/rows";
 
 import { selectedDayAtom, editingGridAtom } from "./state";
+import AddTileButton from "./add-tile";
 
 export default function GridControlBar() {
   const [selectedDay, setSelectedDay] = useAtom(selectedDayAtom);
@@ -18,14 +20,15 @@ export default function GridControlBar() {
   }, [editingGrid, setEditingGrid]);
 
   return (
-    <div className="flex flex-row items-center">
+    <HeaderBar>
       <DayNavigator
         selectedDay={selectedDay}
         onSelectDay={setSelectedDay}
         disableFuture
       />
       <div className="flex-grow"></div>
-      <div>
+      <Stack direction="row" alignItems="center" columnGap={4}>
+        {editingGrid && <AddTileButton />}
         <Button
           color="inherit"
           variant="text"
@@ -34,7 +37,7 @@ export default function GridControlBar() {
         >
           {editingGrid ? "Done editing" : "Edit grid"}
         </Button>
-      </div>
-    </div>
+      </Stack>
+    </HeaderBar>
   );
 }
