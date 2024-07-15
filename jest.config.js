@@ -28,12 +28,17 @@ const config = {
   // The test environment that will be used for testing
   testEnvironment: "jsdom",
 
-  preset: 'ts-jest',
-  transform: {
-    '^.+\\.(ts|tsx)?$': 'ts-jest',
-    '^.+\\.(js|jsx)$': 'babel-jest',
+  moduleDirectories: ["node_modules", "src"],
+  moduleNameMapper: {
+    "^@/(.*)$": ['<rootDir>/$1'],
   },
-  transformIgnorePatterns: ['/node_modules/(?!(p-queue|p-timeout)/)']
+
+  setupFiles: ['<rootDir>/setup-jest.ts'],
+
+  preset: 'ts-jest',
+
+  // Ignore node_modules, EXCEPT the ones listed here
+  transformIgnorePatterns: ['/node_modules/(?!(p-queue|p-timeout|mui-sonner)/)']
 };
 
 // next adds /node_modules/ to the start of the ignore list, which we need to remove

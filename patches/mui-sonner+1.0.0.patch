@@ -1,0 +1,13 @@
+diff --git a/node_modules/mui-sonner/package.json b/node_modules/mui-sonner/package.json
+index 7e5921b..b17463a 100644
+--- a/node_modules/mui-sonner/package.json
++++ b/node_modules/mui-sonner/package.json
+@@ -24,7 +24,7 @@
+     "types": "dist/index.d.ts",
+     "typings": "dist/index.d.ts",
+     "exports": {
+-        "import": "./dist/index.js"
++        ".": "./dist/index.js"
+     },
+     "files": [
+         "dist",

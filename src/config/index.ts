@@ -1,6 +1,6 @@
 export function requiredVar(value?: string) {
   if (!value) {
-    throw new Error(`Environment variable ${name} missing`);
+    throw new Error(`Environment variable missing`);
   }
   return value;
 }

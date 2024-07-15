@@ -63,11 +63,11 @@ function useServingOptions(food: Food | null) {
  * Parse a quantity like "13 oz"
  * @fixme Currently only supports '.' for decimal separator
  */
-function extractServingSize(inputValue: string) {
+export function extractServingSize(inputValue: string) {
   const [_, numeric, unitName] =
-    inputValue.match(/^(\d+(?:\.\d+)?)(?:\s+(.*))?$/) ?? [];
+    inputValue.match(/^(\d*(?:\.\d+)?)(?:\s+(.*))?$/) ?? [];
 
-  const number = Number(numeric);
+  const number = numeric ? Number(numeric) : undefined;
 
   return { quantity: Number.isNaN(number) ? undefined : number, unitName };
 }
