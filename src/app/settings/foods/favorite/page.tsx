@@ -3,14 +3,8 @@
 import { Button, Typography } from "@mui/material";
 import { useState, useCallback } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  DataGrid,
-  GridActionsCellItem,
-  GridColDef,
-  GridRowParams,
-} from "@mui/x-data-grid";
+import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { toast } from "mui-sonner";
-import { Edit } from "@mui/icons-material";
 import { useConfirm } from "material-ui-confirm";
 
 import { buildFavoriteFoodsQuery, Food } from "@/api/nutrition";
@@ -19,6 +13,8 @@ import {
   buildAddFavoriteFoodsMutation,
   buildDeleteFavoritesFoodMutation,
 } from "@/api/nutrition/foods";
+import { FooterActionBar } from "@/components/layout/rows";
+import { FormRow } from "@/components/forms/form-row";
 
 const favoriteFoodsColumns: Array<GridColDef<Food>> = [
   { field: "name", headerName: "Food", flex: 2 },
@@ -28,25 +24,6 @@ const favoriteFoodsColumns: Array<GridColDef<Food>> = [
     headerName: "Type",
     valueFormatter: (accessLevel) =>
       accessLevel === "PRIVATE" ? "Custom" : "Public",
-  },
-  {
-    field: "actions",
-    type: "actions",
-    headerName: "Actions",
-    width: 100,
-    getActions: ({ id, row: food }: GridRowParams<Food>) => [
-      ...(food.accessLevel === "PRIVATE"
-        ? [
-            <GridActionsCellItem
-              icon={<Edit />}
-              key={id}
-              onClick={() => {}}
-              label="Edit"
-              showInMenu={true}
-            />,
-          ]
-        : []),
-    ],
   },
 ];
 
@@ -95,6 +72,7 @@ export default function ManageFavoriteFoods() {
       </div>
       <DataGrid<Food>
         className="w-full"
+        loading={!favoriteFoods}
         rowSelectionModel={selectedRows}
         onRowSelectionModelChange={(rows) => {
           setSelectedRows(rows as Array<number>);
@@ -104,7 +82,7 @@ export default function ManageFavoriteFoods() {
         rows={favoriteFoods}
         columns={favoriteFoodsColumns}
       />
-      <div className="flex flex-row items-center mt-8">
+      <FooterActionBar>
         <Button
           color="warning"
           disabled={selectedRows.length === 0}
@@ -112,7 +90,7 @@ export default function ManageFavoriteFoods() {
         >
           Remove favorites
         </Button>
-      </div>
+      </FooterActionBar>
     </>
   );
 }
@@ -127,7 +105,7 @@ function AddFoodPicker({ addFood }: { addFood: (food: Food) => void }) {
   }, [selectedFoodToAdd, addFood]);
 
   return (
-    <div className="flex flex-row items-center gap-x-4">
+    <FormRow>
       <SearchFoods
         className="flex-1"
         value={selectedFoodToAdd}
@@ -136,6 +114,6 @@ function AddFoodPicker({ addFood }: { addFood: (food: Food) => void }) {
       <Button disabled={!selectedFoodToAdd} onClick={addSelectedFood}>
         Add favorite food
       </Button>
-    </div>
+    </FormRow>
   );
 }

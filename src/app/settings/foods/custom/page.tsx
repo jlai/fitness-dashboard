@@ -83,7 +83,7 @@ export default function ManageCustomFoods() {
   }, [selectedRows, deleteFoodIds, confirm]);
 
   return (
-    <>
+    <div>
       <HeaderBar>
         <Typography variant="h5">Custom foods</Typography>
         <div className="flex-1"></div>
@@ -94,6 +94,7 @@ export default function ManageCustomFoods() {
       <CreateCustomFoodDialog />
       <DataGrid<Food>
         className="w-full"
+        loading={!customFoods}
         rowSelectionModel={selectedRows}
         onRowSelectionModelChange={(rows) => {
           setSelectedRows(rows as Array<number>);
@@ -112,6 +113,6 @@ export default function ManageCustomFoods() {
           Delete custom foods
         </Button>
       </FooterActionBar>
-    </>
+    </div>
   );
 }
