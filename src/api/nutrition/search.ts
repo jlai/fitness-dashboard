@@ -29,6 +29,18 @@ export function buildSearchFoodsQuery(query: string) {
   });
 }
 
+export function buildCustomFoodsQuery() {
+  return queryOptions({
+    queryKey: ["custom-foods"],
+    queryFn: async () => {
+      const response = await makeRequest(`/1/user/-/foods.json`);
+
+      return ((await response.json()) as SearchFoodsResponse).foods;
+    },
+    staleTime: ONE_HOUR_IN_MILLIS,
+  });
+}
+
 export function buildFavoriteFoodsQuery() {
   return queryOptions({
     queryKey: ["favorite-foods"],

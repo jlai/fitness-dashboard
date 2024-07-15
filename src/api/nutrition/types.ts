@@ -10,7 +10,50 @@ export interface Serving {
   unit: FoodUnit;
 }
 
+export type FoodAccessLevel = "PUBLIC" | "PRIVATE";
+
+export type NutritionalValues = Partial<{
+  // common public
+  calories: number;
+  carbs: number;
+  fat: number;
+  fiber: number;
+
+  // detailed
+  biotin: number;
+  calcium: number;
+  caloriesFromFat: number;
+  cholesterol: number;
+  copper: number;
+  dietaryFiber: number;
+  folicAcid: number;
+  iodine: number;
+  iron: number;
+  magnesium: number;
+  niacin: number;
+  pantothenicAcid: number;
+  phosphorus: number;
+  potassium: number;
+  protein: number;
+  riboflavin: number;
+  saturatedFat: number;
+  sodium: number;
+  sugars: number;
+  thiamin: number;
+  totalCarbohydrate: number;
+  totalFat: 15;
+  transFat: number;
+  vitaminA: number;
+  vitaminB12: number;
+  vitaminB6: number;
+  vitaminC: number;
+  vitaminD: number;
+  vitaminE: number;
+  zinc: number;
+}>;
+
 export interface Food {
+  accessLevel: FoodAccessLevel;
   foodId: number;
   name: string;
   brand?: string;
@@ -20,6 +63,7 @@ export interface Food {
   defaultServingSize?: number;
   unit?: FoodUnit;
   units: Array<number>;
+  nutritionalValues?: NutritionalValues;
 }
 
 export type FoodLogEntry = Food & {
@@ -28,14 +72,6 @@ export type FoodLogEntry = Food & {
   loggedFood: Food & {
     amount: number;
     mealTypeId: MealType;
-  };
-  nutritionalValues: {
-    calories: number;
-    carbs: number;
-    fat: number;
-    fiber: number;
-    protein: number;
-    sodium: number;
   };
 };
 
@@ -58,6 +94,10 @@ export const MEAL_TYPE_NAMES = {
   [MealType.EveningSnack]: "Evening Snack",
   [MealType.Anytime]: "Anytime",
 };
+
+export interface GetFoodResponse {
+  food: Food;
+}
 
 // https://dev.fitbit.com/build/reference/web-api/nutrition/get-food-log/
 export interface GetFoodLogResponse {

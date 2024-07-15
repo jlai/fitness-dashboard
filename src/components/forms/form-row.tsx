@@ -32,3 +32,11 @@ export function FormRow({
     </Stack>
   );
 }
+
+export function FormActionRow({ children }: { children: React.ReactNode }) {
+  return (
+    <FormRow marginBlock={4} justifyContent="end">
+      {children}
+    </FormRow>
+  );
+}

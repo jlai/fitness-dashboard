@@ -114,11 +114,14 @@ export default function CreateFoodLog() {
       <div className="flex-1">
         <CreateFoodLogForm />
       </div>
-      <div>
-        <Button href="/settings/foods" LinkComponent={NextLink}>
-          Manage foods
+      <Stack direction="column" rowGap={2}>
+        <Button href="/settings/foods/custom" LinkComponent={NextLink}>
+          Custom foods
         </Button>
-      </div>
+        <Button href="/settings/foods/favorite" LinkComponent={NextLink}>
+          Favorites
+        </Button>
+      </Stack>
     </Stack>
   );
 }

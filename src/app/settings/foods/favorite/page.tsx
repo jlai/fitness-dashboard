@@ -1,10 +1,17 @@
 "use client";
 
-import { Button, Paper, Typography } from "@mui/material";
+import { Button, Typography } from "@mui/material";
 import { useState, useCallback } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { DataGrid, GridColDef } from "@mui/x-data-grid";
+import {
+  DataGrid,
+  GridActionsCellItem,
+  GridColDef,
+  GridRowParams,
+} from "@mui/x-data-grid";
 import { toast } from "mui-sonner";
+import { Edit } from "@mui/icons-material";
+import { useConfirm } from "material-ui-confirm";
 
 import { buildFavoriteFoodsQuery, Food } from "@/api/nutrition";
 import SearchFoods from "@/components/nutrition/food/food-search";
@@ -13,52 +20,83 @@ import {
   buildDeleteFavoritesFoodMutation,
 } from "@/api/nutrition/foods";
 
-const favoriteFoodsColumns: Array<GridColDef> = [
-  { field: "name", headerName: "Food", width: 400 },
-  { field: "brand", headerName: "Brand" },
+const favoriteFoodsColumns: Array<GridColDef<Food>> = [
+  { field: "name", headerName: "Food", flex: 2 },
+  { field: "brand", headerName: "Brand", flex: 1 },
+  {
+    field: "accessLevel",
+    headerName: "Type",
+    valueFormatter: (accessLevel) =>
+      accessLevel === "PRIVATE" ? "Custom" : "Public",
+  },
+  {
+    field: "actions",
+    type: "actions",
+    headerName: "Actions",
+    width: 100,
+    getActions: ({ id, row: food }: GridRowParams<Food>) => [
+      ...(food.accessLevel === "PRIVATE"
+        ? [
+            <GridActionsCellItem
+              icon={<Edit />}
+              key={id}
+              onClick={() => {}}
+              label="Edit"
+              showInMenu={true}
+            />,
+          ]
+        : []),
+    ],
+  },
 ];
 
-function ManageFavoriteFoods() {
+export default function ManageFavoriteFoods() {
+  const confirm = useConfirm();
   const [selectedRows, setSelectedRows] = useState<Array<number>>([]);
-  const queryClient = useQueryClient();
 
+  const queryClient = useQueryClient();
   const { data: favoriteFoods } = useQuery(buildFavoriteFoodsQuery());
 
-  const { mutateAsync: addFavoriteFoods } = useMutation(
+  const { mutateAsync: addFavoriteFoodIds } = useMutation(
     buildAddFavoriteFoodsMutation(queryClient)
   );
 
-  const { mutateAsync: deleteFavoriteFoods } = useMutation(
+  const { mutateAsync: deleteFavoriteFoodIds } = useMutation(
     buildDeleteFavoritesFoodMutation(queryClient)
   );
 
   const addFavoriteFood = useCallback(
     (food: Food) => {
-      addFavoriteFoods([food.foodId]).then(() => {
+      addFavoriteFoodIds([food.foodId]).then(() => {
         toast.success("Added food to favorites list");
       });
     },
-    [addFavoriteFoods]
+    [addFavoriteFoodIds]
   );
 
   const deleteFavorites = useCallback(() => {
-    deleteFavoriteFoods(selectedRows).then(() => {
+    (async () => {
+      await confirm({
+        title: "Remove favorite foods?",
+      });
+
+      await deleteFavoriteFoodIds(selectedRows);
       toast.success("Removed foods from favorites list");
-    });
-  }, [deleteFavoriteFoods, selectedRows]);
+    })();
+  }, [deleteFavoriteFoodIds, selectedRows, confirm]);
 
   return (
     <>
-      <Typography variant="h5" className="mb-8">
+      <Typography variant="h5" className="m-4">
         Favorite foods
       </Typography>
-      <div className="my-8">
+      <div className="m-4">
         <AddFoodPicker addFood={addFavoriteFood} />
       </div>
       <DataGrid<Food>
+        className="w-full"
         rowSelectionModel={selectedRows}
         onRowSelectionModelChange={(rows) => {
-          console.log(rows);
           setSelectedRows(rows as Array<number>);
         }}
         checkboxSelection
@@ -76,17 +114,6 @@ function ManageFavoriteFoods() {
         </Button>
       </div>
     </>
-  );
-}
-
-export default function ManageFoods() {
-  return (
-    <Paper className="p-4">
-      <Typography variant="h4" className="mb-8">
-        Manage foods
-      </Typography>
-      <ManageFavoriteFoods />
-    </Paper>
   );
 }
 
