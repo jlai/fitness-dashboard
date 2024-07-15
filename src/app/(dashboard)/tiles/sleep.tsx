@@ -66,7 +66,9 @@ function NoSleep() {
       justifyContent="center"
       height="100%"
     >
-      <Typography variant="h6">No sleep recorded</Typography>
+      <Typography variant="h6" className="text-center">
+        No sleep recorded
+      </Typography>
     </Stack>
   );
 }
