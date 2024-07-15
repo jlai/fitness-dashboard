@@ -12,6 +12,7 @@ import { CalorieGoalTileContent } from "./calorie-goal";
 import Tile from "./tile";
 import GraphTileContent from "./graph";
 import { SleepTileContent } from "./sleep";
+import { CaloriesConsumedTileContent } from "./calories-consumed";
 
 export interface TileDefinition {
   name: string;
@@ -69,6 +70,12 @@ export const TILE_TYPES: Record<string, TileDefinition> = {
     component: CalorieGoalTileContent,
     w: 2,
     h: 2,
+  },
+  caloriesConsumed: {
+    name: "Calories consumed",
+    component: CaloriesConsumedTileContent,
+    w: 1,
+    h: 1,
   },
   plant: {
     name: "Plant",

@@ -115,7 +115,7 @@ export function useDataset(
         ];
         yAxis = [
           {
-            label: units.localizedWaterVolumeName,
+            label: "Cal",
           },
         ];
         break;
@@ -197,11 +197,6 @@ export function useDataset(
             showMark: false,
             valueFormatter: (value) =>
               value ? FRACTION_DIGITS_1.format(value) : "",
-          },
-        ];
-        yAxis = [
-          {
-            label: units.localizedKilogramsName,
           },
         ];
         break;
