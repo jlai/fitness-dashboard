@@ -25,7 +25,7 @@ export function CalorieGoalTileContent() {
         <div className="flex flex-col flex-1 min-h-0 min-w-0 place-content-center items-center">
           <Image src={foodIcon} alt="" className="size-1/2" />
         </div>
-        <div className="flex flex-col items-center">
+        <div className="flex flex-col items-center text-center">
           <NumericStat
             value={Math.abs(caloriesRemaining)}
             unit="calories"

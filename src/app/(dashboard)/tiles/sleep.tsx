@@ -35,9 +35,12 @@ export function SleepTileContent() {
     >
       <div>
         {mainSleep && (
-          <Typography variant="subtitle1">
-            {TIME.format(new Date(mainSleep.startTime))} &ndash;{" "}
-            {TIME.format(new Date(mainSleep.endTime))}
+          <Typography variant="subtitle1" className="text-center text-balance">
+            <span className="wrap">
+              {TIME.format(new Date(mainSleep.startTime))}
+            </span>
+            <span> &ndash; </span>
+            <span>{TIME.format(new Date(mainSleep.endTime))}</span>
           </Typography>
         )}
       </div>
