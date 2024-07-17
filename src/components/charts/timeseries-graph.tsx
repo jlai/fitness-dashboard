@@ -1,60 +1,38 @@
 "use client";
 
 import { FormControl, MenuItem, Select, Divider, Box } from "@mui/material";
-import {
-  BarPlot,
-  BarSeriesType,
-  ChartsAxisHighlight,
-  ChartsGrid,
-  ChartsTooltip,
-  ChartsXAxis,
-  ChartsYAxis,
-  LinePlot,
-  LineSeriesType,
-  MarkPlot,
-  ResponsiveChartContainer,
-} from "@mui/x-charts";
-import { useQuery } from "@tanstack/react-query";
 import { useAtom, useAtomValue } from "jotai";
-import dayjs from "dayjs";
-import {
-  AxisConfig,
-  ChartsYAxisProps,
-  DatasetType,
-  MakeOptional,
-  ScaleName,
-} from "@mui/x-charts/internals";
+import { createElement } from "react";
 
-import {
-  TimeSeriesResource,
-  buildTimeSeriesQuery,
-  TIME_SERIES_CONFIGS,
-} from "@/api/activity";
-import { formatShortDate } from "@/utils/date-formats";
+import { TIME_SERIES_CONFIGS } from "@/api/activity";
 
 import { RequireScopes } from "../require-scopes";
-import { DayjsRange } from "../calendar/period-navigator";
 import { HeaderBar } from "../layout/rows";
+import { DayjsRange } from "../calendar/period-navigator";
 
-import { useDataset } from "./dataset";
-import { CHART_RESOURCE_CONFIGS, CHART_RESOURCE_MENU_ITEMS } from "./resources";
 import {
-  selectedRangeAtom,
+  CHART_RESOURCE_CONFIGS,
+  CHART_RESOURCE_MENU_ITEMS,
+  ChartResource,
+} from "./timeseries/resources";
+import {
   selectedResourceAtom,
   rangeTypeChangedEffect,
   resourceChangedEffect,
+  selectedRangeAtom,
 } from "./atoms";
 import { GraphRangeSelector, DateTimeRangeNavigator } from "./navigators";
+import { TimeSeriesChartContext } from "./timeseries/context";
 
 export function SeriesSelector() {
   const [selectedResource, setselectedResource] = useAtom(selectedResourceAtom);
 
   return (
     <FormControl>
-      <Select<TimeSeriesResource>
+      <Select<ChartResource>
         value={selectedResource}
         onChange={(event) =>
-          setselectedResource(event.target.value as TimeSeriesResource)
+          setselectedResource(event.target.value as ChartResource)
         }
         size="small"
       >
@@ -73,94 +51,32 @@ export function SeriesSelector() {
 }
 
 export function TimeSeriesChart({
-  dataset,
-  series,
-  yAxis,
-  formatDate = (date: Date) => formatShortDate(dayjs(date)),
+  resource,
+  range,
+  formatDate,
 }: {
-  dataset: DatasetType;
-  series: Array<BarSeriesType | LineSeriesType>;
-  yAxis?: Array<
-    MakeOptional<AxisConfig<ScaleName, any, ChartsYAxisProps>, "id">
-  >;
-  formatDate?: AxisConfig<"band", Date>["valueFormatter"];
+  resource: ChartResource;
+  range: DayjsRange;
+  formatDate?: (date: Date) => string;
 }) {
-  return (
-    <ResponsiveChartContainer
-      dataset={dataset}
-      series={series}
-      xAxis={[
-        {
-          scaleType: "band",
-          dataKey: "dateTime",
-          valueFormatter: formatDate,
-        },
-      ]}
-      yAxis={yAxis}
-    >
-      <BarPlot />
-      <LinePlot />
+  const requiredScopes = TIME_SERIES_CONFIGS[resource]?.requiredScopes ?? [];
 
-      <ChartsXAxis />
-      <ChartsYAxis />
-      <ChartsAxisHighlight x="band" />
-      <ChartsTooltip />
-      <MarkPlot />
-      <ChartsGrid horizontal />
-    </ResponsiveChartContainer>
+  return (
+    <RequireScopes scopes={requiredScopes}>
+      <TimeSeriesChartContext.Provider value={{ range, formatDate }}>
+        {createElement(CHART_RESOURCE_CONFIGS[resource].component)}
+      </TimeSeriesChartContext.Provider>
+    </RequireScopes>
   );
 }
 
-type DateValueFormatter = AxisConfig<"band", Date>["valueFormatter"];
-
-export function getFormatterForDayRange({
-  startDay,
-  endDay,
-}: DayjsRange): DateValueFormatter {
-  const options: Intl.DateTimeFormatOptions = {
-    day: "numeric",
-  };
-
-  if (startDay.isSame(endDay, "week")) {
-    options.weekday = "short";
-    options.month = "short";
-  } else if (startDay.isSame(endDay, "month")) {
-    // just the day
-  } else if (startDay.isSame(endDay, "year")) {
-    options.month = "numeric";
-  } else {
-    options.year = "numeric";
-  }
-
-  const tickFormat = new Intl.DateTimeFormat(undefined, options).format;
-  const tooltipFormat = new Intl.DateTimeFormat(undefined, {
-    month: "long",
-    ...options,
-  }).format;
-
-  return (value, context) =>
-    context.location === "tick" ? tickFormat(value) : tooltipFormat(value);
-}
-
-export function GraphView() {
+/** Graph component with resource selector and navigation controls */
+export function NavigableGraphView() {
   useAtomValue(resourceChangedEffect);
   useAtomValue(rangeTypeChangedEffect);
 
-  const dateTimeRange = useAtomValue(selectedRangeAtom);
   const selectedResource = useAtomValue(selectedResourceAtom);
-
-  const { data } = useQuery(
-    buildTimeSeriesQuery(
-      selectedResource,
-      dateTimeRange.startDay,
-      dateTimeRange.endDay
-    )
-  );
-
-  const { dataset, series, yAxis } = useDataset(selectedResource, data);
-
-  const requiredScopes =
-    TIME_SERIES_CONFIGS[selectedResource]?.requiredScopes ?? [];
+  const selectedRange = useAtomValue(selectedRangeAtom);
 
   return (
     <div>
@@ -171,14 +87,7 @@ export function GraphView() {
         <DateTimeRangeNavigator />
       </HeaderBar>
       <div className="w-full h-[400px]">
-        <RequireScopes scopes={requiredScopes}>
-          <TimeSeriesChart
-            dataset={dataset}
-            series={series}
-            yAxis={yAxis}
-            formatDate={getFormatterForDayRange(dateTimeRange)}
-          />
-        </RequireScopes>
+        <TimeSeriesChart resource={selectedResource} range={selectedRange} />
       </div>
     </div>
   );

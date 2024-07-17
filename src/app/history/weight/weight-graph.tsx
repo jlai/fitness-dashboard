@@ -33,9 +33,9 @@ import {
 } from "@/components/charts/navigators";
 import { useUnits } from "@/config/units";
 import { FRACTION_DIGITS_1 } from "@/utils/number-formats";
-import { getFormatterForDayRange } from "@/components/charts/timeseries-graph";
 import { buildGetBodyWeightGoalQuery } from "@/api/body";
 import { HeaderBar } from "@/components/layout/rows";
+import { getTickFormatterForDayRange } from "@/components/charts/timeseries/formatters";
 
 export default function ScopedAtomWeightGraph() {
   return (
@@ -134,7 +134,7 @@ export function LeanFatMassGraph() {
     return { series, dates, minWeight };
   }, [fatData, localizedKilograms, localizedKilogramsName, weightData]);
 
-  const dateFormatter = getFormatterForDayRange(range);
+  const dateFormatter = getTickFormatterForDayRange(range);
 
   return (
     <div>

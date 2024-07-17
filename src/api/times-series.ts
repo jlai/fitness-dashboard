@@ -156,11 +156,11 @@ export type TimeSeriesEntry<ValueType> = {
   value: ValueType;
 };
 
-export type TimeSeriesResponse<ResourceName extends string, ValueType> = {
-  [key in ResourceName]: Array<TimeSeriesEntry<ValueType>>;
+export type TimeSeriesResponse<ResourceName extends string, TEntry> = {
+  [key in ResourceName]: Array<TEntry>;
 };
 
-export function buildTimeSeriesQuery<ValueType = unknown>(
+export function buildTimeSeriesQuery<TEntry = TimeSeriesEntry<string>>(
   resource: TimeSeriesResource,
   startDay: Dayjs,
   endDay: Dayjs
@@ -184,7 +184,7 @@ export function buildTimeSeriesQuery<ValueType = unknown>(
       );
 
       const defaultExtractData = (responseBody: any) => {
-        const data = (responseBody as TimeSeriesResponse<string, ValueType>)[
+        const data = (responseBody as TimeSeriesResponse<string, TEntry>)[
           config.responseKey
         ];
 
@@ -198,7 +198,7 @@ export function buildTimeSeriesQuery<ValueType = unknown>(
       };
 
       const extractData = config.extractData ?? defaultExtractData;
-      return extractData(await response.json());
+      return extractData(await response.json()) as Array<TEntry>;
     },
     staleTime: ONE_MINUTE_IN_MILLIS,
   });

@@ -2,11 +2,13 @@ import { atom } from "jotai";
 import dayjs from "dayjs";
 import { atomEffect } from "jotai-effect";
 
-import { TIME_SERIES_CONFIGS, TimeSeriesResource } from "@/api/times-series";
+import { TIME_SERIES_CONFIGS } from "@/api/times-series";
 
 import { DayjsRange } from "../calendar/period-navigator";
 
-export const selectedResourceAtom = atom<TimeSeriesResource>("steps");
+import { ChartResource } from "./timeseries/resources";
+
+export const selectedResourceAtom = atom<ChartResource>("steps");
 
 export type DateRangeType = "week" | "month" | "quarter" | "year";
 export const MAX_DAYS_IN_RANGE = {
