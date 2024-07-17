@@ -26,10 +26,7 @@ const SCOPES = [
   "location",
   "nutrition",
   "profile",
-  "settings",
   "sleep",
-  "social",
-  "temperature",
   "weight",
 ];
 
@@ -208,6 +205,13 @@ export function getAccessTokenScopes() {
     token && (jwtDecode(token.accessToken) as FitbitJwtPayload);
 
   return new Set(accessToken?.scopes?.split(" ") ?? []);
+}
+
+export function getMissingScopes(requiredScopes: Array<string>) {
+  const currentScopes = getAccessTokenScopes();
+  return requiredScopes.filter(
+    (scope) => !currentScopes.has(scope) && !currentScopes.has(`w${scope}`)
+  );
 }
 
 export function hasTokenScope(scope: string) {

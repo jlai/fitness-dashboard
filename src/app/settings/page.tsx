@@ -83,10 +83,10 @@ function LoginSettings() {
 
   const switchAccounts = useCallback(() => {
     confirm({
-      description: "Log out and switch accounts?",
+      description: "Log out?",
     }).then(() => {
       queryClient.clear();
-      redirectToLogin({ prompt: "login" });
+      redirectToLogin({ prompt: "login consent" });
     });
   }, [confirm, queryClient]);
 
@@ -110,10 +110,10 @@ function LoginSettings() {
         </Suspense>
       </SettingsRow>
       <SettingsRow
-        title="Switch accounts"
+        title="Change permissions / switch accounts"
         action={<Button onClick={switchAccounts}>Switch accounts</Button>}
       >
-        Switch to a different Fitbit account
+        Change permissions or sign in with a different account
       </SettingsRow>
       <SettingsRow
         title="Unlink Fitbit account"
