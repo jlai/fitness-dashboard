@@ -1,6 +1,9 @@
-import { Stack } from "@mui/material";
+import { Stack, StackProps } from "@mui/material";
 
-export function HeaderBar({ children }: { children: React.ReactNode }) {
+export function HeaderBar({
+  children,
+  ...stackProps
+}: { children: React.ReactNode } & StackProps) {
   return (
     <Stack
       direction="row"
@@ -8,6 +11,7 @@ export function HeaderBar({ children }: { children: React.ReactNode }) {
       marginBlock={2}
       alignItems="center"
       columnGap={2}
+      {...stackProps}
     >
       {children}
     </Stack>
