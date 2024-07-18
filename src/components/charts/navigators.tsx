@@ -38,6 +38,9 @@ export function GraphRangeSelector({
       <ToggleButton value="quarter" disabled={maxDays < 90}>
         Quarter
       </ToggleButton>
+      <ToggleButton value="year" disabled={maxDays < 366}>
+        Year
+      </ToggleButton>
     </ToggleButtonGroup>
   );
 }

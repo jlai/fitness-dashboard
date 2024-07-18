@@ -17,6 +17,15 @@ export const TOOLTIP_DATE_FORMAT = new Intl.DateTimeFormat(undefined, {
   year: "numeric",
 });
 
+export const MONTH_ONLY_FORMAT = new Intl.DateTimeFormat(undefined, {
+  month: "short",
+});
+
+export const MONTH_YEAR_FORMAT = new Intl.DateTimeFormat(undefined, {
+  month: "short",
+  year: "numeric",
+});
+
 export function getTickFormatterForDayRange({ startDay, endDay }: DayjsRange) {
   const options: Intl.DateTimeFormatOptions = {
     day: "numeric",

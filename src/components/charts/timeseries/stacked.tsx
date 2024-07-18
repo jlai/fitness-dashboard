@@ -9,6 +9,7 @@ import { selectedRangeAtom } from "../atoms";
 import { ChartSeriesConfig } from "./series-config";
 import { StackedBarChart } from "./mui-renderer";
 import { TimeSeriesDatum } from "./data";
+import { useAggregation } from "./aggregation";
 
 type ActiveZoneMinutesDatum = TimeSeriesDatum & {
   value: {
@@ -55,10 +56,6 @@ export function ActiveZoneMinutesChart() {
     )
   );
 
-  return (
-    <StackedBarChart<ActiveZoneMinutesDatum>
-      data={data}
-      seriesConfigs={AZM_SERIES_CONFIGS}
-    />
-  );
+  const props = useAggregation(data, AZM_SERIES_CONFIGS);
+  return <StackedBarChart {...props} />;
 }

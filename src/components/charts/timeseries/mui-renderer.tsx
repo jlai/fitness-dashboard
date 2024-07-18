@@ -14,18 +14,21 @@ import {
 } from "@mui/x-charts";
 import dayjs from "dayjs";
 import { useContext } from "react";
+import { ChartsOverlay } from "@mui/x-charts/ChartsOverlay";
 
 import { ChartSeriesConfig } from "./series-config";
-import { StringValueDatum, TimeSeriesDatum } from "./data";
+import { TimeSeriesDatum } from "./data";
 import {
   getTickFormatterForDayRange,
   makeAxisValueFormatter,
   makeSeriesValueFormatter,
+  MONTH_ONLY_FORMAT,
+  MONTH_YEAR_FORMAT,
   TOOLTIP_DATE_FORMAT,
 } from "./formatters";
 import { TimeSeriesChartContext } from "./context";
 
-interface CommonChartProps<TDatum = TimeSeriesDatum> {
+interface CommonChartProps<TDatum extends TimeSeriesDatum> {
   data: Array<TDatum> | undefined;
   seriesConfigs: Array<ChartSeriesConfig<TDatum>>;
   yAxisOptions?: YAxisOptions;
@@ -34,12 +37,24 @@ interface CommonChartProps<TDatum = TimeSeriesDatum> {
 function useXAxisConfig<TDatum extends TimeSeriesDatum>(
   data?: Array<TDatum>
 ): ResponsiveChartContainerProps["xAxis"] {
-  const { range, formatDate: customFormatDate } = useContext(
-    TimeSeriesChartContext
-  );
+  const {
+    range,
+    formatDate: customFormatDate,
+    aggregation,
+  } = useContext(TimeSeriesChartContext);
 
-  const tickFormat = customFormatDate ?? getTickFormatterForDayRange(range);
+  const aggregationTickFormat =
+    aggregation === "month" ? MONTH_ONLY_FORMAT.format : undefined;
+  const aggregationTooltipFormat =
+    aggregation === "month" ? MONTH_YEAR_FORMAT.format : undefined;
+
+  const tickFormat =
+    aggregationTickFormat ??
+    customFormatDate ??
+    getTickFormatterForDayRange(range);
   const dates = data?.map((entry) => dayjs(entry.dateTime).toDate()) ?? [];
+
+  const tooltipFormat = aggregationTooltipFormat ?? TOOLTIP_DATE_FORMAT.format;
 
   return [
     {
@@ -47,9 +62,7 @@ function useXAxisConfig<TDatum extends TimeSeriesDatum>(
       data: dates,
       scaleType: "band",
       valueFormatter: (value, context) =>
-        context.location === "tick"
-          ? tickFormat(value)
-          : TOOLTIP_DATE_FORMAT.format(value),
+        context.location === "tick" ? tickFormat(value) : tooltipFormat(value),
     },
   ];
 }
@@ -94,9 +107,10 @@ function getCommonSeriesProps<TDatum extends TimeSeriesDatum>(
   return props;
 }
 
-function getCommonChartElements() {
+function getCommonChartElements({ loading }: { loading: boolean }) {
   return (
     <>
+      <ChartsOverlay loading={loading} />
       <ChartsXAxis />
       <ChartsYAxis />
       <ChartsAxisHighlight x="band" />
@@ -108,7 +122,7 @@ function getCommonChartElements() {
 }
 
 export function SimpleBarChart<
-  TDatum extends TimeSeriesDatum = StringValueDatum
+  TDatum extends TimeSeriesDatum = TimeSeriesDatum
 >({ data, seriesConfigs, yAxisOptions = {} }: CommonChartProps<TDatum>) {
   const xAxis = useXAxisConfig<TDatum>(data);
   const yAxis = getYAxisConfig(yAxisOptions);
@@ -121,13 +135,13 @@ export function SimpleBarChart<
   return (
     <ResponsiveChartContainer xAxis={xAxis} yAxis={yAxis} series={series}>
       <BarPlot />
-      {getCommonChartElements()}
+      {getCommonChartElements({ loading: !data })}
     </ResponsiveChartContainer>
   );
 }
 
 export function StackedBarChart<
-  TDatum extends TimeSeriesDatum = StringValueDatum
+  TDatum extends TimeSeriesDatum = TimeSeriesDatum
 >({ data, seriesConfigs, yAxisOptions = {} }: CommonChartProps<TDatum>) {
   const xAxis = useXAxisConfig<TDatum>(data);
   const yAxis = getYAxisConfig(yAxisOptions);
@@ -141,13 +155,13 @@ export function StackedBarChart<
   return (
     <ResponsiveChartContainer xAxis={xAxis} yAxis={yAxis} series={series}>
       <BarPlot />
-      {getCommonChartElements()}
+      {getCommonChartElements({ loading: !data })}
     </ResponsiveChartContainer>
   );
 }
 
 export function SimpleLineChart<
-  TDatum extends TimeSeriesDatum = StringValueDatum
+  TDatum extends TimeSeriesDatum = TimeSeriesDatum
 >({ data, seriesConfigs, yAxisOptions = {} }: CommonChartProps<TDatum>) {
   const xAxis = useXAxisConfig<TDatum>(data);
   const yAxis = getYAxisConfig(yAxisOptions);
@@ -155,14 +169,14 @@ export function SimpleLineChart<
   const series: Array<LineSeriesType> = seriesConfigs.map((config) => ({
     type: "line",
     connectNulls: true,
-    showMark: false,
+    showMark: config.showMark,
     ...getCommonSeriesProps(data, config),
   }));
 
   return (
     <ResponsiveChartContainer xAxis={xAxis} yAxis={yAxis} series={series}>
       <LinePlot />
-      {getCommonChartElements()}
+      {getCommonChartElements({ loading: !data })}
     </ResponsiveChartContainer>
   );
 }

@@ -1,6 +1,4 @@
-import { createContext, useContext } from "react";
-
-import { StringValueDatum, TimeSeriesDatum } from "./data";
+import { StringValueDatum } from "./data";
 
 export interface ChartSeriesConfig<TDatum> {
   id: string;
@@ -9,6 +7,7 @@ export interface ChartSeriesConfig<TDatum> {
   color?: string;
   numberFormat?: (value: number) => string;
   unit?: string;
+  showMark?: boolean;
 }
 
 export function singleSeriesConfig<TDatum = StringValueDatum>({
@@ -26,14 +25,4 @@ export function singleSeriesConfig<TDatum = StringValueDatum>({
         yAccessor ?? ((entry) => Number((entry as StringValueDatum).value)),
     },
   ] as Array<ChartSeriesConfig<TDatum>>;
-}
-
-export const SeriesConfigsContext = createContext<
-  Array<ChartSeriesConfig<any>>
->([]);
-
-export function useSeriesConfigs<DatumType extends TimeSeriesDatum>() {
-  return useContext(SeriesConfigsContext) as Array<
-    ChartSeriesConfig<DatumType>
-  >;
 }

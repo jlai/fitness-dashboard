@@ -20,9 +20,10 @@ import {
   rangeTypeChangedEffect,
   resourceChangedEffect,
   selectedRangeAtom,
+  selectedRangeTypeAtom,
 } from "./atoms";
 import { GraphRangeSelector, DateTimeRangeNavigator } from "./navigators";
-import { TimeSeriesChartContext } from "./timeseries/context";
+import { AggregationType, TimeSeriesChartContext } from "./timeseries/context";
 
 export function SeriesSelector() {
   const [selectedResource, setselectedResource] = useAtom(selectedResourceAtom);
@@ -54,16 +55,20 @@ export function TimeSeriesChart({
   resource,
   range,
   formatDate,
+  aggregation,
 }: {
   resource: ChartResource;
   range: DayjsRange;
+  aggregation?: AggregationType;
   formatDate?: (date: Date) => string;
 }) {
   const requiredScopes = TIME_SERIES_CONFIGS[resource]?.requiredScopes ?? [];
 
   return (
     <RequireScopes scopes={requiredScopes}>
-      <TimeSeriesChartContext.Provider value={{ range, formatDate }}>
+      <TimeSeriesChartContext.Provider
+        value={{ range, formatDate, aggregation }}
+      >
         {createElement(CHART_RESOURCE_CONFIGS[resource].component)}
       </TimeSeriesChartContext.Provider>
     </RequireScopes>
@@ -77,6 +82,9 @@ export function NavigableGraphView() {
 
   const selectedResource = useAtomValue(selectedResourceAtom);
   const selectedRange = useAtomValue(selectedRangeAtom);
+  const selectedRangeType = useAtomValue(selectedRangeTypeAtom);
+
+  const aggregation = selectedRangeType === "year" ? "month" : "day";
 
   return (
     <div>
@@ -87,7 +95,11 @@ export function NavigableGraphView() {
         <DateTimeRangeNavigator />
       </HeaderBar>
       <div className="w-full h-[400px]">
-        <TimeSeriesChart resource={selectedResource} range={selectedRange} />
+        <TimeSeriesChart
+          resource={selectedResource}
+          range={selectedRange}
+          aggregation={aggregation}
+        />
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import { FRACTION_DIGITS_0 } from "@/utils/number-formats";
 import { TimeSeriesDatum, useTimeSeriesData } from "./data";
 import { ChartSeriesConfig, singleSeriesConfig } from "./series-config";
 import { SimpleLineChart, StackedBarChart } from "./mui-renderer";
+import { useAggregation } from "./aggregation";
 
 type HeartDatum = TimeSeriesDatum & {
   value: HeartTimeSeriesValue;
@@ -17,20 +18,17 @@ type SimplifiedHeartDatum = TimeSeriesDatum & {
 
 const RESTING_HEART_RATE_SERIES_CONFIGS = singleSeriesConfig<HeartDatum>({
   label: "Resting heart rate",
-  yAccessor: (entry) => entry.value.restingHeartRate,
+  yAccessor: (entry) => entry.value.restingHeartRate ?? null,
   numberFormat: FRACTION_DIGITS_0.format,
   unit: "bpm",
+  showMark: true,
 });
 
 export function RestingHeartRateChart() {
   const data = useTimeSeriesData<HeartDatum>("resting-heart-rate");
+  const props = useAggregation(data, RESTING_HEART_RATE_SERIES_CONFIGS);
 
-  return (
-    <SimpleLineChart<HeartDatum>
-      data={data}
-      seriesConfigs={RESTING_HEART_RATE_SERIES_CONFIGS}
-    />
-  );
+  return <SimpleLineChart {...props} />;
 }
 
 const HEART_RATE_ZONES_SERIES_CONFIGS: Array<
@@ -90,10 +88,6 @@ export function HeartRateZonesChart() {
     return datum;
   });
 
-  return (
-    <StackedBarChart<SimplifiedHeartDatum>
-      data={data}
-      seriesConfigs={HEART_RATE_ZONES_SERIES_CONFIGS}
-    />
-  );
+  const props = useAggregation(data, HEART_RATE_ZONES_SERIES_CONFIGS);
+  return <StackedBarChart {...props} />;
 }

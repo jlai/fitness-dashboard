@@ -9,6 +9,7 @@ import { SimpleBarChart, SimpleLineChart } from "./mui-renderer";
 import { useTimeSeriesData } from "./data";
 import { singleSeriesConfig } from "./series-config";
 import { durationTickFormat, durationTooltipFormat } from "./formatters";
+import { useAggregation } from "./aggregation";
 
 dayjs.extend(durationPlugin);
 
@@ -50,8 +51,9 @@ const SLEEP_SERIES_CONFIGS = singleSeriesConfig({
 
 export function StepsChart() {
   const data = useTimeSeriesData("steps");
+  const props = useAggregation(data, STEPS_SERIES_CONFIGS);
 
-  return <SimpleBarChart data={data} seriesConfigs={STEPS_SERIES_CONFIGS} />;
+  return <SimpleBarChart {...props} />;
 }
 
 export function DistanceChart() {
@@ -61,30 +63,37 @@ export function DistanceChart() {
   const seriesConfigs = useMemo(
     () =>
       singleSeriesConfig({
+        label: "Distance",
         numberFormat: FRACTION_DIGITS_1.format,
         unit: localizedKilometersName,
       }),
     [localizedKilometersName]
   );
 
-  return <SimpleBarChart data={data} seriesConfigs={seriesConfigs} />;
+  const props = useAggregation(data, seriesConfigs);
+
+  return <SimpleBarChart {...props} />;
 }
 
 export function FloorsChart() {
   const data = useTimeSeriesData("floors");
-  return <SimpleBarChart data={data} seriesConfigs={FLOORS_SERIES_CONFIGS} />;
+  const props = useAggregation(data, FLOORS_SERIES_CONFIGS);
+
+  return <SimpleBarChart {...props} />;
 }
 
 export function CaloriesBurnedChart() {
   const data = useTimeSeriesData("calories");
+  const props = useAggregation(data, CALORIES_SERIES_CONFIGS);
 
-  return <SimpleBarChart data={data} seriesConfigs={CALORIES_SERIES_CONFIGS} />;
+  return <SimpleBarChart {...props} />;
 }
 
 export function CaloriesConsumedChart() {
-  const data = useTimeSeriesData("calories");
+  const data = useTimeSeriesData("calories-in");
+  const props = useAggregation(data, CALORIES_SERIES_CONFIGS);
 
-  return <SimpleBarChart data={data} seriesConfigs={CALORIES_SERIES_CONFIGS} />;
+  return <SimpleBarChart {...props} />;
 }
 
 export function WaterChart() {
@@ -94,6 +103,7 @@ export function WaterChart() {
   const seriesConfigs = useMemo(
     () =>
       singleSeriesConfig({
+        label: "Water consumed",
         yAccessor: (entry) => localizedWaterVolume(Number(entry.value)),
         numberFormat: FRACTION_DIGITS_0.format,
         unit: localizedWaterVolumeName,
@@ -101,7 +111,8 @@ export function WaterChart() {
     [localizedWaterVolume, localizedWaterVolumeName]
   );
 
-  return <SimpleBarChart data={data} seriesConfigs={seriesConfigs} />;
+  const props = useAggregation(data, seriesConfigs);
+  return <SimpleBarChart {...props} />;
 }
 
 export function WeightChart() {
@@ -119,25 +130,44 @@ export function WeightChart() {
     [localizedKilograms, localizedKilogramsName]
   );
 
-  return <SimpleLineChart data={data} seriesConfigs={seriesConfigs} />;
+  const props = useAggregation(data, seriesConfigs);
+  return (
+    <SimpleLineChart
+      {...props}
+      yAxisOptions={{ tickFormat: FRACTION_DIGITS_1.format }}
+    />
+  );
 }
 
 export function FatChart() {
   const data = useTimeSeriesData("fat");
-  return <SimpleLineChart data={data} seriesConfigs={FAT_SERIES_CONFIGS} />;
+  const props = useAggregation(data, FAT_SERIES_CONFIGS);
+  return (
+    <SimpleLineChart
+      {...props}
+      yAxisOptions={{ tickFormat: FRACTION_DIGITS_1.format }}
+    />
+  );
 }
 
 export function BmiChart() {
   const data = useTimeSeriesData("bmi");
-  return <SimpleLineChart data={data} seriesConfigs={BMI_SERIES_CONFIGS} />;
+  const props = useAggregation(data, BMI_SERIES_CONFIGS);
+  return (
+    <SimpleLineChart
+      {...props}
+      yAxisOptions={{ tickFormat: FRACTION_DIGITS_1.format }}
+    />
+  );
 }
 
 export function SleepChart() {
   const data = useTimeSeriesData("sleep");
+  const props = useAggregation(data, SLEEP_SERIES_CONFIGS);
+
   return (
     <SimpleBarChart
-      data={data}
-      seriesConfigs={SLEEP_SERIES_CONFIGS}
+      {...props}
       yAxisOptions={{
         tickFormat: durationTickFormat,
         tooltipFormat: durationTooltipFormat,

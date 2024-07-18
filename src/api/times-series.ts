@@ -39,7 +39,7 @@ export interface ActiveZoneMinutesTimeSeriesValue {
 }
 
 export interface HeartTimeSeriesValue {
-  restingHeartRate: number;
+  restingHeartRate?: number;
   heartRateZones: Array<HeartRateZone>;
 }
 
@@ -177,7 +177,7 @@ export function buildTimeSeriesQuery<TEntry = TimeSeriesEntry<string>>(
         `${config.urlPrefix}${startDate}/${endDate}.json`,
         {
           headers: {
-            // For heart rate zones
+            // For heart rate zones where we need to match the name
             "Accept-Locale": "en-US",
           },
         }
