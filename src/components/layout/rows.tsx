@@ -11,6 +11,8 @@ export function HeaderBar({
       marginBlock={2}
       alignItems="center"
       columnGap={2}
+      rowGap={2}
+      flexWrap="wrap"
       {...stackProps}
     >
       {children}

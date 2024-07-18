@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { Button, Divider, Stack } from "@mui/material";
+import { Button } from "@mui/material";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { toast } from "mui-sonner";
@@ -16,6 +16,7 @@ import {
 import LinkedDayElement, { DaySelectorSource } from "@/components/linked-day";
 import { selectedDayForPageAtom } from "@/state";
 import { FormRow, FormRows } from "@/components/forms/form-row";
+import { DividedStack } from "@/components/layout/flex";
 
 import { MealTypeElement } from "../food/meal-type-element";
 
@@ -84,11 +85,7 @@ export default function CreateMealLog() {
       formContext={formContext}
       onSuccess={logMeal}
     >
-      <Stack
-        direction="row"
-        spacing={4}
-        divider={<Divider orientation="vertical" flexItem />}
-      >
+      <DividedStack>
         <div className="flex-1">
           <FormRows>
             <FormRow>
@@ -109,7 +106,7 @@ export default function CreateMealLog() {
             Manage meals
           </Button>
         </div>
-      </Stack>
+      </DividedStack>
     </FormContainer>
   );
 }

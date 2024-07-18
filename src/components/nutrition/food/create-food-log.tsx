@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback } from "react";
-import { Button, Divider, Stack } from "@mui/material";
+import { Button, Stack } from "@mui/material";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "mui-sonner";
 import { FormContainer, useForm } from "react-hook-form-mui";
@@ -15,6 +15,7 @@ import LinkedDayElement, { DaySelectorSource } from "@/components/linked-day";
 import { selectedDayForPageAtom } from "@/state";
 import { FormRow, FormRows } from "@/components/forms/form-row";
 import { ServingSize } from "@/utils/food-amounts";
+import { DividedStack } from "@/components/layout/flex";
 
 import { SearchFoodsElement } from "./food-search";
 import { FoodServingSizeElement } from "./serving-size";
@@ -106,11 +107,7 @@ export function CreateFoodLogForm() {
 
 export default function CreateFoodLog() {
   return (
-    <Stack
-      direction="row"
-      spacing={4}
-      divider={<Divider orientation="vertical" flexItem />}
-    >
+    <DividedStack>
       <div className="flex-1">
         <CreateFoodLogForm />
       </div>
@@ -122,6 +119,6 @@ export default function CreateFoodLog() {
           Favorites
         </Button>
       </Stack>
-    </Stack>
+    </DividedStack>
   );
 }

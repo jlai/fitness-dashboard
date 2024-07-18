@@ -1,12 +1,13 @@
 "use client";
 
-import { Button, Divider, Paper, Stack, Typography } from "@mui/material";
+import { Button, Divider, Paper, Typography } from "@mui/material";
 import { useState, useCallback, Suspense } from "react";
 
 import { Meal } from "@/api/nutrition";
 import SearchMeals from "@/components/nutrition/meal/meal-search";
 import { useUnits } from "@/config/units";
 import { CreateOrEditMeal } from "@/components/nutrition/meal/edit-meal";
+import { DividedStack } from "@/components/layout/flex";
 
 export default function ManageMeals() {
   // Don't need this, just preload for now
@@ -48,11 +49,7 @@ export default function ManageMeals() {
       <Typography variant="h4" className="mb-8">
         Manage meals
       </Typography>
-      <Stack
-        direction="row"
-        columnGap={4}
-        divider={<Divider orientation="vertical" flexItem />}
-      >
+      <DividedStack>
         <div className="flex-1">
           <Suspense>
             <SearchMeals
@@ -63,7 +60,7 @@ export default function ManageMeals() {
           </Suspense>
         </div>
         <Button onClick={createNewMeal}>Create new</Button>
-      </Stack>
+      </DividedStack>
       {draftMeal && (
         <>
           <Divider className="my-8" />

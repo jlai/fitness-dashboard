@@ -1,7 +1,6 @@
 import Image from "next/image";
 import {
   Button,
-  Divider,
   FormControl,
   InputAdornment,
   OutlinedInput,
@@ -25,6 +24,7 @@ import {
 } from "@/api/nutrition";
 
 import NumericStat from "../numeric-stat";
+import { DividedStack } from "../layout/flex";
 
 import glassCupUrl from "./assets/water_full_24dp_FILL0_wght400_GRAD0_opsz24.svg";
 import smallBottleUrl from "./assets/water_bottle_24dp_FILL0_wght400_GRAD0_opsz24.svg";
@@ -154,7 +154,7 @@ export default function WaterEntryPanel() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
-      <div className="flex flex-row">
+      <DividedStack>
         <div className="flex-1 space-y-8 flex flex-col items-center">
           <div className="flex flex-row gap-x-8">
             <FormControl>
@@ -184,13 +184,12 @@ export default function WaterEntryPanel() {
             )}
           </div>
         </div>
-        <Divider orientation="vertical" flexItem />
         <div className="flex-1 self-center justify-self-center">
           <Suspense>
             <WaterToday />
           </Suspense>
         </div>
-      </div>
+      </DividedStack>
     </form>
   );
 }
