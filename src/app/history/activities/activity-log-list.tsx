@@ -12,7 +12,7 @@ import {
 } from "@/api/activity/activities";
 import HistoryList from "@/components/history-list/history-list";
 
-import { showingActivityLogDetailsDialogAtom } from "./atoms";
+import { showingActivityLogDetailsDialogAtom } from "./details/atoms";
 
 const NUMBER_FORMAT = new Intl.NumberFormat(undefined, {
   maximumFractionDigits: 2,

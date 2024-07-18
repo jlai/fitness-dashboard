@@ -4,9 +4,9 @@ import { ScopeProvider } from "jotai-scope";
 
 import { RequireScopes } from "@/components/require-scopes";
 
-import { ActivityLogDetailsDialog } from "./activity-details";
+import { ActivityLogDetailsDialog } from "./details";
 import ActivityLogList from "./activity-log-list";
-import { showingActivityLogDetailsDialogAtom } from "./atoms";
+import { showingActivityLogDetailsDialogAtom } from "./details/atoms";
 
 export default function ActivityHistoryPage() {
   return (

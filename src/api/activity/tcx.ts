@@ -1,4 +1,5 @@
 import { tcx as tcxToGeoJson } from "@tmcw/togeojson";
+import { FeatureCollection } from "geojson";
 
 export type Trackpoint = {
   time: Date;
@@ -11,6 +12,11 @@ export type Trackpoint = {
 
 function parseOptionalNumber(stringValue?: string | null) {
   return stringValue ? Number(stringValue) : undefined;
+}
+
+export interface ParsedTcx {
+  trackpoints: Array<Trackpoint>;
+  geojson: FeatureCollection;
 }
 
 export function parseTcx(tcxString: string) {

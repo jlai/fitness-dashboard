@@ -52,6 +52,7 @@
     "react-hook-form-mui": "^7.0.1",
     "react-hydration-provider": "^2.1.0",
     "react-map-gl": "^7.1.7",
+    "react-resizable-panels": "^2.0.21",
     "react-use": "^17.5.0",
     "svg-plant": "^2.0.5",
     "wonka": "^6.3.4"
