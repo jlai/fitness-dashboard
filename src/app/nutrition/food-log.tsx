@@ -33,12 +33,14 @@ import {
 } from "@/api/nutrition";
 
 import { groupByMealType, MealTypeSummary } from "./summarize-day";
+import { selectedFoodLogsAtom, updateSelectedFoodLogAtom } from "./atoms";
 import {
-  selectedFoodLogsAtom,
-  updateSelectedFoodLogAtom,
+  createMealDialogOpenAtom,
+  CreateMealFromFoodLogsDialog,
+  EditServingSize,
   moveDialogOpenAtom,
-} from "./atoms";
-import { EditServingSize, MoveFoodLogsDialog } from "./edit-food-log-dialogs";
+  MoveFoodLogsDialog,
+} from "./dialogs";
 
 const NUTRIENT_FORMAT = FRACTION_DIGITS_1;
 
@@ -160,6 +162,7 @@ function FoodRow({ foodLog }: { foodLog: FoodLogEntry }) {
 export default function FoodLog({ day }: { day: Dayjs }) {
   const [selectedFoodLogs, setSelectedFoodLogs] = useAtom(selectedFoodLogsAtom);
   const setMoveDialogOpen = useSetAtom(moveDialogOpenAtom);
+  const setCreateMealDialogOpen = useSetAtom(createMealDialogOpenAtom);
 
   const confirm = useConfirm();
   const queryClient = useQueryClient();
@@ -238,8 +241,15 @@ export default function FoodLog({ day }: { day: Dayjs }) {
             ? `Move ${selectedFoodLogs.size} selected`
             : "Move selected"}
         </Button>
+        <Button
+          disabled={selectedFoodLogs.size === 0}
+          onClick={() => setCreateMealDialogOpen(true)}
+        >
+          Create meal
+        </Button>
       </div>
       <MoveFoodLogsDialog />
+      <CreateMealFromFoodLogsDialog />
       <div className="mb-8"></div>
     </>
   );

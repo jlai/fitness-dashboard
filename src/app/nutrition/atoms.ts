@@ -3,7 +3,6 @@ import { atom } from "jotai";
 
 import { FoodLogEntry } from "@/api/nutrition";
 
-export const moveDialogOpenAtom = atom(false);
 export const selectedFoodLogsAtom = atom<Immutable.Set<FoodLogEntry>>(
   Immutable.Set([])
 );
