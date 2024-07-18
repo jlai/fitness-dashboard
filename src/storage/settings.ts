@@ -33,3 +33,9 @@ export const distanceUnitAtom = atomWithStorage<"en_US" | "METRIC" | undefined>(
     getOnInit: true,
   }
 );
+
+export const foodLogTotalsPositionAtom = atomWithStorage<
+  "top" | "bottom" | "both"
+>("food-log:totals-position", "bottom", undefined, {
+  getOnInit: true,
+});

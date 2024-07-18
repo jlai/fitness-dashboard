@@ -28,9 +28,11 @@ import { bindPopper, usePopupState } from "material-ui-popup-state/hooks";
 import { FRACTION_DIGITS_1 } from "@/utils/number-formats";
 import {
   FoodLogEntry,
+  GetFoodLogResponse,
   buildDeleteFoodLogsMutation,
   buildFoodLogQuery,
 } from "@/api/nutrition";
+import { foodLogTotalsPositionAtom } from "@/storage/settings";
 
 import { groupByMealType, MealTypeSummary } from "./summarize-day";
 import { selectedFoodLogsAtom, updateSelectedFoodLogAtom } from "./atoms";
@@ -159,10 +161,26 @@ function FoodRow({ foodLog }: { foodLog: FoodLogEntry }) {
   );
 }
 
+function TotalsRow({
+  foodLogsResponse,
+}: {
+  foodLogsResponse: GetFoodLogResponse;
+}) {
+  const summary: MealTypeSummary = {
+    id: -1,
+    name: "Total",
+    foods: [],
+    ...foodLogsResponse.summary,
+  };
+
+  return <MealTypeRows summary={summary} />;
+}
+
 export default function FoodLog({ day }: { day: Dayjs }) {
   const [selectedFoodLogs, setSelectedFoodLogs] = useAtom(selectedFoodLogsAtom);
   const setMoveDialogOpen = useSetAtom(moveDialogOpenAtom);
   const setCreateMealDialogOpen = useSetAtom(createMealDialogOpenAtom);
+  const foodLogTotalsPosition = useAtomValue(foodLogTotalsPositionAtom);
 
   const confirm = useConfirm();
   const queryClient = useQueryClient();
@@ -170,16 +188,16 @@ export default function FoodLog({ day }: { day: Dayjs }) {
     buildDeleteFoodLogsMutation(queryClient)
   );
 
-  const { data: foodLogs } = useSuspenseQuery(buildFoodLogQuery(day));
+  const { data: foodLogsResponse } = useSuspenseQuery(buildFoodLogQuery(day));
   const groupedMealTypes = useMemo(
-    () => groupByMealType(foodLogs.foods),
-    [foodLogs]
+    () => groupByMealType(foodLogsResponse.foods),
+    [foodLogsResponse]
   );
 
   useEffect(() => {
     // Clear when the food log list changes
     setSelectedFoodLogs(Immutable.Set([]));
-  }, [foodLogs, setSelectedFoodLogs]);
+  }, [foodLogsResponse.foods, setSelectedFoodLogs]);
 
   const deleteSelected = useCallback(() => {
     (async () => {
@@ -213,6 +231,9 @@ export default function FoodLog({ day }: { day: Dayjs }) {
             </TableRow>
           </TableHead>
           <TableBody>
+            {foodLogTotalsPosition !== "bottom" && (
+              <TotalsRow foodLogsResponse={foodLogsResponse} />
+            )}
             {[...groupedMealTypes.values()]
               .filter(
                 (summary) => summary.foods.length > 0 || summary.id === -1
@@ -220,6 +241,9 @@ export default function FoodLog({ day }: { day: Dayjs }) {
               .map((summary) => (
                 <MealTypeRows key={summary.id} summary={summary} />
               ))}
+            {foodLogTotalsPosition !== "top" && (
+              <TotalsRow foodLogsResponse={foodLogsResponse} />
+            )}
           </TableBody>
         </Table>
       </Paper>

@@ -36,6 +36,7 @@ import {
 } from "@/api/user";
 import {
   distanceUnitAtom,
+  foodLogTotalsPositionAtom,
   pollyEnabledAtom,
   waterUnitAtom,
   weightUnitAtom,
@@ -126,6 +127,30 @@ function LoginSettings() {
         Unlink access to Fitbit account from this website (across all browser
         sessions)
       </SettingsRow>
+    </>
+  );
+}
+
+function FoodSettings() {
+  const [totalsPosition, setTotalsPosition] = useAtom(
+    foodLogTotalsPositionAtom
+  );
+
+  return (
+    <>
+      <SettingsRow
+        title="Show food totals row"
+        action={
+          <Select<typeof totalsPosition>
+            value={totalsPosition}
+            onChange={(event) => setTotalsPosition(event.target.value as any)}
+          >
+            <MenuItem value="top">On top</MenuItem>
+            <MenuItem value="bottom">On bottom</MenuItem>
+            <MenuItem value="both">Both top/bottom</MenuItem>
+          </Select>
+        }
+      />
     </>
   );
 }
@@ -275,6 +300,9 @@ export default function SettingsPage() {
       </SettingsTable>
       <SettingsTable>
         <UnitSettings />
+      </SettingsTable>
+      <SettingsTable>
+        <FoodSettings />
       </SettingsTable>
       {loggedIn && (
         <SettingsTable>

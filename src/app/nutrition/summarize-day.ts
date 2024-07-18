@@ -41,15 +41,6 @@ export function groupByMealType(foods: Array<FoodLogEntry>) {
     });
   }
 
-  const total = {
-    id: -1,
-    name: "Total",
-    foods: [],
-    ...defaultNutrients,
-  };
-
-  mealTypeSummaries.set(-1, total);
-
   for (const food of foods) {
     const summary = mealTypeSummaries.get(food.loggedFood.mealTypeId);
     if (summary) {
@@ -72,13 +63,6 @@ export function groupByMealType(foods: Array<FoodLogEntry>) {
       summary.fiber += fiber;
       summary.protein += protein;
       summary.sodium += sodium;
-
-      total.calories += calories;
-      total.carbs += carbs;
-      total.fat += fat;
-      total.fiber += fiber;
-      total.protein += protein;
-      total.sodium += sodium;
     }
   }
 
