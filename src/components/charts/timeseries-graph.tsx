@@ -56,10 +56,12 @@ export function TimeSeriesChart({
   range,
   formatDate,
   aggregation,
+  layout,
 }: {
   resource: ChartResource;
   range: DayjsRange;
   aggregation?: AggregationType;
+  layout?: "horizontal" | "vertical";
   formatDate?: (date: Date) => string;
 }) {
   const requiredScopes = TIME_SERIES_CONFIGS[resource]?.requiredScopes ?? [];
@@ -67,7 +69,7 @@ export function TimeSeriesChart({
   return (
     <RequireScopes scopes={requiredScopes}>
       <TimeSeriesChartContext.Provider
-        value={{ range, formatDate, aggregation }}
+        value={{ range, formatDate, aggregation, layout }}
       >
         {createElement(CHART_RESOURCE_CONFIGS[resource].component)}
       </TimeSeriesChartContext.Provider>

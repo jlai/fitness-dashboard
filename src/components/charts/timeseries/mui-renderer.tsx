@@ -1,4 +1,5 @@
 import {
+  AxisConfig,
   BarPlot,
   BarSeriesType,
   ChartsAxisHighlight,
@@ -10,7 +11,6 @@ import {
   LineSeriesType,
   MarkPlot,
   ResponsiveChartContainer,
-  ResponsiveChartContainerProps,
 } from "@mui/x-charts";
 import dayjs from "dayjs";
 import { useContext } from "react";
@@ -34,9 +34,11 @@ interface CommonChartProps<TDatum extends TimeSeriesDatum> {
   yAxisOptions?: YAxisOptions;
 }
 
+type EitherAxisConfig = Partial<Omit<AxisConfig, "position">>;
+
 function useXAxisConfig<TDatum extends TimeSeriesDatum>(
   data?: Array<TDatum>
-): ResponsiveChartContainerProps["xAxis"] {
+): Array<EitherAxisConfig> {
   const {
     range,
     formatDate: customFormatDate,
@@ -77,7 +79,7 @@ interface YAxisOptions {
 function getYAxisConfig({
   tickFormat,
   tooltipFormat,
-}: YAxisOptions): ResponsiveChartContainerProps["yAxis"] {
+}: YAxisOptions): Array<EitherAxisConfig> {
   return [
     {
       id: "y",
@@ -87,10 +89,15 @@ function getYAxisConfig({
   ];
 }
 
-function getCommonSeriesProps<TDatum extends TimeSeriesDatum>(
-  data: Array<TDatum> | undefined,
-  config: ChartSeriesConfig<TDatum>
-) {
+function getCommonSeriesProps<TDatum extends TimeSeriesDatum>({
+  data,
+  config,
+  layout,
+}: {
+  data: Array<TDatum> | undefined;
+  config: ChartSeriesConfig<TDatum>;
+  layout?: "horizontal" | "vertical";
+}) {
   const props: Record<string, any> = {
     label: config.label,
     data: data?.map((entry) => config.yAccessor(entry)) ?? [],
@@ -98,6 +105,7 @@ function getCommonSeriesProps<TDatum extends TimeSeriesDatum>(
       numberFormat: config.numberFormat,
       unit: config.unit,
     }),
+    layout: layout ?? "vertical",
   };
 
   if (config.color) {
@@ -107,35 +115,65 @@ function getCommonSeriesProps<TDatum extends TimeSeriesDatum>(
   return props;
 }
 
-function getCommonChartElements({ loading }: { loading: boolean }) {
+function CommonChartElements({
+  layout,
+  loading,
+}: {
+  layout?: "horizontal" | "vertical";
+  loading: boolean;
+}) {
+  const isHorizontal = layout === "horizontal";
+
   return (
     <>
       <ChartsOverlay loading={loading} />
       <ChartsXAxis />
       <ChartsYAxis />
-      <ChartsAxisHighlight x="band" />
+      <ChartsAxisHighlight
+        x={!isHorizontal ? "band" : undefined}
+        y={isHorizontal ? "band" : undefined}
+      />
       <ChartsTooltip />
       <MarkPlot />
-      <ChartsGrid horizontal />
+      <ChartsGrid horizontal={!isHorizontal} vertical={isHorizontal} />
     </>
   );
+}
+
+function useAxes<TDatum extends TimeSeriesDatum>({
+  layout,
+  data,
+  yAxisOptions,
+}: {
+  layout?: "vertical" | "horizontal";
+  data: Array<TDatum> | undefined;
+  yAxisOptions: YAxisOptions;
+}) {
+  const xAxis = useXAxisConfig<TDatum>(data);
+  const yAxis = getYAxisConfig(yAxisOptions);
+
+  if (layout === "horizontal") {
+    return { xAxis: yAxis, yAxis: xAxis };
+  }
+
+  return { xAxis, yAxis };
 }
 
 export function SimpleBarChart<
   TDatum extends TimeSeriesDatum = TimeSeriesDatum
 >({ data, seriesConfigs, yAxisOptions = {} }: CommonChartProps<TDatum>) {
-  const xAxis = useXAxisConfig<TDatum>(data);
-  const yAxis = getYAxisConfig(yAxisOptions);
+  const { layout } = useContext(TimeSeriesChartContext);
+  const axesProps = useAxes({ layout, data, yAxisOptions });
 
   const series: Array<BarSeriesType> = seriesConfigs.map((config) => ({
     type: "bar",
-    ...getCommonSeriesProps(data, config),
+    ...getCommonSeriesProps({ data, config, layout }),
   }));
 
   return (
-    <ResponsiveChartContainer xAxis={xAxis} yAxis={yAxis} series={series}>
+    <ResponsiveChartContainer series={series} {...axesProps}>
       <BarPlot />
-      {getCommonChartElements({ loading: !data })}
+      <CommonChartElements layout={layout} loading={!data} />
     </ResponsiveChartContainer>
   );
 }
@@ -143,19 +181,19 @@ export function SimpleBarChart<
 export function StackedBarChart<
   TDatum extends TimeSeriesDatum = TimeSeriesDatum
 >({ data, seriesConfigs, yAxisOptions = {} }: CommonChartProps<TDatum>) {
-  const xAxis = useXAxisConfig<TDatum>(data);
-  const yAxis = getYAxisConfig(yAxisOptions);
+  const { layout } = useContext(TimeSeriesChartContext);
+  const axesProps = useAxes({ layout, data, yAxisOptions });
 
   const series: Array<BarSeriesType> = seriesConfigs.map((config) => ({
     type: "bar",
     stack: "stack",
-    ...getCommonSeriesProps(data, config),
+    ...getCommonSeriesProps({ data, config, layout }),
   }));
 
   return (
-    <ResponsiveChartContainer xAxis={xAxis} yAxis={yAxis} series={series}>
+    <ResponsiveChartContainer series={series} {...axesProps}>
       <BarPlot />
-      {getCommonChartElements({ loading: !data })}
+      <CommonChartElements layout={layout} loading={!data} />
     </ResponsiveChartContainer>
   );
 }
@@ -163,20 +201,19 @@ export function StackedBarChart<
 export function SimpleLineChart<
   TDatum extends TimeSeriesDatum = TimeSeriesDatum
 >({ data, seriesConfigs, yAxisOptions = {} }: CommonChartProps<TDatum>) {
-  const xAxis = useXAxisConfig<TDatum>(data);
-  const yAxis = getYAxisConfig(yAxisOptions);
+  const axesProps = useAxes({ data, yAxisOptions });
 
   const series: Array<LineSeriesType> = seriesConfigs.map((config) => ({
     type: "line",
     connectNulls: true,
     showMark: config.showMark,
-    ...getCommonSeriesProps(data, config),
+    ...getCommonSeriesProps({ data, config }),
   }));
 
   return (
-    <ResponsiveChartContainer xAxis={xAxis} yAxis={yAxis} series={series}>
+    <ResponsiveChartContainer series={series} {...axesProps}>
       <LinePlot />
-      {getCommonChartElements({ loading: !data })}
+      <CommonChartElements loading={!data} />
     </ResponsiveChartContainer>
   );
 }

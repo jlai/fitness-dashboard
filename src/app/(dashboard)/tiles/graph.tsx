@@ -7,7 +7,7 @@ import {
 } from "@mui/material";
 import { Settings as SettingsIcon } from "@mui/icons-material";
 import { bindPopover, usePopupState } from "material-ui-popup-state/hooks";
-import { useState } from "react";
+import { useContext, useState } from "react";
 
 import { TimeSeriesChart } from "@/components/charts/timeseries-graph";
 import {
@@ -19,7 +19,10 @@ import { SHORT_WEEKDAY } from "@/utils/date-formats";
 
 import { useSelectedDay } from "../state";
 
+import { TileContext } from "./tile";
+
 export default function GraphTileContent() {
+  const { w, h } = useContext(TileContext);
   const [resource, setResource] = useState<ChartResource>("steps");
 
   const popupState = usePopupState({

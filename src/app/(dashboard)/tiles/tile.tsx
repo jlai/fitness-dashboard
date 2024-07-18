@@ -1,5 +1,12 @@
-import { Suspense } from "react";
+import { createContext, Suspense } from "react";
 import { Paper } from "@mui/material";
+
+export interface TileContextData {
+  w?: number;
+  h?: number;
+}
+
+export const TileContext = createContext<TileContextData>({});
 
 export default function Tile({ children }: { children: React.ReactNode }) {
   return (

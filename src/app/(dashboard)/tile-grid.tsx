@@ -11,6 +11,7 @@ import { userTilesAtom } from "@/storage/tiles";
 import { Grid, GridStackReactWidget } from "./grid";
 import { editingGridAtom } from "./state";
 import { LazyTile } from "./tiles";
+import { TileContext } from "./tiles/tile";
 
 type GridData = {
   type: string;
@@ -31,8 +32,12 @@ const GRID_OPTIONS = {
   disableResize: true,
 };
 
-function renderTile({ data }: GridStackReactWidget<GridData>) {
-  return <LazyTile type={data.type} />;
+function renderTile({ data, w, h }: GridStackReactWidget<GridData>) {
+  return (
+    <TileContext.Provider value={{ w, h }}>
+      <LazyTile type={data.type} />
+    </TileContext.Provider>
+  );
 }
 
 export default function TileGrid() {

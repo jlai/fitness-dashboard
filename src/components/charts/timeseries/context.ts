@@ -8,6 +8,7 @@ export type AggregationType = "day" | "month";
 interface TimeSeriesChartConfig {
   range: DayjsRange;
   aggregation?: "day" | "month";
+  layout?: "horizontal" | "vertical";
 
   // Override date format for x-axis
   formatDate?: (date: Date) => string;
