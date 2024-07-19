@@ -16,12 +16,13 @@ function parseOptionalNumber(stringValue?: string | null) {
 
 export interface ParsedTcx {
   trackpoints: Array<Trackpoint>;
-  geojson: FeatureCollection;
+  geojson: FeatureCollection | null;
 }
 
-export function parseTcx(tcxString: string) {
+export function parseTcx(tcxString: string): ParsedTcx {
   const tcxDocument = new DOMParser().parseFromString(tcxString, "text/xml");
 
+  let hasLocation = false;
   const trackpoints: Array<Trackpoint> = [];
 
   tcxDocument.querySelectorAll("Trackpoint").forEach((node) => {
@@ -45,6 +46,10 @@ export function parseTcx(tcxString: string) {
       node.querySelector("HeartRateBpm Value")?.textContent
     );
 
+    if (latitudeDegrees) {
+      hasLocation = true;
+    }
+
     trackpoints.push({
       time,
       latitudeDegrees,
@@ -57,6 +62,6 @@ export function parseTcx(tcxString: string) {
 
   return {
     trackpoints,
-    geojson: tcxToGeoJson(tcxDocument),
+    geojson: hasLocation ? tcxToGeoJson(tcxDocument) : null,
   };
 }

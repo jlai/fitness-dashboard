@@ -3,6 +3,8 @@ import {
   DialogActions,
   DialogContent,
   IconButton,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import { useAtom } from "jotai";
 import {
@@ -18,6 +20,9 @@ import { showingActivityLogDetailsDialogAtom } from "./atoms";
 import { ActivityDetails } from "./activity-details";
 
 export function ActivityLogDetailsDialog() {
+  const theme = useTheme();
+  const isMobileSize = !useMediaQuery(theme.breakpoints.up("sm"));
+
   const [fullScreen, setFullScreen] = useState(false);
   const [showingActivityLog, setShowingActivityLog] = useAtom(
     showingActivityLogDetailsDialogAtom
@@ -26,18 +31,20 @@ export function ActivityLogDetailsDialog() {
   return (
     <Dialog
       fullWidth
-      fullScreen={fullScreen}
+      fullScreen={isMobileSize || fullScreen}
       maxWidth="xl"
       open={!!showingActivityLog}
       onClose={() => setShowingActivityLog(null)}
     >
       <DialogActions>
-        <IconButton
-          aria-label="toggle fullscreen"
-          onClick={() => setFullScreen(!fullScreen)}
-        >
-          {fullScreen ? <FullscreenExitIcon /> : <FullscreenIcon />}
-        </IconButton>
+        {!isMobileSize && (
+          <IconButton
+            aria-label="toggle fullscreen"
+            onClick={() => setFullScreen(!fullScreen)}
+          >
+            {fullScreen ? <FullscreenExitIcon /> : <FullscreenIcon />}
+          </IconButton>
+        )}
         <IconButton
           aria-label="close"
           onClick={() => setShowingActivityLog(null)}
@@ -45,7 +52,7 @@ export function ActivityLogDetailsDialog() {
           <CloseIcon />
         </IconButton>
       </DialogActions>
-      <DialogContent className="p-0">
+      <DialogContent className="p-0 flex-1 flex flex-col">
         <RequireScopes scopes={["loc"]}>
           {showingActivityLog && (
             <ActivityDetails activityLog={showingActivityLog} />
