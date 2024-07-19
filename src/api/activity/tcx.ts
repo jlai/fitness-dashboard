@@ -60,8 +60,10 @@ export function parseTcx(tcxString: string): ParsedTcx {
     });
   });
 
+  const geojson = hasLocation ? tcxToGeoJson(tcxDocument) : null;
+
   return {
     trackpoints,
-    geojson: hasLocation ? tcxToGeoJson(tcxDocument) : null,
+    geojson,
   };
 }

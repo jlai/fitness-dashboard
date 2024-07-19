@@ -11,12 +11,22 @@ import {
   LngLatBoundsLike,
 } from "react-map-gl/maplibre";
 import type { FeatureCollection, Feature, LineString } from "geojson";
-import { bbox, getCoords } from "@turf/turf";
+import {
+  bbox,
+  featureEach,
+  findPoint,
+  getCoord,
+  getCoords,
+  lineChunk,
+} from "@turf/turf";
 import { Flag as EndIcon, PlayArrow as StartIcon } from "@mui/icons-material";
 
 import { MAPLIBRE_STYLE_URL } from "@/config";
 
 import "maplibre-gl/dist/maplibre-gl.css";
+import { useMemo } from "react";
+
+import { useUnits } from "@/config/units";
 
 const layerStyle: LineLayer = {
   id: "track",
@@ -30,17 +40,50 @@ const layerStyle: LineLayer = {
 
 const FIT_BOUNDS_PADDING_PX = 32;
 
+interface SplitInfo {
+  index: number;
+  coords: [number, number];
+}
+
+function getSplits(feature: Feature, units: "miles" | "kilometers") {
+  const chunks = lineChunk(feature as Feature<LineString>, 1, {
+    units,
+  });
+  const markers: Array<SplitInfo> = [];
+
+  featureEach(chunks, (chunk, index) => {
+    if (index === 0) {
+      // skip first chunk
+      return;
+    }
+
+    const point = findPoint(chunk, { featureIndex: 0 });
+    markers.push({
+      index,
+      coords: getCoord(point) as [number, number],
+    });
+  });
+
+  return markers;
+}
+
 export default function ActivityMap({
   geojson,
 }: {
   geojson: FeatureCollection;
 }) {
+  const { distanceUnit } = useUnits();
   const feature = geojson.features[0];
   const boundingBox = feature && bbox(geojson);
 
   const coords = feature && getCoords(feature as Feature<LineString>);
   const startCoords = coords?.[0];
   const endCoords = coords?.[coords.length - 1];
+
+  const splits = useMemo(
+    () => getSplits(feature, distanceUnit === "en_US" ? "miles" : "kilometers"),
+    [feature, distanceUnit]
+  );
 
   return (
     <Map
@@ -82,6 +125,19 @@ export default function ActivityMap({
           </div>
         </Marker>
       )}
+      {splits.map(({ index, coords }) => (
+        <Marker
+          key={`split-${index}`}
+          longitude={coords[0]}
+          latitude={coords[1]}
+        >
+          <div className="bg-slate-100 border-gray-800 border-2 p-0.5 flex items-center justify-center">
+            <span className="font-bold text-center align-middle mx-1">
+              {index}
+            </span>
+          </div>
+        </Marker>
+      ))}
     </Map>
   );
 }
