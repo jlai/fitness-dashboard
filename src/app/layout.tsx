@@ -45,7 +45,9 @@ export default function RootPageLayout({
                 <Header />
                 <main>
                   <Suspense>
-                    <Container maxWidth="lg">{children}</Container>
+                    <Container maxWidth="lg" className="px-0 sm:px-6">
+                      {children}
+                    </Container>
                   </Suspense>
                 </main>
               </ClientSideSetup>

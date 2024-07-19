@@ -23,7 +23,7 @@ export default function HistoryLayout({
     <RequireLogin>
       <Paper>
         <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
-          <Tabs aria-label="history tabs" value={pathname}>
+          <Tabs variant="scrollable" aria-label="history tabs" value={pathname}>
             <Tab
               component={Link}
               href="/history"

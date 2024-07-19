@@ -1,4 +1,4 @@
-import { AppBar, Container, Typography, Chip, Link } from "@mui/material";
+import { AppBar, Container, Chip, Link } from "@mui/material";
 import { Poppins } from "next/font/google";
 import React from "react";
 import NextLink from "next/link";
@@ -68,8 +68,8 @@ export default function Header() {
         boxShadow: 0,
         bgcolor: "#fcfcff",
         paddingBlock: 2,
-        marginBottom: 4,
       }}
+      className="mb-2 sm:mb-6"
     >
       <Container maxWidth="lg">
         <div className="flex flex-row items-center gap-x-2 text-gray-500">

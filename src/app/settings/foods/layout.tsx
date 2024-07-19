@@ -28,7 +28,11 @@ export default function MealSettingsPage({
           </Button>
         </div>
         <Paper>
-          <Tabs aria-label="food settings tabs" value={pathname}>
+          <Tabs
+            variant="scrollable"
+            aria-label="food settings tabs"
+            value={pathname}
+          >
             <Tab
               component={Link}
               href="/settings/foods/custom"
