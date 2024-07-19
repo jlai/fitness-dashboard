@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import {
   LineLayer,
   Layer,
@@ -21,12 +22,10 @@ import {
 } from "@turf/turf";
 import { Flag as EndIcon, PlayArrow as StartIcon } from "@mui/icons-material";
 
+import { useUnits } from "@/config/units";
 import { MAPLIBRE_STYLE_URL } from "@/config";
 
 import "maplibre-gl/dist/maplibre-gl.css";
-import { useMemo } from "react";
-
-import { useUnits } from "@/config/units";
 
 const layerStyle: LineLayer = {
   id: "track",

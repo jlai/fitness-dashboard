@@ -9,12 +9,7 @@ import {
 } from "@mui/material";
 import dynamic from "next/dynamic";
 import { Download } from "@mui/icons-material";
-import {
-  Direction,
-  PanelGroup,
-  Panel,
-  PanelResizeHandle,
-} from "react-resizable-panels";
+import { PanelGroup, Panel, PanelResizeHandle } from "react-resizable-panels";
 
 import { useUnits } from "@/config/units";
 import { FRACTION_DIGITS_1 } from "@/utils/number-formats";
@@ -81,7 +76,7 @@ export function ActivityDetails({ activityLog }: { activityLog: ActivityLog }) {
   const isSmallOrLarger = useMediaQuery(theme.breakpoints.up("sm"));
 
   // Auto-switch based on screen size
-  const panelDirection: Direction = isSmallOrLarger ? "horizontal" : "vertical";
+  const panelDirection = isSmallOrLarger ? "horizontal" : "vertical";
 
   return (
     <Stack direction="column" className="min-h-0 h-full flex-1">
