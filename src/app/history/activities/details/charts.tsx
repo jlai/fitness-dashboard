@@ -65,10 +65,12 @@ export function ActivityTcxCharts({
           <HeartRateChart trackpoints={parsedTcx.trackpoints} />
         </section>
       )}
-      <section>
-        <Typography variant="h5">Calories burned</Typography>
-        <CaloriesChart data={caloriesIntraday} />
-      </section>{" "}
+      {ENABLE_INTRADAY && (
+        <section>
+          <Typography variant="h5">Calories burned</Typography>
+          <CaloriesChart data={caloriesIntraday} />
+        </section>
+      )}
     </div>
   );
 }
