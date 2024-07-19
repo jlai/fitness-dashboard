@@ -24,6 +24,7 @@ import { loadable } from "jotai/utils";
 
 import { Food, foodUnitsByIdAtom } from "@/api/nutrition";
 import { formatServing, ServingSize } from "@/utils/food-amounts";
+import { commonFoodUnits } from "@/config/common-ids";
 
 function useServingOptions(food: Food | null) {
   const loadingFoodUnitsById = useAtomValue(loadable(foodUnitsByIdAtom));
@@ -53,6 +54,13 @@ function useServingOptions(food: Food | null) {
           options.push({ amount: 1, unit });
         }
       }
+    }
+
+    const seenUnitIds = new Set(options.map((option) => option.unit.id));
+
+    // Add generic units like lbs, kg
+    for (const unit of commonFoodUnits) {
+      if (!seenUnitIds.has(unit.id)) options.push({ amount: 1, unit });
     }
 
     return options;

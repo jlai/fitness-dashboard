@@ -137,7 +137,6 @@ function FoodRow({ foodLog }: { foodLog: FoodLogEntry }) {
         </button>
         <Popper
           {...bindPopper(popupState)}
-          disablePortal
           modifiers={[
             {
               name: "arrow",
