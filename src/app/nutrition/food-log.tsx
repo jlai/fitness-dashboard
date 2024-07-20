@@ -33,6 +33,7 @@ import {
   buildFoodLogQuery,
 } from "@/api/nutrition";
 import { foodLogTotalsPositionAtom } from "@/storage/settings";
+import { formatFoodName } from "@/utils/other-formats";
 
 import { groupByMealType, MealTypeSummary } from "./summarize-day";
 import { selectedFoodLogsAtom, updateSelectedFoodLogAtom } from "./atoms";
@@ -45,6 +46,7 @@ import {
 } from "./dialogs";
 
 const NUTRIENT_FORMAT = FRACTION_DIGITS_1;
+const NUTRIENT_PROPS = ["carbs", "fat", "fiber", "protein", "sodium"];
 
 function formatNutrientPropValue(
   nutritionalValues: FoodLogEntry["nutritionalValues"],
@@ -66,7 +68,7 @@ function MealTypeRows({ summary }: { summary: MealTypeSummary }) {
         <TableCell className="font-medium">{summary.name}</TableCell>
         <TableCell></TableCell>
         <TableCell>{NUTRIENT_FORMAT.format(summary.calories)}</TableCell>
-        {["carbs", "fat", "fiber", "protein", "sodium"].map((prop) => (
+        {NUTRIENT_PROPS.map((prop) => (
           <TableCell key={prop}>
             {formatNutrientPropValue(summary, prop)}
           </TableCell>
@@ -82,7 +84,7 @@ function MealTypeRows({ summary }: { summary: MealTypeSummary }) {
 function FoodRow({ foodLog }: { foodLog: FoodLogEntry }) {
   const {
     logId,
-    loggedFood: { name, amount, unit, calories },
+    loggedFood: { name, brand, amount, unit, calories },
     nutritionalValues,
   } = foodLog;
 
@@ -112,7 +114,7 @@ function FoodRow({ foodLog }: { foodLog: FoodLogEntry }) {
                 onChange={handleChange}
               />
             }
-            label={name}
+            label={formatFoodName(name, brand)}
           />
         </div>
       </TableCell>
@@ -151,11 +153,17 @@ function FoodRow({ foodLog }: { foodLog: FoodLogEntry }) {
         </Popper>
       </TableCell>
       <TableCell>{NUTRIENT_FORMAT.format(calories)}</TableCell>
-      {["carbs", "fat", "fiber", "protein", "sodium"].map((prop) => (
-        <TableCell key={prop}>
-          {formatNutrientPropValue(nutritionalValues, prop)}
+      {nutritionalValues &&
+        NUTRIENT_PROPS.map((prop) => (
+          <TableCell key={prop}>
+            {formatNutrientPropValue(nutritionalValues, prop)}
+          </TableCell>
+        ))}
+      {!nutritionalValues && (
+        <TableCell colSpan={NUTRIENT_PROPS.length} className="text-center">
+          Not available due to Fitbit API limitations
         </TableCell>
-      ))}
+      )}
     </TableRow>
   );
 }

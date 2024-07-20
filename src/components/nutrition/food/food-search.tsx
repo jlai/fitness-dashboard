@@ -31,6 +31,7 @@ import {
   buildSearchFoodsQuery,
 } from "@/api/nutrition/search";
 import { Food } from "@/api/nutrition";
+import { formatFoodName } from "@/utils/other-formats";
 
 type FoodOption = Food & {
   recent?: boolean;
@@ -264,10 +265,8 @@ export default function SearchFoods({
 
           if (isSearchOption(option)) {
             return option.name;
-          } else if (option.brand) {
-            return `${option.name} (${option.brand})`;
           } else {
-            return option.name;
+            return formatFoodName(option.name, option.brand);
           }
         }}
         renderInput={(params) => (

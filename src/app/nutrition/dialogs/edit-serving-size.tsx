@@ -11,12 +11,13 @@ import { ServingSize } from "@/utils/food-amounts";
 import { FoodServingSizeElement } from "@/components/nutrition/food/serving-size";
 import {
   buildUpdateFoodLogsMutation,
+  Food,
   FoodLogEntry,
   getDefaultServingSize,
 } from "@/api/nutrition";
 
 interface EditServingSizeFormData {
-  food: FoodLogEntry;
+  food: Food;
   servingSize: ServingSize | null;
 }
 

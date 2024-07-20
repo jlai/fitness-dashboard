@@ -3,12 +3,11 @@ import { useQuery } from "@tanstack/react-query";
 import { UseControllerProps, useController } from "react-hook-form";
 
 import { Meal, buildMealsQuery } from "@/api/nutrition";
+import { formatFoodName } from "@/utils/other-formats";
 
 function getMealFoodNames(meal: Meal) {
   return meal.mealFoods
-    .map((food) => {
-      return food.brand ? `${food.name} ${food.brand}` : food.name;
-    })
+    .map((food) => formatFoodName(food.name, food.brand))
     .join(", ");
 }
 

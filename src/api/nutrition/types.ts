@@ -63,16 +63,21 @@ export interface Food {
   defaultServingSize?: number;
   unit?: FoodUnit;
   units: Array<number>;
+
+  // Only available on custom (private) foods
   nutritionalValues?: NutritionalValues;
 }
 
-export type FoodLogEntry = Food & {
+export type FoodLogEntry = {
   logDate: string;
   logId: number;
   loggedFood: Food & {
     amount: number;
     mealTypeId: MealType;
   };
+
+  // Only available on some foods
+  nutritionalValues?: NutritionalValues;
 };
 
 export enum MealType {

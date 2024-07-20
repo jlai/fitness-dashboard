@@ -30,6 +30,7 @@ import {
   buildDeleteMealMutation,
   buildUpdateMealMutation,
 } from "@/api/nutrition";
+import { formatFoodName } from "@/utils/other-formats";
 
 import SearchFoods from "../food/food-search";
 import { FoodServingSizeInput } from "../food/serving-size";
@@ -199,9 +200,7 @@ function FoodRow({
       name={`foods.${index}`}
       render={({ field: { value: food, onChange } }) => (
         <TableRow key={food.foodId}>
-          <TableCell>
-            {food.name} {food.brand ? ` (${food.brand})` : ""}
-          </TableCell>
+          <TableCell>{formatFoodName(food.name, food.brand)}</TableCell>
           <TableCell className="w-8">
             <FoodServingSizeInput
               food={food}
