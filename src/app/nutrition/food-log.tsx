@@ -1,187 +1,35 @@
 import dayjs, { Dayjs } from "dayjs";
-import {
-  Button,
-  Checkbox,
-  FormControlLabel,
-  Paper,
-  Popper,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  Typography,
-} from "@mui/material";
-import { ChangeEvent, useCallback, useEffect, useMemo } from "react";
+import { Button, Paper, Table, TableBody, TableHead } from "@mui/material";
+import { useCallback, useEffect, useMemo } from "react";
 import {
   useMutation,
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
-import { EditOutlined as EditIcon } from "@mui/icons-material";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import Immutable from "immutable";
 import { useConfirm } from "material-ui-confirm";
 import { toast } from "mui-sonner";
-import { bindPopper, usePopupState } from "material-ui-popup-state/hooks";
 
-import { FRACTION_DIGITS_1 } from "@/utils/number-formats";
 import {
-  FoodLogEntry,
-  GetFoodLogResponse,
   buildDeleteFoodLogsMutation,
   buildFoodLogQuery,
 } from "@/api/nutrition";
 import { foodLogTotalsPositionAtom } from "@/storage/settings";
-import { formatFoodName } from "@/utils/other-formats";
 
-import { groupByMealType, MealTypeSummary } from "./summarize-day";
-import { selectedFoodLogsAtom, updateSelectedFoodLogAtom } from "./atoms";
+import { groupByMealType } from "./summarize-day";
+import { selectedFoodLogsAtom } from "./atoms";
 import {
   createMealDialogOpenAtom,
   CreateMealFromFoodLogsDialog,
-  EditServingSize,
   moveDialogOpenAtom,
   MoveFoodLogsDialog,
 } from "./dialogs";
-
-const NUTRIENT_FORMAT = FRACTION_DIGITS_1;
-const NUTRIENT_PROPS = ["carbs", "fat", "fiber", "protein", "sodium"];
-
-function formatNutrientPropValue(
-  nutritionalValues: FoodLogEntry["nutritionalValues"],
-  prop: string
-) {
-  const value = ((nutritionalValues ?? {}) as Record<string, number>)[prop];
-
-  if (value !== undefined) {
-    return NUTRIENT_FORMAT.format(value);
-  }
-
-  return undefined;
-}
-
-function MealTypeRows({ summary }: { summary: MealTypeSummary }) {
-  return (
-    <>
-      <TableRow className="bg-slate-50">
-        <TableCell className="font-medium">{summary.name}</TableCell>
-        <TableCell></TableCell>
-        <TableCell>{NUTRIENT_FORMAT.format(summary.calories)}</TableCell>
-        {NUTRIENT_PROPS.map((prop) => (
-          <TableCell key={prop}>
-            {formatNutrientPropValue(summary, prop)}
-          </TableCell>
-        ))}
-      </TableRow>
-      {summary.foods.map((foodLog) => (
-        <FoodRow key={foodLog.logId} foodLog={foodLog} />
-      ))}
-    </>
-  );
-}
-
-function FoodRow({ foodLog }: { foodLog: FoodLogEntry }) {
-  const {
-    logId,
-    loggedFood: { name, brand, amount, unit, calories },
-    nutritionalValues,
-  } = foodLog;
-
-  const selectedFoodLogs = useAtomValue(selectedFoodLogsAtom);
-  const updateSelectedFoodLog = useSetAtom(updateSelectedFoodLogAtom);
-  const popupState = usePopupState({
-    variant: "popper",
-    popupId: "edit-food-serving-popup",
-  });
-
-  const handleChange = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
-      updateSelectedFoodLog(foodLog, event.target.checked);
-    },
-    [foodLog, updateSelectedFoodLog]
-  );
-
-  return (
-    <TableRow key={logId}>
-      <TableCell>
-        <div className="flex flex-row items-center">
-          <FormControlLabel
-            control={
-              <Checkbox
-                size="small"
-                checked={selectedFoodLogs.has(foodLog)}
-                onChange={handleChange}
-              />
-            }
-            label={formatFoodName(name, brand)}
-          />
-        </div>
-      </TableCell>
-      <TableCell className="group min-w-max">
-        <button
-          className="flex flex-row items-center"
-          onClick={popupState.open}
-        >
-          <Typography
-            variant="body1"
-            sx={{
-              backgroundColor: popupState.isOpen
-                ? "rgb(252, 232, 3, 0.2)"
-                : undefined,
-            }}
-          >
-            {amount} {amount === 1 ? unit?.name : unit?.plural}
-          </Typography>
-          <div className="ms-2 invisible group-hover:visible text-slate-500">
-            <EditIcon />
-          </div>
-        </button>
-        <Popper
-          {...bindPopper(popupState)}
-          modifiers={[
-            {
-              name: "arrow",
-              enabled: true,
-              options: {
-                element: popupState.anchorEl,
-              },
-            },
-          ]}
-        >
-          <EditServingSize foodLog={foodLog} closePopover={popupState.close} />
-        </Popper>
-      </TableCell>
-      <TableCell>{NUTRIENT_FORMAT.format(calories)}</TableCell>
-      {nutritionalValues &&
-        NUTRIENT_PROPS.map((prop) => (
-          <TableCell key={prop}>
-            {formatNutrientPropValue(nutritionalValues, prop)}
-          </TableCell>
-        ))}
-      {!nutritionalValues && (
-        <TableCell colSpan={NUTRIENT_PROPS.length} className="text-center">
-          Not available due to Fitbit API limitations
-        </TableCell>
-      )}
-    </TableRow>
-  );
-}
-
-function TotalsRow({
-  foodLogsResponse,
-}: {
-  foodLogsResponse: GetFoodLogResponse;
-}) {
-  const summary: MealTypeSummary = {
-    id: -1,
-    name: "Total",
-    foods: [],
-    ...foodLogsResponse.summary,
-  };
-
-  return <MealTypeRows summary={summary} />;
-}
+import {
+  FoodLogTableHeaderRows,
+  MealTypeRows,
+  TotalsRow,
+} from "./dialogs/food-log-rows";
 
 export default function FoodLog({ day }: { day: Dayjs }) {
   const [selectedFoodLogs, setSelectedFoodLogs] = useAtom(selectedFoodLogsAtom);
@@ -226,16 +74,7 @@ export default function FoodLog({ day }: { day: Dayjs }) {
       <Paper className="max-w-full overflow-x-auto">
         <Table size="small">
           <TableHead>
-            <TableRow>
-              <TableCell>Food</TableCell>
-              <TableCell>Amount</TableCell>
-              <TableCell>Calories</TableCell>
-              <TableCell>Carbs</TableCell>
-              <TableCell>Fat</TableCell>
-              <TableCell>Fiber</TableCell>
-              <TableCell>Protein</TableCell>
-              <TableCell>Sodium</TableCell>
-            </TableRow>
+            <FoodLogTableHeaderRows />
           </TableHead>
           <TableBody>
             {foodLogTotalsPosition !== "bottom" && (
