@@ -2,11 +2,9 @@ import { atom } from "jotai";
 import dayjs from "dayjs";
 import { atomEffect } from "jotai-effect";
 
-import { TIME_SERIES_CONFIGS } from "@/api/times-series";
-
 import { DayjsRange } from "../calendar/period-navigator";
 
-import { ChartResource } from "./timeseries/resources";
+import { CHART_RESOURCE_CONFIGS, ChartResource } from "./timeseries/resources";
 
 export const selectedResourceAtom = atom<ChartResource>("steps");
 
@@ -30,7 +28,7 @@ export const resourceChangedEffect = atomEffect((get, set) => {
   const resource = get(selectedResourceAtom);
   const rangeType = get.peek(selectedRangeTypeAtom);
 
-  const resourceMaxDays = TIME_SERIES_CONFIGS[resource].maxDays;
+  const resourceMaxDays = CHART_RESOURCE_CONFIGS[resource].maxDays;
   const rangeMaxDays = MAX_DAYS_IN_RANGE[rangeType];
 
   if (resourceMaxDays < rangeMaxDays) {

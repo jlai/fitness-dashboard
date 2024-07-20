@@ -3,8 +3,6 @@
 import { useAtomValue, useAtom } from "jotai";
 import { ToggleButtonGroup, ToggleButton } from "@mui/material";
 
-import { TIME_SERIES_CONFIGS, TimeSeriesResource } from "@/api/times-series";
-
 import {
   WeekNavigator,
   MonthNavigator,
@@ -13,17 +11,14 @@ import {
 } from "../calendar/period-navigator";
 
 import { selectedRangeTypeAtom, selectedRangeAtom } from "./atoms";
+import { CHART_RESOURCE_CONFIGS, ChartResource } from "./timeseries/resources";
 
-export function GraphRangeSelector({
-  resource,
-}: {
-  resource: TimeSeriesResource;
-}) {
+export function GraphRangeSelector({ resource }: { resource: ChartResource }) {
   const [selectedRangeType, setSelectedRangeType] = useAtom(
     selectedRangeTypeAtom
   );
 
-  const maxDays = TIME_SERIES_CONFIGS[resource].maxDays;
+  const maxDays = CHART_RESOURCE_CONFIGS[resource].maxDays;
 
   return (
     <ToggleButtonGroup

@@ -1,4 +1,6 @@
-import { TimeSeriesResource } from "@/api/times-series";
+import { pick } from "lodash";
+
+import { TIME_SERIES_CONFIGS } from "@/api/times-series";
 
 import {
   BmiChart,
@@ -14,81 +16,90 @@ import {
 } from "./simple";
 import { ActiveZoneMinutesChart } from "./stacked";
 import { HeartRateZonesChart, RestingHeartRateChart } from "./heart-rate";
+import { CalorieBalanceChart } from "./calorie-balance";
 
 export interface ChartResourceConfig {
   label: string;
   component: React.ComponentType<{}>;
-  scopes: Array<string>;
+  requiredScopes: Array<string>;
+  maxDays: number;
 }
 
-export const CHART_RESOURCE_CONFIGS: Record<
-  TimeSeriesResource,
-  ChartResourceConfig
-> = {
+export const CHART_RESOURCE_CONFIGS: Record<string, ChartResourceConfig> = {
   steps: {
     label: "Steps",
     component: StepsChart,
-    scopes: ["act"],
+    ...pick(TIME_SERIES_CONFIGS.steps, "maxDays", "requiredScopes"),
   },
   distance: {
     label: "Distance",
     component: DistanceChart,
-    scopes: ["act"],
+    ...pick(TIME_SERIES_CONFIGS.distance, "maxDays", "requiredScopes"),
   },
   calories: {
     label: "Calories burned",
     component: CaloriesBurnedChart,
-    scopes: ["act"],
+    ...pick(TIME_SERIES_CONFIGS.calories, "maxDays", "requiredScopes"),
   },
   floors: {
     label: "Floors",
     component: FloorsChart,
-    scopes: ["act"],
+    ...pick(TIME_SERIES_CONFIGS.floors, "maxDays", "requiredScopes"),
   },
   sleep: {
     label: "Sleep",
     component: SleepChart,
-    scopes: ["sle"],
+    ...pick(TIME_SERIES_CONFIGS.sleep, "maxDays", "requiredScopes"),
   },
   "resting-heart-rate": {
     label: "Resting heart rate",
     component: RestingHeartRateChart,
-    scopes: ["hr"],
+    ...pick(TIME_SERIES_CONFIGS.heart, "maxDays", "requiredScopes"),
   },
   "heart-rate-zones": {
     label: "Heart rate zones",
     component: HeartRateZonesChart,
-    scopes: ["hr"],
+    ...pick(TIME_SERIES_CONFIGS.heart, "maxDays", "requiredScopes"),
   },
   weight: {
     label: "Weight (trend)",
     component: WeightChart,
-    scopes: ["wei"],
+    ...pick(TIME_SERIES_CONFIGS.weight, "maxDays", "requiredScopes"),
   },
   fat: {
     label: "Fat (trend)",
     component: FatChart,
-    scopes: ["wei"],
+    ...pick(TIME_SERIES_CONFIGS.fat, "maxDays", "requiredScopes"),
   },
   bmi: {
     label: "BMI (trend)",
     component: BmiChart,
-    scopes: ["wei"],
+    ...pick(TIME_SERIES_CONFIGS.bmi, "maxDays", "requiredScopes"),
   },
   water: {
     label: "Water logged",
     component: WaterChart,
-    scopes: ["nut"],
+    ...pick(TIME_SERIES_CONFIGS.water, "maxDays", "requiredScopes"),
   },
   "calories-in": {
     label: "Calories logged",
     component: CaloriesConsumedChart,
-    scopes: ["nut"],
+    ...pick(TIME_SERIES_CONFIGS["calories-in"], "maxDays", "requiredScopes"),
   },
   "active-zone-minutes": {
     label: "Active Zone Minutes",
     component: ActiveZoneMinutesChart,
-    scopes: ["act"],
+    ...pick(
+      TIME_SERIES_CONFIGS["active-zone-minutes"],
+      "maxDays",
+      "requiredScopes"
+    ),
+  },
+  "calorie-balance": {
+    label: "Calories in vs out",
+    component: CalorieBalanceChart,
+    requiredScopes: ["act", "nut"],
+    maxDays: 1095,
   },
 };
 
@@ -109,6 +120,7 @@ export const CHART_RESOURCE_MENU_ITEMS: Array<ChartResource | "-"> = [
   "fat",
   "bmi",
   "-",
+  "calorie-balance",
   "calories-in",
   "water",
 ];

@@ -13,8 +13,7 @@ export type TimeSeriesResource =
   | "distance"
   | "steps"
   | "floors"
-  | "resting-heart-rate"
-  | "heart-rate-zones"
+  | "heart"
   | "weight"
   | "fat"
   | "bmi"
@@ -106,20 +105,14 @@ export const TIME_SERIES_CONFIGS: Record<
     requiredScopes: ["nut"],
     maxDays: 1095,
   },
-  ["water"]: {
+  water: {
     urlPrefix: "/1/user/-/foods/log/water/date/",
     responseKey: "foods-log-water",
     requiredScopes: ["nut"],
     maxDays: 1095,
   },
   // other
-  ["resting-heart-rate"]: {
-    urlPrefix: "/1/user/-/activities/heart/date/",
-    responseKey: "activities-heart",
-    requiredScopes: ["hr"],
-    maxDays: 366,
-  },
-  ["heart-rate-zones"]: {
+  ["heart"]: {
     urlPrefix: "/1/user/-/activities/heart/date/",
     responseKey: "activities-heart",
     requiredScopes: ["hr"],

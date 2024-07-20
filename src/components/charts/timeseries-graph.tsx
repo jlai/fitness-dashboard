@@ -4,8 +4,6 @@ import { FormControl, MenuItem, Select, Divider, Box } from "@mui/material";
 import { useAtom, useAtomValue } from "jotai";
 import { createElement } from "react";
 
-import { TIME_SERIES_CONFIGS } from "@/api/activity";
-
 import { RequireScopes } from "../require-scopes";
 import { HeaderBar } from "../layout/rows";
 import { DayjsRange } from "../calendar/period-navigator";
@@ -64,7 +62,7 @@ export function TimeSeriesChart({
   layout?: "horizontal" | "vertical";
   formatDate?: (date: Date) => string;
 }) {
-  const requiredScopes = TIME_SERIES_CONFIGS[resource]?.requiredScopes ?? [];
+  const requiredScopes = CHART_RESOURCE_CONFIGS[resource]?.requiredScopes ?? [];
 
   return (
     <RequireScopes scopes={requiredScopes}>

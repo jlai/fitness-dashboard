@@ -25,7 +25,7 @@ const RESTING_HEART_RATE_SERIES_CONFIGS = singleSeriesConfig<HeartDatum>({
 });
 
 export function RestingHeartRateChart() {
-  const data = useTimeSeriesData<HeartDatum>("resting-heart-rate");
+  const data = useTimeSeriesData<HeartDatum>("heart");
   const props = useAggregation(data, RESTING_HEART_RATE_SERIES_CONFIGS);
 
   return <SimpleLineChart {...props} />;
@@ -61,7 +61,7 @@ const HEART_RATE_ZONES_SERIES_CONFIGS: Array<
 ];
 
 export function HeartRateZonesChart() {
-  const rawData = useTimeSeriesData<HeartDatum>("heart-rate-zones");
+  const rawData = useTimeSeriesData<HeartDatum>("heart");
 
   const data = rawData?.map((entry) => {
     const datum: SimplifiedHeartDatum = {
