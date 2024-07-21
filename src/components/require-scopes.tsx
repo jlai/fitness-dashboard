@@ -60,7 +60,7 @@ function CompactMissingScopes({
 }) {
   const confirm = useConfirm();
 
-  const reconsent = useCallback(() => {
+  const handleReconsentClicked = () => {
     confirm({
       title: "Update permissions",
       description: (
@@ -74,7 +74,7 @@ function CompactMissingScopes({
     }).then(() => {
       redirectToLogin({ prompt: "consent" });
     });
-  }, [confirm, scopes]);
+  };
 
   return (
     <Stack
@@ -86,7 +86,7 @@ function CompactMissingScopes({
       <Typography variant="subtitle1" className="text-center">
         {name}
       </Typography>
-      <Button onClick={reconsent}>Fix permissions</Button>
+      <Button onClick={handleReconsentClicked}>Fix permissions</Button>
     </Stack>
   );
 }

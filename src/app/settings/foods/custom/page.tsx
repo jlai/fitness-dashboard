@@ -1,7 +1,7 @@
 "use client";
 
 import { Button, Typography } from "@mui/material";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   DataGrid,
@@ -10,7 +10,7 @@ import {
   GridRowParams,
 } from "@mui/x-data-grid";
 import { Edit } from "@mui/icons-material";
-import { useAtom, useSetAtom } from "jotai";
+import { useSetAtom } from "jotai";
 import { useConfirm } from "material-ui-confirm";
 import { toast } from "mui-sonner";
 
@@ -60,9 +60,7 @@ function EditAction({ food }: { food: Food }) {
 export default function ManageCustomFoods() {
   const confirm = useConfirm();
   const [selectedRows, setSelectedRows] = useState<Array<number>>([]);
-  const [editingCustomFood, setEditingCustomFood] = useAtom(
-    editingCustomFoodAtom
-  );
+  const setEditingCustomFood = useSetAtom(editingCustomFoodAtom);
 
   const queryClient = useQueryClient();
 
@@ -71,7 +69,7 @@ export default function ManageCustomFoods() {
     buildDeleteCustomFoodsMutation(queryClient)
   );
 
-  const deleteCustomFoods = useCallback(() => {
+  const handleDeleteClicked = () => {
     (async () => {
       await confirm({
         title: "Delete custom foods?",
@@ -80,7 +78,7 @@ export default function ManageCustomFoods() {
       await deleteFoodIds(selectedRows);
       toast.success("Deleted custom foods");
     })();
-  }, [selectedRows, deleteFoodIds, confirm]);
+  };
 
   return (
     <div>
@@ -108,7 +106,7 @@ export default function ManageCustomFoods() {
         <Button
           color="warning"
           disabled={selectedRows.length === 0}
-          onClick={deleteCustomFoods}
+          onClick={handleDeleteClicked}
         >
           Delete custom foods
         </Button>

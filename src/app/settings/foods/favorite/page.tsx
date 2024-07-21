@@ -42,7 +42,7 @@ export default function ManageFavoriteFoods() {
     buildDeleteFavoritesFoodMutation(queryClient)
   );
 
-  const addFavoriteFood = useCallback(
+  const handleAddFavoriteFood = useCallback(
     (food: Food) => {
       addFavoriteFoodIds([food.foodId]).then(() => {
         toast.success("Added food to favorites list");
@@ -51,7 +51,7 @@ export default function ManageFavoriteFoods() {
     [addFavoriteFoodIds]
   );
 
-  const deleteFavorites = useCallback(() => {
+  const handleDeleteFavoritesClick = () => {
     (async () => {
       await confirm({
         title: "Remove favorite foods?",
@@ -60,7 +60,7 @@ export default function ManageFavoriteFoods() {
       await deleteFavoriteFoodIds(selectedRows);
       toast.success("Removed foods from favorites list");
     })();
-  }, [deleteFavoriteFoodIds, selectedRows, confirm]);
+  };
 
   return (
     <>
@@ -68,7 +68,7 @@ export default function ManageFavoriteFoods() {
         Favorite foods
       </Typography>
       <div className="m-4">
-        <AddFoodPicker addFood={addFavoriteFood} />
+        <AddFoodPicker addFood={handleAddFavoriteFood} />
       </div>
       <DataGrid<Food>
         className="w-full"
@@ -86,7 +86,7 @@ export default function ManageFavoriteFoods() {
         <Button
           color="warning"
           disabled={selectedRows.length === 0}
-          onClick={deleteFavorites}
+          onClick={handleDeleteFavoritesClick}
         >
           Remove favorites
         </Button>
@@ -98,11 +98,11 @@ export default function ManageFavoriteFoods() {
 function AddFoodPicker({ addFood }: { addFood: (food: Food) => void }) {
   const [selectedFoodToAdd, setSelectedFoodToAdd] = useState<Food | null>(null);
 
-  const addSelectedFood = useCallback(() => {
+  const addSelectedFood = () => {
     if (selectedFoodToAdd) {
       addFood(selectedFoodToAdd);
     }
-  }, [selectedFoodToAdd, addFood]);
+  };
 
   return (
     <FormRow>

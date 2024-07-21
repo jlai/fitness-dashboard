@@ -20,7 +20,6 @@ import {
   bindTrigger,
   bindMenu,
 } from "material-ui-popup-state/hooks";
-import { useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { logout, useLoggedIn } from "@/api/auth";
@@ -33,15 +32,15 @@ export default function AccountMenu() {
   });
   const queryClient = useQueryClient();
 
-  const clickedLogout = useCallback(() => {
+  const handleLogoutClicked = () => {
     logout();
     popupState.close();
-  }, [popupState]);
+  };
 
-  const clickedRefrseh = useCallback(() => {
+  const handleRefreshClicked = () => {
     queryClient.invalidateQueries();
     popupState.close();
-  }, [popupState, queryClient]);
+  };
 
   return (
     <>
@@ -57,7 +56,7 @@ export default function AccountMenu() {
             <ListItemText>Settings</ListItemText>
           </Link>
         </MenuItem>
-        <MenuItem onClick={clickedRefrseh}>
+        <MenuItem onClick={handleRefreshClicked}>
           <ListItemIcon>
             <RefreshIcon />
           </ListItemIcon>
@@ -65,7 +64,7 @@ export default function AccountMenu() {
         </MenuItem>
         {loggedIn && <Divider />}
         {loggedIn && (
-          <MenuItem onClick={clickedLogout}>
+          <MenuItem onClick={handleLogoutClicked}>
             <ListItemIcon>
               <LogoutIcon />
             </ListItemIcon>

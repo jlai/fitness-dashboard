@@ -267,11 +267,11 @@ function EditFoodList() {
 function AddFoodPicker({ addFood }: { addFood: (food: Food) => void }) {
   const [selectedFoodToAdd, setSelectedFoodToAdd] = useState<Food | null>(null);
 
-  const addSelectedFood = useCallback(() => {
+  const handleAddSelectedFoodClicked = () => {
     if (selectedFoodToAdd) {
       addFood(selectedFoodToAdd);
     }
-  }, [selectedFoodToAdd, addFood]);
+  };
 
   return (
     <div className="flex flex-row items-center gap-x-4">
@@ -280,7 +280,10 @@ function AddFoodPicker({ addFood }: { addFood: (food: Food) => void }) {
         value={selectedFoodToAdd}
         onChange={setSelectedFoodToAdd}
       />
-      <Button disabled={!selectedFoodToAdd} onClick={addSelectedFood}>
+      <Button
+        disabled={!selectedFoodToAdd}
+        onClick={handleAddSelectedFoodClicked}
+      >
         Add food
       </Button>
     </div>

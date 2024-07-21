@@ -82,23 +82,23 @@ function LoginSettings() {
   const confirm = useConfirm();
   const queryClient = useQueryClient();
 
-  const switchAccounts = useCallback(() => {
+  const switchAccounts = () => {
     confirm({
       description: "Log out?",
     }).then(() => {
       queryClient.clear();
       redirectToLogin({ prompt: "login consent" });
     });
-  }, [confirm, queryClient]);
+  };
 
-  const unlinkAccount = useCallback(() => {
+  const unlinkAccount = () => {
     confirm({
       description: "Sign out and unlink this website from your Fitbit account?",
     }).then(() => {
       revokeAuthorization();
       queryClient.clear();
     });
-  }, [confirm, queryClient]);
+  };
 
   return (
     <>

@@ -1,6 +1,6 @@
 import dayjs, { Dayjs } from "dayjs";
 import { Button, Paper, Table, TableBody, TableHead } from "@mui/material";
-import { useCallback, useEffect, useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import {
   useMutation,
   useQueryClient,
@@ -54,7 +54,7 @@ export default function FoodLog({ day }: { day: Dayjs }) {
     setSelectedFoodLogs(Immutable.Set([]));
   }, [foodLogsResponse.foods, setSelectedFoodLogs]);
 
-  const deleteSelected = useCallback(() => {
+  const deleteSelected = () => {
     (async () => {
       await confirm({ title: "Deleted selected food logs?" });
 
@@ -67,7 +67,7 @@ export default function FoodLog({ day }: { day: Dayjs }) {
 
       toast.success("Deleted food logs");
     })();
-  }, [selectedFoodLogs, deleteFoodLogs, confirm]);
+  };
 
   return (
     <>

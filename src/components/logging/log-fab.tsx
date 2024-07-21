@@ -8,7 +8,6 @@ import {
 } from "@mui/icons-material";
 import { Fab, ListItemIcon, ListItemText, Menu, MenuItem } from "@mui/material";
 import { bindMenu, usePopupState } from "material-ui-popup-state/hooks";
-import { useCallback } from "react";
 import { useAtom } from "jotai";
 
 import CreateActivityLogDialog, {
@@ -56,20 +55,20 @@ export function LogFab() {
     popupId: "logger-popup-menu",
   });
 
-  const showCreateActivityLog = useCallback(() => {
+  const showCreateActivityLog = () => {
     setShowingCreateActivityLog(true);
     popupState.close();
-  }, [setShowingCreateActivityLog, popupState]);
+  };
 
-  const showCreateSleepLog = useCallback(() => {
+  const showCreateSleepLog = () => {
     setShowingCreateSleepLog(true);
     popupState.close();
-  }, [setShowingCreateSleepLog, popupState]);
+  };
 
-  const showCreateWeightLog = useCallback(() => {
+  const showCreateWeightLog = () => {
     setShowingCreateWeightLog(true);
     popupState.close();
-  }, [setShowingCreateWeightLog, popupState]);
+  };
 
   return (
     <div className="fixed bottom-8 right-8">

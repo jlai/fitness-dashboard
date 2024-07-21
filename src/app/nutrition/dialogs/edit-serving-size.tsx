@@ -65,27 +65,24 @@ export function EditServingSize({
     [closePopover, foodLog, updateFoodLogs]
   );
 
-  const adjustQuantity = useCallback(
-    (adjustment: number) => {
-      const servingSize = formContext.getValues().servingSize;
+  const adjustQuantity = (adjustment: number) => {
+    const servingSize = formContext.getValues().servingSize;
 
-      if (servingSize) {
-        const newAmount = servingSize.amount + adjustment;
+    if (servingSize) {
+      const newAmount = servingSize.amount + adjustment;
 
-        if (newAmount > 0) {
-          formContext.setValue(
-            "servingSize",
-            {
-              ...servingSize,
-              amount: newAmount,
-            },
-            { shouldValidate: true }
-          );
-        }
+      if (newAmount > 0) {
+        formContext.setValue(
+          "servingSize",
+          {
+            ...servingSize,
+            amount: newAmount,
+          },
+          { shouldValidate: true }
+        );
       }
-    },
-    [formContext]
-  );
+    }
+  };
 
   return (
     <FormContainer<EditServingSizeFormData>
