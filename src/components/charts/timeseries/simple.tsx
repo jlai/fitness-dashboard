@@ -6,7 +6,7 @@ import { useUnits } from "@/config/units";
 import { FRACTION_DIGITS_0, FRACTION_DIGITS_1 } from "@/utils/number-formats";
 
 import { SimpleBarChart, SimpleLineChart } from "./mui-renderer";
-import { useTimeSeriesData } from "./data";
+import { removeFutureDates, useTimeSeriesData } from "./data";
 import { singleSeriesConfig } from "./series-config";
 import { durationTickFormat, durationTooltipFormat } from "./formatters";
 import { useAggregation } from "./aggregation";
@@ -35,12 +35,14 @@ const FAT_SERIES_CONFIGS = singleSeriesConfig({
   label: "Fat %",
   numberFormat: FRACTION_DIGITS_1.format,
   unit: "%",
+  showMark: false,
 });
 
 const BMI_SERIES_CONFIGS = singleSeriesConfig({
   label: "BMI",
   numberFormat: FRACTION_DIGITS_1.format,
   unit: "BMI",
+  showMark: false,
 });
 
 const SLEEP_SERIES_CONFIGS = singleSeriesConfig({
@@ -117,7 +119,7 @@ export function WaterChart() {
 
 export function WeightChart() {
   const { localizedKilograms, localizedKilogramsName } = useUnits();
-  const data = useTimeSeriesData("weight");
+  const data = removeFutureDates(useTimeSeriesData("weight"));
 
   const seriesConfigs = useMemo(
     () =>
@@ -126,6 +128,7 @@ export function WeightChart() {
         yAccessor: (entry) => localizedKilograms(Number(entry.value)),
         numberFormat: FRACTION_DIGITS_1.format,
         unit: localizedKilogramsName,
+        showMark: false,
       }),
     [localizedKilograms, localizedKilogramsName]
   );
@@ -140,7 +143,7 @@ export function WeightChart() {
 }
 
 export function FatChart() {
-  const data = useTimeSeriesData("fat");
+  const data = removeFutureDates(useTimeSeriesData("fat"));
   const props = useAggregation(data, FAT_SERIES_CONFIGS);
   return (
     <SimpleLineChart
@@ -151,7 +154,7 @@ export function FatChart() {
 }
 
 export function BmiChart() {
-  const data = useTimeSeriesData("bmi");
+  const data = removeFutureDates(useTimeSeriesData("bmi"));
   const props = useAggregation(data, BMI_SERIES_CONFIGS);
   return (
     <SimpleLineChart

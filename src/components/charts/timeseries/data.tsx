@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useContext } from "react";
+import dayjs from "dayjs";
 
 import { buildTimeSeriesQuery, TimeSeriesResource } from "@/api/times-series";
 
@@ -25,4 +26,11 @@ export function useTimeSeriesData<TEntry = StringValueDatum>(
   );
 
   return data;
+}
+
+export function removeFutureDates<TDatum extends TimeSeriesDatum>(
+  data?: Array<TDatum>
+) {
+  const today = dayjs().endOf("day");
+  return data?.filter((data) => !dayjs(data.dateTime).isAfter(today));
 }

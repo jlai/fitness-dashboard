@@ -20,9 +20,9 @@ export async function makeRequest(uri: string, options?: RequestInit) {
   const response = await fetch(url, {
     ...options,
     headers: {
+      "Accept-Language": "metric",
       ...options?.headers,
       Authorization: `Bearer ${authToken}`,
-      "Accept-Language": "metric",
     },
   });
 

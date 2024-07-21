@@ -4,6 +4,7 @@ import {
   Add as AddIcon,
   DirectionsWalk as ActivityIcon,
   Bedtime as SleepIcon,
+  MonitorWeight as WeightIcon,
 } from "@mui/icons-material";
 import { Fab, ListItemIcon, ListItemText, Menu, MenuItem } from "@mui/material";
 import { bindMenu, usePopupState } from "material-ui-popup-state/hooks";
@@ -16,6 +17,9 @@ import CreateActivityLogDialog, {
 import CreateSleepLogDialog, {
   createSleepLogDialogOpenAtom,
 } from "./create-sleep-log";
+import CreateWeightLogDialog, {
+  createWeightLogDialogOpenAtom,
+} from "./create-weight-log";
 
 function LogMenuItem({
   onClick,
@@ -43,6 +47,10 @@ export function LogFab() {
     createSleepLogDialogOpenAtom
   );
 
+  const [showingCreateWeightLog, setShowingCreateWeightLog] = useAtom(
+    createWeightLogDialogOpenAtom
+  );
+
   const popupState = usePopupState({
     variant: "popover",
     popupId: "logger-popup-menu",
@@ -57,6 +65,11 @@ export function LogFab() {
     setShowingCreateSleepLog(true);
     popupState.close();
   }, [setShowingCreateSleepLog, popupState]);
+
+  const showCreateWeightLog = useCallback(() => {
+    setShowingCreateWeightLog(true);
+    popupState.close();
+  }, [setShowingCreateWeightLog, popupState]);
 
   return (
     <div className="fixed bottom-8 right-8">
@@ -81,9 +94,13 @@ export function LogFab() {
         <LogMenuItem icon={<SleepIcon />} onClick={showCreateSleepLog}>
           Log Sleep
         </LogMenuItem>
+        <LogMenuItem icon={<WeightIcon />} onClick={showCreateWeightLog}>
+          Log Weight
+        </LogMenuItem>
       </Menu>
       {showingCreateActivityLog && <CreateActivityLogDialog />}
       {showingCreateSleepLog && <CreateSleepLogDialog />}
+      {showingCreateWeightLog && <CreateWeightLogDialog />}
     </div>
   );
 }

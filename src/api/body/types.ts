@@ -10,6 +10,7 @@ export interface WeightLog {
 
 // https://dev.fitbit.com/build/reference/web-api/body-timeseries/get-weight-timeseries-by-date-range/
 export interface GetWeightTimeSeriesResponse {
+  // NOTE: due to rounding problems in the API, this is in *localized* units
   weight: Array<WeightLog>;
 }
 

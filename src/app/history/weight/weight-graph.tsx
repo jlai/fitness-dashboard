@@ -67,6 +67,7 @@ export function LeanFatMassGraph() {
   const clipPathId = useId();
 
   const { series, dates, minWeight } = useMemo(() => {
+    const today = dayjs();
     const valueFormatter = (value: number | null) =>
       value
         ? `${FRACTION_DIGITS_1.format(value)} ${localizedKilogramsName}`
@@ -83,6 +84,10 @@ export function LeanFatMassGraph() {
       }
 
       for (let i = 0; i < weightData?.length; i++) {
+        if (dayjs(weightData[i].dateTime).isAfter(today)) {
+          break;
+        }
+
         const weightKg = Number(weightData[i].value);
         const percentFat = Number(fatData[i].value);
         const leanKg = weightKg * (1.0 - percentFat / 100);
