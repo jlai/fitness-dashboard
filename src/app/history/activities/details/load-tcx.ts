@@ -2,11 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 
 import { buildActivityTcxQuery } from "@/api/activity/activities";
-import { ParsedTcx, parseTcx } from "@/api/activity/tcx";
+import { ParsedTcx, parseTcx, Trackpoint } from "@/api/activity/tcx";
 import { useUnits } from "@/config/units";
 
-type LocalizedTrackpoint = {
-  time: Date;
+type LocalizedTrackpoint = Trackpoint & {
   altitudeLocalized: number;
 };
 
@@ -75,7 +74,7 @@ export function useTrackpoints(parsedTcx?: ParsedTcx) {
         hasElevation = true;
 
         localizedTrackpoints.push({
-          time: trackpoint.time,
+          ...trackpoint,
           altitudeLocalized: units.localizedMeters(trackpoint.altitudeMeters),
         });
       }

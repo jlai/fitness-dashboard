@@ -2,11 +2,29 @@ import {
   AxisConfig,
   ScaleName,
   ChartsXAxisProps,
-  LineChart,
+  ResponsiveChartContainer,
+  LinePlot,
+  useDrawingArea,
+  useXScale,
+  ChartsAxisHighlightPath,
+  ChartsXAxis,
+  ChartsYAxis,
+  ChartsClipPath,
+  ChartsTooltip,
 } from "@mui/x-charts";
 import { Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
+import { ChartsOverlay } from "@mui/x-charts/ChartsOverlay";
+import {
+  ComponentPropsWithoutRef,
+  RefObject,
+  useEffect,
+  useId,
+  useRef,
+} from "react";
+import { useAtom, useAtomValue } from "jotai";
+import { ScaleLinear } from "d3-scale";
 
 import { ParsedTcx, Trackpoint } from "@/api/activity/tcx";
 import { FRACTION_DIGITS_0, FRACTION_DIGITS_1 } from "@/utils/number-formats";
@@ -16,18 +34,12 @@ import { buildActivityIntradayQuery, IntradayEntry } from "@/api/intraday";
 import { ENABLE_INTRADAY } from "@/config";
 
 import { useTrackpoints } from "./load-tcx";
+import { highlightedXAtom, xScaleMeasureAtom } from "./atoms";
 
 const TIME_FORMAT = new Intl.DateTimeFormat(undefined, {
   hour: "numeric",
   minute: "2-digit",
 });
-
-const XAXIS_CONFIG: AxisConfig<ScaleName, Date, ChartsXAxisProps> = {
-  id: "x",
-  dataKey: "time",
-  scaleType: "time",
-  valueFormatter: (time: Date) => TIME_FORMAT.format(time),
-};
 
 export function ActivityTcxCharts({
   parsedTcx,
@@ -75,23 +87,143 @@ export function ActivityTcxCharts({
   );
 }
 
-export function CaloriesChart({ data }: { data?: Array<IntradayEntry> }) {
-  const valueFormatter = (value: number | null) =>
-    value ? `${FRACTION_DIGITS_1.format(value)} Cal/min` : "";
+function SynchronizedHighlight({
+  svgRef,
+}: {
+  svgRef: RefObject<SVGSVGElement>;
+}) {
+  const xScaleMeasure = useAtomValue(xScaleMeasureAtom);
+  const [highlightedX, setHighlightedX] = useAtom(highlightedXAtom);
+  const highlightRef = useRef<SVGPathElement>(null);
+
+  const { left, top, width, height } = useDrawingArea();
+  const xScale = useXScale() as ScaleLinear<any, any>;
+
+  useEffect(() => {
+    const element = svgRef.current;
+    if (element === null) {
+      return () => {};
+    }
+
+    const handleMouseOut = () => {
+      setHighlightedX(null);
+    };
+
+    const handleMouseMove = (event: MouseEvent) => {
+      const x = event.offsetX;
+      const y = event.offsetY;
+      if (y < top || y > top + height) {
+        setHighlightedX(null);
+        return;
+      }
+      if (x < left - 10 || x > left + width + 10) {
+        // Allows some margin if slightly on top/bottom of the drawing area
+        setHighlightedX(null);
+        return;
+      }
+
+      if (xScaleMeasure === "time") {
+        setHighlightedX({
+          type: "time",
+          value: xScale.invert(x) as unknown as Date,
+        });
+      } else {
+        setHighlightedX({ type: "distance", value: xScale.invert(x) });
+      }
+    };
+
+    element.addEventListener("mouseout", handleMouseOut);
+    element.addEventListener("mousemove", handleMouseMove);
+
+    return () => {
+      element.removeEventListener("mouseout", handleMouseOut);
+      element.removeEventListener("mousemove", handleMouseMove);
+    };
+  }, [
+    height,
+    left,
+    setHighlightedX,
+    svgRef,
+    top,
+    width,
+    xScale,
+    xScaleMeasure,
+  ]);
+
+  const x = xScale(highlightedX?.value ?? 0);
 
   return (
-    <LineChart
-      loading={!data}
-      skipAnimation
+    <ChartsAxisHighlightPath
+      ref={highlightRef}
+      sx={{ visibility: x ? "visible" : "hidden" }}
+      d={`M ${x ?? 0} ${top} L ${x ?? 0} ${top + height}`}
+      ownerState={{ axisHighlight: "line" }}
+    />
+  );
+}
+
+type SynchronizedChartProps = ComponentPropsWithoutRef<
+  typeof ResponsiveChartContainer
+> & {
+  loading?: boolean;
+};
+
+export function SynchronizedChart(props: SynchronizedChartProps) {
+  const svgRef = useRef<SVGSVGElement>(null);
+  const clipPathId = useId();
+
+  const xScaleMeasure = useAtomValue(xScaleMeasureAtom);
+
+  const XAXIS_CONFIG: AxisConfig<ScaleName, Date, ChartsXAxisProps> =
+    xScaleMeasure === "time"
+      ? {
+          id: "x",
+          dataKey: "dateTime",
+          scaleType: "time",
+          valueFormatter: (time: Date) => TIME_FORMAT.format(time),
+        }
+      : {
+          id: "x",
+          dataKey: "distanceMeters",
+          scaleType: "linear",
+          valueFormatter: (time: Date) => TIME_FORMAT.format(time),
+        };
+
+  return (
+    <ResponsiveChartContainer
+      ref={svgRef}
       height={200}
-      dataset={data ?? []}
-      xAxis={[{ ...XAXIS_CONFIG, dataKey: "dateTime" }]}
+      xAxis={[XAXIS_CONFIG]}
       yAxis={[
         {
           scaleType: "linear",
         },
       ]}
-      series={[{ dataKey: "value", showMark: false, valueFormatter }]}
+      {...props}
+    >
+      <ChartsOverlay loading={props.loading} />
+      <ChartsXAxis />
+      <ChartsYAxis />
+      <g clipPath={clipPathId}>
+        <LinePlot />
+        <SynchronizedHighlight svgRef={svgRef} />
+      </g>
+      <ChartsClipPath id={clipPathId} />
+      <ChartsTooltip />
+    </ResponsiveChartContainer>
+  );
+}
+
+export function CaloriesChart({ data }: { data?: Array<IntradayEntry> }) {
+  const valueFormatter = (value: number | null) =>
+    value ? `${FRACTION_DIGITS_1.format(value)} Cal/min` : "";
+
+  return (
+    <SynchronizedChart
+      dataset={data ?? []}
+      series={[
+        { type: "line", dataKey: "value", showMark: false, valueFormatter },
+      ]}
     />
   );
 }
@@ -105,17 +237,16 @@ export function HeartRateChart({
     value ? `${FRACTION_DIGITS_0.format(value)} bpm` : "";
 
   return (
-    <LineChart
-      skipAnimation
-      height={200}
+    <SynchronizedChart
       dataset={trackpoints}
-      xAxis={[XAXIS_CONFIG]}
       yAxis={[
         {
           scaleType: "linear",
         },
       ]}
-      series={[{ dataKey: "heartBpm", showMark: false, valueFormatter }]}
+      series={[
+        { type: "line", dataKey: "heartBpm", showMark: false, valueFormatter },
+      ]}
     />
   );
 }
@@ -131,19 +262,20 @@ export function ElevationChart({
     value ? `${FRACTION_DIGITS_0.format(value)} ${localizedMetersName}` : "";
 
   return (
-    <LineChart
-      skipAnimation
-      height={200}
-      slotProps={{ legend: { hidden: true } }}
+    <SynchronizedChart
       dataset={trackpoints}
-      xAxis={[XAXIS_CONFIG]}
       yAxis={[
         {
           valueFormatter,
         },
       ]}
       series={[
-        { dataKey: "altitudeLocalized", showMark: false, valueFormatter },
+        {
+          type: "line",
+          dataKey: "altitudeLocalized",
+          showMark: false,
+          valueFormatter,
+        },
       ]}
     />
   );

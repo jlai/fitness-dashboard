@@ -2,7 +2,7 @@ import { tcx as tcxToGeoJson } from "@tmcw/togeojson";
 import { FeatureCollection } from "geojson";
 
 export type Trackpoint = {
-  time: Date;
+  dateTime: Date;
   latitudeDegrees?: number;
   longitudeDegrees?: number;
   altitudeMeters?: number;
@@ -26,13 +26,13 @@ export function parseTcx(tcxString: string): ParsedTcx {
   const trackpoints: Array<Trackpoint> = [];
 
   tcxDocument.querySelectorAll("Trackpoint").forEach((node) => {
-    const time = new Date(node.querySelector("Time")?.textContent!);
-
-    const latitudeDegrees = parseOptionalNumber(
-      node.querySelector("Position LatitudeDegrees")?.textContent
-    );
+    const dateTime = new Date(node.querySelector("Time")?.textContent!);
 
     const longitudeDegrees = parseOptionalNumber(
+      node.querySelector("Position LongitudeDegrees")?.textContent
+    );
+
+    const latitudeDegrees = parseOptionalNumber(
       node.querySelector("Position LatitudeDegrees")?.textContent
     );
 
@@ -51,7 +51,7 @@ export function parseTcx(tcxString: string): ParsedTcx {
     }
 
     trackpoints.push({
-      time,
+      dateTime,
       latitudeDegrees,
       longitudeDegrees,
       altitudeMeters,

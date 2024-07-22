@@ -68,8 +68,10 @@ function getSplits(feature: Feature, units: "miles" | "kilometers") {
 
 export default function ActivityMap({
   geojson,
+  tracePosition,
 }: {
   geojson: FeatureCollection;
+  tracePosition?: [number, number];
 }) {
   const { distanceUnit } = useUnits();
   const feature = geojson.features[0];
@@ -122,6 +124,11 @@ export default function ActivityMap({
           <div className="bg-slate-100 border-gray-800 rounded-full border-2 p-0.5">
             <EndIcon className="text-slate-600 size-4 block" />
           </div>
+        </Marker>
+      )}
+      {tracePosition && (
+        <Marker longitude={tracePosition[0]} latitude={tracePosition[1]}>
+          <div className="border-teal-600 rounded-full border-2 p-2"></div>
         </Marker>
       )}
       {splits.map(({ index, coords }) => (

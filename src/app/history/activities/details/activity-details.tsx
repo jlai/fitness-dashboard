@@ -3,6 +3,8 @@
 import {
   Button,
   Stack,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
   useMediaQuery,
   useTheme,
@@ -10,12 +12,15 @@ import {
 import dynamic from "next/dynamic";
 import { Download } from "@mui/icons-material";
 import { PanelGroup, Panel, PanelResizeHandle } from "react-resizable-panels";
+import { bisector } from "d3-array";
+import { useAtom, useAtomValue } from "jotai";
 
 import { useUnits } from "@/config/units";
 import { FRACTION_DIGITS_1 } from "@/utils/number-formats";
 import { ActivityLog } from "@/api/activity";
 import { MAPLIBRE_STYLE_URL } from "@/config";
 import { HeaderBar } from "@/components/layout/rows";
+import { ParsedTcx, Trackpoint } from "@/api/activity/tcx";
 
 import {
   useFetchTcxAsString,
@@ -23,8 +28,9 @@ import {
   useTcxDownloadUrl,
 } from "./load-tcx";
 import { ActivityTcxCharts } from "./charts";
+import { highlightedXAtom, xScaleMeasureAtom } from "./atoms";
 
-const LazyActivityMap = dynamic(() => import("@/components/activity-map"));
+const LazyActivityMap = dynamic(() => import("@/components/map/activity-map"));
 
 function ActivityOverview({
   activityLog,
@@ -68,6 +74,40 @@ function ActivityOverview({
   );
 }
 
+function MapWithPosition({ parsedTcx }: { parsedTcx: ParsedTcx }) {
+  let tracePosition: [number, number] | undefined = undefined;
+
+  const x = useAtomValue(highlightedXAtom);
+
+  if (x) {
+    let index;
+
+    if (x.type === "time") {
+      const trackpointBisector = bisector<Trackpoint, Date>((d) => d.dateTime);
+      index = trackpointBisector.center(parsedTcx.trackpoints, x.value);
+    } else {
+      const trackpointBisector = bisector<Trackpoint, number | undefined>(
+        (d) => d.distanceMeters
+      );
+      index = trackpointBisector.center(parsedTcx.trackpoints, x.value);
+    }
+
+    const { longitudeDegrees, latitudeDegrees } =
+      parsedTcx.trackpoints[index] ?? {};
+
+    if (longitudeDegrees && latitudeDegrees) {
+      tracePosition = [longitudeDegrees, latitudeDegrees];
+    }
+  }
+
+  return (
+    <LazyActivityMap
+      geojson={parsedTcx.geojson!}
+      tracePosition={tracePosition}
+    />
+  );
+}
+
 export function ActivityDetails({ activityLog }: { activityLog: ActivityLog }) {
   const tcxString = useFetchTcxAsString(activityLog.logId);
   const parsedTcx = useParsedTcx(tcxString);
@@ -88,7 +128,7 @@ export function ActivityDetails({ activityLog }: { activityLog: ActivityLog }) {
             <>
               <Panel id="map" className="min-h-[20px]">
                 <div className="size-full">
-                  <LazyActivityMap geojson={parsedTcx.geojson} />
+                  <MapWithPosition parsedTcx={parsedTcx} />
                 </div>
               </Panel>
               {panelDirection === "vertical" ? (
@@ -116,5 +156,29 @@ export function ActivityDetails({ activityLog }: { activityLog: ActivityLog }) {
         </PanelGroup>
       )}
     </Stack>
+  );
+}
+
+function MeasureToggle() {
+  const [xScaleMeasure, setXScaleMeasure] = useAtom(xScaleMeasureAtom);
+
+  const handleChange = (event: any, value: typeof xScaleMeasure) => {
+    if (!value) {
+      return;
+    }
+
+    setXScaleMeasure(value);
+  };
+
+  return (
+    <ToggleButtonGroup
+      value={xScaleMeasure}
+      onChange={handleChange}
+      exclusive
+      size="small"
+    >
+      <ToggleButton value="time">Time</ToggleButton>
+      <ToggleButton value="distance">Distance</ToggleButton>
+    </ToggleButtonGroup>
   );
 }
