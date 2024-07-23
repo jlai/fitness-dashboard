@@ -60,6 +60,11 @@ export function ActivityTcxCharts({
     enabled: ENABLE_INTRADAY,
   });
 
+  const dateDomain: [Date, Date] = [
+    startTime.startOf("minute").toDate(),
+    endTime.endOf("minute").toDate(),
+  ];
+
   return (
     <div className="p-4 h-full overflow-y-auto">
       {hasElevation && (
@@ -68,7 +73,7 @@ export function ActivityTcxCharts({
           <ElevationChart
             trackpoints={localizedTrackpoints}
             localizedMetersName={units.localizedMetersName}
-            dateDomain={[startTime.toDate(), endTime.toDate()]}
+            dateDomain={dateDomain}
           />
         </section>
       )}
@@ -77,17 +82,14 @@ export function ActivityTcxCharts({
           <Typography variant="h5">Heart rate</Typography>
           <HeartRateChart
             trackpoints={parsedTcx.trackpoints}
-            dateDomain={[startTime.toDate(), endTime.toDate()]}
+            dateDomain={dateDomain}
           />
         </section>
       )}
       {ENABLE_INTRADAY && (
         <section>
           <Typography variant="h5">Calories burned</Typography>
-          <CaloriesChart
-            data={caloriesIntraday}
-            dateDomain={[startTime.toDate(), endTime.toDate()]}
-          />
+          <CaloriesChart data={caloriesIntraday} dateDomain={dateDomain} />
         </section>
       )}
     </div>
