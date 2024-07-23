@@ -68,19 +68,26 @@ export function ActivityTcxCharts({
           <ElevationChart
             trackpoints={localizedTrackpoints}
             localizedMetersName={units.localizedMetersName}
+            dateDomain={[startTime.toDate(), endTime.toDate()]}
           />
         </section>
       )}
       {hasHeartRate && (
         <section>
           <Typography variant="h5">Heart rate</Typography>
-          <HeartRateChart trackpoints={parsedTcx.trackpoints} />
+          <HeartRateChart
+            trackpoints={parsedTcx.trackpoints}
+            dateDomain={[startTime.toDate(), endTime.toDate()]}
+          />
         </section>
       )}
       {ENABLE_INTRADAY && (
         <section>
           <Typography variant="h5">Calories burned</Typography>
-          <CaloriesChart data={caloriesIntraday} />
+          <CaloriesChart
+            data={caloriesIntraday}
+            dateDomain={[startTime.toDate(), endTime.toDate()]}
+          />
         </section>
       )}
     </div>
@@ -166,27 +173,32 @@ type SynchronizedChartProps = ComponentPropsWithoutRef<
   typeof ResponsiveChartContainer
 > & {
   loading?: boolean;
+  dateDomain?: [Date, Date];
 };
 
 export function SynchronizedChart(props: SynchronizedChartProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const clipPathId = useId();
+  const units = useUnits();
 
   const xScaleMeasure = useAtomValue(xScaleMeasureAtom);
 
-  const XAXIS_CONFIG: AxisConfig<ScaleName, Date, ChartsXAxisProps> =
+  const XAXIS_CONFIG: AxisConfig<ScaleName, any, ChartsXAxisProps> =
     xScaleMeasure === "time"
       ? {
           id: "x",
           dataKey: "dateTime",
           scaleType: "time",
-          valueFormatter: (time: Date) => TIME_FORMAT.format(time),
+          min: props.dateDomain?.[0],
+          max: props.dateDomain?.[1],
+          valueFormatter: (time: Date) =>
+            !isNaN(time.getDate()) ? TIME_FORMAT.format(time) : "",
         }
       : {
           id: "x",
           dataKey: "distanceMeters",
           scaleType: "linear",
-          valueFormatter: (time: Date) => TIME_FORMAT.format(time),
+          valueFormatter: (value: number) => `${units.localizedMeters(value)}`,
         };
 
   return (
@@ -214,12 +226,20 @@ export function SynchronizedChart(props: SynchronizedChartProps) {
   );
 }
 
-export function CaloriesChart({ data }: { data?: Array<IntradayEntry> }) {
+export function CaloriesChart({
+  data,
+  dateDomain,
+}: {
+  data?: Array<IntradayEntry>;
+  dateDomain?: [Date, Date];
+}) {
   const valueFormatter = (value: number | null) =>
     value ? `${FRACTION_DIGITS_1.format(value)} Cal/min` : "";
 
   return (
     <SynchronizedChart
+      loading={!data}
+      dateDomain={dateDomain}
       dataset={data ?? []}
       series={[
         { type: "line", dataKey: "value", showMark: false, valueFormatter },
@@ -230,14 +250,18 @@ export function CaloriesChart({ data }: { data?: Array<IntradayEntry> }) {
 
 export function HeartRateChart({
   trackpoints,
+  dateDomain,
 }: {
   trackpoints: Array<Trackpoint>;
+  dateDomain?: [Date, Date];
 }) {
   const valueFormatter = (value: number | null) =>
     value ? `${FRACTION_DIGITS_0.format(value)} bpm` : "";
 
   return (
     <SynchronizedChart
+      loading={!trackpoints}
+      dateDomain={dateDomain}
       dataset={trackpoints}
       yAxis={[
         {
@@ -254,15 +278,19 @@ export function HeartRateChart({
 export function ElevationChart({
   trackpoints,
   localizedMetersName,
+  dateDomain,
 }: {
   trackpoints: Array<Trackpoint>;
   localizedMetersName: string;
+  dateDomain?: [Date, Date];
 }) {
   const valueFormatter = (value: number | null) =>
     value ? `${FRACTION_DIGITS_0.format(value)} ${localizedMetersName}` : "";
 
   return (
     <SynchronizedChart
+      loading={!trackpoints}
+      dateDomain={dateDomain}
       dataset={trackpoints}
       yAxis={[
         {
