@@ -253,7 +253,7 @@ function EditFoodList() {
                 append({
                   ...food,
                   amount: food.defaultServingSize ?? 1,
-                  unit: food.defaultUnit,
+                  unit: food.defaultUnit ?? food.unit,
                 })
               }
             />
