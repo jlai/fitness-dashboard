@@ -20,12 +20,14 @@ export function PeriodNavigator({
   value,
   onChange,
   pickerOptions,
+  disableFuture,
 }: {
   label: string;
   period: "day" | "week" | "month" | "quarter" | "year";
   value: DayjsRange;
   onChange: (updated: DayjsRange) => void;
   pickerOptions?: StaticDatePickerProps<Dayjs>;
+  disableFuture?: boolean;
 }) {
   const popupState = usePopupState({
     variant: "popover",
@@ -60,6 +62,9 @@ export function PeriodNavigator({
     popupState.close();
   };
 
+  const isLastPeriod =
+    disableFuture && value.startDay.add(1, period as any).isAfter(dayjs());
+
   return (
     <Stack direction="row" alignItems="center">
       <IconButton aria-label="previous" onClick={onNavigatePrevious}>
@@ -77,14 +82,18 @@ export function PeriodNavigator({
       </IconButton>
       <Popover {...bindPopover(popupState)}>
         <StaticDatePicker
-          disableFuture
+          disableFuture={disableFuture}
           defaultValue={value.startDay}
           onAccept={onPickDate}
           onClose={popupState.close}
           {...pickerOptions}
         />
       </Popover>
-      <IconButton aria-label="next" onClick={onNavigateNext}>
+      <IconButton
+        aria-label="next"
+        onClick={onNavigateNext}
+        disabled={isLastPeriod}
+      >
         <ChevronRight />
       </IconButton>
     </Stack>
@@ -94,9 +103,11 @@ export function PeriodNavigator({
 export function MonthNavigator({
   value,
   onChange,
+  disableFuture = true,
 }: {
   value: DayjsRange;
   onChange: (updated: DayjsRange) => void;
+  disableFuture?: boolean;
 }) {
   return (
     <PeriodNavigator
@@ -108,6 +119,7 @@ export function MonthNavigator({
         openTo: "month",
         views: ["year", "month"],
       }}
+      disableFuture={disableFuture}
     />
   );
 }
@@ -115,9 +127,11 @@ export function MonthNavigator({
 export function WeekNavigator({
   value,
   onChange,
+  disableFuture = true,
 }: {
   value: DayjsRange;
   onChange: (updated: DayjsRange) => void;
+  disableFuture?: boolean;
 }) {
   const label = `Week of ${formatWeek(value.startDay)}`;
 
@@ -127,6 +141,7 @@ export function WeekNavigator({
       period="week"
       value={value}
       onChange={onChange}
+      disableFuture={disableFuture}
     />
   );
 }
@@ -134,9 +149,11 @@ export function WeekNavigator({
 export function QuarterNavigator({
   value,
   onChange,
+  disableFuture = true,
 }: {
   value: DayjsRange;
   onChange: (updated: DayjsRange) => void;
+  disableFuture?: boolean;
 }) {
   const label = new Intl.DateTimeFormat(undefined, {
     month: "short",
@@ -153,6 +170,7 @@ export function QuarterNavigator({
         openTo: "month",
         views: ["year", "month"],
       }}
+      disableFuture={disableFuture}
     />
   );
 }
@@ -160,9 +178,11 @@ export function QuarterNavigator({
 export function YearNavigator({
   value,
   onChange,
+  disableFuture = true,
 }: {
   value: DayjsRange;
   onChange: (updated: DayjsRange) => void;
+  disableFuture?: boolean;
 }) {
   return (
     <PeriodNavigator
@@ -170,6 +190,7 @@ export function YearNavigator({
       period="year"
       value={value}
       onChange={onChange}
+      disableFuture={disableFuture}
     />
   );
 }
