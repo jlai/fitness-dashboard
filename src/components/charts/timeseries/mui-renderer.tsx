@@ -207,6 +207,7 @@ export function SimpleLineChart<
     type: "line",
     connectNulls: true,
     showMark: config.showMark,
+    curve: config.curve,
     ...getCommonSeriesProps({ data, config }),
   }));
 

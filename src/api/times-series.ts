@@ -14,6 +14,7 @@ export type TimeSeriesResource =
   | "steps"
   | "floors"
   | "heart"
+  | "hrv"
   | "weight"
   | "fat"
   | "bmi"
@@ -117,6 +118,12 @@ export const TIME_SERIES_CONFIGS: Record<
     responseKey: "activities-heart",
     requiredScopes: ["hr"],
     maxDays: 366,
+  },
+  ["hrv"]: {
+    urlPrefix: "/1/user/-/hrv/date/",
+    responseKey: "hrv",
+    requiredScopes: ["hr"],
+    maxDays: 30,
   },
   ["active-zone-minutes"]: {
     urlPrefix: "/1/user/-/activities/active-zone-minutes/date/",

@@ -1,3 +1,5 @@
+import { CurveType } from "@mui/x-charts";
+
 import { StringValueDatum } from "./data";
 
 export interface ChartSeriesConfig<TDatum> {
@@ -8,6 +10,7 @@ export interface ChartSeriesConfig<TDatum> {
   numberFormat?: (value: number) => string;
   unit?: string;
   showMark?: boolean;
+  curve?: CurveType;
 }
 
 export function singleSeriesConfig<TDatum = StringValueDatum>({

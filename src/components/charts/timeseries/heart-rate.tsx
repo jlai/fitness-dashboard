@@ -10,6 +10,13 @@ type HeartDatum = TimeSeriesDatum & {
   value: HeartTimeSeriesValue;
 };
 
+type HRVDatum = TimeSeriesDatum & {
+  value: {
+    dailyRmssd: number;
+    deepRmssd: number;
+  };
+};
+
 type SimplifiedHeartDatum = TimeSeriesDatum & {
   fatBurnZoneMinutes: number;
   cardioZoneMinutes: number;
@@ -22,6 +29,14 @@ const RESTING_HEART_RATE_SERIES_CONFIGS = singleSeriesConfig<HeartDatum>({
   numberFormat: FRACTION_DIGITS_0.format,
   unit: "bpm",
   showMark: true,
+});
+
+const HRV_SERIES_CONFIGS = singleSeriesConfig<HRVDatum>({
+  label: "HRV",
+  yAccessor: (entry) => entry.value.dailyRmssd ?? null,
+  numberFormat: FRACTION_DIGITS_0.format,
+  showMark: true,
+  curve: "linear",
 });
 
 export function RestingHeartRateChart() {
@@ -90,4 +105,10 @@ export function HeartRateZonesChart() {
 
   const props = useAggregation(data, HEART_RATE_ZONES_SERIES_CONFIGS);
   return <StackedBarChart {...props} />;
+}
+
+export function HeartRateVariabilityChart() {
+  const data = useTimeSeriesData<HRVDatum>("hrv");
+
+  return <SimpleLineChart data={data} seriesConfigs={HRV_SERIES_CONFIGS} />;
 }

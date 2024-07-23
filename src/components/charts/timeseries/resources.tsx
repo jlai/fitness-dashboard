@@ -15,7 +15,11 @@ import {
   WeightChart,
 } from "./simple";
 import { ActiveZoneMinutesChart } from "./stacked";
-import { HeartRateZonesChart, RestingHeartRateChart } from "./heart-rate";
+import {
+  HeartRateVariabilityChart,
+  HeartRateZonesChart,
+  RestingHeartRateChart,
+} from "./heart-rate";
 import { CalorieBalanceChart } from "./calorie-balance";
 
 export interface ChartResourceConfig {
@@ -55,6 +59,11 @@ export const CHART_RESOURCE_CONFIGS: Record<string, ChartResourceConfig> = {
     label: "Resting heart rate",
     component: RestingHeartRateChart,
     ...pick(TIME_SERIES_CONFIGS.heart, "maxDays", "requiredScopes"),
+  },
+  hrv: {
+    label: "Heart Rate Variability (HRV)",
+    component: HeartRateVariabilityChart,
+    ...pick(TIME_SERIES_CONFIGS.hrv, "maxDays", "requiredScopes"),
   },
   "heart-rate-zones": {
     label: "Heart rate zones",
@@ -113,6 +122,7 @@ export const CHART_RESOURCE_MENU_ITEMS: Array<ChartResource | "-"> = [
   "-",
   "sleep",
   "resting-heart-rate",
+  "hrv",
   "heart-rate-zones",
   "active-zone-minutes",
   "-",
