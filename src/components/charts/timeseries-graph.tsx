@@ -15,7 +15,6 @@ import {
 } from "./timeseries/resources";
 import {
   selectedResourceAtom,
-  rangeTypeChangedEffect,
   resourceChangedEffect,
   selectedRangeAtom,
   selectedRangeTypeAtom,
@@ -78,7 +77,6 @@ export function TimeSeriesChart({
 /** Graph component with resource selector and navigation controls */
 export function NavigableGraphView() {
   useAtomValue(resourceChangedEffect);
-  useAtomValue(rangeTypeChangedEffect);
 
   const selectedResource = useAtomValue(selectedResourceAtom);
   const selectedRange = useAtomValue(selectedRangeAtom);

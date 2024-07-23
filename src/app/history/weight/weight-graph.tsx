@@ -23,7 +23,6 @@ import { min } from "lodash";
 
 import { buildTimeSeriesQuery } from "@/api/times-series";
 import {
-  rangeTypeChangedEffect,
   selectedRangeAtom,
   selectedRangeTypeAtom,
 } from "@/components/charts/atoms";
@@ -51,8 +50,6 @@ export function roundDownMinWeight(weight: number) {
 
 export function LeanFatMassGraph() {
   const { localizedKilograms, localizedKilogramsName } = useUnits();
-
-  useAtomValue(rangeTypeChangedEffect);
 
   const range = useAtomValue(selectedRangeAtom);
 

@@ -1,6 +1,7 @@
 import { atom } from "jotai";
 import dayjs from "dayjs";
 import { atomEffect } from "jotai-effect";
+import { atomFamily } from "jotai/utils";
 
 import { DayjsRange } from "../calendar/period-navigator";
 
@@ -8,20 +9,37 @@ import { CHART_RESOURCE_CONFIGS, ChartResource } from "./timeseries/resources";
 
 export const selectedResourceAtom = atom<ChartResource>("steps");
 
-export type DateRangeType = "week" | "month" | "quarter" | "year";
+export type DateRangeType = "week" | "month" | "quarter" | "year" | "custom";
 export const MAX_DAYS_IN_RANGE = {
   week: 7,
   month: 31,
   quarter: 92,
   year: 365,
+  custom: 1095,
 };
 
 export const selectedRangeTypeAtom = atom<DateRangeType>("month");
 
-export const selectedRangeAtom = atom<DayjsRange>({
-  startDay: dayjs().startOf("day"),
-  endDay: dayjs().endOf("day"),
+// Store selected range for each range type
+export const selectedRangeFamily = atomFamily((rangeType: DateRangeType) => {
+  if (rangeType === "custom") {
+    return atom<DayjsRange>({
+      startDay: dayjs().subtract(30, "days"),
+      endDay: dayjs(),
+    });
+  }
+
+  return atom<DayjsRange>({
+    startDay: dayjs().startOf(rangeType),
+    endDay: dayjs().endOf(rangeType),
+  });
 });
+
+export const selectedRangeAtom = atom<DayjsRange, [DayjsRange], void>(
+  (get) => get(selectedRangeFamily(get(selectedRangeTypeAtom))),
+  (get, set, update) =>
+    set(selectedRangeFamily(get(selectedRangeTypeAtom)), update)
+);
 
 // Reset date range if resource doesn't support it
 export const resourceChangedEffect = atomEffect((get, set) => {
@@ -35,15 +53,4 @@ export const resourceChangedEffect = atomEffect((get, set) => {
     console.log("resource max days too high");
     set(selectedRangeTypeAtom, "week");
   }
-});
-
-// Update date range when range type changes
-export const rangeTypeChangedEffect = atomEffect((get, set) => {
-  const rangeType = get(selectedRangeTypeAtom);
-  let { startDay, endDay } = get.peek(selectedRangeAtom);
-
-  startDay = startDay.startOf(rangeType);
-  endDay = startDay.endOf(rangeType);
-
-  set(selectedRangeAtom, { startDay, endDay });
 });
