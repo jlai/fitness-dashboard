@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Button,
   IconButton,
   Table,
   TableBody,
@@ -13,9 +14,10 @@ import {
 import dayjs from "dayjs";
 import { useCallback, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Delete as DeleteIcon } from "@mui/icons-material";
+import { Add, Delete as DeleteIcon } from "@mui/icons-material";
 import { toast } from "mui-sonner";
 import { useConfirm } from "material-ui-confirm";
+import { useSetAtom } from "jotai";
 
 import {
   DayjsRange,
@@ -33,6 +35,10 @@ import {
   PERCENT_FRACTION_DIGITS_1,
 } from "@/utils/number-formats";
 import { HeaderBar } from "@/components/layout/rows";
+import { FlexSpacer } from "@/components/layout/flex";
+import CreateWeightLogDialog, {
+  createWeightLogDialogOpenAtom,
+} from "@/components/logging/create-weight-log";
 
 function WeightLogRow({
   logEntry: log,
@@ -69,6 +75,10 @@ function WeightLogRow({
 }
 
 export default function WeightLogList() {
+  const setShowingCreateWeightDialog = useSetAtom(
+    createWeightLogDialogOpenAtom
+  );
+
   const [range, setRange] = useState<DayjsRange>({
     startDay: dayjs().startOf("month"),
     endDay: dayjs().endOf("month"),
@@ -103,9 +113,16 @@ export default function WeightLogList() {
   return (
     <div>
       <HeaderBar>
-        <Typography variant="h4">Weight Logs</Typography>
-        <div className="flex-1"></div>
+        <Typography variant="h5">Weight logs</Typography>
         <MonthNavigator value={range} onChange={setRange} />
+        <FlexSpacer />
+        <Button
+          onClick={() => setShowingCreateWeightDialog(true)}
+          startIcon={<Add />}
+        >
+          Log weight
+        </Button>
+        <CreateWeightLogDialog />
       </HeaderBar>
       <TableContainer>
         <Table>
