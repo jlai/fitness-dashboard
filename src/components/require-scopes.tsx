@@ -16,6 +16,7 @@ const SCOPE_NAME_MAPPING: Record<string, string> = {
   tem: "temperature",
   wei: "weight",
   set: "device settings",
+  loc: "location",
 };
 
 function getScopeName(scope: string) {
