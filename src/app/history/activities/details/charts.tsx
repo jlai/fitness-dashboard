@@ -11,6 +11,7 @@ import {
   ChartsYAxis,
   ChartsClipPath,
   ChartsTooltip,
+  ChartsGrid,
 } from "@mui/x-charts";
 import { Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
@@ -25,6 +26,7 @@ import {
 } from "react";
 import { useAtom, useAtomValue } from "jotai";
 import { ScaleLinear } from "d3-scale";
+import { AxisValueFormatterContext } from "@mui/x-charts/internals";
 
 import { ParsedTcx, Trackpoint } from "@/api/activity/tcx";
 import { FRACTION_DIGITS_0, FRACTION_DIGITS_1 } from "@/utils/number-formats";
@@ -41,6 +43,22 @@ const TIME_FORMAT = new Intl.DateTimeFormat(undefined, {
   minute: "2-digit",
 });
 
+const TIME_FORMAT_WITH_SECONDS = new Intl.DateTimeFormat(undefined, {
+  hour: "numeric",
+  minute: "2-digit",
+  second: "2-digit",
+});
+
+function formatTime(value: Date, context: AxisValueFormatterContext) {
+  if (isNaN(value.getDate())) {
+    return "";
+  }
+
+  return context.location === "tick"
+    ? TIME_FORMAT.format(value)
+    : TIME_FORMAT_WITH_SECONDS.format(value);
+}
+
 export function ActivityTcxCharts({
   parsedTcx,
   activityLog,
@@ -52,18 +70,18 @@ export function ActivityTcxCharts({
   const { hasElevation, hasHeartRate, localizedTrackpoints } =
     useTrackpoints(parsedTcx);
 
-  const startTime = dayjs(activityLog.startTime);
-  const endTime = startTime.add(activityLog.duration);
+  const startTime = dayjs(activityLog.startTime).startOf("minute");
+  const endTime = startTime
+    .add(activityLog.duration)
+    .startOf("minute")
+    .add(1, "minute");
 
   const { data: caloriesIntraday } = useQuery({
     ...buildActivityIntradayQuery("calories", "1min", startTime, endTime),
     enabled: ENABLE_INTRADAY,
   });
 
-  const dateDomain: [Date, Date] = [
-    startTime.startOf("minute").toDate(),
-    endTime.endOf("minute").toDate(),
-  ];
+  const dateDomain: [Date, Date] = [startTime.toDate(), endTime.toDate()];
 
   return (
     <div className="p-4 h-full overflow-y-auto">
@@ -193,8 +211,7 @@ export function SynchronizedChart(props: SynchronizedChartProps) {
           scaleType: "time",
           min: props.dateDomain?.[0],
           max: props.dateDomain?.[1],
-          valueFormatter: (time: Date) =>
-            !isNaN(time.getDate()) ? TIME_FORMAT.format(time) : "",
+          valueFormatter: formatTime,
         }
       : {
           id: "x",
@@ -218,6 +235,7 @@ export function SynchronizedChart(props: SynchronizedChartProps) {
       <ChartsOverlay loading={props.loading} />
       <ChartsXAxis />
       <ChartsYAxis />
+      <ChartsGrid horizontal />
       <g clipPath={clipPathId}>
         <LinePlot />
         <SynchronizedHighlight svgRef={svgRef} />
