@@ -1,3 +1,4 @@
+import { atom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
 
 /** setting whether we should enable polly at startup */
@@ -32,6 +33,10 @@ export const distanceUnitAtom = atomWithStorage<"en_US" | "METRIC" | undefined>(
   {
     getOnInit: true,
   }
+);
+
+export const allUnitsConfiguredAtom = atom(
+  (get) => get(weightUnitAtom) && get(waterUnitAtom) && get(distanceUnitAtom)
 );
 
 export const foodLogTotalsPositionAtom = atomWithStorage<
