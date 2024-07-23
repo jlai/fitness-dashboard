@@ -215,9 +215,11 @@ export function SynchronizedChart(props: SynchronizedChartProps) {
         }
       : {
           id: "x",
+          label: units.localizedKilometersName,
           dataKey: "distanceMeters",
           scaleType: "linear",
-          valueFormatter: (value: number) => `${units.localizedMeters(value)}`,
+          valueFormatter: (value: number) =>
+            FRACTION_DIGITS_1.format(units.localizedKilometers(value / 1000)),
         };
 
   return (
