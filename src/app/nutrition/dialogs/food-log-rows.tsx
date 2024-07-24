@@ -148,7 +148,7 @@ function FoodLogRow({ foodLog }: { foodLog: FoodLogEntry }) {
 export function MealTypeRows({ summary }: { summary: MealTypeSummary }) {
   return (
     <>
-      <TableRow className="bg-slate-50">
+      <TableRow className="bg-slate-50 dark:bg-slate-900">
         <TableCell className="font-medium">{summary.name}</TableCell>
         <TableCell></TableCell>
         <TableCell className="text-end">
@@ -156,7 +156,7 @@ export function MealTypeRows({ summary }: { summary: MealTypeSummary }) {
         </TableCell>
         {NUTRIENT_PROPS.map((prop) => (
           <TableCell key={prop} className="text-end">
-            {formatNutrientPropValue(summary, prop)}
+            <Typography>{formatNutrientPropValue(summary, prop)}</Typography>
           </TableCell>
         ))}
       </TableRow>

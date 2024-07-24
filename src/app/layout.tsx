@@ -4,13 +4,11 @@ import { HydrationProvider } from "react-hydration-provider";
 import dynamic from "next/dynamic";
 import { Container } from "@mui/material";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v13-appRouter";
-import { ThemeProvider } from "@mui/material/styles";
 import { Suspense } from "react";
 
 import { CONTENT_SECURITY_POLICY } from "@/config/content-security-policy";
 
 import Header from "./header";
-import { theme } from "./theme";
 
 import "./globals.css";
 
@@ -40,18 +38,16 @@ export default function RootPageLayout({
       <body className={`${roboto.className}`}>
         <HydrationProvider>
           <AppRouterCacheProvider options={{ key: "css" }}>
-            <ThemeProvider theme={theme}>
-              <ClientSideSetup>
-                <Header />
-                <main>
-                  <Suspense>
-                    <Container maxWidth="lg" className="px-0 sm:px-6">
-                      {children}
-                    </Container>
-                  </Suspense>
-                </main>
-              </ClientSideSetup>
-            </ThemeProvider>
+            <ClientSideSetup>
+              <Header />
+              <main>
+                <Suspense>
+                  <Container maxWidth="lg" className="px-0 sm:px-6">
+                    {children}
+                  </Container>
+                </Suspense>
+              </main>
+            </ClientSideSetup>
           </AppRouterCacheProvider>
         </HydrationProvider>
       </body>

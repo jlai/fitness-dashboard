@@ -1,7 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { StyledEngineProvider } from "@mui/material";
+import { useEffect, useMemo, useState } from "react";
+import {
+  StyledEngineProvider,
+  ThemeProvider,
+  useMediaQuery,
+} from "@mui/material";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { ConfirmProvider } from "material-ui-confirm";
@@ -20,6 +24,8 @@ import { startPollyAtom, stopPollyAtom } from "@/storage/polly";
 import { pollyEnabledAtom } from "@/storage/settings";
 import { syncFitbitTokenEffect } from "@/api/auth";
 import { warnOnRateLimitExceededEffect } from "@/api/request";
+
+import { buildTheme } from "./theme";
 
 function PollyWrapper({ children }: { children: React.ReactNode }) {
   const startPolly = useSetAtom(startPollyAtom);
@@ -74,20 +80,28 @@ export default function ClientSideSetup({
 }) {
   useAtom(syncFitbitTokenEffect);
 
+  const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
+  const theme = useMemo(
+    () => buildTheme(prefersDarkMode ? "dark" : "light"),
+    [prefersDarkMode]
+  );
+
   return (
-    <JotaiProvider>
-      <DevelopmentSetup>
-        <LocalizationProvider dateAdapter={AdapterDayjs}>
-          <StyledEngineProvider injectFirst>
-            <QueryClientProvider client={queryClient}>
-              <ConfirmProvider>
-                <Setup>{children}</Setup>
-                <Toaster />
-              </ConfirmProvider>
-            </QueryClientProvider>
-          </StyledEngineProvider>
-        </LocalizationProvider>
-      </DevelopmentSetup>
-    </JotaiProvider>
+    <ThemeProvider theme={theme}>
+      <JotaiProvider>
+        <DevelopmentSetup>
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <StyledEngineProvider injectFirst>
+              <QueryClientProvider client={queryClient}>
+                <ConfirmProvider>
+                  <Setup>{children}</Setup>
+                  <Toaster />
+                </ConfirmProvider>
+              </QueryClientProvider>
+            </StyledEngineProvider>
+          </LocalizationProvider>
+        </DevelopmentSetup>
+      </JotaiProvider>
+    </ThemeProvider>
   );
 }

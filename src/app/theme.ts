@@ -8,15 +8,20 @@ export const mainFont = Open_Sans({
   subsets: ["latin"],
 });
 
-export const theme = createTheme({
-  typography: {
-    fontFamily: `${mainFont.style.fontFamily}, Helvetica, Arial, san-serif`,
-  },
-  components: {
-    MuiStack: {
-      defaultProps: {
-        useFlexGap: true,
+export function buildTheme(mode: "light" | "dark") {
+  return createTheme({
+    palette: {
+      mode,
+    },
+    typography: {
+      fontFamily: `${mainFont.style.fontFamily}, Helvetica, Arial, san-serif`,
+    },
+    components: {
+      MuiStack: {
+        defaultProps: {
+          useFlexGap: true,
+        },
       },
     },
-  },
-});
+  });
+}

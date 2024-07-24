@@ -40,7 +40,7 @@ function NavLink({
 function SiteBranding({ className = "" }: { className: string }) {
   return (
     <div
-      className={`hidden md:flex flex-row items-center text-gray-500 ${className}`}
+      className={`hidden md:flex flex-row items-center text-gray-500 dark:text-inherit ${className}`}
     >
       <div>
         <div className={`${poppins.className} text-3xl`}>{WEBSITE_NAME}</div>
@@ -69,10 +69,10 @@ export default function Header() {
         bgcolor: "#fcfcff",
         paddingBlock: 2,
       }}
-      className="mb-2 sm:mb-6"
+      className="mb-2 sm:mb-6 bg-[#fcfcff] dark:bg-inherit"
     >
       <Container maxWidth="lg">
-        <div className="flex flex-row items-center gap-x-2 text-gray-500">
+        <div className="flex flex-row items-center gap-x-2 text-gray-500 dark:text-inherit">
           <SiteBranding className="flex-1" />
           <div className="flex flex-row flex-1 items-center md:gap-x-2 md:mx-4">
             <NavLink href="/" icon={<DashboardIcon />}>
