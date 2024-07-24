@@ -74,8 +74,6 @@ function ActivityLogListHeaderCells() {
 }
 
 export default function ActivityLogList() {
-  buildGetActivityListInfiniteQuery(dayjs());
-
   return (
     <HistoryList
       buildQuery={buildGetActivityListInfiniteQuery}

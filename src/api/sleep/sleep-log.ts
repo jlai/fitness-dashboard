@@ -55,13 +55,16 @@ export function buildGetSleepLogByDateQuery(day: Dayjs) {
   });
 }
 
-export function buildGetSleepLogListInfiniteQuery(initialDay: Dayjs) {
+export function buildGetSleepLogListInfiniteQuery(
+  initialDay: Dayjs,
+  pageSize: number
+) {
   return infiniteQueryOptions({
-    queryKey: ["sleep-log-list", formatAsDate(initialDay)],
+    queryKey: ["sleep-log-list", formatAsDate(initialDay), pageSize],
     queryFn: async ({ pageParam }) => {
       const queryString =
         pageParam ||
-        `limit=10&offset=0&sort=desc&beforeDate=${encodeURIComponent(
+        `limit=${pageSize}&offset=0&sort=desc&beforeDate=${encodeURIComponent(
           initialDay.toISOString().replace("Z", "")
         )}`;
 

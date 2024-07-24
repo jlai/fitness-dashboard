@@ -29,13 +29,14 @@ interface RowElementProps<Log> {
 
 interface HistoryListProps<Response, Log extends LogEntryWithId> {
   buildQuery: (
-    initialDay: Dayjs
+    initialDay: Dayjs,
+    pageSize: number
   ) => UseInfiniteQueryOptions<
     Response,
     Error,
     InfiniteData<Response>,
     Response,
-    string[],
+    (string | number)[], // query key type
     string
   >;
   getLogs: (response: Response) => Array<Log>;
@@ -45,17 +46,20 @@ interface HistoryListProps<Response, Log extends LogEntryWithId> {
   };
 }
 
+const DEFAULT_PAGE_SIZE = 10;
+const ALLOWED_PAGE_SIZES = [10, 25, 50, 100];
+
 export default function HistoryList<Response, Log extends LogEntryWithId>({
   buildQuery,
   getLogs,
   slots: { row: Row, headerCells: HeaderCells },
 }: HistoryListProps<Response, Log>) {
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [pageNumber, setPageNumber] = useState(0);
   const [initialDay, setInitialDay] = useState(dayjs());
 
-  const { data, hasNextPage, fetchNextPage, isFetching } = useInfiniteQuery(
-    buildQuery(initialDay)
-  );
+  const { data, hasNextPage, fetchNextPage, isFetching, refetch } =
+    useInfiniteQuery(buildQuery(initialDay, pageSize));
 
   const numLoadedPages = data?.pages.length ?? 0;
 
@@ -78,7 +82,12 @@ export default function HistoryList<Response, Log extends LogEntryWithId>({
     [setPageNumber, setInitialDay]
   );
 
-  const pageSize = 10;
+  const updatePageSize = (size: number) => {
+    setPageSize(size);
+    setPageNumber(0);
+    refetch();
+  };
+
   const page = data?.pages[pageNumber];
   const logEntries = (page && getLogs(page)) ?? [];
 
@@ -117,8 +126,11 @@ export default function HistoryList<Response, Log extends LogEntryWithId>({
                       0
                     ) ?? -1
               }
-              rowsPerPageOptions={[]}
+              rowsPerPageOptions={ALLOWED_PAGE_SIZES}
               rowsPerPage={pageSize}
+              onRowsPerPageChange={(event) =>
+                updatePageSize(Number(event.target.value))
+              }
               page={pageNumber}
               onPageChange={(event, newPageNumber) =>
                 changePageNumber(newPageNumber)

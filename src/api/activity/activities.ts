@@ -106,13 +106,16 @@ export function isPossiblyTracked(activity: ActivityLog) {
   );
 }
 
-export function buildGetActivityListInfiniteQuery(initialDay: Dayjs) {
+export function buildGetActivityListInfiniteQuery(
+  initialDay: Dayjs,
+  pageSize: number
+) {
   return infiniteQueryOptions({
-    queryKey: ["activity-log-list", formatAsDate(initialDay)],
+    queryKey: ["activity-log-list", formatAsDate(initialDay), pageSize],
     queryFn: async ({ pageParam }) => {
       const queryString =
         pageParam ||
-        `limit=10&offset=0&sort=desc&beforeDate=${encodeURIComponent(
+        `limit=${pageSize}&offset=0&sort=desc&beforeDate=${encodeURIComponent(
           initialDay.toISOString().replace("Z", "")
         )}`;
 
