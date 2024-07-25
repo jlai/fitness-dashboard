@@ -43,7 +43,9 @@ export function TileClickableArea({
   return (
     <button
       onClick={onClick}
-      className={`size-full ${isEditingGrid ? "pointer-events-none" : ""}`}
+      className={`block size-full ${
+        isEditingGrid ? "pointer-events-none" : ""
+      }`}
     >
       {children}
     </button>
