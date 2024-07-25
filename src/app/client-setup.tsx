@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
   StyledEngineProvider,
   ThemeProvider,
@@ -12,47 +12,13 @@ import { ConfirmProvider } from "material-ui-confirm";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useHydrateAtoms } from "jotai/utils";
 import { Toaster } from "mui-sonner";
-import {
-  useSetAtom,
-  useAtomValue,
-  useAtom,
-  Provider as JotaiProvider,
-} from "jotai";
+import { useAtom, Provider as JotaiProvider } from "jotai";
 import { queryClientAtom } from "jotai-tanstack-query";
 
-import { startPollyAtom, stopPollyAtom } from "@/storage/polly";
-import { pollyEnabledAtom } from "@/storage/settings";
 import { syncFitbitTokenEffect } from "@/api/auth";
 import { warnOnRateLimitExceededEffect } from "@/api/request";
 
 import { buildTheme } from "./theme";
-
-function PollyWrapper({ children }: { children: React.ReactNode }) {
-  const startPolly = useSetAtom(startPollyAtom);
-  const stopPolly = useSetAtom(stopPollyAtom);
-
-  const [pollyReady, setPollyReady] = useState(false);
-
-  useEffect(() => {
-    console.log("setting up polly");
-
-    startPolly().then(() => {
-      setPollyReady(true);
-    });
-
-    return () => {
-      stopPolly();
-    };
-  }, [startPolly, stopPolly]);
-
-  return pollyReady ? children : <></>;
-}
-
-function DevelopmentSetup({ children }: { children: React.ReactNode }) {
-  const enablePolly = useAtomValue(pollyEnabledAtom);
-
-  return enablePolly ? <PollyWrapper>{children}</PollyWrapper> : children;
-}
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -89,18 +55,16 @@ export default function ClientSideSetup({
   return (
     <ThemeProvider theme={theme}>
       <JotaiProvider>
-        <DevelopmentSetup>
-          <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <StyledEngineProvider injectFirst>
-              <QueryClientProvider client={queryClient}>
-                <ConfirmProvider>
-                  <Setup>{children}</Setup>
-                  <Toaster />
-                </ConfirmProvider>
-              </QueryClientProvider>
-            </StyledEngineProvider>
-          </LocalizationProvider>
-        </DevelopmentSetup>
+        <LocalizationProvider dateAdapter={AdapterDayjs}>
+          <StyledEngineProvider injectFirst>
+            <QueryClientProvider client={queryClient}>
+              <ConfirmProvider>
+                <Setup>{children}</Setup>
+                <Toaster />
+              </ConfirmProvider>
+            </QueryClientProvider>
+          </StyledEngineProvider>
+        </LocalizationProvider>
       </JotaiProvider>
     </ThemeProvider>
   );

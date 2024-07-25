@@ -4,11 +4,9 @@ import { Suspense, useCallback } from "react";
 import {
   Button,
   Container,
-  Link,
   MenuItem,
   Paper,
   Select,
-  Switch,
   Table,
   TableBody,
   TableCell,
@@ -37,11 +35,9 @@ import {
 import {
   distanceUnitAtom,
   foodLogTotalsPositionAtom,
-  pollyEnabledAtom,
   waterUnitAtom,
   weightUnitAtom,
 } from "@/storage/settings";
-import { startPollyAtom, stopPollyAtom } from "@/storage/polly";
 
 function SettingsRow({
   title,
@@ -237,39 +233,9 @@ function MainSettings() {
 }
 
 function DeveloperSettings() {
-  const [pollyEnabled, setPollyEnabled] = useAtom(pollyEnabledAtom);
-  const startPolly = useSetAtom(startPollyAtom);
-  const stopPolly = useSetAtom(stopPollyAtom);
-
-  const updatePollyEnabled = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      const enable = event.target.checked;
-
-      setPollyEnabled(event.target.checked);
-
-      // Start/stop polly
-      if (enable) {
-        startPolly();
-      } else {
-        stopPolly();
-      }
-    },
-    [setPollyEnabled, startPolly, stopPolly]
-  );
-
   return (
     <>
       <SettingsRow title="Developer settings"></SettingsRow>
-      <SettingsRow
-        title="Enable PollyJS"
-        action={<Switch checked={pollyEnabled} onChange={updatePollyEnabled} />}
-      >
-        Use{" "}
-        <Link href="https://pollyjs.com" target="_blank" rel="noreferrer">
-          PollyJS
-        </Link>{" "}
-        to record and replay HTTP requests
-      </SettingsRow>
     </>
   );
 }

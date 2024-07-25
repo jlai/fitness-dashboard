@@ -1,16 +1,6 @@
 import { atom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
 
-/** setting whether we should enable polly at startup */
-export const pollyEnabledAtom = atomWithStorage(
-  "dev:enable-polly",
-  false,
-  undefined,
-  {
-    getOnInit: true,
-  }
-);
-
 export const weightUnitAtom = atomWithStorage<
   "en_US" | "en_GB" | "METRIC" | undefined
 >("unit:weight", undefined, undefined, {
