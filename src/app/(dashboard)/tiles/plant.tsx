@@ -5,6 +5,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Stack,
   Typography,
 } from "@mui/material";
 import {
@@ -13,6 +14,9 @@ import {
   ToggleButtonGroupElement,
 } from "react-hook-form-mui";
 import dayjs from "dayjs";
+import { CasinoOutlined } from "@mui/icons-material";
+import { Chance } from "chance";
+import { find } from "lodash";
 
 import { formatAsDate } from "@/api/datetime";
 import { FormRow, FormRows } from "@/components/forms/form-row";
@@ -24,20 +28,28 @@ import { RenderDialogContentProps, TileWithDialog } from "./tile-with-dialog";
 import { useTileSettings } from "./tile";
 
 type GenusID = keyof typeof Genera;
+const GENUSES = Object.keys(Genera);
 
 function SvgPlantWrapper({
   genusId,
   age,
   seed,
 }: {
-  genusId: GenusID;
+  genusId: GenusID | "random";
   age: number;
   seed: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
 
   const plantSvg = useMemo(() => {
-    const genus = new Genera[genusId](seed);
+    let genus;
+
+    if (genusId === "random") {
+      const randomGenusId = Chance(seed).pickone(GENUSES) as GenusID;
+      genus = new Genera[randomGenusId](seed);
+    } else {
+      genus = new Genera[genusId](seed);
+    }
 
     const plant = new SvgPlant(genus, {
       color: true,
@@ -55,8 +67,8 @@ function SvgPlantWrapper({
 }
 
 interface PlantSettings {
-  goal: "steps" | "calories-out";
-  genus: GenusID;
+  goal: "steps" | "distance" | "calories-out" | "active-minutes";
+  genus: GenusID | "random";
 }
 
 const DEFAULT_SETTINGS: PlantSettings = { goal: "steps", genus: "BushyPlant" };
@@ -78,17 +90,38 @@ export default function PlantTileContent() {
         text = "Meet your step goal to grow";
       }
       break;
-    case "calories-out": {
-      const total = dailySummary.summary.caloriesOut;
-      const goal = dailySummary.goals?.caloriesOut ?? 0;
-      progress = Math.min(1.0, total / goal);
-      text = "Burn calories to grow";
-    }
+    case "calories-out":
+      {
+        const total = dailySummary.summary.caloriesOut;
+        const goal = dailySummary.goals?.caloriesOut ?? 0;
+        progress = Math.min(1.0, total / goal);
+        text = "Burn calories to grow";
+      }
+      break;
+    case "active-minutes":
+      {
+        const { fairlyActiveMinutes, veryActiveMinutes } = dailySummary.summary;
+        const total = fairlyActiveMinutes + veryActiveMinutes;
+        const goal = dailySummary.goals?.activeMinutes ?? 0;
+        progress = Math.min(1.0, total / goal);
+        text = "Be active to grow";
+      }
+      break;
+    case "distance":
+      {
+        const total =
+          find(dailySummary.summary.distances, { activity: "total" })
+            ?.distance ?? 0;
+        const goal = dailySummary.goals?.distance ?? 0;
+        progress = Math.min(1.0, total / goal);
+        text = "Go the distance to grow";
+      }
+      break;
   }
 
   return (
     <TileWithDialog
-      dialogProps={{ sx: { minWidth: "300px" } }}
+      dialogProps={{ maxWidth: "lg" }}
       renderDialogContent={PlantDialogContent}
     >
       <div className="flex flex-col h-full overflow-hidden">
@@ -115,7 +148,7 @@ function GenusPreview({ genusId }: { genusId: GenusID }) {
   const today = dayjs();
 
   return (
-    <div className="overflow-hidden w-[100px] h-[100px]">
+    <div className="overflow-hidden size-[50px] md:size-[100px]">
       <SvgPlantWrapper genusId={genusId} age={0.7} seed={formatAsDate(today)} />
     </div>
   );
@@ -130,9 +163,32 @@ const PLANT_GOAL_OPTIONS = [
     id: "calories-out",
     label: "Calories burned",
   },
+  {
+    id: "active-minutes",
+    label: "Active minutes",
+  },
+  {
+    id: "distance",
+    label: "Distance",
+  },
 ];
 
 const GENUS_OPTIONS = [
+  {
+    id: "random",
+    label: (
+      <Stack
+        direction="column"
+        alignItems="center"
+        justifyContent="center"
+        gap={1}
+        marginInline={2}
+      >
+        <CasinoOutlined fontSize="large" />
+        Random
+      </Stack>
+    ),
+  },
   {
     id: "BushyPlant",
     label: <GenusPreview genusId="BushyPlant" />,
