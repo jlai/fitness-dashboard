@@ -56,6 +56,9 @@ export const PRIVACY_POLICY_LINK = process.env.NEXT_PUBLIC_PRIVACY_POLICY_LINK;
 /** Link to terms of service */
 export const TOS_LINK = process.env.NEXT_PUBLIC_TOS_LINK;
 
+/** Link to what's new page */
+export const WHATS_NEW_LINK = process.env.NEXT_PUBLIC_WHATS_NEW_LINK;
+
 /** Extra content security script-src */
 export const EXTRA_CSP_SCRIPT_SRC =
   process.env.NEXT_PUBLIC_CSP_EXTRA_SCRIPT_SRC;

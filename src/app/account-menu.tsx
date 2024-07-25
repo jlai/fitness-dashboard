@@ -5,6 +5,7 @@ import {
   Settings as SettingsIcon,
   Logout as LogoutIcon,
   Refresh as RefreshIcon,
+  NewReleases as NewsIcon,
 } from "@mui/icons-material";
 import {
   IconButton,
@@ -23,6 +24,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 
 import { logout, useLoggedIn } from "@/api/auth";
+import { WHATS_NEW_LINK } from "@/config";
 
 export default function AccountMenu() {
   const loggedIn = useLoggedIn();
@@ -48,6 +50,20 @@ export default function AccountMenu() {
         <AccountIcon />
       </IconButton>
       <Menu {...bindMenu(popupState)}>
+        {WHATS_NEW_LINK && (
+          <MenuItem onClick={popupState.close}>
+            <Link
+              href={WHATS_NEW_LINK}
+              target="_blank"
+              className="flex flex-row"
+            >
+              <ListItemIcon>
+                <NewsIcon />
+              </ListItemIcon>
+              <ListItemText>What&apos;s new</ListItemText>
+            </Link>
+          </MenuItem>
+        )}
         <MenuItem onClick={popupState.close}>
           <Link href="/settings" className="flex flex-row">
             <ListItemIcon>
