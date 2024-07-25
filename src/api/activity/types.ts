@@ -115,3 +115,14 @@ export interface GetLifetimeStatsResponse {
     };
   };
 }
+
+export interface GetActivityGoalsResponse {
+  goals: {
+    activeMinutes?: number; // daily only
+    activeZoneMinutes: number;
+    caloriesOut?: number; // daily only
+    distance: number;
+    floors: number;
+    steps: number;
+  };
+}
