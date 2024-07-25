@@ -1,5 +1,10 @@
 import Image from "next/image";
-import { DialogActions, DialogContent, Typography } from "@mui/material";
+import {
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Typography,
+} from "@mui/material";
 import { useSuspenseQueries } from "@tanstack/react-query";
 import React, { Suspense } from "react";
 
@@ -63,6 +68,7 @@ export default function WaterTileContent() {
 function WaterTileDialogContent(props: RenderDialogContentProps) {
   return (
     <>
+      <DialogTitle align="center">Water</DialogTitle>
       <DialogContent>
         <Suspense>
           <WaterEntryPanel />
