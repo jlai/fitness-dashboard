@@ -1,13 +1,18 @@
 import {
   Divider,
   IconButton,
+  ListItemIcon,
+  ListItemText,
   MenuItem,
   Popover,
   Typography,
 } from "@mui/material";
-import { Settings as SettingsIcon } from "@mui/icons-material";
+import {
+  BookmarkBorder as SaveIcon,
+  Settings as SettingsIcon,
+} from "@mui/icons-material";
 import { bindPopover, usePopupState } from "material-ui-popup-state/hooks";
-import { useContext, useState } from "react";
+import { useState } from "react";
 
 import { TimeSeriesChart } from "@/components/charts/timeseries-graph";
 import {
@@ -19,11 +24,19 @@ import { SHORT_WEEKDAY } from "@/utils/date-formats";
 
 import { useSelectedDay } from "../state";
 
-import { TileContext } from "./tile";
+import { useTileSettings } from "./tile";
+
+interface GraphTileSettings {
+  chartResource: ChartResource;
+}
 
 export default function GraphTileContent() {
-  const { w, h } = useContext(TileContext);
-  const [resource, setResource] = useState<ChartResource>("steps");
+  const [settings, saveSettings] = useTileSettings<GraphTileSettings>({
+    chartResource: "steps",
+  });
+  const [resource, setResource] = useState<ChartResource>(
+    settings.chartResource
+  );
 
   const popupState = usePopupState({
     variant: "popover",
@@ -33,6 +46,13 @@ export default function GraphTileContent() {
 
   const startDay = day.subtract(7, "days");
   const endDay = day;
+
+  const saveDefault = () => {
+    saveSettings({
+      chartResource: resource,
+    });
+    popupState.close();
+  };
 
   return (
     <div className="size-full max-h-full relative overflow-hidden p-2">
@@ -50,6 +70,16 @@ export default function GraphTileContent() {
               anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
               transformOrigin={{ vertical: "top", horizontal: "right" }}
             >
+              <MenuItem
+                onClick={saveDefault}
+                disabled={settings.chartResource === resource}
+              >
+                <ListItemIcon>
+                  <SaveIcon />
+                </ListItemIcon>
+                <ListItemText>Save as default</ListItemText>
+              </MenuItem>
+              <Divider />
               {CHART_RESOURCE_MENU_ITEMS.map((id, i) =>
                 id === "-" ? (
                   <Divider key={i} />
