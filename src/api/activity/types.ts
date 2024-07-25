@@ -27,6 +27,27 @@ export interface GetDailyActivitySummaryResponse {
     minutes: number;
     name: string;
   }>;
+  activities: Array<DailySummaryActivityLog>;
+}
+
+/** Activity log that appears in summary */
+export interface DailySummaryActivityLog {
+  activityId: number;
+  activityParentId: number;
+  activityParentName: string;
+  calories: number;
+  description: string;
+  distance: string;
+  duration: number;
+  hasActiveZoneMinutes: boolean;
+  hasStartTime: boolean;
+  isFavorite: boolean;
+  lastModified: string;
+  logId: number;
+  name: string;
+  startDate: string;
+  startTime: string;
+  steps: number;
 }
 
 export interface ActivityLog {

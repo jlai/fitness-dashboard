@@ -4,7 +4,7 @@ import {
   bindTrigger,
   usePopupState,
 } from "material-ui-popup-state/hooks";
-import React from "react";
+import React, { Suspense } from "react";
 
 import { TileClickableArea } from "./tile";
 
@@ -15,13 +15,13 @@ export interface RenderDialogContentProps {
 
 export interface TileWithDialogProps {
   children: React.ReactNode;
-  renderDialogContent(options: RenderDialogContentProps): React.ReactNode;
+  dialogComponent: React.ComponentType<RenderDialogContentProps>;
   dialogProps?: Omit<DialogProps, "open" | "onClose">;
 }
 
 export function TileWithDialog({
   children,
-  renderDialogContent,
+  dialogComponent,
   dialogProps,
 }: TileWithDialogProps) {
   const popupState = usePopupState({
@@ -36,9 +36,16 @@ export function TileWithDialog({
       <TileClickableArea {...bindTrigger(popupState)}>
         {children}
       </TileClickableArea>
-      <Dialog {...dialogProps} {...bindDialog(popupState)}>
-        {renderDialogContent({ close: popupState.close, closeButton })}
-      </Dialog>
+      {popupState.isOpen && (
+        <Suspense>
+          <Dialog {...dialogProps} {...bindDialog(popupState)}>
+            {React.createElement(dialogComponent, {
+              close: popupState.close,
+              closeButton,
+            })}
+          </Dialog>
+        </Suspense>
+      )}
     </>
   );
 }

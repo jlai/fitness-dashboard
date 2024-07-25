@@ -32,7 +32,7 @@ export default function WaterTileContent() {
   const ratio = Math.min(waterConsumedMl / waterGoalMl, 1.0);
 
   return (
-    <TileWithDialog renderDialogContent={WaterTileDialogContent}>
+    <TileWithDialog dialogComponent={WaterTileDialogContent}>
       <div className="size-full max-h-full relative overflow-hidden">
         <Image
           src={Wave}

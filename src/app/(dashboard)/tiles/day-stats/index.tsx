@@ -4,16 +4,22 @@ import {
   GaugeReferenceArc,
 } from "@mui/x-charts";
 import Image from "next/image";
+import { lazy } from "react";
 
 import { useUnits } from "@/config/units";
 import NumericStat from "@/components/numeric-stat";
 
-import stepsIconUrl from "./assets/steps_24dp_FILL0_wght400_GRAD0_opsz24.svg";
-import distanceIconUrl from "./assets/distance_24dp_FILL0_wght400_GRAD0_opsz24.svg";
-import floorsIconUrl from "./assets/floor_24dp_FILL0_wght400_GRAD0_opsz24.svg";
-import activeMinutesIconUrl from "./assets/bolt_24dp_FILL0_wght400_GRAD0_opsz24.svg";
-import fireIconUrl from "./assets/fire.svg";
-import { useDailySummary } from "./common";
+import { useDailySummary } from "../common";
+import stepsIconUrl from "../assets/steps_24dp_FILL0_wght400_GRAD0_opsz24.svg";
+import distanceIconUrl from "../assets/distance_24dp_FILL0_wght400_GRAD0_opsz24.svg";
+import floorsIconUrl from "../assets/floor_24dp_FILL0_wght400_GRAD0_opsz24.svg";
+import activeMinutesIconUrl from "../assets/bolt_24dp_FILL0_wght400_GRAD0_opsz24.svg";
+import fireIconUrl from "../assets/fire.svg";
+import { TileWithDialog } from "../tile-with-dialog";
+
+const CaloriesDialogContent = lazy(async () => ({
+  default: (await import("./calories-dialog")).CaloriesDialogContent,
+}));
 
 export function GaugeStepsTileContent() {
   const dailySummary = useDailySummary();
@@ -58,12 +64,17 @@ export function GaugeCaloriesBurnedTileContent() {
   const goal = dailySummary.goals?.caloriesOut ?? 0;
 
   return (
-    <StatGauge
-      iconSrc={fireIconUrl}
-      value={burned}
-      valueMax={goal}
-      valueUnits="calories"
-    />
+    <TileWithDialog
+      dialogComponent={CaloriesDialogContent}
+      dialogProps={{ fullWidth: true, maxWidth: "lg" }}
+    >
+      <StatGauge
+        iconSrc={fireIconUrl}
+        value={burned}
+        valueMax={goal}
+        valueUnits="calories"
+      />
+    </TileWithDialog>
   );
 }
 

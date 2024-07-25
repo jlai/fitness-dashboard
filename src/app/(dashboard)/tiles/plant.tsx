@@ -122,7 +122,7 @@ export default function PlantTileContent() {
   return (
     <TileWithDialog
       dialogProps={{ maxWidth: "lg" }}
-      renderDialogContent={PlantDialogContent}
+      dialogComponent={PlantDialogContent}
     >
       <div className="flex flex-col h-full overflow-hidden">
         <div className="flex-1 min-h-0 text-center align-middle">
