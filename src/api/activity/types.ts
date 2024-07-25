@@ -84,3 +84,13 @@ export interface GetActivityTypesResponse {
     activities: Array<ActivityType>;
   }>;
 }
+
+export interface GetLifetimeStatsResponse {
+  lifetime: {
+    tracker: {
+      distance: number;
+      floors: number;
+      steps: number;
+    };
+  };
+}

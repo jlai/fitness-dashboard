@@ -7,7 +7,7 @@ export default function NumericStat({
   className = "",
 }: {
   value: number;
-  unit: string;
+  unit?: string;
   maximumFractionDigits?: number;
   className?: string;
 }) {
@@ -24,9 +24,11 @@ export default function NumericStat({
       >
         {formatter.format(value)}
       </Typography>{" "}
-      <Typography variant="body2" component="span" className="text-base">
-        {unit}
-      </Typography>
+      {unit && (
+        <Typography variant="body2" component="span" className="text-base">
+          {unit}
+        </Typography>
+      )}
     </div>
   );
 }

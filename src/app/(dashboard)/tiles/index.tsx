@@ -14,6 +14,7 @@ import { CalorieGoalTileContent } from "./calorie-goal";
 import Tile from "./tile";
 import { SleepTileContent } from "./sleep";
 import { CaloriesConsumedTileContent } from "./calories-consumed";
+import { LifetimeTileContent } from "./lifetime";
 
 export interface TileDefinition {
   name: string;
@@ -101,6 +102,27 @@ export const TILE_TYPES: Record<string, TileDefinition> = {
     scopes: ["sle"],
     w: 2,
     h: 2,
+  },
+  lifetimeSteps: {
+    name: "Lifetime steps",
+    component: LifetimeTileContent,
+    scopes: ["act"],
+    w: 2,
+    h: 1,
+  },
+  lifetimeDistance: {
+    name: "Lifetime distance",
+    component: LifetimeTileContent,
+    scopes: ["act"],
+    w: 2,
+    h: 1,
+  },
+  lifetimeFloors: {
+    name: "Lifetime floors",
+    component: LifetimeTileContent,
+    scopes: ["act"],
+    w: 2,
+    h: 1,
   },
 };
 

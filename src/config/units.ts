@@ -27,6 +27,7 @@ interface DistanceUnitConfig {
   localizedKilometers: (value: number) => number;
   localizedMetersName: string;
   localizedKilometersName: string;
+  localizedKilometersNameLong: string;
 }
 
 interface WeightUnitConfig {
@@ -47,6 +48,7 @@ const US_DISTANCE_UNIT_CONFIG: DistanceUnitConfig = {
   localizedKilometers: (value: number) => value * MILES_PER_KM,
   localizedMetersName: "ft",
   localizedKilometersName: "mi",
+  localizedKilometersNameLong: "miles",
 };
 
 const METRIC_DISTANCE_UNIT_CONFIG: DistanceUnitConfig = {
@@ -55,6 +57,7 @@ const METRIC_DISTANCE_UNIT_CONFIG: DistanceUnitConfig = {
   localizedKilometers: (value: number) => value,
   localizedMetersName: "m",
   localizedKilometersName: "km",
+  localizedKilometersNameLong: "kilometers",
 };
 
 const US_WEIGHT_UNIT_CONFIG: WeightUnitConfig = {

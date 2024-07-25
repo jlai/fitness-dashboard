@@ -34,7 +34,7 @@ const GRID_OPTIONS = {
 
 function renderTile({ data, w, h }: GridStackReactWidget<GridData>) {
   return (
-    <TileContext.Provider value={{ w, h }}>
+    <TileContext.Provider value={{ w, h, type: data.type }}>
       <LazyTile type={data.type} />
     </TileContext.Provider>
   );
