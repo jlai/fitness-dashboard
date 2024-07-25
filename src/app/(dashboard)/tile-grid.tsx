@@ -15,6 +15,7 @@ import { TileContext } from "./tiles/tile";
 
 type GridData = {
   type: string;
+  settings: unknown;
 };
 
 const GRID_OPTIONS = {
@@ -32,9 +33,11 @@ const GRID_OPTIONS = {
   disableResize: true,
 };
 
-function renderTile({ data, w, h }: GridStackReactWidget<GridData>) {
+function renderTile({ id, data, w, h }: GridStackReactWidget<GridData>) {
   return (
-    <TileContext.Provider value={{ w, h, type: data.type }}>
+    <TileContext.Provider
+      value={{ w, h, id, type: data.type, settings: data.settings }}
+    >
       <LazyTile type={data.type} />
     </TileContext.Provider>
   );
@@ -54,6 +57,7 @@ export default function TileGrid() {
         h: tile.h ?? 1, // support old tile configs
         data: {
           type: tile.type,
+          settings: tile.settings,
         },
       })),
     [userTiles]

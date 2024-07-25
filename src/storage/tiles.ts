@@ -1,12 +1,14 @@
+import { atom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
 
-export interface UserTile {
+export interface UserTile<TSettings = unknown> {
   id: string;
   type: string;
   x?: number;
   y?: number;
   w: number;
   h: number;
+  settings?: TSettings;
 }
 
 const defaultTiles: Array<UserTile> = [
@@ -75,3 +77,17 @@ export const userTilesAtom = atomWithStorage(
     getOnInit: true,
   }
 );
+
+export const updateTileSettingsAtom = atom(null, (get, set, id, settings) => {
+  const tiles = get(userTilesAtom);
+
+  const updatedTiles = tiles.map((tile) => {
+    if (tile.id === id) {
+      return { ...tile, settings };
+    }
+
+    return tile;
+  });
+
+  set(userTilesAtom, updatedTiles);
+});

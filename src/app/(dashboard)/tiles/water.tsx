@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { Typography } from "@mui/material";
+import { DialogActions, DialogContent, Typography } from "@mui/material";
 import { useSuspenseQueries } from "@tanstack/react-query";
 import React, { Suspense } from "react";
 
@@ -10,7 +10,7 @@ import NumericStat from "@/components/numeric-stat";
 import { useSelectedDay } from "../state";
 
 import Wave from "./assets/wave.svg";
-import { TileWithDialog } from "./tile-with-dialog";
+import { RenderDialogContentProps, TileWithDialog } from "./tile-with-dialog";
 
 const WaterEntryPanel = React.lazy(
   () => import("@/components/nutrition/water-entry-panel")
@@ -32,7 +32,7 @@ export default function WaterTileContent() {
   const ratio = Math.min(waterConsumedMl / waterGoalMl, 1.0);
 
   return (
-    <TileWithDialog renderDialogContent={() => <WaterTileDialogContent />}>
+    <TileWithDialog renderDialogContent={WaterTileDialogContent}>
       <div className="size-full max-h-full relative overflow-hidden">
         <Image
           src={Wave}
@@ -60,10 +60,15 @@ export default function WaterTileContent() {
   );
 }
 
-function WaterTileDialogContent() {
+function WaterTileDialogContent(props: RenderDialogContentProps) {
   return (
-    <Suspense>
-      <WaterEntryPanel />
-    </Suspense>
+    <>
+      <DialogContent>
+        <Suspense>
+          <WaterEntryPanel />
+        </Suspense>
+      </DialogContent>
+      <DialogActions>{props.closeButton}</DialogActions>
+    </>
   );
 }
