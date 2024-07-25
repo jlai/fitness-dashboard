@@ -1,11 +1,21 @@
-import { TableCell, TableRow } from "@mui/material";
+import { Dialog, TableCell, TableRow } from "@mui/material";
 import dayjs from "dayjs";
+import {
+  bindDialog,
+  bindTrigger,
+  usePopupState,
+} from "material-ui-popup-state/hooks";
+import { lazy, Suspense } from "react";
 
 import { formatShortDate } from "@/utils/date-formats";
 import { SleepLog } from "@/api/sleep/types";
 import NumericStat from "@/components/numeric-stat";
 import HistoryList from "@/components/history-list/history-list";
 import { buildGetSleepLogListInfiniteQuery } from "@/api/sleep";
+
+const SleepDetailsDialogContent = lazy(
+  () => import("@/components/sleep/sleep-details-dialog")
+);
 
 function SleepDuration({ minutesAsleep }: { minutesAsleep: number }) {
   const hours = Math.floor(minutesAsleep / 60);
@@ -39,15 +49,34 @@ function SleepLogRow({ logEntry: sleep }: { logEntry: SleepLog }) {
   const startTime = new Date(sleep.startTime);
   const endTime = new Date(sleep.endTime);
 
+  const popupState = usePopupState({
+    popupId: "sleep-log-details",
+    variant: "dialog",
+  });
+
   return (
     <TableRow className="w-full">
-      <TableCell>{formatShortDate(dayjs(endTime))}</TableCell>
+      <TableCell>
+        <button
+          className="block text-start w-full"
+          {...bindTrigger(popupState)}
+        >
+          {formatShortDate(dayjs(endTime))}
+        </button>
+      </TableCell>
       <TableCell className="text-end">
         {WEEKDAY_AND_TIME_FORMAT.formatRange(startTime, endTime)}
       </TableCell>
       <TableCell className="flex flex-row justify-end max-w-full">
         <SleepDuration minutesAsleep={sleep.minutesAsleep} />
       </TableCell>
+      {popupState.isOpen && (
+        <Suspense>
+          <Dialog {...bindDialog(popupState)} fullWidth maxWidth="lg">
+            <SleepDetailsDialogContent sleepLog={sleep} />
+          </Dialog>
+        </Suspense>
+      )}
     </TableRow>
   );
 }

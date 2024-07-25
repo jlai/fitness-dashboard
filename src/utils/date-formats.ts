@@ -99,3 +99,13 @@ export function formatMonth(day: Dayjs, options?: Intl.DateTimeFormatOptions) {
 export function formatDuration(milliseconds: number) {
   return dayjs.duration(milliseconds).format("HH:mm:ss");
 }
+
+export function formatMinutes(minutes: number) {
+  const duration = dayjs.duration(minutes, "minutes");
+
+  if (duration.asMinutes() > 60) {
+    return duration.format("H[h] m[m]");
+  } else {
+    return duration.format("m[m]");
+  }
+}

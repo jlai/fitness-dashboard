@@ -35,10 +35,16 @@ export interface SleepLog {
   levels?: {
     data: Array<SleepLogLevelData>;
     summary: {
+      // Sleep stages
       deep?: SleepLogLevelSummary;
       light?: SleepLogLevelSummary;
       rem?: SleepLogLevelSummary;
       wake?: SleepLogLevelSummary;
+
+      // Classic sleep
+      awake?: SleepLogLevelSummary;
+      asleep?: SleepLogLevelSummary;
+      restless?: SleepLogLevelSummary;
     };
   };
   logId: number;
