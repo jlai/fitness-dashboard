@@ -6,6 +6,8 @@ import { SleepLog } from "@/api/sleep";
 import { formatMinutes, formatShortDateTime } from "@/utils/date-formats";
 import { PERCENT_FRACTION_DIGITS_0 } from "@/utils/number-formats";
 
+import { Hypnogram } from "./hypnogram";
+
 interface SleepDetailsDialogContentProps {
   sleepLog: SleepLog;
 }
@@ -15,6 +17,8 @@ export default function SleepDetailsDialogContent({
 }: SleepDetailsDialogContentProps) {
   const { levels } = sleepLog;
   const endDay = dayjs(sleepLog.endTime);
+
+  const hasSleepStages = levels?.summary?.rem;
 
   return (
     <>
@@ -28,9 +32,16 @@ export default function SleepDetailsDialogContent({
               Duration: {formatMinutes(sleepLog.minutesAsleep)}
             </Typography>
           </div>
-          <div>
-            {levels?.summary?.rem && <SleepLevelSummaryChart levels={levels} />}
-          </div>
+          {hasSleepStages && (
+            <>
+              <div className="w-full mb-8 h-[300px]">
+                <Hypnogram height={300} sleepLog={sleepLog} />
+              </div>
+              <div>
+                <SleepLevelSummaryChart levels={levels} />
+              </div>
+            </>
+          )}
         </Stack>
       </DialogContent>
     </>

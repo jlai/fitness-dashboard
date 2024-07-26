@@ -17,10 +17,12 @@ export interface TileWithDialogProps {
   children: React.ReactNode;
   dialogComponent: React.ComponentType<RenderDialogContentProps>;
   dialogProps?: Omit<DialogProps, "open" | "onClose">;
+  disableDialog?: boolean;
 }
 
 export function TileWithDialog({
   children,
+  disableDialog,
   dialogComponent,
   dialogProps,
 }: TileWithDialogProps) {
@@ -33,7 +35,7 @@ export function TileWithDialog({
 
   return (
     <>
-      <TileClickableArea {...bindTrigger(popupState)}>
+      <TileClickableArea {...(!disableDialog ? bindTrigger(popupState) : {})}>
         {children}
       </TileClickableArea>
       {popupState.isOpen && (

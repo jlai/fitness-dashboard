@@ -34,6 +34,7 @@ export interface SleepLog {
   isMainSleep: boolean;
   levels?: {
     data: Array<SleepLogLevelData>;
+    shortData: Array<SleepLogLevelData>;
     summary: {
       // Sleep stages
       deep?: SleepLogLevelSummary;
