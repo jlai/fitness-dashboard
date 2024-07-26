@@ -89,6 +89,7 @@ type FoodUnitAutocompleteOption = FoodUnit & {
 
 interface CustomFoodFormData {
   name: string;
+  brand: string;
   amount: number;
   unit?: FoodUnitAutocompleteOption;
   calories?: number;
@@ -120,8 +121,10 @@ export function CustomFoodFields() {
     });
 
   return (
-    <FormRows>
+    <FormRows marginTop={2}>
       <TextFieldElement name="name" label="Name" rules={{ required: true }} />
+      <TextFieldElement name="brand" label="Brand" />
+
       <FormRow>
         <TextFieldElement
           name="amount"
@@ -185,6 +188,7 @@ export const editingCustomFoodAtom = atom<number | null>(null);
 
 const DEFAULT_FORM_DATA = {
   name: "",
+  brand: "",
   amount: 1,
   calories: undefined,
   unit: { id: 304, label: "serving", name: "serving", plural: "servings" },
@@ -212,12 +216,10 @@ export default function CreateCustomFoodDialog() {
 
   const save = useCallback(
     (values: CustomFoodFormData) => {
-      console.log("saving", values);
-
       saveCustomFood({
         foodId: isExistingFood ? customFoodId : undefined,
         name: values.name,
-        description: "",
+        brand: values.brand,
         formType: "DRY",
         calories: values.calories!,
         defaultFoodMeasurementUnitId: values.unit!.id,
@@ -239,6 +241,7 @@ export default function CreateCustomFoodDialog() {
     if (food && food.foodId === customFoodId) {
       formContext.reset({
         name: food.name,
+        brand: food.brand,
         amount: food.defaultServingSize,
         calories: food.calories,
         unit: { ...food.defaultUnit, label: food.defaultUnit?.plural },

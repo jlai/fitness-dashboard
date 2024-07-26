@@ -14,6 +14,7 @@ import {
   History as HistoryIcon,
   Star as FavoriteIcon,
   Repeat as RepeatIcon,
+  Person as CustomIcon,
 } from "@mui/icons-material";
 import { SyntheticEvent, useCallback, useMemo, useState } from "react";
 import {
@@ -23,8 +24,10 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { useController, UseControllerProps } from "react-hook-form";
+import { uniqBy } from "lodash";
 
 import {
+  buildCustomFoodsQuery,
   buildFavoriteFoodsQuery,
   buildFrequentFoodsQuery,
   buildRecentFoodsQuery,
@@ -57,10 +60,11 @@ function buildSavedFoodsQuery(queryClient: QueryClient) {
   return queryOptions({
     queryKey: ["saved-foods"],
     queryFn: async () => {
-      const [favorites, frequents, recents] = await Promise.all([
+      const [favorites, frequents, recents, custom] = await Promise.all([
         queryClient.fetchQuery(buildFavoriteFoodsQuery()),
         queryClient.fetchQuery(buildFrequentFoodsQuery()),
         queryClient.fetchQuery(buildRecentFoodsQuery()),
+        queryClient.fetchQuery(buildCustomFoodsQuery()),
       ]);
 
       const allFoods = new Map<number, FoodOption>();
@@ -86,6 +90,10 @@ function buildSavedFoodsQuery(queryClient: QueryClient) {
 
       for (const food of recents) {
         addFood(food).recent = true;
+      }
+
+      for (const food of custom) {
+        addFood(food);
       }
 
       return [...allFoods.values()];
@@ -134,6 +142,9 @@ function FoodOptionDisplay({
       <div className="text-slate-500 flex flex-row md:gap-x-2 items-center">
         {option.favorite && (
           <ShrinkingChip label="Favorite" icon={<FavoriteIcon />} />
+        )}
+        {option.accessLevel === "PRIVATE" && (
+          <ShrinkingChip label="Custom" icon={<CustomIcon />} />
         )}
         {option.recent && (
           <ShrinkingChip label="Recent" icon={<HistoryIcon />} />
@@ -316,6 +327,9 @@ export default function SearchFoods({
 
             options = [...searchOptions, ...options];
           }
+
+          // Dedupe
+          options = uniqBy(options, (option) => option?.foodId);
 
           return options;
         }}

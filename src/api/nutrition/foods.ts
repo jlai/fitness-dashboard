@@ -39,7 +39,7 @@ export function buildDeleteFavoritesFoodMutation(queryClient: QueryClient) {
 export interface CreateCustomFoodOptions {
   foodId?: number; // undefined for new food
   name: string;
-  description: string;
+  brand?: string;
   formType: "DRY" | "LIQUID";
   defaultFoodMeasurementUnitId: number;
   defaultServingSize: number;
@@ -79,7 +79,7 @@ export function buildCreateCustomFoodMutation(queryClient: QueryClient) {
     mutationFn: async (customFood: CreateCustomFoodOptions) => {
       const queryParams = new URLSearchParams();
       queryParams.set("name", customFood.name);
-      queryParams.set("description", customFood.description);
+      queryParams.set("brand", customFood.brand ?? "");
       queryParams.set(
         "defaultFoodMeasurementUnitId",
         `${customFood.defaultFoodMeasurementUnitId}`
