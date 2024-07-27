@@ -61,19 +61,6 @@ export function formatShortDateTime(day: Dayjs) {
   return SHORT_DATE_TIME_OTHER_YEAR.format(day.toDate());
 }
 
-export function formatDay(day: Dayjs, options?: Intl.DateTimeFormatOptions) {
-  const today = dayjs();
-  const isSameYear = day.isSame(today, "year");
-  const isSameMonth = day.isSame(today, "month");
-
-  return new Intl.DateTimeFormat(undefined, {
-    ...options,
-    day: options?.day ?? "numeric",
-    month: isSameMonth ? undefined : options?.month ?? "long",
-    year: isSameYear ? undefined : "numeric",
-  }).format(day.toDate());
-}
-
 export function formatWeek(day: Dayjs, options?: Intl.DateTimeFormatOptions) {
   const today = dayjs();
   const isSameYear = day.isSame(today, "year");
