@@ -1,6 +1,6 @@
 import { useParentSize } from "@visx/responsive";
 import { LinearGradient } from "@visx/gradient";
-import { Line } from "@visx/shape";
+import { Line, BarRounded } from "@visx/shape";
 import { Group } from "@visx/group";
 import { AxisBottom, AxisLeft } from "@visx/axis";
 import { scaleTime, scaleBand } from "@visx/scale";
@@ -8,6 +8,20 @@ import { ScaleTime } from "d3-scale";
 import dayjs from "dayjs";
 
 import { SleepLog } from "@/api/sleep";
+
+const colors: Record<string, string> = {
+  wake: "#fcba03",
+  rem: "#9ccef0",
+  light: "#0398fc",
+  deep: "#5d47ff",
+};
+
+const levelIndex: Record<string, number> = {
+  wake: 1,
+  rem: 2,
+  light: 3,
+  deep: 4,
+};
 
 export function Hypnogram({
   sleepLog,
@@ -34,13 +48,6 @@ export function Hypnogram({
     padding: 1,
   });
 
-  const colors: Record<string, string> = {
-    wake: "#fcba03",
-    rem: "#9ccef0",
-    light: "#0398fc",
-    deep: "#5d47ff",
-  };
-
   const data = sleepLog.levels?.data ?? [];
   const shortData = sleepLog.levels?.shortData ?? [];
 
@@ -55,20 +62,28 @@ export function Hypnogram({
     const endTime = startTime.add(datum.seconds, "seconds");
     const startX = xScale(startTime.toDate());
     const endX = xScale(endTime.toDate());
-    const y = yScale(datum.level);
+    const y = yScale(datum.level)!;
 
-    const width = endX - startX;
-    const paddingX = width > 10 ? 4 : 0;
+    const currentLevelIndex = levelIndex[datum.level];
+    const prevLevelIndex = levelIndex[data[i - 1]?.level] ?? 0;
+    const nextLevelIndex = levelIndex[data[i + 1]?.level] ?? 0;
+
+    const startIsDeeper = currentLevelIndex > prevLevelIndex;
+    const endIsDeeper = nextLevelIndex > currentLevelIndex;
 
     lines.push(
-      <Line
+      <BarRounded
         key={datum.dateTime}
-        stroke={colors[datum.level]}
-        strokeWidth={8}
-        strokeLinecap="round"
+        fill={colors[datum.level]}
         radius={6}
-        from={{ x: startX + paddingX, y }}
-        to={{ x: endX - paddingX, y }}
+        x={startX}
+        y={y - 4}
+        width={endX - startX}
+        height={8}
+        topLeft={!startIsDeeper}
+        topRight={endIsDeeper}
+        bottomLeft={startIsDeeper}
+        bottomRight={!endIsDeeper}
       />
     );
 
