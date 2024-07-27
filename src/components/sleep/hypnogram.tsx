@@ -123,7 +123,7 @@ export function Hypnogram({
           from="#3b6978"
           to="#204051"
         />
-        <Group left={yAxisWidth}>{lines}</Group>
+        <Group>{lines}</Group>
         <AxisLeft
           left={yAxisWidth}
           scale={yScale}
@@ -138,6 +138,7 @@ export function Hypnogram({
           scale={xScale}
           stroke="#cbd5e1"
           strokeWidth={0}
+          numTicks={width > 500 ? undefined : 4}
           tickStroke="#cbd5e1"
           tickLineProps={{ strokeWidth: 1 }}
           tickLabelProps={{ fill: "#cbd5e1", fontSize: 14 }}
