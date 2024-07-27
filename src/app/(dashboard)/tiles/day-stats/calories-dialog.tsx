@@ -12,23 +12,30 @@ import { RenderDialogContentProps } from "../tile-with-dialog";
 import { useDailySummary } from "../common";
 import { useSelectedDay } from "../../state";
 
+import { DailyGoalSummary } from "./goals";
+
 const timeFormat = new Intl.DateTimeFormat(undefined, {
   hour: "numeric",
   minute: "2-digit",
 });
 
-export function CaloriesDialogContent(props: RenderDialogContentProps) {
-  const [currentTab, setCurrentTab] = useState("pie");
+export default function CaloriesDialogContent(props: RenderDialogContentProps) {
+  const [currentTab, setCurrentTab] = useState("overview");
 
   return (
     <>
-      <DialogTitle align="center">Calories</DialogTitle>
+      <DialogTitle align="center">Calories burned</DialogTitle>
       <DialogContent>
         <TabContext value={currentTab}>
           <TabList onChange={(event, value) => setCurrentTab(value)}>
+            <Tab label="Overview" value="overview" />
+
             <Tab label="By activity" value="pie" />
             {ENABLE_INTRADAY && <Tab label="Burn rate" value="intraday" />}
           </TabList>
+          <TabPanel value="overview">
+            <Overview />
+          </TabPanel>
           <TabPanel value="pie">
             <CaloriesPieChart />
           </TabPanel>
@@ -44,17 +51,29 @@ export function CaloriesDialogContent(props: RenderDialogContentProps) {
   );
 }
 
+function Overview() {
+  const { summary, goals } = useDailySummary();
+  const currentTotal = summary.caloriesOut;
+  const dailyGoal = goals?.caloriesOut ?? 0;
+
+  return (
+    <DailyGoalSummary
+      currentTotal={currentTotal}
+      dailyGoal={dailyGoal}
+      unit="Calories"
+    />
+  );
+}
+
 function CaloriesPieChart() {
   const {
     activities,
-    summary: { caloriesBMR, caloriesOut },
+    summary: { caloriesOut },
   } = useDailySummary();
 
-  let otherCalories = caloriesOut - caloriesBMR;
+  let otherCalories = caloriesOut;
 
-  const seriesData: Array<PieValueType> = [
-    { id: "bmr", value: caloriesBMR, label: "BMR", color: "#a9b3c4" },
-  ];
+  const seriesData: Array<PieValueType> = [];
 
   for (const activityLog of activities) {
     const time = new Date(`${activityLog.startDate}T${activityLog.startTime}`);
@@ -70,21 +89,20 @@ function CaloriesPieChart() {
 
   if (otherCalories > 0) {
     seriesData.push({
-      id: "other-active",
+      id: "other",
       value: otherCalories,
-      label: "Other movement",
+      label: "Other",
+      color: "#a9b3c4",
     });
   }
 
   return (
     <PieChart
-      width={400}
+      width={500}
       height={200}
       series={[
         {
           data: seriesData,
-          startAngle: -180,
-          endAngle: 180,
           paddingAngle: 0.5,
           cornerRadius: 8,
           innerRadius: 30,

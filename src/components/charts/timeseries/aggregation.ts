@@ -1,6 +1,8 @@
 import { useContext, useMemo } from "react";
 import dayjs from "dayjs";
-import { groupBy, sum } from "lodash";
+import { groupBy, sum, sumBy } from "lodash";
+
+import { IntradayEntry } from "@/api/intraday";
 
 import { TimeSeriesChartContext } from "./context";
 import { ChartSeriesConfig } from "./series-config";
@@ -81,4 +83,16 @@ export function useAggregation<TDatum extends TimeSeriesDatum>(
       seriesConfigs: seriesConfigs as Array<ChartSeriesConfig<TimeSeriesDatum>>,
     };
   }, [context.aggregation, data, seriesConfigs]);
+}
+
+/** Aggregate intraday entries into hourly */
+export function aggregateByHour(data: Array<IntradayEntry>) {
+  const byHour = groupBy(data, (entry) =>
+    dayjs(entry.dateTime).startOf("hour").toISOString()
+  );
+
+  return Object.entries(byHour).map(([timestamp, entries]) => ({
+    dateTime: new Date(timestamp),
+    value: sumBy(entries, (entry) => entry.value),
+  }));
 }
