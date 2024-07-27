@@ -66,7 +66,7 @@ function SleepLogRow({ logEntry: sleep }: { logEntry: SleepLog }) {
         {TIME.format(startTime)} &ndash; {TIME.format(endTime)}
       </TableCell>
       <TableCell className="hidden md:table-cell md:w-[200px]">
-        {sleep.levels?.summary.rem && (
+        {sleep.levels && (
           <button className="block size-full" {...bindTrigger(popupState)}>
             <div className="w-full h-[20px]">
               <SleepLevelMiniSummary levels={sleep.levels} />

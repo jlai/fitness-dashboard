@@ -13,41 +13,73 @@ export function SleepLevelMiniSummary({
 
   const summary = levels.summary;
 
-  const wakeMins = summary.wake?.minutes ?? 0;
-  const remMins = summary.rem?.minutes ?? 0;
-  const lightMins = summary.light?.minutes ?? 0;
-  const deepMins = summary.deep?.minutes ?? 0;
-  const totalMins = wakeMins + remMins + lightMins + deepMins;
+  let totalMins = 0;
+  let data: Array<{
+    level: string;
+    value: number;
+    color: string;
+  }> = [];
+
+  if (summary.rem) {
+    const wakeMins = summary.wake?.minutes ?? 0;
+    const remMins = summary.rem?.minutes ?? 0;
+    const lightMins = summary.light?.minutes ?? 0;
+    const deepMins = summary.deep?.minutes ?? 0;
+    totalMins = wakeMins + remMins + lightMins + deepMins;
+
+    data = [
+      {
+        level: "wake",
+        value: wakeMins,
+        color: "#fcba03",
+      },
+      {
+        level: "rem",
+        value: remMins,
+        color: "#9ccef0",
+      },
+      {
+        level: "light",
+        value: lightMins,
+        color: "#0398fc",
+      },
+      {
+        level: "deep",
+        value: deepMins,
+        color: "#5d47ff80",
+      },
+    ];
+  } else {
+    const awakeMins = summary.awake?.minutes ?? 0;
+    const restlessMins = summary.restless?.minutes ?? 0;
+    const asleepMins = summary.asleep?.minutes ?? 0;
+    totalMins = awakeMins + restlessMins + asleepMins;
+
+    data = [
+      {
+        level: "awake",
+        value: awakeMins,
+        color: "#fcba03",
+      },
+      {
+        level: "restless",
+        value: restlessMins,
+        color: "#61dde8",
+      },
+      {
+        level: "asleep",
+        value: asleepMins,
+        color: "#2850a1",
+      },
+    ];
+  }
 
   const xScale = scaleLinear<number>({
     domain: [0, Math.max(totalMins, 10 * 60)], // 10 hours or total
     range: [0, width],
   });
 
-  const data = [
-    {
-      level: "wake",
-      value: wakeMins,
-      color: "#fcba03",
-    },
-    {
-      level: "rem",
-      value: remMins,
-      color: "#9ccef0",
-    },
-    {
-      level: "light",
-      value: lightMins,
-      color: "#0398fc",
-    },
-    {
-      level: "deep",
-      value: deepMins,
-      color: "#5d47ff80",
-    },
-  ];
-
-  const bars: Array<React.ReactNode> = [];
+  const bars: Array<React.ReactElement> = [];
 
   let xOffset = 0;
   for (const datum of data) {
@@ -59,10 +91,10 @@ export function SleepLevelMiniSummary({
         y={0}
         width={width}
         height={height}
-        radius={2}
+        radius={4}
         fill={datum.color}
-        left={datum.level == "wake"}
-        right={datum.level == "deep"}
+        left={xOffset === 0}
+        right={xOffset + width === xScale(totalMins)}
       />
     );
     xOffset += width;
