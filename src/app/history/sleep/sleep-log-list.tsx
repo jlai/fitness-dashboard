@@ -35,7 +35,9 @@ function SleepLogListHeaderCells() {
     <>
       <TableCell>Date</TableCell>
       <TableCell className="text-end">Time</TableCell>
-      <TableCell className="text-center">Time in stages</TableCell>
+      <TableCell className="text-center hidden md:table-cell">
+        Time in stages
+      </TableCell>
       <TableCell className="text-end max-w-full">Duration</TableCell>
     </>
   );
@@ -63,7 +65,7 @@ function SleepLogRow({ logEntry: sleep }: { logEntry: SleepLog }) {
       <TableCell className="text-end">
         {TIME.format(startTime)} &ndash; {TIME.format(endTime)}
       </TableCell>
-      <TableCell className="min-w-[100px] max-w-[200px]">
+      <TableCell className="hidden md:table-cell md:w-[200px]">
         {sleep.levels?.summary.rem && (
           <button className="block size-full" {...bindTrigger(popupState)}>
             <div className="w-full h-[20px]">
