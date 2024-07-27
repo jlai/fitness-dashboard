@@ -90,21 +90,35 @@ export function formatDuration(milliseconds: number) {
 export function formatMinutes(minutes: number) {
   const duration = dayjs.duration(minutes, "minutes");
 
-  if (duration.asMinutes() > 60) {
-    return duration.format("H[h] m[m]");
-  } else {
-    return duration.format("m[m]");
+  const formatParts = [];
+
+  if (duration.hours() > 0) {
+    formatParts.push("H[h]");
   }
+
+  if (duration.minutes() > 0) {
+    formatParts.push("m[m]");
+  }
+
+  return duration.format(formatParts.join(" "));
 }
 
 export function formatSeconds(seconds: number) {
   const duration = dayjs.duration(seconds, "seconds");
 
-  if (duration.asMinutes() >= 60) {
-    return duration.format("H[h] m[m]");
-  } else if (seconds >= 60) {
-    return duration.format(duration.seconds() ? "m[m] s[s]" : "m[m]");
-  } else {
-    return duration.format("s[s]");
+  const formatParts = [];
+
+  if (duration.hours() > 0) {
+    formatParts.push("H[h]");
   }
+
+  if (duration.minutes() > 0) {
+    formatParts.push("m[m]");
+  }
+
+  if (duration.seconds() > 0) {
+    formatParts.push("s[s]");
+  }
+
+  return duration.format(formatParts.join(" "));
 }
