@@ -62,7 +62,7 @@ export function SleepLevelMiniSummary({
         color: "#5d47ff80",
         ratio: deepMins / totalMins,
       },
-    ];
+    ].toReversed();
   } else {
     const awakeMins = summary.awake?.minutes ?? 0;
     const restlessMins = summary.restless?.minutes ?? 0;
@@ -88,7 +88,7 @@ export function SleepLevelMiniSummary({
         color: "#2850a1",
         ratio: asleepMins / totalMins,
       },
-    ];
+    ].toReversed();
   }
 
   const xScale = scaleLinear<number>({
@@ -111,7 +111,7 @@ export function SleepLevelMiniSummary({
         radius={4}
         fill={datum.color}
         left={xOffset === 0}
-        right={xOffset + width === xScale(totalMins)}
+        right={xScale(totalMins) - xOffset - width < 2}
       />
     );
     xOffset += width;
@@ -121,22 +121,24 @@ export function SleepLevelMiniSummary({
     <Tooltip
       title={
         <>
-          {data.map((datum) => (
-            <Typography
-              key={datum.level}
-              variant="body1"
-              className="m-1 text-end flex flex-row items-center"
-              columnGap={1}
-            >
-              <Box width="1em" height="1em" bgcolor={datum.color}></Box>
-              <div>{LEVEL_NAMES[datum.level]}</div>
-              <FlexSpacer />
-              <b className="text-end">{formatMinutes(datum.value)}</b>
-              <div className="text-end">
-                ({PERCENT_FRACTION_DIGITS_0.format(datum.ratio)})
-              </div>
-            </Typography>
-          ))}
+          {data
+            .filter((datum) => datum.value > 0)
+            .map((datum) => (
+              <Typography
+                key={datum.level}
+                variant="body1"
+                className="m-1 text-end flex flex-row items-center"
+                columnGap={1}
+              >
+                <Box width="1em" height="1em" bgcolor={datum.color}></Box>
+                <div>{LEVEL_NAMES[datum.level]}</div>
+                <FlexSpacer />
+                <b className="text-end">{formatMinutes(datum.value)}</b>
+                <div className="text-end">
+                  ({PERCENT_FRACTION_DIGITS_0.format(datum.ratio)})
+                </div>
+              </Typography>
+            ))}
         </>
       }
     >

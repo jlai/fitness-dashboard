@@ -6,8 +6,14 @@ export const LEVEL_COLORS: Record<string, string> = {
 };
 
 export const LEVEL_NAMES: Record<string, string> = {
+  // Stages
   wake: "Awake",
   rem: "REM",
   light: "Light",
   deep: "Deep",
+
+  // Classic
+  awake: "Awake",
+  asleep: "Asleep",
+  restless: "Restless",
 };
