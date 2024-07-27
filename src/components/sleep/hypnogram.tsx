@@ -3,18 +3,17 @@ import { LinearGradient } from "@visx/gradient";
 import { Line, BarRounded } from "@visx/shape";
 import { Group } from "@visx/group";
 import { AxisBottom, AxisLeft } from "@visx/axis";
+import { localPoint } from "@visx/event";
 import { scaleTime, scaleBand } from "@visx/scale";
+import { useTooltip, useTooltipInPortal } from "@visx/tooltip";
 import { ScaleTime } from "d3-scale";
 import dayjs from "dayjs";
+import { Box, Stack, Typography } from "@mui/material";
 
-import { SleepLog } from "@/api/sleep";
+import { SleepLog, SleepLogLevelData } from "@/api/sleep";
+import { formatSeconds, TIME } from "@/utils/date-formats";
 
-const colors: Record<string, string> = {
-  wake: "#fcba03",
-  rem: "#9ccef0",
-  light: "#0398fc",
-  deep: "#5d47ff",
-};
+import { LEVEL_COLORS, LEVEL_NAMES } from "./levels";
 
 const levelIndex: Record<string, number> = {
   wake: 1,
@@ -31,8 +30,20 @@ export function Hypnogram({
   height: number | string;
 }) {
   const { parentRef, width, height } = useParentSize();
+  const {
+    showTooltip,
+    tooltipOpen,
+    hideTooltip,
+    tooltipLeft,
+    tooltipTop,
+    tooltipData,
+  } = useTooltip<SleepLogLevelData>();
+  const { containerRef, TooltipInPortal } = useTooltipInPortal({
+    detectBounds: true,
+    scroll: true,
+  });
 
-  const yAxisWidth = 60;
+  const yAxisWidth = 70;
   const xAxisHeight = 40;
 
   const xScale = scaleTime<number>({
@@ -47,6 +58,22 @@ export function Hypnogram({
     range: [0, height - xAxisHeight],
     padding: 1,
   });
+
+  const handleMouseOver = (
+    event: React.MouseEvent<SVGElement>,
+    datum: SleepLogLevelData
+  ) => {
+    const coords = localPoint((event.target as any).ownerSVGElement, event);
+    if (!coords) {
+      return;
+    }
+
+    showTooltip({
+      tooltipLeft: coords.x,
+      tooltipTop: coords.y,
+      tooltipData: datum,
+    });
+  };
 
   const data = sleepLog.levels?.data ?? [];
   const shortData = sleepLog.levels?.shortData ?? [];
@@ -74,7 +101,7 @@ export function Hypnogram({
     lines.push(
       <BarRounded
         key={datum.dateTime}
-        fill={colors[datum.level]}
+        fill={LEVEL_COLORS[datum.level]}
         radius={6}
         x={startX}
         y={y - 4}
@@ -84,6 +111,8 @@ export function Hypnogram({
         topRight={endIsDeeper}
         bottomLeft={startIsDeeper}
         bottomRight={!endIsDeeper}
+        onMouseMove={(event) => handleMouseOver(event, datum)}
+        onMouseOut={hideTooltip}
       />
     );
 
@@ -114,17 +143,23 @@ export function Hypnogram({
     lines.push(
       <Line
         key={`${datum.dateTime}-short`}
-        stroke={colors[datum.level]}
+        stroke={LEVEL_COLORS[datum.level]}
         strokeWidth={8}
         from={{ x: startX, y }}
         to={{ x: endX, y }}
+        onMouseMove={(event) => handleMouseOver(event, datum)}
+        onMouseOut={hideTooltip}
       />
     );
   }
 
   return (
-    <div ref={parentRef} style={{ height: containerHeight }}>
-      <svg width={width} height={height}>
+    <div
+      ref={parentRef}
+      className="relative"
+      style={{ height: containerHeight }}
+    >
+      <svg ref={containerRef} width={width} height={height}>
         <rect
           x={0}
           y={0}
@@ -145,6 +180,7 @@ export function Hypnogram({
           stroke="#cbd5e1"
           strokeWidth={0}
           hideTicks
+          tickFormat={(value) => LEVEL_NAMES[value]}
           tickLabelProps={{ fill: "#cbd5e1", fontSize: 14 }}
         />
         <AxisBottom<ScaleTime<number, number>>
@@ -159,6 +195,38 @@ export function Hypnogram({
           tickLabelProps={{ fill: "#cbd5e1", fontSize: 14 }}
         />
       </svg>
+      {tooltipOpen && tooltipData && (
+        <TooltipInPortal
+          top={tooltipTop}
+          left={tooltipLeft}
+          className="min-w-max z-[1500]"
+        >
+          <SleepSegmentTooltipContent tooltipData={tooltipData} />
+        </TooltipInPortal>
+      )}
+    </div>
+  );
+}
+
+function SleepSegmentTooltipContent({
+  tooltipData: { level, seconds, dateTime },
+}: {
+  tooltipData: SleepLogLevelData;
+}) {
+  const startTime = new Date(dateTime);
+  const endTime = new Date(startTime.getTime() + seconds * 1000);
+
+  return (
+    <div className="space-y-1">
+      <Stack direction="row" alignItems="center" columnGap={1}>
+        <Box width="1em" height="1em" bgcolor={LEVEL_COLORS[level]}></Box>
+        <Typography>
+          {LEVEL_NAMES[level]}: <b>{formatSeconds(seconds)}</b>
+        </Typography>
+      </Stack>
+      <Typography>
+        {TIME.format(startTime)} &ndash; {TIME.format(endTime)}
+      </Typography>
     </div>
   );
 }

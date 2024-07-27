@@ -96,3 +96,15 @@ export function formatMinutes(minutes: number) {
     return duration.format("m[m]");
   }
 }
+
+export function formatSeconds(seconds: number) {
+  const duration = dayjs.duration(seconds, "seconds");
+
+  if (duration.asMinutes() >= 60) {
+    return duration.format("H[h] m[m]");
+  } else if (seconds >= 60) {
+    return duration.format(duration.seconds() ? "m[m] s[s]" : "m[m]");
+  } else {
+    return duration.format("s[s]");
+  }
+}

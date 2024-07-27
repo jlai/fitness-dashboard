@@ -10,6 +10,8 @@ import { SleepLog } from "@/api/sleep";
 import { formatMinutes } from "@/utils/date-formats";
 import { PERCENT_FRACTION_DIGITS_0 } from "@/utils/number-formats";
 
+import { LEVEL_NAMES } from "./levels";
+
 export function SleepLevelSummaryChart({
   levels,
 }: {
@@ -78,6 +80,7 @@ export function SleepLevelSummaryChart({
           scale={yScale}
           hideTicks
           hideAxisLine
+          tickFormat={(value) => LEVEL_NAMES[value]}
           tickLabelProps={{ fill: "currentColor", fontSize: 14 }}
         />
         {data.map((datum) => {
