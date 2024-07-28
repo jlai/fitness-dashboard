@@ -1,8 +1,15 @@
-import { DialogActions, DialogContent, DialogTitle, Tab } from "@mui/material";
+import {
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Stack,
+  Tab,
+} from "@mui/material";
 import { BarChart } from "@mui/x-charts";
 import { TabContext, TabList, TabPanel } from "@mui/lab";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { sumBy } from "lodash";
 
 import { buildActivityIntradayQuery } from "@/api/intraday";
 import { ENABLE_INTRADAY } from "@/config";
@@ -12,9 +19,12 @@ import { aggregateByHour } from "@/components/charts/timeseries/aggregation";
 
 import { RenderDialogContentProps } from "../tile-with-dialog";
 import { useSelectedDay } from "../../state";
-import { useDailySummary } from "../common";
 
-import { DailyGoalSummary } from "./goals";
+import {
+  DailyGoalSummary,
+  useDayAndWeekSummary,
+  WeeklyGoalSummary,
+} from "./goals";
 
 export default function StepsDialogContent(props: RenderDialogContentProps) {
   const [currentTab, setCurrentTab] = useState("overview");
@@ -44,16 +54,31 @@ export default function StepsDialogContent(props: RenderDialogContentProps) {
 }
 
 function Overview() {
-  const { summary, goals } = useDailySummary();
+  const {
+    daySummary: { summary, goals },
+    weeklyGoals,
+    weekData,
+  } = useDayAndWeekSummary("steps");
+
   const currentTotal = summary.steps;
   const dailyGoal = goals?.steps ?? 0;
 
+  const weeklySteps = sumBy(weekData, (entry) => Number(entry.value));
+  const weeklyGoal = weeklyGoals.steps;
+
   return (
-    <DailyGoalSummary
-      currentTotal={currentTotal}
-      dailyGoal={dailyGoal}
-      unit="steps"
-    />
+    <Stack direction="row" justifyContent="center">
+      <DailyGoalSummary
+        currentTotal={currentTotal}
+        dailyGoal={dailyGoal}
+        unit="steps"
+      />
+      <WeeklyGoalSummary
+        currentTotal={weeklySteps}
+        weeklyGoal={weeklyGoal}
+        unit="steps"
+      />
+    </Stack>
   );
 }
 
