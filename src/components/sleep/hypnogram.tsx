@@ -79,6 +79,7 @@ export function Hypnogram({
   const shortData = sleepLog.levels?.shortData ?? [];
 
   const lines: Array<React.ReactNode> = [];
+  const rects: Array<React.ReactNode> = [];
 
   let lastEndX: number | undefined;
   let lastY: number | undefined;
@@ -111,6 +112,19 @@ export function Hypnogram({
         topRight={endIsDeeper}
         bottomLeft={startIsDeeper}
         bottomRight={!endIsDeeper}
+        onMouseMove={(event) => handleMouseOver(event, datum)}
+        onMouseOut={hideTooltip}
+      />
+    );
+
+    rects.push(
+      <rect
+        key={`rect-${datum.dateTime}`}
+        x={startX}
+        width={endX - startX}
+        y={0}
+        height={height}
+        fill="transparent"
         onMouseMove={(event) => handleMouseOver(event, datum)}
         onMouseOut={hideTooltip}
       />
@@ -173,6 +187,7 @@ export function Hypnogram({
           from="#3b6978"
           to="#204051"
         />
+        <Group>{rects}</Group>
         <Group>{lines}</Group>
         <AxisLeft
           left={yAxisWidth}
