@@ -55,7 +55,11 @@ function FoodQuickSummary({ selectedDay }: { selectedDay: Dayjs }) {
   const { data } = useQuery(buildFoodLogQuery(selectedDay));
 
   return (
-    <Typography variant="subtitle1" className="text-2xl">
+    <Typography
+      variant="subtitle1"
+      className="text-2xl"
+      aria-label="total calories for day"
+    >
       <span>{data?.summary.calories ?? "\u2014"} Calories</span>
     </Typography>
   );

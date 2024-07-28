@@ -85,8 +85,30 @@ vary by hosting provider.
 
 ## Running tests
 
+### Unit tests (jest)
+
 ```bash
 npm run test
+```
+
+### End-to-end tests (playwright)
+
+Headless:
+
+```bash
+npx playwright test
+```
+
+UI:
+
+```bash
+npx playwright test --ui
+```
+
+Debug:
+
+```bash
+npx playwright test --debug
 ```
 
 ## License
