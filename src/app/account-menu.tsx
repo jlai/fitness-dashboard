@@ -46,7 +46,7 @@ export default function AccountMenu() {
 
   return (
     <>
-      <IconButton {...bindTrigger(popupState)}>
+      <IconButton {...bindTrigger(popupState)} aria-label="open account menu">
         <AccountIcon />
       </IconButton>
       <Menu {...bindMenu(popupState)}>

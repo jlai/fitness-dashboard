@@ -62,7 +62,7 @@ export default function GraphTileContent() {
             {CHART_RESOURCE_CONFIGS[resource].label}
           </Typography>
           <div>
-            <IconButton onClick={popupState.open}>
+            <IconButton onClick={popupState.open} aria-label="open graph menu">
               <SettingsIcon />
             </IconButton>
             <Popover

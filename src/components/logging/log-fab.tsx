@@ -72,7 +72,11 @@ export function LogFab() {
 
   return (
     <div className="fixed bottom-8 right-8">
-      <Fab onClick={popupState.open} color="primary">
+      <Fab
+        onClick={popupState.open}
+        color="primary"
+        aria-label="open logging menu"
+      >
         <AddIcon />
       </Fab>
       <Menu

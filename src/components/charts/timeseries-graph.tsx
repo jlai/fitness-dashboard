@@ -33,6 +33,7 @@ export function SeriesSelector() {
           setselectedResource(event.target.value as ChartResource)
         }
         size="small"
+        SelectDisplayProps={{ "aria-label": "select resource" }}
       >
         {CHART_RESOURCE_MENU_ITEMS.map((id, i) =>
           id === "-" ? (

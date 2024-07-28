@@ -16,6 +16,7 @@ export default function StatGauge({
   iconSrc,
   innerContent,
   bottomContent,
+  ariaLabel,
 }: {
   /** numeric value; this should use localized values for screen reader support */
   value: number;
@@ -24,6 +25,7 @@ export default function StatGauge({
   iconSrc?: string;
   innerContent?: React.ReactNode;
   bottomContent?: React.ReactNode;
+  ariaLabel?: string;
 }) {
   const percent = (100 * value) / valueMax;
 
@@ -47,6 +49,7 @@ export default function StatGauge({
             value={value}
             valueMax={valueMax}
             cornerRadius="50%"
+            aria-label={ariaLabel ?? `${valueUnits} progress`}
           >
             <GaugeReferenceArc />
             <GaugeValueArc style={{ fill: color }} />
