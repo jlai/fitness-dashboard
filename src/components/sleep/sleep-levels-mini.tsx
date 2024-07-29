@@ -1,7 +1,13 @@
 import { BarRounded } from "@visx/shape";
 import { scaleLinear } from "@visx/scale";
 import { useParentSize } from "@visx/responsive";
-import { Box, Tooltip, Typography } from "@mui/material";
+import { Box, Paper, Popper, Typography } from "@mui/material";
+import React from "react";
+import {
+  bindHover,
+  bindPopper,
+  usePopupState,
+} from "material-ui-popup-state/hooks";
 
 import { SleepLog } from "@/api/sleep";
 import { formatMinutes } from "@/utils/date-formats";
@@ -24,6 +30,10 @@ export function SleepLevelMiniSummary({
   levels: NonNullable<SleepLog["levels"]>;
 }) {
   const { parentRef, width, height } = useParentSize();
+  const popupState = usePopupState({
+    variant: "popper",
+    popupId: "sleep-mini-summary",
+  });
 
   const summary = levels.summary;
 
@@ -118,35 +128,49 @@ export function SleepLevelMiniSummary({
   }
 
   return (
-    <Tooltip
-      title={
-        <>
-          {data
-            .filter((datum) => datum.value > 0)
-            .map((datum) => (
-              <Typography
-                key={datum.level}
-                variant="body1"
-                className="m-1 text-end flex flex-row items-center"
-                columnGap={1}
-              >
-                <Box width="1em" height="1em" bgcolor={datum.color}></Box>
-                <div>{LEVEL_NAMES[datum.level]}</div>
-                <FlexSpacer />
-                <b className="text-end">{formatMinutes(datum.value)}</b>
-                <div className="text-end">
-                  ({PERCENT_FRACTION_DIGITS_0.format(datum.ratio)})
-                </div>
-              </Typography>
-            ))}
-        </>
-      }
-    >
-      <div ref={parentRef} className="relative size-full">
+    <>
+      <div
+        ref={parentRef}
+        className="relative size-full"
+        {...bindHover(popupState)}
+      >
         <svg width={width} height={height}>
           {bars}
         </svg>
       </div>
-    </Tooltip>
+      {popupState.isOpen && (
+        <Popper {...bindPopper(popupState)}>
+          <Paper className="p-2">
+            <SleepStagesTooltip data={data} />
+          </Paper>
+        </Popper>
+      )}
+    </>
+  );
+}
+
+function SleepStagesTooltip({ data }: { data: Array<SleepSegmentDatum> }) {
+  return (
+    <>
+      {data
+        .filter((datum) => datum.value > 0)
+        .map((datum) => (
+          <Typography
+            key={datum.level}
+            variant="body1"
+            component="div"
+            className="m-1 text-end flex flex-row items-center"
+            columnGap={1}
+          >
+            <Box width="1em" height="1em" bgcolor={datum.color}></Box>
+            <div>{LEVEL_NAMES[datum.level]}</div>
+            <FlexSpacer />
+            <b className="text-end">{formatMinutes(datum.value)}</b>
+            <div className="text-end">
+              ({PERCENT_FRACTION_DIGITS_0.format(datum.ratio)})
+            </div>
+          </Typography>
+        ))}
+    </>
   );
 }
