@@ -118,7 +118,7 @@ test("can move logged foods to another meal time", async ({
 
   const rowNames = await rowNameCells.allInnerTexts();
 
-  expect(rowNames).toEqual([
+  expect(rowNames.map((name) => name.trim())).toEqual([
     "Breakfast",
     "Orange Juice",
     "Lunch",
