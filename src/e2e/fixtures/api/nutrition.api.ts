@@ -24,6 +24,11 @@ export class NutritionApi {
     await page.route("**/1/user/-/foods/log/date/*.json", async (route) => {
       await route.fulfill({ json: { foods: [] } });
     });
+
+    // Update or delete food log
+    await page.route("**/1/user/-/foods/log/*.json**", async (route) => {
+      await route.fulfill({ status: 200 });
+    });
   }
 
   async setFoodLogsResponse(

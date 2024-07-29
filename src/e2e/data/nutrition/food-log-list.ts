@@ -1,4 +1,4 @@
-export const BREAKFAST_FOODS_LOG_RESPONSE = {
+export const BREAKFAST_FOOD_LOGS_RESPONSE = {
   foods: [
     {
       isFavorite: false,

@@ -56,7 +56,10 @@ export default function FoodLog({ day }: { day: Dayjs }) {
 
   const deleteSelected = () => {
     (async () => {
-      await confirm({ title: "Deleted selected food logs?" });
+      await confirm({
+        title: "Deleted selected food logs?",
+        confirmationText: "Delete",
+      });
 
       const deletes = selectedFoodLogs.map((foodLog) => ({
         foodLogId: foodLog.logId,
@@ -70,7 +73,7 @@ export default function FoodLog({ day }: { day: Dayjs }) {
   };
 
   return (
-    <>
+    <section aria-label="Logged foods">
       <Paper className="max-w-full overflow-x-auto">
         <Table size="small">
           <TableHead>
@@ -121,6 +124,6 @@ export default function FoodLog({ day }: { day: Dayjs }) {
       <MoveFoodLogsDialog />
       <CreateMealFromFoodLogsDialog />
       <div className="mb-8"></div>
-    </>
+    </section>
   );
 }
