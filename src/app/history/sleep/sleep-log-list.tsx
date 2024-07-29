@@ -1,4 +1,4 @@
-import { Dialog, TableCell, TableRow } from "@mui/material";
+import { TableCell, TableRow } from "@mui/material";
 import dayjs, { Dayjs } from "dayjs";
 import {
   bindDialog,
@@ -7,12 +7,13 @@ import {
 } from "material-ui-popup-state/hooks";
 import { lazy, Suspense } from "react";
 
-import { TIME } from "@/utils/date-formats";
+import { formatShortDateTime, TIME } from "@/utils/date-formats";
 import { SleepLog } from "@/api/sleep/types";
 import NumericStat from "@/components/numeric-stat";
 import HistoryList from "@/components/history-list/history-list";
 import { buildGetSleepLogListInfiniteQuery } from "@/api/sleep";
 import { SleepLevelMiniSummary } from "@/components/sleep/sleep-levels-mini";
+import { ResponsiveDialog } from "@/components/dialogs/responsive-dialog";
 
 const SleepDetailsDialogContent = lazy(
   () => import("@/components/sleep/sleep-details-dialog")
@@ -80,9 +81,14 @@ function SleepLogRow({ logEntry: sleep }: { logEntry: SleepLog }) {
 
       {popupState.isOpen && (
         <Suspense>
-          <Dialog {...bindDialog(popupState)} fullWidth maxWidth="lg">
+          <ResponsiveDialog
+            {...bindDialog(popupState)}
+            title={`Sleep ending ${formatShortDateTime(dayjs(endTime))}`}
+            fullWidth
+            fullScreenPreferenceId="sleep"
+          >
             <SleepDetailsDialogContent sleepLog={sleep} />
-          </Dialog>
+          </ResponsiveDialog>
         </Suspense>
       )}
     </TableRow>
