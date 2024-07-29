@@ -61,6 +61,7 @@
     "react-resizable-panels": "^2.0.21",
     "react-use": "^17.5.0",
     "svg-plant": "^2.0.5",
+    "typescript-eslint": "^7.17.0",
     "wonka": "^6.3.4"
   },
   "devDependencies": {

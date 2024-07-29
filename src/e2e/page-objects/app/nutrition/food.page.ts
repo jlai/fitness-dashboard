@@ -15,7 +15,7 @@ export default class FoodPage {
 
   async selectFood() {
     const foodSearch = this.page.getByPlaceholder("Type to search");
-    expect(foodSearch).toBeVisible();
+    await expect(foodSearch).toBeVisible();
 
     const openFoodSearch = this.page.getByLabel("Open", { exact: true });
     await openFoodSearch.click();

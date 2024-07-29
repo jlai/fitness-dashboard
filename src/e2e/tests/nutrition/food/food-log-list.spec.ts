@@ -4,7 +4,7 @@ import { BREAKFAST_FOOD_LOGS_RESPONSE } from "@/e2e/data/nutrition/food-log-list
 import { test, expect } from "@/e2e/fixtures";
 
 test("can view logged foods", async ({ page, pageObjects, nutritionApi }) => {
-  nutritionApi.setFoodLogsResponse(BREAKFAST_FOOD_LOGS_RESPONSE);
+  await nutritionApi.setFoodLogsResponse(BREAKFAST_FOOD_LOGS_RESPONSE);
 
   await page.goto("/nutrition");
 
@@ -28,7 +28,7 @@ test("can delete logged foods", async ({
   pageObjects: { foodPage },
   nutritionApi,
 }) => {
-  nutritionApi.setFoodLogsResponse(BREAKFAST_FOOD_LOGS_RESPONSE);
+  await nutritionApi.setFoodLogsResponse(BREAKFAST_FOOD_LOGS_RESPONSE);
 
   await page.goto("/nutrition");
 
@@ -53,7 +53,7 @@ test("can delete logged foods", async ({
       (food) => food.loggedFood.name !== "Scrambled Eggs"
     );
   });
-  nutritionApi.setFoodLogsResponse(updatedResponse);
+  await nutritionApi.setFoodLogsResponse(updatedResponse);
   const confirmButton = page.getByRole("button", { name: "Delete" });
 
   await confirmButton.click();
@@ -66,7 +66,7 @@ test("can move logged foods to another meal time", async ({
   pageObjects: { foodPage },
   nutritionApi,
 }) => {
-  nutritionApi.setFoodLogsResponse(BREAKFAST_FOOD_LOGS_RESPONSE);
+  await nutritionApi.setFoodLogsResponse(BREAKFAST_FOOD_LOGS_RESPONSE);
 
   await page.goto("/nutrition");
 
@@ -103,7 +103,7 @@ test("can move logged foods to another meal time", async ({
     );
     eggs!.loggedFood.mealTypeId = 3;
   });
-  nutritionApi.setFoodLogsResponse(updatedResponse);
+  await nutritionApi.setFoodLogsResponse(updatedResponse);
 
   await confirmMoveButton.click();
 

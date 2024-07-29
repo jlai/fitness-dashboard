@@ -21,8 +21,8 @@ const TOKEN_STRING = JSON.stringify({
 
 export const test = base.extend({
   page: async ({ page }, use) => {
-    await page.route("https://api.fitbit.com/**", (route) => {
-      route.fulfill({ status: 404 });
+    await page.route("https://api.fitbit.com/**", async (route) => {
+      await route.fulfill({ status: 404 });
     });
 
     await page.clock.install({
