@@ -17,6 +17,7 @@ import { queryClientAtom } from "jotai-tanstack-query";
 
 import { syncFitbitTokenEffect } from "@/api/auth";
 import { warnOnRateLimitExceededEffect } from "@/api/request";
+import { analyticsPingEffect } from "@/storage/analytics";
 
 import { buildTheme } from "./theme";
 
@@ -45,6 +46,7 @@ export default function ClientSideSetup({
   children: React.ReactNode;
 }) {
   useAtom(syncFitbitTokenEffect);
+  useAtom(analyticsPingEffect);
 
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
   const theme = useMemo(

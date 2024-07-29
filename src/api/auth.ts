@@ -123,6 +123,10 @@ function getTokenFromStorage() {
   return token;
 }
 
+export function isLoggedIn() {
+  return !!getTokenFromStorage();
+}
+
 function saveTokenToStorage(token: OAuth2Token) {
   localStorage.setItem(FITBIT_TOKEN_STORAGE_KEY, JSON.stringify(token));
 

@@ -12,6 +12,7 @@ import {
 export const poppins = Poppins({ weight: "400", subsets: ["latin"] });
 
 import { HOST_WEBSITE_LINK, HOST_WEBSITE_NAME, WEBSITE_NAME } from "@/config";
+import { SurveyButton } from "@/components/survey";
 
 import AccountMenu from "./account-menu";
 
@@ -86,6 +87,7 @@ export default function Header() {
             </NavLink>
           </div>
           <div className="flex flex-row items-center gap-x-2 md:mx-4">
+            <SurveyButton />
             <NavLink href="/about" icon={<AboutIcon />}>
               About
             </NavLink>

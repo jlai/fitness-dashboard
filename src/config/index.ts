@@ -1,3 +1,5 @@
+import dayjs from "dayjs";
+
 export function requiredVar(value?: string) {
   if (!value) {
     throw new Error(`Environment variable missing`);
@@ -58,6 +60,26 @@ export const TOS_LINK = process.env.NEXT_PUBLIC_TOS_LINK;
 
 /** Link to what's new page */
 export const WHATS_NEW_LINK = process.env.NEXT_PUBLIC_WHATS_NEW_LINK;
+
+/** Link to survey */
+export const SURVEY_LINK = process.env.NEXT_PUBLIC_SURVEY_LINK;
+
+/**
+ * ISO8601 date range to show survey, e.g. 2024-05-01/2024-05-07
+ * If time is not provided, uses the (local) start of day.
+ * Does not support repeating intervals.
+ */
+export const SURVEY_DATE_RANGE = ((value: string | undefined) => {
+  if (!value) {
+    return undefined;
+  }
+
+  const [startDate, endDate] = value.split("/");
+  return [dayjs(startDate), dayjs(endDate)];
+})(process.env.NEXT_PUBLIC_SURVEY_DATE_RANGE);
+
+/** URL to send anonymous analytics */
+export const ANALYTICS_PING_URL = process.env.NEXT_PUBLIC_ANALYTICS_PING_URL;
 
 /** Extra content security script-src */
 export const EXTRA_CSP_SCRIPT_SRC =
