@@ -47,6 +47,24 @@ export function useTileSettings<TSettings>(
   ];
 }
 
+/** Use a single tile settings property */
+export function useTileSetting<TSettings, TProp extends keyof TSettings>(
+  prop: TProp,
+  defaultValue: TSettings[TProp]
+): [TSettings[TProp], (update: TSettings[TProp]) => void] {
+  const { id, settings } = useTileData() as {
+    id: string;
+    settings?: TSettings;
+  };
+  const updateTileSettings = useSetAtom(updateTileSettingsAtom);
+
+  return [
+    (settings && settings[prop]) ?? defaultValue,
+    (update: TSettings[TProp]) =>
+      updateTileSettings(id, { ...settings, [prop]: update }),
+  ];
+}
+
 /** Clickable area which disables click events when editing grid */
 export function TileClickableArea({
   children,

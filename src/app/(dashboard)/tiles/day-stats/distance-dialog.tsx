@@ -15,7 +15,7 @@ import {
   ResponsiveChartContainer,
 } from "@mui/x-charts";
 import { TabContext, TabList, TabPanel } from "@mui/lab";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { sumBy } from "lodash";
 
@@ -28,6 +28,7 @@ import { useUnits } from "@/config/units";
 
 import { RenderDialogContentProps } from "../tile-with-dialog";
 import { useSelectedDay } from "../../state";
+import { useTileSetting } from "../tile";
 
 import {
   DailyGoalSummary,
@@ -35,8 +36,15 @@ import {
   WeeklyGoalSummary,
 } from "./goals";
 
+interface DistanceTileSettings {
+  defaultTab: string;
+}
+
 export default function DistanceDialogContent(props: RenderDialogContentProps) {
-  const [currentTab, setCurrentTab] = useState("overview");
+  const [currentTab, setCurrentTab] = useTileSetting<
+    DistanceTileSettings,
+    "defaultTab"
+  >("defaultTab", "overview");
 
   return (
     <>

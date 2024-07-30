@@ -7,7 +7,7 @@ import {
 } from "@mui/material";
 import { BarChart } from "@mui/x-charts";
 import { TabContext, TabList, TabPanel } from "@mui/lab";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { sumBy } from "lodash";
 
@@ -19,6 +19,7 @@ import { aggregateByHour } from "@/components/charts/timeseries/aggregation";
 
 import { RenderDialogContentProps } from "../tile-with-dialog";
 import { useSelectedDay } from "../../state";
+import { useTileSetting } from "../tile";
 
 import {
   DailyGoalSummary,
@@ -26,8 +27,15 @@ import {
   WeeklyGoalSummary,
 } from "./goals";
 
+interface FloorsTileSettings {
+  defaultTab: string;
+}
+
 export default function FloorsDialogContent(props: RenderDialogContentProps) {
-  const [currentTab, setCurrentTab] = useState("overview");
+  const [currentTab, setCurrentTab] = useTileSetting<
+    FloorsTileSettings,
+    "defaultTab"
+  >("defaultTab", "overview");
 
   return (
     <>

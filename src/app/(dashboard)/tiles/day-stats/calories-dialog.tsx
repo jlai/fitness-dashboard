@@ -1,7 +1,6 @@
 import { DialogActions, DialogContent, DialogTitle, Tab } from "@mui/material";
 import { LineChart, PieChart, PieValueType } from "@mui/x-charts";
 import { TabContext, TabList, TabPanel } from "@mui/lab";
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import { FRACTION_DIGITS_0 } from "@/utils/number-formats";
@@ -11,8 +10,13 @@ import { ENABLE_INTRADAY } from "@/config";
 import { RenderDialogContentProps } from "../tile-with-dialog";
 import { useDailySummary } from "../common";
 import { useSelectedDay } from "../../state";
+import { useTileSetting } from "../tile";
 
 import { DailyGoalSummary } from "./goals";
+
+interface CaloriesTileSettings {
+  defaultTab: string;
+}
 
 const timeFormat = new Intl.DateTimeFormat(undefined, {
   hour: "numeric",
@@ -20,7 +24,10 @@ const timeFormat = new Intl.DateTimeFormat(undefined, {
 });
 
 export default function CaloriesDialogContent(props: RenderDialogContentProps) {
-  const [currentTab, setCurrentTab] = useState("overview");
+  const [currentTab, setCurrentTab] = useTileSetting<
+    CaloriesTileSettings,
+    "defaultTab"
+  >("defaultTab", "overview");
 
   return (
     <>
