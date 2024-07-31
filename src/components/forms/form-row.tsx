@@ -33,9 +33,22 @@ export function FormRow({
   );
 }
 
-export function FormActionRow({ children }: { children: React.ReactNode }) {
+export function FormActionRow({
+  className,
+  children,
+  justifyContent = "end",
+}: {
+  className?: string;
+  children: React.ReactNode;
+  justifyContent?: StackProps["justifyContent"];
+}) {
   return (
-    <FormRow marginBlock={4} justifyContent="end">
+    <FormRow
+      marginBlock={2}
+      justifyContent={justifyContent}
+      columnGap={2}
+      className={`px-4 sm:px-0 ${className ?? ""}`}
+    >
       {children}
     </FormRow>
   );

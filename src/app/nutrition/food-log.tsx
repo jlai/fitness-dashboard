@@ -1,5 +1,20 @@
 import dayjs, { Dayjs } from "dayjs";
-import { Button, Paper, Table, TableBody, TableHead } from "@mui/material";
+import {
+  Button,
+  IconButton,
+  Menu,
+  MenuItem,
+  Paper,
+  Table,
+  TableBody,
+  TableHead,
+} from "@mui/material";
+import {
+  Delete as DeleteIcon,
+  MoreVert,
+  MoveDown as MoveIcon,
+  ContentCopy as CopyIcon,
+} from "@mui/icons-material";
 import { useEffect, useMemo } from "react";
 import {
   useMutation,
@@ -10,16 +25,23 @@ import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import Immutable from "immutable";
 import { useConfirm } from "material-ui-confirm";
 import { toast } from "mui-sonner";
+import {
+  bindMenu,
+  bindTrigger,
+  usePopupState,
+} from "material-ui-popup-state/hooks";
 
 import {
   buildDeleteFoodLogsMutation,
   buildFoodLogQuery,
 } from "@/api/nutrition";
 import { foodLogTotalsPositionAtom } from "@/storage/settings";
+import { FormActionRow } from "@/components/forms/form-row";
 
 import { groupByMealType } from "./summarize-day";
 import { selectedFoodLogsAtom } from "./atoms";
 import {
+  copyDialogOpenAtom,
   createMealDialogOpenAtom,
   CreateMealFromFoodLogsDialog,
   moveDialogOpenAtom,
@@ -30,10 +52,17 @@ import {
   MealTypeRows,
   TotalsRow,
 } from "./dialogs/food-log-rows";
+import { CopyFoodLogsDialog } from "./dialogs/copy-food-logs";
 
 export default function FoodLog({ day }: { day: Dayjs }) {
+  const menuPopupState = usePopupState({
+    variant: "popover",
+    popupId: "food-log-actions-menu",
+  });
+
   const [selectedFoodLogs, setSelectedFoodLogs] = useAtom(selectedFoodLogsAtom);
   const setMoveDialogOpen = useSetAtom(moveDialogOpenAtom);
+  const setCopyDialogOpen = useSetAtom(copyDialogOpenAtom);
   const setCreateMealDialogOpen = useSetAtom(createMealDialogOpenAtom);
   const foodLogTotalsPosition = useAtomValue(foodLogTotalsPositionAtom);
 
@@ -96,34 +125,50 @@ export default function FoodLog({ day }: { day: Dayjs }) {
           </TableBody>
         </Table>
       </Paper>
-      <div className="flex flex-row items-center gap-x-2">
+      <FormActionRow justifyContent="start">
         <Button
           disabled={selectedFoodLogs.size === 0}
           color="warning"
           onClick={deleteSelected}
+          startIcon={<DeleteIcon />}
         >
-          {selectedFoodLogs.size > 0
-            ? `Delete ${selectedFoodLogs.size} selected`
-            : "Delete selected"}
+          Delete
         </Button>
         <Button
           disabled={selectedFoodLogs.size === 0}
           onClick={() => setMoveDialogOpen(true)}
+          startIcon={<MoveIcon />}
         >
-          {selectedFoodLogs.size > 0
-            ? `Move ${selectedFoodLogs.size} selected`
-            : "Move selected"}
+          Move
         </Button>
         <Button
           disabled={selectedFoodLogs.size === 0}
-          onClick={() => setCreateMealDialogOpen(true)}
+          onClick={() => setCopyDialogOpen(true)}
+          startIcon={<CopyIcon />}
         >
-          Create meal
+          Copy
         </Button>
-      </div>
+        <IconButton
+          disabled={selectedFoodLogs.size === 0}
+          {...bindTrigger(menuPopupState)}
+        >
+          <MoreVert />
+        </IconButton>
+        <Menu {...bindMenu(menuPopupState)}>
+          <MenuItem
+            onClick={() => {
+              setCreateMealDialogOpen(true);
+              menuPopupState.close();
+            }}
+          >
+            Create meal
+          </MenuItem>
+        </Menu>
+      </FormActionRow>
       <MoveFoodLogsDialog />
       <CreateMealFromFoodLogsDialog />
-      <div className="mb-8"></div>
+      <CopyFoodLogsDialog />
+      <div className="sm:mb-8"></div>
     </section>
   );
 }

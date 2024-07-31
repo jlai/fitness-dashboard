@@ -3,10 +3,13 @@ import { Page, expect } from "@playwright/test";
 export default class FoodPage {
   readonly calorieTotal = this.page.getByLabel("total calories for day");
   readonly deleteSelectedButton = this.page.getByRole("button", {
-    name: /Delete Selected|Delete \d+ Selected/i,
+    name: /Delete/i,
   });
   readonly moveSelectedButton = this.page.getByRole("button", {
-    name: /Move Selected|Move \d+ Selected/i,
+    name: /Move/i,
+  });
+  readonly copySelectedButton = this.page.getByRole("button", {
+    name: /Copy/i,
   });
 
   readonly foodLogSection = new FoodLogSection(this.page);
