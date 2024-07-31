@@ -16,11 +16,10 @@ export default function AboutPage() {
       <section className="space-y-4">
         <Typography variant="h4">Introduction</Typography>
         <Typography variant="body2">
-          A dashboard for viewing stats from your Fitbit account.
-        </Typography>
-        <Typography variant="body2">
-          This is an early preview (alpha). There are likely to be many bugs and
-          some data may not be displayed accurately.
+          A dashboard for viewing stats from your Fitbit account, managing and
+          logging meals, viewing maps of your runs, and more. This is an early
+          preview (alpha). There are likely to be many bugs and some data may
+          not be displayed accurately.
         </Typography>
         <Typography variant="body2">
           <b>
@@ -39,11 +38,12 @@ export default function AboutPage() {
       </section>
       <section className="space-y-4">
         <Typography variant="h4">Privacy</Typography>
+        <Typography variant="h6">How this works</Typography>
         <Typography variant="body2">
-          This website runs entirely in your browser and accesses the Fitbit Web
-          API to get your fitness stats without passing through or syncing to
-          other cloud servers. This helps ensure the safety and security of your
-          data.
+          This website uses the Fitbit Web API to directly get and display your
+          fitness stats, without passing through or syncing to other cloud
+          servers. This means we don&apos;t store, transfer, or otherwise have
+          access to your data.
         </Typography>
         <Typography variant="body2">
           Some features, such as displaying maps of runs, may send coordinates
