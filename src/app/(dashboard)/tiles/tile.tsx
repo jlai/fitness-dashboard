@@ -35,6 +35,11 @@ export function useTileData() {
   return useContext(TileContext);
 }
 
+export function useTileScale() {
+  const { w = 1, h = 1 } = useTileData();
+  return { scale: Math.min(w, h), w, h };
+}
+
 export function useTileSettings<TSettings>(
   defaultSettings: TSettings
 ): [TSettings, (update: TSettings) => void] {
@@ -42,7 +47,7 @@ export function useTileSettings<TSettings>(
   const updateTileSettings = useSetAtom(updateTileSettingsAtom);
 
   return [
-    (settings ?? defaultSettings) as TSettings,
+    { ...defaultSettings, ...(settings as TSettings) },
     (updatedSettings: TSettings) => updateTileSettings(id, updatedSettings),
   ];
 }

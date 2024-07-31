@@ -124,6 +124,13 @@ export const TILE_TYPES: Record<string, TileDefinition> = {
     w: 2,
     h: 1,
   },
+  hourlyStepGoal: {
+    name: "Hourly step goal",
+    component: lazy(() => import("./hourly-step-goal")),
+    scopes: ["act"],
+    w: 2,
+    h: 2,
+  },
 };
 
 export function LazyTile({ type }: { type: string }) {

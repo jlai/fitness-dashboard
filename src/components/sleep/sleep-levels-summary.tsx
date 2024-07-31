@@ -10,9 +10,9 @@ import { Typography } from "@mui/material";
 import { SleepLog } from "@/api/sleep";
 import { formatMinutes } from "@/utils/date-formats";
 import { PERCENT_FRACTION_DIGITS_0 } from "@/utils/number-formats";
+import { usePortalTooltip } from "@/components/charts/visx/tooltip";
 
 import { LEVEL_NAMES } from "./levels";
-import { usePortalTooltip } from "./tooltip";
 
 interface SummaryDatum {
   level: string;
