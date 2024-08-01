@@ -135,6 +135,8 @@ export default function HourlyStepGoalTileContent() {
   }
 
   const isToday = dayjs().isSame(day, "day");
+  const isWithinRange =
+    isToday && currentHour >= startHour && currentHour < endHour;
   const currentHourSteps = stepsByHour.get(currentHour);
   const stepsRemaining = Math.max(0, hourlyStepGoal - (currentHourSteps ?? 0));
 
@@ -155,11 +157,18 @@ export default function HourlyStepGoalTileContent() {
           <HourlyDots settings={settings} stepsByHour={stepsByHour} />
         )}
         {hoursMetGoal >= hours && h > 1 && (
-          <Typography>You met your goal!</Typography>
+          <Typography>You met your daily goal!</Typography>
         )}
-        {hoursMetGoal < hours && isToday && h > 1 && (
+        {hoursMetGoal < hours && isWithinRange && h > 1 && (
           <Typography>
-            {FRACTION_DIGITS_0.format(stepsRemaining)} steps to go this hour
+            {stepsRemaining > 0 && (
+              <span>
+                {FRACTION_DIGITS_0.format(stepsRemaining)} steps to go this hour
+              </span>
+            )}
+            {stepsRemaining === 0 && (
+              <span>You met your goal for this hour!</span>
+            )}
           </Typography>
         )}
       </Stack>
@@ -205,6 +214,7 @@ function HourlyDots({
 
   const circles: Array<React.ReactNode> = [];
   const labels: Array<React.ReactNode> = [];
+  let metGoalHours = 0;
 
   assertValidHours(startHour, endHour);
   for (let hour = startHour; hour < endHour; hour++) {
@@ -218,6 +228,10 @@ function HourlyDots({
 
     const x = radius * Math.cos(midAngle - Math.PI / 2);
     const y = radius * Math.sin(midAngle - Math.PI / 2);
+
+    if (metGoal) {
+      metGoalHours++;
+    }
 
     circles.push(
       <circle
@@ -239,6 +253,7 @@ function HourlyDots({
           verticalAnchor="start"
           x={x}
           y={y + 30}
+          fill="currentColor"
         >
           {formatHour(hour)}
         </Text>
@@ -246,26 +261,39 @@ function HourlyDots({
     }
   }
 
+  const hours = endHour - startHour;
+  const metDailyGoal = metGoalHours >= hours;
+
   return (
-    <div ref={parentRef} className="w-full flex-1 min-h-0 max-h-[50%] my-4">
+    <div
+      ref={parentRef}
+      className="group w-full flex-1 min-h-0 max-h-[50%] my-4"
+    >
       <svg ref={containerRef} width={width} height={height}>
         <Group left={width / 2} top={effectiveHeight}>
           {circles}
           {tileScale > 1 && labels}
-
-          {tileScale > 1 && (
-            <g
-              transform={`translate(${-12 * tileScale} -${
-                10 * tileScale
-              }) scale(${tileScale})`}
-            >
-              <path
-                fill="#5f6368"
-                d="M13 2a2 2 0 1 0 0 4c1.11 0 2-.89 2-2a2 2 0 0 0-2-2M4 7v2h6v6l-5.07 5.07l1.41 1.43l6.72-6.73L17 17.13V21h2v-4.43c0-.36-.18-.68-.5-.86L15 13.6V9h6V7z"
-              />
-            </g>
-          )}
         </Group>
+        {tileScale > 1 && (
+          <g
+            transform={`translate(${width / 2} ${effectiveHeight}) translate(${
+              -12 * tileScale
+            } -${10 * tileScale})`}
+            className={
+              metDailyGoal
+                ? "group-hover:motion-safe:animate-wobble-z origin-bottom"
+                : ""
+            }
+          >
+            <path
+              className={
+                metDailyGoal ? "#90ee02" : "fill-[#5f6368] dark:fill-current"
+              }
+              transform={`scale(${tileScale})`}
+              d="M13 2a2 2 0 1 0 0 4c1.11 0 2-.89 2-2a2 2 0 0 0-2-2M4 7v2h6v6l-5.07 5.07l1.41 1.43l6.72-6.73L17 17.13V21h2v-4.43c0-.36-.18-.68-.5-.86L15 13.6V9h6V7z"
+            />
+          </g>
+        )}
       </svg>
       {tooltipOpen && tooltipData && (
         <TooltipInPortal
