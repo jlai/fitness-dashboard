@@ -89,7 +89,11 @@ export function buildGetBodyWeightGoalQuery() {
   });
 }
 
-export function buildGetWeightTimeSeriesQuery(startDay: Dayjs, endDay: Dayjs) {
+export function buildGetWeightTimeSeriesQuery(
+  startDay: Dayjs,
+  endDay: Dayjs,
+  weightUnitSystem: WeightUnitSystem
+) {
   return queryOptions({
     queryKey: [
       "weight-time-series",
@@ -103,7 +107,7 @@ export function buildGetWeightTimeSeriesQuery(startDay: Dayjs, endDay: Dayjs) {
         )}/${formatAsDate(endDay)}.json`,
         {
           headers: {
-            "Accept-Language": "en_US",
+            "Accept-Language": weightUnitSystem,
           },
         }
       );

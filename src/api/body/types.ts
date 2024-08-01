@@ -5,7 +5,7 @@ export interface WeightLog {
   logId: number;
   source: string;
   time: string;
-  weight: number;
+  weight: number; // localized units (e.g. pounds)
 }
 
 // https://dev.fitbit.com/build/reference/web-api/body-timeseries/get-weight-timeseries-by-date-range/

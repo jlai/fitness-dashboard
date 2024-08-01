@@ -75,6 +75,8 @@ function WeightLogRow({
 }
 
 export default function WeightLogList() {
+  const { weightUnit } = useUnits();
+
   const setShowingCreateWeightDialog = useSetAtom(
     createWeightLogDialogOpenAtom
   );
@@ -85,7 +87,7 @@ export default function WeightLogList() {
   });
 
   const { data } = useQuery(
-    buildGetWeightTimeSeriesQuery(range.startDay, range.endDay)
+    buildGetWeightTimeSeriesQuery(range.startDay, range.endDay, weightUnit)
   );
 
   const queryClient = useQueryClient();
