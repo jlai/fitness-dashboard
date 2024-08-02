@@ -2,7 +2,7 @@
 
 import { FormControl, MenuItem, Select, Divider, Box } from "@mui/material";
 import { useAtom, useAtomValue } from "jotai";
-import { createElement } from "react";
+import { createElement, useMemo } from "react";
 
 import { RequireScopes } from "../require-scopes";
 import { HeaderBar } from "../layout/rows";
@@ -55,20 +55,25 @@ export function TimeSeriesChart({
   formatDate,
   aggregation,
   layout,
+  statsEl,
 }: {
   resource: ChartResource;
   range: DayjsRange;
   aggregation?: AggregationType;
   layout?: "horizontal" | "vertical";
   formatDate?: (date: Date) => string;
+  statsEl?: HTMLElement;
 }) {
   const requiredScopes = CHART_RESOURCE_CONFIGS[resource]?.requiredScopes ?? [];
 
+  const chartConfig = useMemo(
+    () => ({ range, formatDate, aggregation, layout, statsEl }),
+    [aggregation, formatDate, layout, range, statsEl]
+  );
+
   return (
     <RequireScopes scopes={requiredScopes}>
-      <TimeSeriesChartContext.Provider
-        value={{ range, formatDate, aggregation, layout }}
-      >
+      <TimeSeriesChartContext.Provider value={chartConfig}>
         {createElement(CHART_RESOURCE_CONFIGS[resource].component)}
       </TimeSeriesChartContext.Provider>
     </RequireScopes>

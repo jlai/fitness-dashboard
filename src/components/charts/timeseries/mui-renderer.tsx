@@ -171,7 +171,11 @@ export function SimpleBarChart<
   }));
 
   return (
-    <ResponsiveChartContainer series={series} {...axesProps}>
+    <ResponsiveChartContainer
+      series={series}
+      {...axesProps}
+      margin={{ top: 16 }}
+    >
       <BarPlot />
       <CommonChartElements layout={layout} loading={!data} />
     </ResponsiveChartContainer>
@@ -191,7 +195,11 @@ export function StackedBarChart<
   }));
 
   return (
-    <ResponsiveChartContainer series={series} {...axesProps}>
+    <ResponsiveChartContainer
+      series={series}
+      {...axesProps}
+      margin={{ top: 16 }}
+    >
       <BarPlot />
       <CommonChartElements layout={layout} loading={!data} />
     </ResponsiveChartContainer>
@@ -212,7 +220,11 @@ export function SimpleLineChart<
   }));
 
   return (
-    <ResponsiveChartContainer series={series} {...axesProps}>
+    <ResponsiveChartContainer
+      series={series}
+      {...axesProps}
+      margin={{ top: 16 }}
+    >
       <LinePlot />
       <CommonChartElements loading={!data} />
     </ResponsiveChartContainer>

@@ -10,6 +10,7 @@ import { removeFutureDates, useTimeSeriesData } from "./data";
 import { singleSeriesConfig } from "./series-config";
 import { durationTickFormat, durationTooltipFormat } from "./formatters";
 import { useAggregation } from "./aggregation";
+import { AverageAndTotalStat, GraphStats } from "./stats";
 
 dayjs.extend(durationPlugin);
 
@@ -55,33 +56,69 @@ export function StepsChart() {
   const data = useTimeSeriesData("steps");
   const props = useAggregation(data, STEPS_SERIES_CONFIGS);
 
-  return <SimpleBarChart {...props} />;
+  return (
+    <>
+      <SimpleBarChart {...props} />
+      <GraphStats>
+        <AverageAndTotalStat
+          data={data}
+          yAccessor={(datum) => Number(datum.value)}
+        />
+      </GraphStats>
+    </>
+  );
 }
 
 export function DistanceChart() {
-  const { localizedKilometersName } = useUnits();
+  const { localizedKilometers, localizedKilometersName } = useUnits();
   const data = useTimeSeriesData("distance");
 
   const seriesConfigs = useMemo(
     () =>
       singleSeriesConfig({
         label: "Distance",
-        numberFormat: FRACTION_DIGITS_1.format,
+        numberFormat: (value) =>
+          FRACTION_DIGITS_1.format(localizedKilometers(value)),
         unit: localizedKilometersName,
       }),
-    [localizedKilometersName]
+    [localizedKilometers, localizedKilometersName]
   );
 
   const props = useAggregation(data, seriesConfigs);
 
-  return <SimpleBarChart {...props} />;
+  return (
+    <>
+      <SimpleBarChart {...props} />
+      <GraphStats>
+        <AverageAndTotalStat
+          data={data}
+          yAccessor={(datum) => Number(datum.value)}
+          valueFormatter={(value) =>
+            `${FRACTION_DIGITS_1.format(
+              localizedKilometers(value)
+            )} ${localizedKilometersName}`
+          }
+        />
+      </GraphStats>
+    </>
+  );
 }
 
 export function FloorsChart() {
   const data = useTimeSeriesData("floors");
   const props = useAggregation(data, FLOORS_SERIES_CONFIGS);
 
-  return <SimpleBarChart {...props} />;
+  return (
+    <>
+      <SimpleBarChart {...props} />
+      <GraphStats>
+        <AverageAndTotalStat
+          data={data}
+          yAccessor={(datum) => Number(datum.value)}
+        />
+      </GraphStats>
+    </>
+  );
 }
 
 export function CaloriesBurnedChart() {

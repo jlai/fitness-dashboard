@@ -5,6 +5,7 @@ import {
   ListItemText,
   MenuItem,
   Popover,
+  Stack,
   Typography,
 } from "@mui/material";
 import {
@@ -12,7 +13,7 @@ import {
   Settings as SettingsIcon,
 } from "@mui/icons-material";
 import { bindPopover, usePopupState } from "material-ui-popup-state/hooks";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { TimeSeriesChart } from "@/components/charts/timeseries-graph";
 import {
@@ -37,6 +38,9 @@ export default function GraphTileContent() {
   const [resource, setResource] = useState<ChartResource>(
     settings.chartResource
   );
+  const [statsEl, setStatsEl] = useState<HTMLElement | null>(null);
+
+  const statsElRef = useRef<HTMLDivElement>(null);
 
   const popupState = usePopupState({
     variant: "popover",
@@ -53,6 +57,10 @@ export default function GraphTileContent() {
     });
     popupState.close();
   };
+
+  useEffect(() => {
+    setStatsEl(statsElRef.current);
+  }, []);
 
   return (
     <div className="size-full max-h-full relative overflow-hidden p-2">
@@ -98,10 +106,18 @@ export default function GraphTileContent() {
             </Popover>
           </div>
         </div>
+        <Stack
+          direction="row"
+          columnGap={4}
+          ref={statsElRef}
+          padding={1}
+          justifyContent="center"
+        ></Stack>
         <TimeSeriesChart
           resource={resource}
           range={{ startDay, endDay }}
           formatDate={SHORT_WEEKDAY.format}
+          statsEl={statsEl ?? undefined}
         />
       </div>
     </div>

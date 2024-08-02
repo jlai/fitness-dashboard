@@ -10,6 +10,9 @@ interface TimeSeriesChartConfig {
   aggregation?: "day" | "month";
   layout?: "horizontal" | "vertical";
 
+  // Element to portal stats into
+  statsEl?: HTMLElement;
+
   // Override date format for x-axis
   formatDate?: (date: Date) => string;
 }
