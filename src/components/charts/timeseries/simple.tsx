@@ -3,7 +3,11 @@ import dayjs from "dayjs";
 import durationPlugin from "dayjs/plugin/duration";
 
 import { useUnits } from "@/config/units";
-import { FRACTION_DIGITS_0, FRACTION_DIGITS_1 } from "@/utils/number-formats";
+import {
+  FRACTION_DIGITS_0,
+  FRACTION_DIGITS_1,
+  FRACTION_DIGITS_2,
+} from "@/utils/number-formats";
 
 import { SimpleBarChart, SimpleLineChart } from "./mui-renderer";
 import { removeFutureDates, useTimeSeriesData } from "./data";
@@ -78,7 +82,7 @@ export function DistanceChart() {
       singleSeriesConfig({
         label: "Distance",
         numberFormat: (value) =>
-          FRACTION_DIGITS_1.format(localizedKilometers(value)),
+          FRACTION_DIGITS_2.format(localizedKilometers(value)),
         unit: localizedKilometersName,
       }),
     [localizedKilometers, localizedKilometersName]
@@ -94,7 +98,7 @@ export function DistanceChart() {
           data={data}
           yAccessor={(datum) => Number(datum.value)}
           valueFormatter={(value) =>
-            `${FRACTION_DIGITS_1.format(
+            `${FRACTION_DIGITS_2.format(
               localizedKilometers(value)
             )} ${localizedKilometersName}`
           }

@@ -13,7 +13,7 @@ import {
   Settings as SettingsIcon,
 } from "@mui/icons-material";
 import { bindPopover, usePopupState } from "material-ui-popup-state/hooks";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
 import { TimeSeriesChart } from "@/components/charts/timeseries-graph";
 import {
@@ -32,6 +32,7 @@ interface GraphTileSettings {
 }
 
 export default function GraphTileContent() {
+  const { h } = useTileScale();
   const [settings, saveSettings] = useTileSettings<GraphTileSettings>({
     chartResource: "steps",
   });
@@ -39,9 +40,6 @@ export default function GraphTileContent() {
     settings.chartResource
   );
   const [statsEl, setStatsEl] = useState<HTMLElement | null>(null);
-  const { h } = useTileScale();
-
-  const statsElRef = useRef<HTMLDivElement>(null);
 
   const popupState = usePopupState({
     variant: "popover",
@@ -58,10 +56,6 @@ export default function GraphTileContent() {
     });
     popupState.close();
   };
-
-  useEffect(() => {
-    setStatsEl(statsElRef.current);
-  }, []);
 
   return (
     <div className="size-full max-h-full relative overflow-hidden p-2">
@@ -111,7 +105,7 @@ export default function GraphTileContent() {
           display={h > 1 ? "flex" : "none"}
           direction="row"
           columnGap={4}
-          ref={statsElRef}
+          ref={setStatsEl}
           padding={1}
           justifyContent="center"
         />

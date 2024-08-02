@@ -1,8 +1,15 @@
 "use client";
 
-import { FormControl, MenuItem, Select, Divider, Box } from "@mui/material";
+import {
+  FormControl,
+  MenuItem,
+  Select,
+  Divider,
+  Box,
+  Stack,
+} from "@mui/material";
 import { useAtom, useAtomValue } from "jotai";
-import { createElement, useMemo } from "react";
+import { createElement, useMemo, useState } from "react";
 
 import { RequireScopes } from "../require-scopes";
 import { HeaderBar } from "../layout/rows";
@@ -88,6 +95,8 @@ export function NavigableGraphView() {
   const selectedRange = useAtomValue(selectedRangeAtom);
   const selectedRangeType = useAtomValue(selectedRangeTypeAtom);
 
+  const [statsEl, setStatsEl] = useState<HTMLElement | null>(null);
+
   const aggregation = selectedRangeType === "year" ? "month" : "day";
 
   return (
@@ -98,11 +107,19 @@ export function NavigableGraphView() {
         <Box flex={1} />
         <DateTimeRangeNavigator />
       </HeaderBar>
+      <Stack
+        direction="row"
+        columnGap={4}
+        ref={setStatsEl}
+        padding={1}
+        justifyContent="center"
+      />
       <div className="w-full h-[400px]">
         <TimeSeriesChart
           resource={selectedResource}
           range={selectedRange}
           aggregation={aggregation}
+          statsEl={statsEl ?? undefined}
         />
       </div>
     </div>
