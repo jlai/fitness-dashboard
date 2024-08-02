@@ -28,6 +28,8 @@ import {
 } from "./formatters";
 import { TimeSeriesChartContext } from "./context";
 
+const CHART_MARGINS = { top: 16, bottom: 28, right: 8 };
+
 interface CommonChartProps<TDatum extends TimeSeriesDatum> {
   data: Array<TDatum> | undefined;
   seriesConfigs: Array<ChartSeriesConfig<TDatum>>;
@@ -174,7 +176,7 @@ export function SimpleBarChart<
     <ResponsiveChartContainer
       series={series}
       {...axesProps}
-      margin={{ top: 16 }}
+      margin={CHART_MARGINS}
     >
       <BarPlot />
       <CommonChartElements layout={layout} loading={!data} />
@@ -198,7 +200,7 @@ export function StackedBarChart<
     <ResponsiveChartContainer
       series={series}
       {...axesProps}
-      margin={{ top: 16 }}
+      margin={CHART_MARGINS}
     >
       <BarPlot />
       <CommonChartElements layout={layout} loading={!data} />
@@ -223,7 +225,7 @@ export function SimpleLineChart<
     <ResponsiveChartContainer
       series={series}
       {...axesProps}
-      margin={{ top: 16 }}
+      margin={CHART_MARGINS}
     >
       <LinePlot />
       <CommonChartElements loading={!data} />

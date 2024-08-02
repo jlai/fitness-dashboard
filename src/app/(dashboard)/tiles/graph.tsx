@@ -25,7 +25,7 @@ import { SHORT_WEEKDAY } from "@/utils/date-formats";
 
 import { useSelectedDay } from "../state";
 
-import { useTileSettings } from "./tile";
+import { useTileScale, useTileSettings } from "./tile";
 
 interface GraphTileSettings {
   chartResource: ChartResource;
@@ -39,6 +39,7 @@ export default function GraphTileContent() {
     settings.chartResource
   );
   const [statsEl, setStatsEl] = useState<HTMLElement | null>(null);
+  const { h } = useTileScale();
 
   const statsElRef = useRef<HTMLDivElement>(null);
 
@@ -107,12 +108,13 @@ export default function GraphTileContent() {
           </div>
         </div>
         <Stack
+          display={h > 1 ? "flex" : "none"}
           direction="row"
           columnGap={4}
           ref={statsElRef}
           padding={1}
           justifyContent="center"
-        ></Stack>
+        />
         <TimeSeriesChart
           resource={resource}
           range={{ startDay, endDay }}
