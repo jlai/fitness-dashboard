@@ -47,7 +47,7 @@ export default function GraphTileContent() {
   });
   const day = useSelectedDay();
 
-  const startDay = day.subtract(7, "days");
+  const startDay = day.subtract(6, "days");
   const endDay = day;
 
   const saveDefault = () => {

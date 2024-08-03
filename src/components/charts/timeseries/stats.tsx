@@ -29,7 +29,7 @@ export function AverageAndTotalStat<TDatum extends TimeSeriesDatum>({
   const {
     range: { startDay, endDay },
   } = useContext(TimeSeriesChartContext);
-  const numDays = endDay.diff(startDay, "days");
+  const numDays = endDay.diff(startDay, "days") + 1;
 
   if (!data) {
     return;
