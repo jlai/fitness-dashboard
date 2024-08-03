@@ -20,8 +20,11 @@ export const TileContext = createContext<TileContextData>({
 });
 
 export default function Tile({ children }: { children: React.ReactNode }) {
+  const { id } = useTileData();
+
   return (
     <Paper
+      data-testid={`tile-${id}`}
       className="size-full max-h-full select-none"
       elevation={2}
       tabIndex={0}

@@ -78,7 +78,7 @@ export function buildActivityIntradayQuery(
   });
 }
 
-type GetHeartIntradayResponse = {
+export type GetHeartIntradayResponse = {
   "activities-heart": Array<{
     heartRateZones: Array<HeartRateZone>;
   }>;

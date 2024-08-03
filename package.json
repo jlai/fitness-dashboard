@@ -10,7 +10,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "postinstall": "patch-package",
-    "dev-e2e": "cross-env NODE_ENV=test next dev",
+    "dev-e2e": "cross-env NODE_ENV=test next dev -p 3100",
     "build-e2e": "cross-env NODE_ENV=test next build",
     "serve-e2e": "npx serve@latest out -l 3100"
   },
