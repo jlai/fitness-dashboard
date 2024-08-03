@@ -91,15 +91,22 @@ vary by hosting provider.
 npm run test
 ```
 
-### End-to-end tests (playwright)
+### UI automation tests (playwright)
 
-Headless:
+Create a production build with test environment. Run this whenever you make
+changes.
+
+```bash
+npm run build-e2e`
+```
+
+Run tests headless:
 
 ```bash
 npx playwright test
 ```
 
-UI:
+Run tests with UI:
 
 ```bash
 npx playwright test --ui

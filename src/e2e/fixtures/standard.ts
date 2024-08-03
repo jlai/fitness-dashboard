@@ -36,7 +36,7 @@ export const test = base.extend({
       cookies: [],
       origins: [
         {
-          origin: "http://127.0.0.1:3000",
+          origin: "http://127.0.0.1:3100",
           localStorage: [
             { name: "auth:fitbit-token", value: TOKEN_STRING },
             { name: "unit:distance", value: "en_US" },

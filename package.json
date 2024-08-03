@@ -12,7 +12,7 @@
     "postinstall": "patch-package",
     "dev-e2e": "cross-env NODE_ENV=test next dev",
     "build-e2e": "cross-env NODE_ENV=test next build",
-    "serve-e2e": "npx serve@latest out -l 3000"
+    "serve-e2e": "npx serve@latest out -l 3100"
   },
   "dependencies": {
     "@badgateway/oauth2-client": "^2.3.0",
