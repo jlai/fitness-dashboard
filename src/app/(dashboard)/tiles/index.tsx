@@ -16,6 +16,7 @@ import { SleepTileContent } from "./sleep";
 import { CaloriesConsumedTileContent } from "./calories-consumed";
 import { LifetimeTileContent } from "./lifetime";
 import { WeightTileContent } from "./weight";
+import { HeartRateTileContent } from "./heart-rate";
 
 export interface TileDefinition {
   name: string;
@@ -136,6 +137,13 @@ export const TILE_TYPES: Record<string, TileDefinition> = {
     name: "Weight",
     component: WeightTileContent,
     scopes: ["wei"],
+    w: 1,
+    h: 1,
+  },
+  heartRate: {
+    name: "Heart rate",
+    component: HeartRateTileContent,
+    scopes: ["hr"],
     w: 1,
     h: 1,
   },

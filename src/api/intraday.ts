@@ -4,6 +4,8 @@ import { Dayjs } from "dayjs";
 import { ONE_MINUTE_IN_MILLIS } from "./cache-settings";
 import { formatAsDate, formatHoursMinutes } from "./datetime";
 import { makeRequest } from "./request";
+import { HeartRateZone } from "./times-series";
+import { parseHeartRateZones } from "./heart-rate";
 
 type IntradayTimeEntry = {
   time: string; // "08:00:00", does not include date
@@ -71,6 +73,57 @@ export function buildActivityIntradayQuery(
       ];
 
       return parseIntradayDataset(startTime, endTime, intradayData.dataset);
+    },
+    staleTime: ONE_MINUTE_IN_MILLIS,
+  });
+}
+
+type GetHeartIntradayResponse = {
+  "activities-heart": Array<{
+    heartRateZones: Array<HeartRateZone>;
+  }>;
+  "activities-heart-intraday": {
+    dataset: Array<IntradayTimeEntry>;
+  };
+};
+
+export function buildHeartRateIntradayQuery(
+  detailLevel: "1min" | "5min" | "15min",
+  startTime: Dayjs,
+  endTime: Dayjs
+) {
+  return queryOptions({
+    queryKey: [
+      "heart-rate-intraday",
+      startTime.toISOString(),
+      endTime.toISOString(),
+    ],
+    queryFn: async () => {
+      const response = await makeRequest(
+        `/1/user/-/activities/heart/date/${formatAsDate(
+          startTime
+        )}/${formatAsDate(endTime)}/${detailLevel}/time/${formatHoursMinutes(
+          startTime
+        )}/${formatHoursMinutes(endTime)}.json`,
+        {
+          headers: {
+            "Accept-Language": "fr-FR",
+          },
+        }
+      );
+
+      const responseData = (await response.json()) as GetHeartIntradayResponse;
+
+      return {
+        heartRateZones: parseHeartRateZones(
+          responseData["activities-heart"][0].heartRateZones
+        ),
+        intradayData: parseIntradayDataset(
+          startTime,
+          endTime,
+          responseData["activities-heart-intraday"].dataset
+        ),
+      };
     },
     staleTime: ONE_MINUTE_IN_MILLIS,
   });
