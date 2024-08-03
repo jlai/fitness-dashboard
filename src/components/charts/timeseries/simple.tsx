@@ -3,32 +3,15 @@ import dayjs from "dayjs";
 import durationPlugin from "dayjs/plugin/duration";
 
 import { useUnits } from "@/config/units";
-import {
-  FRACTION_DIGITS_0,
-  FRACTION_DIGITS_1,
-  FRACTION_DIGITS_2,
-} from "@/utils/number-formats";
+import { FRACTION_DIGITS_0, FRACTION_DIGITS_1 } from "@/utils/number-formats";
 
 import { SimpleBarChart, SimpleLineChart } from "./mui-renderer";
 import { removeFutureDates, useTimeSeriesData } from "./data";
 import { singleSeriesConfig } from "./series-config";
 import { durationTickFormat, durationTooltipFormat } from "./formatters";
 import { useAggregation } from "./aggregation";
-import { AverageAndTotalStat, GraphStats } from "./stats";
 
 dayjs.extend(durationPlugin);
-
-const STEPS_SERIES_CONFIGS = singleSeriesConfig({
-  label: "Steps",
-  numberFormat: FRACTION_DIGITS_0.format,
-  unit: "steps",
-});
-
-const FLOORS_SERIES_CONFIGS = singleSeriesConfig({
-  label: "Floors",
-  numberFormat: FRACTION_DIGITS_0.format,
-  unit: "floors",
-});
 
 const CALORIES_SERIES_CONFIGS = singleSeriesConfig({
   label: "Calories",
@@ -55,82 +38,6 @@ const SLEEP_SERIES_CONFIGS = singleSeriesConfig({
   numberFormat: durationTooltipFormat,
   unit: "",
 });
-
-export function StepsChart() {
-  const data = useTimeSeriesData("steps");
-  const props = useAggregation(data, STEPS_SERIES_CONFIGS);
-
-  return (
-    <>
-      <SimpleBarChart {...props} />
-      <GraphStats>
-        <AverageAndTotalStat
-          data={data}
-          yAccessor={(datum) => Number(datum.value)}
-        />
-      </GraphStats>
-    </>
-  );
-}
-
-export function DistanceChart() {
-  const { localizedKilometers, localizedKilometersName } = useUnits();
-  const data = useTimeSeriesData("distance");
-
-  const seriesConfigs = useMemo(
-    () =>
-      singleSeriesConfig({
-        label: "Distance",
-        numberFormat: (value) =>
-          FRACTION_DIGITS_2.format(localizedKilometers(value)),
-        unit: localizedKilometersName,
-      }),
-    [localizedKilometers, localizedKilometersName]
-  );
-
-  const props = useAggregation(data, seriesConfigs);
-
-  return (
-    <>
-      <SimpleBarChart {...props} />
-      <GraphStats>
-        <AverageAndTotalStat
-          data={data}
-          yAccessor={(datum) => Number(datum.value)}
-          valueFormatter={(value) =>
-            `${FRACTION_DIGITS_2.format(
-              localizedKilometers(value)
-            )} ${localizedKilometersName}`
-          }
-        />
-      </GraphStats>
-    </>
-  );
-}
-
-export function FloorsChart() {
-  const data = useTimeSeriesData("floors");
-  const props = useAggregation(data, FLOORS_SERIES_CONFIGS);
-
-  return (
-    <>
-      <SimpleBarChart {...props} />
-      <GraphStats>
-        <AverageAndTotalStat
-          data={data}
-          yAccessor={(datum) => Number(datum.value)}
-        />
-      </GraphStats>
-    </>
-  );
-}
-
-export function CaloriesBurnedChart() {
-  const data = useTimeSeriesData("calories");
-  const props = useAggregation(data, CALORIES_SERIES_CONFIGS);
-
-  return <SimpleBarChart {...props} />;
-}
 
 export function CaloriesConsumedChart() {
   const data = useTimeSeriesData("calories-in");

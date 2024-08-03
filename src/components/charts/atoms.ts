@@ -9,8 +9,15 @@ import { CHART_RESOURCE_CONFIGS, ChartResource } from "./timeseries/resources";
 
 export const selectedResourceAtom = atom<ChartResource>("steps");
 
-export type DateRangeType = "week" | "month" | "quarter" | "year" | "custom";
+export type DateRangeType =
+  | "day"
+  | "week"
+  | "month"
+  | "quarter"
+  | "year"
+  | "custom";
 export const MAX_DAYS_IN_RANGE = {
+  day: 1,
   week: 7,
   month: 31,
   quarter: 92,
@@ -48,6 +55,13 @@ export const resourceChangedEffect = atomEffect((get, set) => {
 
   const resourceMaxDays = CHART_RESOURCE_CONFIGS[resource].maxDays;
   const rangeMaxDays = MAX_DAYS_IN_RANGE[rangeType];
+
+  if (
+    rangeType === "day" &&
+    !CHART_RESOURCE_CONFIGS[resource].supportsIntraday
+  ) {
+    set(selectedRangeTypeAtom, "week");
+  }
 
   if (resourceMaxDays < rangeMaxDays) {
     console.log("resource max days too high");

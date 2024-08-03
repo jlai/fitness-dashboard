@@ -7,7 +7,7 @@ export type AggregationType = "day" | "month";
 
 interface TimeSeriesChartConfig {
   range: DayjsRange;
-  aggregation?: "day" | "month";
+  aggregation?: "hour" | "day" | "month";
   layout?: "horizontal" | "vertical";
 
   // Element to portal stats into

@@ -5,7 +5,7 @@ import quarterOfYearPlugin from "dayjs/plugin/quarterOfYear";
 import { bindPopover, usePopupState } from "material-ui-popup-state/hooks";
 import { StaticDatePicker, StaticDatePickerProps } from "@mui/x-date-pickers";
 
-import { formatMonth, formatWeek } from "@/utils/date-formats";
+import { formatMonth, formatShortDate, formatWeek } from "@/utils/date-formats";
 
 dayjs.extend(quarterOfYearPlugin);
 
@@ -119,6 +119,26 @@ export function MonthNavigator({
         openTo: "month",
         views: ["year", "month"],
       }}
+      disableFuture={disableFuture}
+    />
+  );
+}
+
+export function DayNavigator({
+  value,
+  onChange,
+  disableFuture = true,
+}: {
+  value: DayjsRange;
+  onChange: (updated: DayjsRange) => void;
+  disableFuture?: boolean;
+}) {
+  return (
+    <PeriodNavigator
+      label={`${formatShortDate(value.startDay)}`}
+      period="day"
+      value={value}
+      onChange={onChange}
       disableFuture={disableFuture}
     />
   );

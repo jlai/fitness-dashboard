@@ -4,13 +4,9 @@ import { TIME_SERIES_CONFIGS } from "@/api/times-series";
 
 import {
   BmiChart,
-  CaloriesBurnedChart,
   CaloriesConsumedChart,
-  DistanceChart,
   FatChart,
-  FloorsChart,
   SleepChart,
-  StepsChart,
   WaterChart,
   WeightChart,
 } from "./simple";
@@ -21,18 +17,26 @@ import {
   RestingHeartRateChart,
 } from "./heart-rate";
 import { CalorieBalanceChart } from "./calorie-balance";
+import {
+  CaloriesBurnedChart,
+  DistanceChart,
+  FloorsChart,
+  StepsChart,
+} from "./activity";
 
 export interface ChartResourceConfig {
   label: string;
   component: React.ComponentType<{}>;
   requiredScopes: Array<string>;
   maxDays: number;
+  supportsIntraday?: boolean;
 }
 
 export const CHART_RESOURCE_CONFIGS: Record<string, ChartResourceConfig> = {
   steps: {
     label: "Steps",
     component: StepsChart,
+    supportsIntraday: true,
     ...pick(TIME_SERIES_CONFIGS.steps, "maxDays", "requiredScopes"),
   },
   distance: {

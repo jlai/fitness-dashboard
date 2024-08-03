@@ -8,6 +8,7 @@ import {
   MonthNavigator,
   QuarterNavigator,
   YearNavigator,
+  DayNavigator,
 } from "../calendar/period-navigator";
 
 import { selectedRangeTypeAtom, selectedRangeAtom } from "./atoms";
@@ -19,6 +20,7 @@ export function GraphRangeSelector({ resource }: { resource: ChartResource }) {
   );
 
   const maxDays = CHART_RESOURCE_CONFIGS[resource].maxDays;
+  const supportsIntraday = CHART_RESOURCE_CONFIGS[resource].supportsIntraday;
 
   return (
     <ToggleButtonGroup
@@ -26,6 +28,9 @@ export function GraphRangeSelector({ resource }: { resource: ChartResource }) {
       value={selectedRangeType}
       onChange={(event, value) => value && setSelectedRangeType(value)}
     >
+      <ToggleButton value="day" hidden={!supportsIntraday}>
+        Day
+      </ToggleButton>
       <ToggleButton value="week">Week</ToggleButton>
       <ToggleButton value="month" disabled={maxDays < 31}>
         Month
@@ -46,6 +51,8 @@ export function DateTimeRangeNavigator() {
   const [selectedRange, setSelectedRange] = useAtom(selectedRangeAtom);
 
   switch (selectedRangeType) {
+    case "day":
+      return <DayNavigator value={selectedRange} onChange={setSelectedRange} />;
     case "week":
       return (
         <WeekNavigator value={selectedRange} onChange={setSelectedRange} />

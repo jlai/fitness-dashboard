@@ -20,11 +20,11 @@ import { ChartSeriesConfig } from "./series-config";
 import { TimeSeriesDatum } from "./data";
 import {
   getTickFormatterForDayRange,
+  getTooltipFormatterForDayRange,
   makeAxisValueFormatter,
   makeSeriesValueFormatter,
   MONTH_ONLY_FORMAT,
   MONTH_YEAR_FORMAT,
-  TOOLTIP_DATE_FORMAT,
 } from "./formatters";
 import { TimeSeriesChartContext } from "./context";
 
@@ -58,7 +58,8 @@ function useXAxisConfig<TDatum extends TimeSeriesDatum>(
     getTickFormatterForDayRange(range);
   const dates = data?.map((entry) => dayjs(entry.dateTime).toDate()) ?? [];
 
-  const tooltipFormat = aggregationTooltipFormat ?? TOOLTIP_DATE_FORMAT.format;
+  const tooltipFormat =
+    aggregationTooltipFormat ?? getTooltipFormatterForDayRange(range);
 
   return [
     {

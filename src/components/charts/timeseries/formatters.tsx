@@ -7,6 +7,7 @@ import durationPlugin from "dayjs/plugin/duration";
 
 import { FRACTION_DIGITS_0 } from "@/utils/number-formats";
 import { DayjsRange } from "@/components/calendar/period-navigator";
+import { TIME } from "@/utils/date-formats";
 
 dayjs.extend(durationPlugin);
 
@@ -31,7 +32,11 @@ export function getTickFormatterForDayRange({ startDay, endDay }: DayjsRange) {
     day: "numeric",
   };
 
-  if (startDay.isSame(endDay, "week")) {
+  if (startDay.isSame(endDay, "day")) {
+    options.day = undefined;
+    options.hour = "numeric";
+    options.minute = "2-digit";
+  } else if (startDay.isSame(endDay, "week")) {
     options.weekday = "short";
     options.month = "short";
   } else if (startDay.isSame(endDay, "month")) {
@@ -43,6 +48,17 @@ export function getTickFormatterForDayRange({ startDay, endDay }: DayjsRange) {
   }
 
   return new Intl.DateTimeFormat(undefined, options).format;
+}
+
+export function getTooltipFormatterForDayRange({
+  startDay,
+  endDay,
+}: DayjsRange) {
+  if (startDay.isSame(endDay, "day")) {
+    return TIME.format;
+  }
+
+  return TOOLTIP_DATE_FORMAT.format;
 }
 
 export function durationTickFormat(value: number) {

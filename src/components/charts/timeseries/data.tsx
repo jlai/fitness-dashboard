@@ -28,6 +28,22 @@ export function useTimeSeriesData<TEntry = StringValueDatum>(
   return data;
 }
 
+export function useRangeInfo() {
+  const {
+    range: { startDay, endDay },
+  } = useContext(TimeSeriesChartContext);
+
+  const numDays = endDay.diff(startDay, "days");
+  const isIntraday = numDays === 0;
+
+  return {
+    numDays,
+    isIntraday,
+    startDay: isIntraday ? startDay.startOf("day") : startDay,
+    endDay: isIntraday ? startDay.endOf("day") : startDay,
+  };
+}
+
 export function removeFutureDates<TDatum extends TimeSeriesDatum>(
   data?: Array<TDatum>
 ) {
