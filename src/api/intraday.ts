@@ -80,10 +80,15 @@ export function buildActivityIntradayQuery(
 
 export type GetHeartIntradayResponse = {
   "activities-heart": Array<{
+    customHeartRateZones: Array<HeartRateZone>;
     heartRateZones: Array<HeartRateZone>;
+    dateTime: string;
+    value: string;
   }>;
   "activities-heart-intraday": {
     dataset: Array<IntradayTimeEntry>;
+    datasetInterval: number;
+    datasetType: string;
   };
 };
 

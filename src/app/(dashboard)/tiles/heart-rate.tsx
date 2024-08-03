@@ -14,6 +14,7 @@ import { TileWithDialog } from "./tile-with-dialog";
 // Material Symbols heart icon
 const HEART_ICON = (
   <svg
+    role="presentation"
     xmlns="http://www.w3.org/2000/svg"
     height="1em"
     viewBox="0 -960 960 960"
@@ -75,7 +76,7 @@ export function HeartRateTileContent() {
             className="flex flex-row items-center gap-x-2"
           >
             {HEART_ICON}
-            <div>
+            <div aria-label="bpm range">
               {FRACTION_DIGITS_0.format(low)} &ndash;{" "}
               {FRACTION_DIGITS_0.format(high)}
             </div>
