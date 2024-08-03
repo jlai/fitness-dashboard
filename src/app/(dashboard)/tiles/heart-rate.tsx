@@ -55,12 +55,19 @@ export function HeartRateTileContent() {
         justifyContent="center"
         className="h-full"
       >
-        <SparkLineChart
-          margin={{ top: 8, bottom: 4, left: 2, right: 2 }}
-          data={map(intradayData, "value")}
-          yAxis={{ colorMap: createHeartRateZoneColorMap(heartRateZones) }}
-          curve="monotoneX"
-        />
+        {intradayData.length === 0 && (
+          <Stack direction="column" alignItems="center" margin={2} rowGap={1}>
+            {HEART_ICON} No heart rate data
+          </Stack>
+        )}
+        {intradayData.length > 0 && (
+          <SparkLineChart
+            margin={{ top: 8, bottom: 4, left: 2, right: 2 }}
+            data={map(intradayData, "value")}
+            yAxis={{ colorMap: createHeartRateZoneColorMap(heartRateZones) }}
+            curve="monotoneX"
+          />
+        )}
         {low && high && (
           <Typography
             padding={1}
