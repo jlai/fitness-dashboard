@@ -14,10 +14,21 @@ export const commonActivityTypes: Array<ActivityType> = [
   {
     id: 90013,
     name: "Walk",
+    hasSpeed: true,
   },
   {
     id: 90009,
     name: "Run",
+    hasSpeed: true,
+  },
+  {
+    id: 90001,
+    name: "Bike",
+    hasSpeed: true,
+  },
+  {
+    id: 3000,
+    name: "Workout",
   },
 ];
 

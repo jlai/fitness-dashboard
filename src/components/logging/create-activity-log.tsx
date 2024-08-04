@@ -25,10 +25,11 @@ import {
 
 import { buildCreateActivityLogMutation } from "@/api/activity/activities";
 import { useUnits } from "@/config/units";
+import { ACTIVITY_TYPES_WITH_STEPS } from "@/config/common-ids";
+
+import { DividedStack } from "../layout/flex";
 
 import { ActivityTypeElement, ActivityTypeOption } from "./activity-type-input";
-import { DividedStack } from "../layout/flex";
-import { ACTIVITY_TYPES_WITH_STEPS } from "@/config/common-ids";
 
 export const createActivityLogDialogOpenAtom = atom(false);
 
