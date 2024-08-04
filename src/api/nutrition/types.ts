@@ -57,6 +57,7 @@ export interface Food {
   foodId: number;
   name: string;
   brand?: string;
+  locale?: string;
   calories: number;
   servings?: Array<Serving>;
   defaultUnit?: FoodUnit;

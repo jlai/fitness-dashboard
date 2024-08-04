@@ -2,6 +2,8 @@ import dayjs, { Dayjs } from "dayjs";
 import {
   Button,
   IconButton,
+  ListItemIcon,
+  ListItemText,
   Menu,
   MenuItem,
   Paper,
@@ -14,12 +16,15 @@ import {
   MoreVert,
   MoveDown as MoveIcon,
   ContentCopy as CopyIcon,
+  Star,
+  StarBorder,
+  MenuBook,
 } from "@mui/icons-material";
 import { useEffect, useMemo } from "react";
 import {
   useMutation,
   useQueryClient,
-  useSuspenseQuery,
+  useSuspenseQueries,
 } from "@tanstack/react-query";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import Immutable from "immutable";
@@ -30,13 +35,19 @@ import {
   bindTrigger,
   usePopupState,
 } from "material-ui-popup-state/hooks";
+import { map } from "lodash";
 
 import {
   buildDeleteFoodLogsMutation,
+  buildFavoriteFoodsQuery,
   buildFoodLogQuery,
 } from "@/api/nutrition";
 import { foodLogTotalsPositionAtom } from "@/storage/settings";
 import { FormActionRow } from "@/components/forms/form-row";
+import {
+  buildAddFavoriteFoodsMutation,
+  buildDeleteFavoritesFoodMutation,
+} from "@/api/nutrition/foods";
 
 import { groupByMealType } from "./summarize-day";
 import { selectedFoodLogsAtom } from "./atoms";
@@ -71,8 +82,17 @@ export default function FoodLog({ day }: { day: Dayjs }) {
   const { mutateAsync: deleteFoodLogs } = useMutation(
     buildDeleteFoodLogsMutation(queryClient)
   );
+  const { mutateAsync: addFavoriteFoods } = useMutation(
+    buildAddFavoriteFoodsMutation(queryClient)
+  );
+  const { mutateAsync: removeFavoriteFoods } = useMutation(
+    buildDeleteFavoritesFoodMutation(queryClient)
+  );
 
-  const { data: foodLogsResponse } = useSuspenseQuery(buildFoodLogQuery(day));
+  const [{ data: foodLogsResponse }, { data: favoriteFoods }] =
+    useSuspenseQueries({
+      queries: [buildFoodLogQuery(day), buildFavoriteFoodsQuery()],
+    });
   const groupedMealTypes = useMemo(
     () => groupByMealType(foodLogsResponse.foods),
     [foodLogsResponse]
@@ -100,6 +120,33 @@ export default function FoodLog({ day }: { day: Dayjs }) {
       toast.success("Deleted food logs");
     })();
   };
+
+  const handleAddToFavoritesClick = () => {
+    menuPopupState.close();
+
+    const foodIds = selectedFoodLogs.map(
+      (foodLog) => foodLog.loggedFood.foodId
+    );
+    addFavoriteFoods([...foodIds]).then(() => {
+      toast.success(`Added to favorites`);
+    });
+  };
+
+  const handleRemoveFromFavoritesClick = () => {
+    menuPopupState.close();
+
+    const foodIds = selectedFoodLogs.map(
+      (foodLog) => foodLog.loggedFood.foodId
+    );
+    removeFavoriteFoods([...foodIds]).then(() => {
+      toast.success(`Removed from favorites`);
+    });
+  };
+
+  const favoriteFoodIds = new Set(map(favoriteFoods, "foodId"));
+  const areSelectedAllFavorites = selectedFoodLogs.every((foodLog) =>
+    favoriteFoodIds.has(foodLog.loggedFood.foodId)
+  );
 
   return (
     <section aria-label="Logged foods">
@@ -149,6 +196,7 @@ export default function FoodLog({ day }: { day: Dayjs }) {
           Copy
         </Button>
         <IconButton
+          aria-label="more actions"
           disabled={selectedFoodLogs.size === 0}
           {...bindTrigger(menuPopupState)}
         >
@@ -161,8 +209,26 @@ export default function FoodLog({ day }: { day: Dayjs }) {
               menuPopupState.close();
             }}
           >
-            Create meal
+            <ListItemIcon>
+              <MenuBook />
+            </ListItemIcon>
+            <ListItemText>Create meal</ListItemText>
           </MenuItem>
+          {areSelectedAllFavorites ? (
+            <MenuItem onClick={handleRemoveFromFavoritesClick}>
+              <ListItemIcon>
+                <StarBorder />
+              </ListItemIcon>
+              <ListItemText>Remove from favorites</ListItemText>{" "}
+            </MenuItem>
+          ) : (
+            <MenuItem onClick={handleAddToFavoritesClick}>
+              <ListItemIcon>
+                <Star />
+              </ListItemIcon>
+              <ListItemText>Add to favorites</ListItemText>
+            </MenuItem>
+          )}
         </Menu>
       </FormActionRow>
       <MoveFoodLogsDialog />

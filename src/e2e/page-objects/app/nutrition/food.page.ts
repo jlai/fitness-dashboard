@@ -11,6 +11,15 @@ export default class FoodPage {
   readonly copySelectedButton = this.page.getByRole("button", {
     name: /Copy/i,
   });
+  readonly moreActionsButton = this.page.getByRole("button", {
+    name: "more actions",
+  });
+  readonly addToFavoritesAction = this.page.getByRole("menuitem", {
+    name: "Add to favorites",
+  });
+  readonly removeFromFavoritesAction = this.page.getByRole("menuitem", {
+    name: "Remove from favorites",
+  });
 
   readonly foodLogSection = new FoodLogSection(this.page);
 
@@ -22,6 +31,10 @@ export default class FoodPage {
 
     const openFoodSearch = this.page.getByLabel("Open", { exact: true });
     await openFoodSearch.click();
+  }
+
+  async openMoreActionsMenu() {
+    await this.moreActionsButton.click();
   }
 }
 

@@ -126,3 +126,47 @@ test("can move logged foods to another meal time", async ({
     "Total",
   ]);
 });
+
+test("can favorite logged foods", async ({
+  page,
+  pageObjects: { foodPage },
+  nutritionApi,
+}) => {
+  await nutritionApi.setFoodLogsResponse(BREAKFAST_FOOD_LOGS_RESPONSE);
+
+  await page.goto("/nutrition");
+
+  // Contains expected foods
+  const eggs = page.getByText("Scrambled Eggs");
+  await expect(eggs).toBeVisible();
+
+  const orangeJuice = page.getByText("Orange Juice");
+  await expect(orangeJuice).toBeVisible();
+
+  // Select scrambled eggs
+  const eggsCheckbox = page.getByRole("checkbox", { name: "Scrambled Eggs" });
+  await eggsCheckbox.click();
+
+  await expect(eggsCheckbox).toBeChecked();
+
+  const addToFavoritesPromise = nutritionApi.waitForAddToFavorites(80850);
+
+  // Open more actions menu and click add to favorites
+  await foodPage.openMoreActionsMenu();
+  await expect(foodPage.addToFavoritesAction).toBeVisible();
+
+  // Click add to favorites
+  await foodPage.addToFavoritesAction.click();
+  await addToFavoritesPromise;
+
+  // Remove from favorites should now be visible
+  const removeFromFavoritesPromise =
+    nutritionApi.waitForRemoveFromFavorites(80850);
+  await foodPage.openMoreActionsMenu();
+
+  await expect(foodPage.removeFromFavoritesAction).toBeVisible();
+
+  // Remove from favorites
+  await foodPage.removeFromFavoritesAction.click();
+  await removeFromFavoritesPromise;
+});

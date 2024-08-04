@@ -1,3 +1,20 @@
+import { Food } from "@/api/nutrition";
+
+export const SCRAMBLED_EGGS: Food = {
+  accessLevel: "PUBLIC" as const,
+  brand: "",
+  calories: 147,
+  foodId: 80850,
+  locale: "en_US",
+  name: "Scrambled Eggs",
+  unit: {
+    id: 304,
+    name: "serving",
+    plural: "servings",
+  },
+  units: [304, 226, 180, 147, 389],
+};
+
 export const BREAKFAST_FOOD_LOGS_RESPONSE = {
   foods: [
     {
@@ -5,20 +22,9 @@ export const BREAKFAST_FOOD_LOGS_RESPONSE = {
       logDate: "2021-02-01",
       logId: 1,
       loggedFood: {
-        accessLevel: "PUBLIC" as const,
+        ...SCRAMBLED_EGGS,
         amount: 1,
-        brand: "",
-        calories: 147,
-        foodId: 80850,
-        locale: "en_US",
         mealTypeId: 1,
-        name: "Scrambled Eggs",
-        unit: {
-          id: 304,
-          name: "serving",
-          plural: "servings",
-        },
-        units: [304, 226, 180, 147, 389],
       },
       nutritionalValues: {
         calories: 147,
