@@ -75,7 +75,18 @@ export function buildCreateActivityLogMutation(queryClient: QueryClient) {
 
       if ((distance || distance === 0) && distanceUnit) {
         params.set("distance", `${distance}`);
-        params.set("distanceUnit", "mile");
+
+        switch (distanceUnit) {
+          case "en_US":
+            params.set("distanceUnit", "mile");
+            break;
+          case "steps":
+            params.set("distanceUnit", "steps");
+            break;
+          default:
+            params.set("distanceUnit", "kilometer");
+            break;
+        }
       }
 
       const response = await makeRequest(
