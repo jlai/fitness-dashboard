@@ -2,7 +2,11 @@
 
 import { useAtom, useAtomValue } from "jotai";
 import { useCallback, useMemo } from "react";
-import { GridStackNode, GridStackNodesHandler } from "gridstack";
+import {
+  GridStackNode,
+  GridStackNodesHandler,
+  GridStackOptions,
+} from "gridstack";
 import { Typography } from "@mui/material";
 import { DeleteOutlineOutlined as TrashIcon } from "@mui/icons-material";
 
@@ -18,7 +22,7 @@ type GridData = {
   settings: unknown;
 };
 
-const GRID_OPTIONS = {
+const GRID_OPTIONS: GridStackOptions = {
   auto: false,
   margin: 6,
   float: true,
@@ -26,6 +30,8 @@ const GRID_OPTIONS = {
   column: 8,
   columnOpts: {
     columnWidth: 150,
+    columnMax: 8,
+    layout: "moveScale",
   },
   minRow: 1,
   removable: "#grid-remove-target",
