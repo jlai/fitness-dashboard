@@ -26,6 +26,7 @@ const SCOPES = [
   "location",
   "nutrition",
   "profile",
+  "settings",
   "sleep",
   "weight",
 ];

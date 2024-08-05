@@ -13,7 +13,7 @@ function encodeFakeToken(data: Record<string, string>) {
 
 const TOKEN_STRING = JSON.stringify({
   accessToken: encodeFakeToken({
-    scopes: "whr wnut wpro wsle wwei wact wloc",
+    scopes: "whr wnut wpro wsle wwei wact wloc wset",
   }),
   refreshToken: encodeFakeToken({}),
   expiresAt: Date.now() + 10 * 365 * 24 * 60 * 60 * 1000,

@@ -59,6 +59,9 @@ function PermissionsTable() {
           </Link>{" "}
           page to manually set your units.
         </PermissionInfo>
+        <PermissionInfo title="Settings">
+          Display last sync time and battery status.
+        </PermissionInfo>
         <PermissionInfo title="Sleep">
           Display sleep logs and manually log sleep.
         </PermissionInfo>
