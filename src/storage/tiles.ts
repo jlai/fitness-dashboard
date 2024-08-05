@@ -115,7 +115,9 @@ const defaultMobileTiles: Array<UserTile> = [
   { id: "default-weight", type: "weight", w: 1, h: 1, x: 0, y: 4 },
 ];
 
-const isMobile = window.matchMedia("(max-width: 600px)").matches;
+const isMobile =
+  typeof window !== "undefined" &&
+  window.matchMedia("(max-width: 600px)").matches;
 
 export const userTilesAtom = atomWithStorage(
   "dashboard-tiles",
