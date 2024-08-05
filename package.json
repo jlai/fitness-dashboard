@@ -12,7 +12,8 @@
     "postinstall": "patch-package",
     "dev-e2e": "cross-env NODE_ENV=test next dev -p 3100",
     "build-e2e": "cross-env NODE_ENV=test next build",
-    "serve-e2e": "npx serve@latest out -l 3100"
+    "serve-e2e": "npx serve@latest out -l 3100",
+    "prepare": "husky"
   },
   "dependencies": {
     "@badgateway/oauth2-client": "^2.3.0",
@@ -37,6 +38,7 @@
     "d3-scale": "^4.0.2",
     "dayjs": "^1.11.11",
     "gridstack": "^10.2.0",
+    "husky": "^9.1.4",
     "immer": "^10.1.1",
     "immutable": "^4.3.6",
     "jotai": "^2.8.3",
@@ -44,6 +46,7 @@
     "jotai-scope": "^0.6.0",
     "jotai-tanstack-query": "^0.8.5",
     "jwt-decode": "^4.0.0",
+    "lint-staged": "^15.2.8",
     "lodash": "^4.17.21",
     "maplibre-gl": "^4.5.0",
     "material-ui-confirm": "^3.0.16",
@@ -89,5 +92,8 @@
     "ts-jest": "^29.1.5",
     "typescript": "^5",
     "whatwg-fetch": "^3.6.20"
+  },
+  "lint-staged": {
+    "*.ts": "eslint"
   }
 }
