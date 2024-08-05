@@ -1,7 +1,4 @@
-import {
-  MOBILE_TRACK_DEVICE,
-  TRACKER_DEVICE,
-} from "@/e2e/data/nutrition/devices";
+import { MOBILE_TRACK_DEVICE, TRACKER_DEVICE } from "@/e2e/data/devices";
 import { test, expect } from "@/e2e/fixtures";
 
 test.describe("with no trackers", () => {

@@ -1,4 +1,4 @@
-import { HEART_INTRADAY_RESPONSE } from "@/e2e/data/nutrition/heart-intraday";
+import { HEART_INTRADAY_RESPONSE } from "@/e2e/data/heart-intraday";
 import { test, expect } from "@/e2e/fixtures";
 
 test.describe("with no heart rate data", () => {

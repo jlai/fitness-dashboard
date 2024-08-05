@@ -1,7 +1,7 @@
 import { test as base, Page } from "@playwright/test";
 
 import { GetHeartIntradayResponse } from "@/api/intraday";
-import { HEART_INTRADAY_EMPTY_RESPONSE } from "@/e2e/data/nutrition/heart-intraday";
+import { HEART_INTRADAY_EMPTY_RESPONSE } from "@/e2e/data/heart-intraday";
 
 const HEART_INTRADAY_URL =
   "**/1/user/-/activities/heart/date/*/*/*/time/00:00/23:59.json";
