@@ -49,6 +49,7 @@ export function LifetimeTileContent() {
         justifyContent="center"
         columnGap={2}
         rowGap={0}
+        className="text-center"
       >
         <Typography variant={w > 1 ? "h3" : "h6"}>
           {FRACTION_DIGITS_0.format(value)}
