@@ -1,57 +1,34 @@
-import {
-  Dialog,
-  DialogActions,
-  DialogContent,
-  IconButton,
-  useMediaQuery,
-  useTheme,
-} from "@mui/material";
+import { DialogContent } from "@mui/material";
 import { useAtom } from "jotai";
-import {
-  Close as CloseIcon,
-  Fullscreen as FullscreenIcon,
-  FullscreenExit as FullscreenExitIcon,
-} from "@mui/icons-material";
-import { useState } from "react";
+import dayjs from "dayjs";
 
 import { RequireScopes } from "@/components/require-scopes";
+import { ResponsiveDialog } from "@/components/dialogs/responsive-dialog";
+import { formatShortDateTime } from "@/utils/date-formats";
 
 import { showingActivityLogDetailsDialogAtom } from "./atoms";
 import { ActivityDetails } from "./activity-details";
 
 export function ActivityLogDetailsDialog() {
-  const theme = useTheme();
-  const isMobileSize = !useMediaQuery(theme.breakpoints.up("sm"));
-
-  const [fullScreen, setFullScreen] = useState(false);
   const [showingActivityLog, setShowingActivityLog] = useAtom(
     showingActivityLogDetailsDialogAtom
   );
 
   return (
-    <Dialog
-      fullWidth
-      fullScreen={isMobileSize || fullScreen}
+    <ResponsiveDialog
       maxWidth="xl"
+      fullWidth
+      fullScreenPreferenceId="activity"
+      title={
+        showingActivityLog
+          ? `${showingActivityLog.activityName} on ${formatShortDateTime(
+              dayjs(showingActivityLog.startTime)
+            )}`
+          : ""
+      }
       open={!!showingActivityLog}
       onClose={() => setShowingActivityLog(null)}
     >
-      <DialogActions>
-        {!isMobileSize && (
-          <IconButton
-            aria-label="toggle fullscreen"
-            onClick={() => setFullScreen(!fullScreen)}
-          >
-            {fullScreen ? <FullscreenExitIcon /> : <FullscreenIcon />}
-          </IconButton>
-        )}
-        <IconButton
-          aria-label="close"
-          onClick={() => setShowingActivityLog(null)}
-        >
-          <CloseIcon />
-        </IconButton>
-      </DialogActions>
       <DialogContent className="p-0 flex-1 flex flex-col">
         <RequireScopes scopes={["loc"]}>
           {showingActivityLog && (
@@ -59,6 +36,6 @@ export function ActivityLogDetailsDialog() {
           )}
         </RequireScopes>
       </DialogContent>
-    </Dialog>
+    </ResponsiveDialog>
   );
 }
