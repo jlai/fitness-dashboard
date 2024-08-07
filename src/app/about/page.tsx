@@ -18,8 +18,13 @@ export default function AboutPage() {
         <Typography variant="body2">
           A dashboard for viewing stats from your Fitbit account, managing and
           logging meals, viewing maps of your runs, and more. This is an early
-          preview (alpha). There are likely to be many bugs and some data may
-          not be displayed accurately.
+          preview. There are likely to be bugs and some data may not be
+          displayed accurately.
+        </Typography>
+        <Typography variant="body2">
+          This is a volunteer effort created by Fitbit users, for Fitbit users.
+          As a result, the site is free to use with no ads and no data
+          collection.
         </Typography>
         <Typography variant="body2">
           <b>
@@ -42,8 +47,8 @@ export default function AboutPage() {
         <Typography variant="body2">
           This website uses the Fitbit Web API to directly get and display your
           fitness stats, without passing through or syncing to other cloud
-          servers. This means we don&apos;t store, transfer, or otherwise have
-          access to your data.
+          servers. This means we don&apos;t collect, store, transfer, sell, or
+          otherwise have access to your data outside your browser.
         </Typography>
         <Typography variant="body2">
           Some features, such as displaying maps of runs, may send coordinates
@@ -61,45 +66,6 @@ export default function AboutPage() {
         <Typography variant="h4" className="mb-4">
           FAQ
         </Typography>
-        <Accordion>
-          <AccordionSummary expandIcon={<ArrowDropDown />}>
-            Help, I&quot;m getting a blank page or errors due to rate limits
-          </AccordionSummary>
-          <AccordionDetails>
-            The Fitbit Web API has rate limits on the number of data requests
-            this website can make on behalf of a user. If the limit is exceeded,
-            you may need to wait until the next hour for the quota to reset.
-          </AccordionDetails>
-        </Accordion>
-        <Accordion>
-          <AccordionSummary expandIcon={<ArrowDropDown />}>
-            Food search isn&quot;t returning any results
-          </AccordionSummary>
-          <AccordionDetails>
-            There seems to be a problem with the Fitbit API where the food
-            search sometimes returns blank results. Unfortunately, this will be
-            up to Fitbit to fix.
-          </AccordionDetails>
-        </Accordion>
-        <Accordion>
-          <AccordionSummary expandIcon={<ArrowDropDown />}>
-            I keep getting signed out
-          </AccordionSummary>
-          <AccordionDetails>
-            The Fitbit API has limits on having active sessions in multiple
-            browsers, such as desktop + a device. You may have to re-login
-            whenever you switch browsers when the current login tokens expire
-            (every 8 hours or so).
-          </AccordionDetails>
-        </Accordion>
-        <Accordion>
-          <AccordionSummary expandIcon={<ArrowDropDown />}>
-            Can I edit activities or sleep logs?
-          </AccordionSummary>
-          <AccordionDetails>
-            Unfortunately this is not supported in the Fitbit Web API.
-          </AccordionDetails>
-        </Accordion>
         <Accordion>
           <AccordionSummary expandIcon={<ArrowDropDown />}>
             Where can I leave feedback/suggestions or report bugs?
@@ -124,6 +90,44 @@ export default function AboutPage() {
                 Contact
               </Button>
             )}
+          </AccordionDetails>
+        </Accordion>
+        <Accordion>
+          <AccordionSummary expandIcon={<ArrowDropDown />}>
+            Help, I&quot;m getting a blank page or errors due to rate limits
+          </AccordionSummary>
+          <AccordionDetails>
+            The Fitbit Web API has rate limits on the number of data requests
+            this website can make on behalf of a user. If the limit is exceeded,
+            you may need to wait until the next hour for the quota to reset.
+          </AccordionDetails>
+        </Accordion>
+        <Accordion>
+          <AccordionSummary expandIcon={<ArrowDropDown />}>
+            Can I edit activities or sleep logs?
+          </AccordionSummary>
+          <AccordionDetails>
+            Unfortunately this is not supported in the Fitbit Web API.
+          </AccordionDetails>
+        </Accordion>
+        <Accordion>
+          <AccordionSummary expandIcon={<ArrowDropDown />}>
+            Food search isn&quot;t returning any results
+          </AccordionSummary>
+          <AccordionDetails>
+            There seems to be a problem with the Fitbit API where the food
+            search sometimes returns blank results. Unfortunately, this will be
+            up to Fitbit to fix.
+          </AccordionDetails>
+        </Accordion>
+        <Accordion>
+          <AccordionSummary expandIcon={<ArrowDropDown />}>
+            I keep getting signed out
+          </AccordionSummary>
+          <AccordionDetails>
+            The Fitbit API has limits on having active sessions in multiple
+            browsers. If you log in from multiple browsers, or for example on a
+            desktop and a mobile device, you may have to re-login.
           </AccordionDetails>
         </Accordion>
       </section>
