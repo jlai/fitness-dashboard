@@ -46,7 +46,6 @@ import { useTrackpoints } from "./load-tcx";
 import { highlightedXAtom, xScaleMeasureAtom } from "./atoms";
 import { SplitsChart } from "./splits";
 
-
 const TIME_FORMAT = new Intl.DateTimeFormat(undefined, {
   hour: "numeric",
   minute: "2-digit",
@@ -120,12 +119,14 @@ export function ActivityTcxCharts({
       {hasElevation && (
         <section>
           <ChartSectionHeader title="Elevation">
-            <Typography variant="h6">
-              {FRACTION_DIGITS_0.format(
-                localizedMeters(activityLog.elevationGain)
-              )}{" "}
-              {localizedMetersName}
-            </Typography>
+            {activityLog.elevationGain > 0 && (
+              <Typography variant="h6">
+                {FRACTION_DIGITS_0.format(
+                  localizedMeters(activityLog.elevationGain)
+                )}{" "}
+                {localizedMetersName}
+              </Typography>
+            )}
           </ChartSectionHeader>
           <ElevationChart
             trackpoints={localizedTrackpoints}
@@ -253,6 +254,7 @@ type SynchronizedChartProps = ComponentPropsWithoutRef<
 
 export function SynchronizedChart({
   dateDomain,
+  loading,
   ...chartProps
 }: SynchronizedChartProps) {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -294,7 +296,7 @@ export function SynchronizedChart({
       ]}
       {...chartProps}
     >
-      <ChartsOverlay loading={chartProps.loading} />
+      <ChartsOverlay loading={loading} />
       <ChartsXAxis />
       <ChartsYAxis />
       <ChartsGrid horizontal />
