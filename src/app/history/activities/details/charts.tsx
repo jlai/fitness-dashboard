@@ -22,6 +22,7 @@ import {
   RefObject,
   useEffect,
   useId,
+  useMemo,
   useRef,
 } from "react";
 import { useAtom, useAtomValue } from "jotai";
@@ -37,6 +38,7 @@ import { ENABLE_INTRADAY } from "@/config";
 
 import { useTrackpoints } from "./load-tcx";
 import { highlightedXAtom, xScaleMeasureAtom } from "./atoms";
+import { augmentWithDistances, createDistanceScale } from "./distances";
 
 const TIME_FORMAT = new Intl.DateTimeFormat(undefined, {
   hour: "numeric",
@@ -76,10 +78,22 @@ export function ActivityTcxCharts({
     .startOf("minute")
     .add(1, "minute");
 
-  const { data: caloriesIntraday } = useQuery({
+  const { data: caloriesIntradayRaw } = useQuery({
     ...buildActivityIntradayQuery("calories", "1min", startTime, endTime),
     enabled: ENABLE_INTRADAY,
   });
+
+  const distanceScale = useMemo(
+    () => createDistanceScale(localizedTrackpoints),
+    [localizedTrackpoints]
+  );
+  const caloriesIntraday = useMemo(
+    () =>
+      caloriesIntradayRaw
+        ? augmentWithDistances(caloriesIntradayRaw, distanceScale)
+        : undefined,
+    [caloriesIntradayRaw, distanceScale]
+  );
 
   const dateDomain: [Date, Date] = [startTime.toDate(), endTime.toDate()];
 
@@ -199,7 +213,7 @@ type SynchronizedChartProps = ComponentPropsWithoutRef<
 export function SynchronizedChart(props: SynchronizedChartProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const clipPathId = useId();
-  const units = useUnits();
+  const { localizedKilometers, localizedKilometersName } = useUnits();
 
   const xScaleMeasure = useAtomValue(xScaleMeasureAtom);
 
@@ -215,11 +229,13 @@ export function SynchronizedChart(props: SynchronizedChartProps) {
         }
       : {
           id: "x",
-          label: units.localizedKilometersName,
+          label: localizedKilometersName,
           dataKey: "distanceMeters",
           scaleType: "linear",
-          valueFormatter: (value: number) =>
-            FRACTION_DIGITS_1.format(units.localizedKilometers(value / 1000)),
+          valueFormatter: (value: number, context) =>
+            `${FRACTION_DIGITS_1.format(localizedKilometers(value / 1000))} ${
+              context.location === "tooltip" ? localizedKilometersName : ""
+            }`,
         };
 
   return (

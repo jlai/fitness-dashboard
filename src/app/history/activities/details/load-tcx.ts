@@ -5,7 +5,7 @@ import { buildActivityTcxQuery } from "@/api/activity/activities";
 import { ParsedTcx, parseTcx, Trackpoint } from "@/api/activity/tcx";
 import { useUnits } from "@/config/units";
 
-type LocalizedTrackpoint = Trackpoint & {
+export type LocalizedTrackpoint = Trackpoint & {
   altitudeLocalized: number;
 };
 

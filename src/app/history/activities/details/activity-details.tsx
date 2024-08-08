@@ -21,6 +21,7 @@ import { ActivityLog } from "@/api/activity";
 import { MAPLIBRE_STYLE_URL } from "@/config";
 import { HeaderBar } from "@/components/layout/rows";
 import { ParsedTcx, Trackpoint } from "@/api/activity/tcx";
+import { FlexSpacer } from "@/components/layout/flex";
 
 import {
   useFetchTcxAsString,
@@ -29,6 +30,7 @@ import {
 } from "./load-tcx";
 import { ActivityTcxCharts } from "./charts";
 import { highlightedXAtom, xScaleMeasureAtom } from "./atoms";
+import { trackpointsHasDistances } from "./distances";
 
 const LazyActivityMap = dynamic(() => import("@/components/map/activity-map"));
 
@@ -112,6 +114,9 @@ export function ActivityDetails({ activityLog }: { activityLog: ActivityLog }) {
   const tcxString = useFetchTcxAsString(activityLog.logId);
   const parsedTcx = useParsedTcx(tcxString);
 
+  const hasDistances =
+    parsedTcx && trackpointsHasDistances(parsedTcx.trackpoints);
+
   const theme = useTheme();
   const isSmallOrLarger = useMediaQuery(theme.breakpoints.up("sm"));
 
@@ -148,6 +153,10 @@ export function ActivityDetails({ activityLog }: { activityLog: ActivityLog }) {
             id="charts"
             className="max-h-full min-h-[20px] overflow-y-auto"
           >
+            <HeaderBar>
+              <FlexSpacer />
+              {hasDistances && <MeasureToggle />}
+            </HeaderBar>
             <ActivityTcxCharts
               activityLog={activityLog}
               parsedTcx={parsedTcx}

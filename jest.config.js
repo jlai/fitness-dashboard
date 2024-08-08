@@ -33,6 +33,9 @@ const config = {
   moduleDirectories: ["node_modules", "src"],
   moduleNameMapper: {
     "^@/(.*)$": ['<rootDir>/$1'],
+
+    // https://github.com/jestjs/jest/issues/12036
+    '^d3-(.+)$': '<rootDir>/node_modules/d3-$1/dist/d3-$1.js',
   },
 
   setupFiles: ['<rootDir>/setup-jest.ts'],
@@ -40,7 +43,7 @@ const config = {
   preset: 'ts-jest',
 
   // Ignore node_modules, EXCEPT the ones listed here
-  transformIgnorePatterns: ['/node_modules/(?!(p-queue|p-timeout|mui-sonner)/)']
+  transformIgnorePatterns: ['/node_modules/(?!(p-queue|p-timeout|mui-sonner|d3-scale)/)']
 };
 
 // next adds /node_modules/ to the start of the ignore list, which we need to remove
