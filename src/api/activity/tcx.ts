@@ -25,6 +25,8 @@ export function parseTcx(tcxString: string): ParsedTcx {
   let hasLocation = false;
   const trackpoints: Array<Trackpoint> = [];
 
+  let lastDistanceMeters: number | undefined = undefined;
+
   tcxDocument.querySelectorAll("Trackpoint").forEach((node) => {
     const dateTime = new Date(node.querySelector("Time")?.textContent!);
 
@@ -39,7 +41,7 @@ export function parseTcx(tcxString: string): ParsedTcx {
     const altitudeMeters = parseOptionalNumber(
       node.querySelector("AltitudeMeters")?.textContent
     );
-    const distanceMeters = parseOptionalNumber(
+    let distanceMeters = parseOptionalNumber(
       node.querySelector("DistanceMeters")?.textContent
     );
     const heartBpm = parseOptionalNumber(
@@ -49,6 +51,17 @@ export function parseTcx(tcxString: string): ParsedTcx {
     if (latitudeDegrees) {
       hasLocation = true;
     }
+
+    if (
+      distanceMeters !== undefined &&
+      lastDistanceMeters !== undefined &&
+      distanceMeters < lastDistanceMeters
+    ) {
+      // Sometimes distanceMeters gets reset to zero for some reason; prevent backsliding
+      distanceMeters = lastDistanceMeters;
+    }
+
+    lastDistanceMeters = distanceMeters;
 
     trackpoints.push({
       dateTime,

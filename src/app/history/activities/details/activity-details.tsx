@@ -14,6 +14,7 @@ import { Download } from "@mui/icons-material";
 import { PanelGroup, Panel, PanelResizeHandle } from "react-resizable-panels";
 import { bisector } from "d3-array";
 import { useAtom, useAtomValue } from "jotai";
+import { useMemo } from "react";
 
 import { useUnits } from "@/config/units";
 import { FRACTION_DIGITS_1 } from "@/utils/number-formats";
@@ -22,6 +23,12 @@ import { MAPLIBRE_STYLE_URL } from "@/config";
 import { HeaderBar } from "@/components/layout/rows";
 import { ParsedTcx, Trackpoint } from "@/api/activity/tcx";
 import { FlexSpacer } from "@/components/layout/flex";
+import {
+  createDistanceScale,
+  getDistanceSplits,
+  SplitDatum,
+  trackpointsHasDistances,
+} from "@/utils/distances";
 
 import {
   useFetchTcxAsString,
@@ -30,7 +37,6 @@ import {
 } from "./load-tcx";
 import { ActivityTcxCharts } from "./charts";
 import { highlightedXAtom, xScaleMeasureAtom } from "./atoms";
-import { trackpointsHasDistances } from "./distances";
 
 const LazyActivityMap = dynamic(() => import("@/components/map/activity-map"));
 
@@ -76,9 +82,16 @@ function ActivityOverview({
   );
 }
 
-function MapWithPosition({ parsedTcx }: { parsedTcx: ParsedTcx }) {
+function MapWithPosition({
+  parsedTcx,
+  splits,
+}: {
+  parsedTcx: ParsedTcx;
+  splits?: Array<SplitDatum>;
+}) {
   let tracePosition: [number, number] | undefined = undefined;
 
+  const { localizedKilometers } = useUnits();
   const x = useAtomValue(highlightedXAtom);
 
   if (x) {
@@ -91,7 +104,9 @@ function MapWithPosition({ parsedTcx }: { parsedTcx: ParsedTcx }) {
       const trackpointBisector = bisector<Trackpoint, number | undefined>(
         (d) => d.distanceMeters
       );
-      index = trackpointBisector.center(parsedTcx.trackpoints, x.value);
+
+      const cursorMeters = (1000 * x.value) / localizedKilometers(1);
+      index = trackpointBisector.center(parsedTcx.trackpoints, cursorMeters);
     }
 
     const { longitudeDegrees, latitudeDegrees } =
@@ -104,18 +119,35 @@ function MapWithPosition({ parsedTcx }: { parsedTcx: ParsedTcx }) {
 
   return (
     <LazyActivityMap
-      geojson={parsedTcx.geojson!}
+      parsedTcx={parsedTcx}
       tracePosition={tracePosition}
+      splits={splits}
     />
   );
 }
 
 export function ActivityDetails({ activityLog }: { activityLog: ActivityLog }) {
+  const { distanceUnit } = useUnits();
+  const [xScaleMeasure, setXScaleMeasure] = useAtom(xScaleMeasureAtom);
   const tcxString = useFetchTcxAsString(activityLog.logId);
   const parsedTcx = useParsedTcx(tcxString);
 
   const hasDistances =
     parsedTcx && trackpointsHasDistances(parsedTcx.trackpoints);
+
+  if (!hasDistances && xScaleMeasure === "distance") {
+    setXScaleMeasure("time");
+  }
+
+  const distanceScale = useMemo(
+    () => parsedTcx && createDistanceScale(parsedTcx.trackpoints),
+    [parsedTcx]
+  );
+
+  const splits = useMemo(
+    () => distanceScale && getDistanceSplits(distanceScale, distanceUnit),
+    [distanceScale, distanceUnit]
+  );
 
   const theme = useTheme();
   const isSmallOrLarger = useMediaQuery(theme.breakpoints.up("sm"));
@@ -133,7 +165,7 @@ export function ActivityDetails({ activityLog }: { activityLog: ActivityLog }) {
             <>
               <Panel id="map" className="min-h-[20px]">
                 <div className="size-full">
-                  <MapWithPosition parsedTcx={parsedTcx} />
+                  <MapWithPosition parsedTcx={parsedTcx} splits={splits} />
                 </div>
               </Panel>
               {panelDirection === "vertical" ? (
@@ -149,18 +181,19 @@ export function ActivityDetails({ activityLog }: { activityLog: ActivityLog }) {
               )}
             </>
           )}
-          <Panel
-            id="charts"
-            className="max-h-full min-h-[20px] overflow-y-auto"
-          >
-            <HeaderBar>
-              <FlexSpacer />
-              {hasDistances && <MeasureToggle />}
-            </HeaderBar>
-            <ActivityTcxCharts
-              activityLog={activityLog}
-              parsedTcx={parsedTcx}
-            />
+          <Panel id="charts" className="max-h-full min-h-[20px]">
+            <div className="max-h-full overflow-y-auto">
+              <HeaderBar>
+                <FlexSpacer />
+                {hasDistances && <MeasureToggle />}
+              </HeaderBar>
+              <ActivityTcxCharts
+                activityLog={activityLog}
+                parsedTcx={parsedTcx}
+                distanceScale={distanceScale!}
+                splits={splits!}
+              />
+            </div>
           </Panel>
         </PanelGroup>
       )}

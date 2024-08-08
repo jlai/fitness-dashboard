@@ -14,7 +14,7 @@ import {
 } from "@/api/user";
 import { hasTokenScope } from "@/api/auth";
 
-const MILES_PER_KM = 0.621371;
+export const MILES_PER_KM = 0.621371;
 const FEET_PER_METER = 3.28084;
 const FLUID_OZ_PER_ML = 0.033814;
 // const CUP_PER_ML = FLUID_OZ_PER_ML / 8;

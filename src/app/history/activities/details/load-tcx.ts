@@ -6,7 +6,8 @@ import { ParsedTcx, parseTcx, Trackpoint } from "@/api/activity/tcx";
 import { useUnits } from "@/config/units";
 
 export type LocalizedTrackpoint = Trackpoint & {
-  altitudeLocalized: number;
+  distanceLocalized?: number;
+  altitudeLocalized?: number;
 };
 
 function useObjectUrl(object: File | Blob | null) {
@@ -60,7 +61,7 @@ export function useParsedTcx(tcxString?: string) {
 
 /** Parses a TCX string into trackpoints using localized units */
 export function useTrackpoints(parsedTcx?: ParsedTcx) {
-  const units = useUnits();
+  const { localizedKilometers, localizedMeters } = useUnits();
 
   return useMemo(() => {
     let hasElevation = false,
@@ -72,12 +73,19 @@ export function useTrackpoints(parsedTcx?: ParsedTcx) {
     for (const trackpoint of parsedTcx?.trackpoints ?? []) {
       if (trackpoint.altitudeMeters !== undefined) {
         hasElevation = true;
-
-        localizedTrackpoints.push({
-          ...trackpoint,
-          altitudeLocalized: units.localizedMeters(trackpoint.altitudeMeters),
-        });
       }
+
+      localizedTrackpoints.push({
+        ...trackpoint,
+        distanceLocalized:
+          trackpoint.distanceMeters !== undefined
+            ? localizedKilometers(trackpoint.distanceMeters / 1000)
+            : undefined,
+        altitudeLocalized:
+          trackpoint.altitudeMeters !== undefined
+            ? localizedMeters(trackpoint.altitudeMeters)
+            : undefined,
+      });
 
       if (trackpoint.heartBpm !== undefined) {
         hasHeartRate = true;
@@ -89,5 +97,5 @@ export function useTrackpoints(parsedTcx?: ParsedTcx) {
     }
 
     return { hasElevation, hasHeartRate, hasLocation, localizedTrackpoints };
-  }, [parsedTcx, units]);
+  }, [parsedTcx, localizedKilometers, localizedMeters]);
 }

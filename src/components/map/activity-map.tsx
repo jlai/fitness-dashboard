@@ -11,19 +11,13 @@ import {
   Marker,
   LngLatBoundsLike,
 } from "react-map-gl/maplibre";
-import type { FeatureCollection, Feature, LineString } from "geojson";
-import {
-  bbox,
-  featureEach,
-  findPoint,
-  getCoord,
-  getCoords,
-  lineChunk,
-} from "@turf/turf";
+import type { Feature, LineString } from "geojson";
+import { bbox, getCoords } from "@turf/turf";
 import { Flag as EndIcon, PlayArrow as StartIcon } from "@mui/icons-material";
 
-import { useUnits } from "@/config/units";
 import { MAPLIBRE_STYLE_URL } from "@/config";
+import { ParsedTcx, Trackpoint } from "@/api/activity/tcx";
+import { SplitDatum } from "@/utils/distances";
 
 import "maplibre-gl/dist/maplibre-gl.css";
 
@@ -44,46 +38,58 @@ interface SplitInfo {
   coords: [number, number];
 }
 
-function getSplits(feature: Feature, units: "miles" | "kilometers") {
-  const chunks = lineChunk(feature as Feature<LineString>, 1, {
-    units,
-  });
+function getSplitMarkers(
+  splits: Array<SplitDatum>,
+  trackpoints: Array<Trackpoint>
+) {
   const markers: Array<SplitInfo> = [];
 
-  featureEach(chunks, (chunk, index) => {
-    if (index === 0) {
-      // skip first chunk
-      return;
+  let currentSplitIndex = 0;
+
+  for (const trackpoint of trackpoints) {
+    const currentSplit = splits[currentSplitIndex];
+    if (!currentSplit) {
+      break;
     }
 
-    const point = findPoint(chunk, { featureIndex: 0 });
-    markers.push({
-      index,
-      coords: getCoord(point) as [number, number],
-    });
-  });
+    if (trackpoint.dateTime.getTime() >= currentSplit.endTime.getTime()) {
+      if (
+        trackpoint.longitudeDegrees &&
+        trackpoint.latitudeDegrees &&
+        !currentSplit.incomplete
+      ) {
+        markers.push({
+          index: currentSplit.lap,
+          coords: [trackpoint.longitudeDegrees, trackpoint.latitudeDegrees],
+        });
+      }
+
+      currentSplitIndex++;
+    }
+  }
 
   return markers;
 }
 
 export default function ActivityMap({
-  geojson,
+  parsedTcx: { geojson, trackpoints },
   tracePosition,
+  splits,
 }: {
-  geojson: FeatureCollection;
+  parsedTcx: ParsedTcx;
   tracePosition?: [number, number];
+  splits?: Array<SplitDatum>;
 }) {
-  const { distanceUnit } = useUnits();
-  const feature = geojson.features[0];
-  const boundingBox = feature && bbox(geojson);
+  const feature = geojson!.features[0];
+  const boundingBox = feature && bbox(geojson!);
 
   const coords = feature && getCoords(feature as Feature<LineString>);
   const startCoords = coords?.[0];
   const endCoords = coords?.[coords.length - 1];
 
-  const splits = useMemo(
-    () => getSplits(feature, distanceUnit === "en_US" ? "miles" : "kilometers"),
-    [feature, distanceUnit]
+  const splitMarkers = useMemo(
+    () => (splits ? getSplitMarkers(splits, trackpoints) : []),
+    [splits, trackpoints]
   );
 
   return (
@@ -131,7 +137,7 @@ export default function ActivityMap({
           <div className="border-teal-600 rounded-full border-2 p-2"></div>
         </Marker>
       )}
-      {splits.map(({ index, coords }) => (
+      {splitMarkers.map(({ index, coords }) => (
         <Marker
           key={`split-${index}`}
           longitude={coords[0]}

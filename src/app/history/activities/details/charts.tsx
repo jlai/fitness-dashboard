@@ -13,7 +13,7 @@ import {
   ChartsTooltip,
   ChartsGrid,
 } from "@mui/x-charts";
-import { Typography } from "@mui/material";
+import { Stack, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { ChartsOverlay } from "@mui/x-charts/ChartsOverlay";
@@ -35,10 +35,17 @@ import { useUnits } from "@/config/units";
 import { ActivityLog } from "@/api/activity";
 import { buildActivityIntradayQuery, IntradayEntry } from "@/api/intraday";
 import { ENABLE_INTRADAY } from "@/config";
+import {
+  augmentWithDistances,
+  DistanceScale,
+  SplitDatum,
+} from "@/utils/distances";
+import { FlexSpacer } from "@/components/layout/flex";
 
 import { useTrackpoints } from "./load-tcx";
 import { highlightedXAtom, xScaleMeasureAtom } from "./atoms";
-import { augmentWithDistances, createDistanceScale } from "./distances";
+import { SplitsChart } from "./splits";
+
 
 const TIME_FORMAT = new Intl.DateTimeFormat(undefined, {
   hour: "numeric",
@@ -64,11 +71,16 @@ function formatTime(value: Date, context: AxisValueFormatterContext) {
 export function ActivityTcxCharts({
   parsedTcx,
   activityLog,
+  distanceScale,
+  splits,
 }: {
   parsedTcx: ParsedTcx;
   activityLog: ActivityLog;
+  distanceScale: DistanceScale;
+  splits: Array<SplitDatum>;
 }) {
-  const units = useUnits();
+  const { localizedKilometers, localizedMeters, localizedMetersName } =
+    useUnits();
   const { hasElevation, hasHeartRate, localizedTrackpoints } =
     useTrackpoints(parsedTcx);
 
@@ -83,28 +95,41 @@ export function ActivityTcxCharts({
     enabled: ENABLE_INTRADAY,
   });
 
-  const distanceScale = useMemo(
-    () => createDistanceScale(localizedTrackpoints),
-    [localizedTrackpoints]
-  );
   const caloriesIntraday = useMemo(
     () =>
       caloriesIntradayRaw
-        ? augmentWithDistances(caloriesIntradayRaw, distanceScale)
+        ? augmentWithDistances(
+            caloriesIntradayRaw,
+            distanceScale,
+            localizedKilometers
+          )
         : undefined,
-    [caloriesIntradayRaw, distanceScale]
+    [caloriesIntradayRaw, distanceScale, localizedKilometers]
   );
 
   const dateDomain: [Date, Date] = [startTime.toDate(), endTime.toDate()];
 
   return (
-    <div className="p-4 h-full overflow-y-auto">
+    <div className="p-4 h-full">
+      {splits && splits.length > 0 && (
+        <section>
+          <Typography variant="h5">Splits</Typography>
+          <SplitsChart splits={splits} />
+        </section>
+      )}
       {hasElevation && (
         <section>
-          <Typography variant="h5">Elevation</Typography>
+          <ChartSectionHeader title="Elevation">
+            <Typography variant="h6">
+              {FRACTION_DIGITS_0.format(
+                localizedMeters(activityLog.elevationGain)
+              )}{" "}
+              {localizedMetersName}
+            </Typography>
+          </ChartSectionHeader>
           <ElevationChart
             trackpoints={localizedTrackpoints}
-            localizedMetersName={units.localizedMetersName}
+            localizedMetersName={localizedMetersName}
             dateDomain={dateDomain}
           />
         </section>
@@ -113,18 +138,34 @@ export function ActivityTcxCharts({
         <section>
           <Typography variant="h5">Heart rate</Typography>
           <HeartRateChart
-            trackpoints={parsedTcx.trackpoints}
+            trackpoints={localizedTrackpoints}
             dateDomain={dateDomain}
           />
         </section>
       )}
       {ENABLE_INTRADAY && (
         <section>
-          <Typography variant="h5">Calories burned</Typography>
+          <ChartSectionHeader title="Calories burned" />
           <CaloriesChart data={caloriesIntraday} dateDomain={dateDomain} />
         </section>
       )}
     </div>
+  );
+}
+
+function ChartSectionHeader({
+  title,
+  children,
+}: {
+  title: string;
+  children?: React.ReactNode;
+}) {
+  return (
+    <Stack direction="row">
+      <Typography variant="h5">{title}</Typography>
+      <FlexSpacer />
+      {children}
+    </Stack>
   );
 }
 
@@ -210,10 +251,13 @@ type SynchronizedChartProps = ComponentPropsWithoutRef<
   dateDomain?: [Date, Date];
 };
 
-export function SynchronizedChart(props: SynchronizedChartProps) {
+export function SynchronizedChart({
+  dateDomain,
+  ...chartProps
+}: SynchronizedChartProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const clipPathId = useId();
-  const { localizedKilometers, localizedKilometersName } = useUnits();
+  const { localizedKilometersName } = useUnits();
 
   const xScaleMeasure = useAtomValue(xScaleMeasureAtom);
 
@@ -223,17 +267,17 @@ export function SynchronizedChart(props: SynchronizedChartProps) {
           id: "x",
           dataKey: "dateTime",
           scaleType: "time",
-          min: props.dateDomain?.[0],
-          max: props.dateDomain?.[1],
+          min: dateDomain?.[0],
+          max: dateDomain?.[1],
           valueFormatter: formatTime,
         }
       : {
           id: "x",
           label: localizedKilometersName,
-          dataKey: "distanceMeters",
+          dataKey: "distanceLocalized",
           scaleType: "linear",
           valueFormatter: (value: number, context) =>
-            `${FRACTION_DIGITS_1.format(localizedKilometers(value / 1000))} ${
+            `${FRACTION_DIGITS_1.format(value)} ${
               context.location === "tooltip" ? localizedKilometersName : ""
             }`,
         };
@@ -248,9 +292,9 @@ export function SynchronizedChart(props: SynchronizedChartProps) {
           scaleType: "linear",
         },
       ]}
-      {...props}
+      {...chartProps}
     >
-      <ChartsOverlay loading={props.loading} />
+      <ChartsOverlay loading={chartProps.loading} />
       <ChartsXAxis />
       <ChartsYAxis />
       <ChartsGrid horizontal />

@@ -19,3 +19,8 @@ export const PERCENT_FRACTION_DIGITS_1 = new Intl.NumberFormat(undefined, {
   maximumFractionDigits: 1,
   style: "percent",
 });
+
+export const TWO_DIGITS = new Intl.NumberFormat(undefined, {
+  minimumIntegerDigits: 2,
+  maximumFractionDigits: 0,
+});
