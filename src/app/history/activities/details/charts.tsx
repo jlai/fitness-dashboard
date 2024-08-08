@@ -110,12 +110,6 @@ export function ActivityTcxCharts({
 
   return (
     <div className="p-4 h-full">
-      {splits && splits.length > 0 && (
-        <section>
-          <Typography variant="h5">Splits</Typography>
-          <SplitsChart splits={splits} />
-        </section>
-      )}
       {hasElevation && (
         <section>
           <ChartSectionHeader title="Elevation">
@@ -148,6 +142,12 @@ export function ActivityTcxCharts({
         <section>
           <ChartSectionHeader title="Calories burned" />
           <CaloriesChart data={caloriesIntraday} dateDomain={dateDomain} />
+        </section>
+      )}
+      {splits && splits.length > 0 && (
+        <section>
+          <Typography variant="h5">Splits</Typography>
+          <SplitsChart splits={splits} />
         </section>
       )}
     </div>
