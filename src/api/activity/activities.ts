@@ -139,3 +139,23 @@ export function buildGetActivityListInfiniteQuery(
     initialPageParam: "",
   });
 }
+
+export function buildDeleteActivityLogMutation(queryClient: QueryClient) {
+  return mutationOptions({
+    mutationFn: async (activityLogId: number) => {
+      // FIXME workaround for server 502 issue
+      try {
+        await makeRequest(`/1/user/-/activities/${activityLogId}.json`, {
+          method: "DELETE",
+        });
+      } catch (e) {
+        console.error("ignoring error", e);
+      }
+    },
+    onSuccess: () => {
+      queryClient.resetQueries({
+        queryKey: ["activity-log-list"],
+      });
+    },
+  });
+}

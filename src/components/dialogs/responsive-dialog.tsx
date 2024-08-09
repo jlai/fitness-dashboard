@@ -22,6 +22,7 @@ interface ResponsiveDialogProps {
   title: string;
   fullScreen?: boolean;
   showCloseButton?: boolean;
+  titleActions?: React.ReactNode;
 
   /** If provided, remember fullscreen setting for this dialog type. */
   fullScreenPreferenceId?: string;
@@ -32,6 +33,7 @@ export function ResponsiveDialog({
   onClose,
   children,
   title,
+  titleActions,
   fullScreen: initialFullScreen,
   fullScreenPreferenceId = "",
   showCloseButton = true,
@@ -71,6 +73,7 @@ export function ResponsiveDialog({
         showFullScreenToggle={!isMobileSize}
         showCloseButton={showCloseButton}
         onClose={onClose}
+        actions={titleActions}
       />
       {children}
     </Dialog>
@@ -83,6 +86,7 @@ export function ResponsiveDialogTitleBar({
   setFullScreen,
   showFullScreenToggle,
   onClose,
+  actions,
   showCloseButton = true,
 }: {
   title?: string;
@@ -91,6 +95,7 @@ export function ResponsiveDialogTitleBar({
   setFullScreen: (enabled: boolean) => void;
   showFullScreenToggle: boolean;
   showCloseButton?: boolean;
+  actions?: React.ReactNode;
 }) {
   return (
     <Stack
@@ -106,6 +111,7 @@ export function ResponsiveDialogTitleBar({
       )}
       <Typography variant="h6">{title}</Typography>
       <FlexSpacer />
+      {actions}
       {showFullScreenToggle && (
         <IconButton
           aria-label="toggle fullscreen"
