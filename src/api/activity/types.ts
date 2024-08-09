@@ -69,7 +69,7 @@ export interface ActivityLog {
   originalDuration: number;
   originalStartTime: string;
   startTime: string;
-  steps: number;
+  steps?: number;
   tcxLink: string;
 
   distance?: number;

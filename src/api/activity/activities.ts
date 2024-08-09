@@ -42,12 +42,20 @@ export function buildActivityTcxQuery(id: number) {
   });
 }
 
+// Yes the pluralization is inconsistent, yes it has to be this way
+export type CreateActivityLogDistanceUnit =
+  | "mile"
+  | "steps"
+  | "yards"
+  | "meter"
+  | "kilometer";
+
 export interface CreateActivityLogOptions {
   activityId: number;
   startTime: Dayjs;
   durationMinutes: number;
   distance?: number;
-  distanceUnit?: string;
+  distanceUnit?: CreateActivityLogDistanceUnit;
   manualCalories?: number;
 }
 
@@ -75,18 +83,7 @@ export function buildCreateActivityLogMutation(queryClient: QueryClient) {
 
       if ((distance || distance === 0) && distanceUnit) {
         params.set("distance", `${distance}`);
-
-        switch (distanceUnit) {
-          case "en_US":
-            params.set("distanceUnit", "mile");
-            break;
-          case "steps":
-            params.set("distanceUnit", "steps");
-            break;
-          default:
-            params.set("distanceUnit", "kilometer");
-            break;
-        }
+        params.set("distanceUnit", `${distanceUnit}`);
       }
 
       const response = await makeRequest(

@@ -30,6 +30,15 @@ export const commonActivityTypes: Array<ActivityType> = [
     id: 3000,
     name: "Workout",
   },
+  {
+    id: 15000,
+    name: "Sport",
+  },
+  {
+    id: 90024,
+    name: "Swim",
+  },
 ];
 
 export const ACTIVITY_TYPES_WITH_STEPS = new Set([90013, 90009]);
+export const SWIMMING_ACTIVITY_TYPE = 90024;

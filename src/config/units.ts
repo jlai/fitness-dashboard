@@ -3,12 +3,14 @@ import { useAtom } from "jotai";
 
 import {
   distanceUnitAtom,
+  swimUnitAtom,
   waterUnitAtom,
   weightUnitAtom,
 } from "@/storage/settings";
 import {
   buildUserProfileQuery,
   DistanceUnitSystem,
+  SwimUnitSystem,
   WaterUnitSystem,
   WeightUnitSystem,
 } from "@/api/user";
@@ -16,6 +18,7 @@ import { hasTokenScope } from "@/api/auth";
 
 export const MILES_PER_KM = 0.621371;
 const FEET_PER_METER = 3.28084;
+const YARDS_PER_METER = 1.09361;
 const FLUID_OZ_PER_ML = 0.033814;
 // const CUP_PER_ML = FLUID_OZ_PER_ML / 8;
 const POUNDS_PER_KG = 2.20462;
@@ -28,6 +31,12 @@ interface DistanceUnitConfig {
   localizedMetersName: string;
   localizedKilometersName: string;
   localizedKilometersNameLong: string;
+}
+
+interface SwimUnitConfig {
+  swimUnit: SwimUnitSystem;
+  localizedSwimMeters: (value: number) => number;
+  localizedSwimMetersName: string;
 }
 
 interface WeightUnitConfig {
@@ -58,6 +67,18 @@ const METRIC_DISTANCE_UNIT_CONFIG: DistanceUnitConfig = {
   localizedMetersName: "m",
   localizedKilometersName: "km",
   localizedKilometersNameLong: "kilometers",
+};
+
+const US_SWIM_UNIT_CONFIG: SwimUnitConfig = {
+  swimUnit: "en_US",
+  localizedSwimMeters: (value: number) => value * YARDS_PER_METER,
+  localizedSwimMetersName: "yds",
+};
+
+const METRIC_SWIM_UNIT_CONFIG: SwimUnitConfig = {
+  swimUnit: "METRIC",
+  localizedSwimMeters: (value: number) => value,
+  localizedSwimMetersName: "m",
 };
 
 const US_WEIGHT_UNIT_CONFIG: WeightUnitConfig = {
@@ -93,6 +114,7 @@ const METRIC_WATER_UNIT_CONFIG: WaterUnitConfig = {
 export function useUnits() {
   const [storedDistanceUnitSystem, setDistanceUnitSystem] =
     useAtom(distanceUnitAtom);
+  const [storedSwimUnitSystem, setSwimUnitSystem] = useAtom(swimUnitAtom);
   const [storedWeightUnitSystem, setWeightUnitSystem] = useAtom(weightUnitAtom);
   const [storedWaterUnitSystem, setWaterUnitSystem] = useAtom(waterUnitAtom);
 
@@ -103,10 +125,16 @@ export function useUnits() {
     queryKey: ["units"],
     queryFn: async () => {
       let distanceUnitSystem = storedDistanceUnitSystem;
+      let swimUnitSystem = storedSwimUnitSystem;
       let weightUnitSystem = storedWeightUnitSystem;
       let waterUnitSystem = storedWaterUnitSystem;
 
-      if (!distanceUnitSystem || !weightUnitSystem || !waterUnitSystem) {
+      if (
+        !distanceUnitSystem ||
+        !swimUnitSystem ||
+        !weightUnitSystem ||
+        !waterUnitSystem
+      ) {
         if (!hasTokenScope("pro")) {
           return {
             distanceUnitSystem: "METRIC",
@@ -122,6 +150,11 @@ export function useUnits() {
           setDistanceUnitSystem(profile.distanceUnit);
         }
 
+        if (!swimUnitSystem) {
+          swimUnitSystem = profile.swimUnit;
+          setSwimUnitSystem(profile.swimUnit);
+        }
+
         if (!weightUnitSystem) {
           weightUnitSystem = profile.weightUnit;
           setWeightUnitSystem(profile.weightUnit);
@@ -133,7 +166,12 @@ export function useUnits() {
         }
       }
 
-      return { distanceUnitSystem, weightUnitSystem, waterUnitSystem };
+      return {
+        distanceUnitSystem,
+        swimUnitSystem,
+        weightUnitSystem,
+        waterUnitSystem,
+      };
     },
   });
 
@@ -141,6 +179,11 @@ export function useUnits() {
     (storedDistanceUnitSystem ?? profileUnits.distanceUnitSystem) === "en_US"
       ? US_DISTANCE_UNIT_CONFIG
       : METRIC_DISTANCE_UNIT_CONFIG;
+
+  const swimUnitConfig =
+    (storedSwimUnitSystem ?? profileUnits.swimUnitSystem) === "en_US"
+      ? US_SWIM_UNIT_CONFIG
+      : METRIC_SWIM_UNIT_CONFIG;
 
   let weightUnitConfig: WeightUnitConfig;
 
@@ -161,5 +204,10 @@ export function useUnits() {
       ? US_WATER_UNIT_CONFIG
       : METRIC_WATER_UNIT_CONFIG;
 
-  return { ...distanceUnitConfig, ...weightUnitConfig, ...waterUnitConfig };
+  return {
+    ...distanceUnitConfig,
+    ...swimUnitConfig,
+    ...weightUnitConfig,
+    ...waterUnitConfig,
+  };
 }

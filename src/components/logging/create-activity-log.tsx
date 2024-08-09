@@ -23,9 +23,15 @@ import {
   TimePickerElement,
 } from "react-hook-form-mui/date-pickers";
 
-import { buildCreateActivityLogMutation } from "@/api/activity/activities";
+import {
+  buildCreateActivityLogMutation,
+  CreateActivityLogDistanceUnit,
+} from "@/api/activity/activities";
 import { useUnits } from "@/config/units";
-import { ACTIVITY_TYPES_WITH_STEPS } from "@/config/common-ids";
+import {
+  ACTIVITY_TYPES_WITH_STEPS,
+  SWIMMING_ACTIVITY_TYPE,
+} from "@/config/common-ids";
 
 import { DividedStack } from "../layout/flex";
 
@@ -38,7 +44,6 @@ interface CreateActivityFormData {
   startTime: Dayjs;
   durationMinutes: number;
   distance?: number;
-  distanceUnit?: string;
   manualCalories?: number;
   useSteps?: boolean;
 }
@@ -54,14 +59,18 @@ function validateStartTime(value: Dayjs, formValues: CreateActivityFormData) {
 }
 
 function CreateActivityLog({ onSaveSuccess }: { onSaveSuccess?: () => void }) {
-  const units = useUnits();
+  const {
+    distanceUnit: distanceUnitSystem,
+    swimUnit: swimUnitSystem,
+    localizedKilometersName,
+    localizedSwimMetersName,
+  } = useUnits();
 
   const formContext = useForm<CreateActivityFormData>({
     defaultValues: {
       activityType: null,
       startTime: dayjs().subtract(30, "minutes"),
       durationMinutes: 30,
-      distanceUnit: units.distanceUnit,
       useSteps: false,
     },
   });
@@ -78,17 +87,26 @@ function CreateActivityLog({ onSaveSuccess }: { onSaveSuccess?: () => void }) {
   const supportsSteps = ACTIVITY_TYPES_WITH_STEPS.has(
     watch("activityType")?.id ?? -1
   );
+  const isSwimming = watch("activityType")?.id === SWIMMING_ACTIVITY_TYPE;
   const useSteps = supportsSteps && watch("useSteps");
 
   const onSubmit = useCallback(
     (values: CreateActivityFormData) => {
+      let unit: CreateActivityLogDistanceUnit =
+        distanceUnitSystem === "en_US" ? "mile" : "kilometer";
+
+      if (supportsSteps && values.useSteps) {
+        unit = "steps";
+      } else if (isSwimming) {
+        unit = swimUnitSystem === "en_US" ? "yards" : "meter";
+      }
+
       createActivityLog({
         activityId: values.activityType!.id,
         startTime: values.startTime,
         durationMinutes: values.durationMinutes,
         distance: values.distance,
-        distanceUnit:
-          supportsSteps && values.useSteps ? "steps" : values.distanceUnit,
+        distanceUnit: unit,
         manualCalories: values.manualCalories,
       }).then(
         () => {
@@ -100,7 +118,14 @@ function CreateActivityLog({ onSaveSuccess }: { onSaveSuccess?: () => void }) {
         }
       );
     },
-    [createActivityLog, onSaveSuccess, supportsSteps]
+    [
+      createActivityLog,
+      onSaveSuccess,
+      supportsSteps,
+      isSwimming,
+      distanceUnitSystem,
+      swimUnitSystem,
+    ]
   );
 
   return (
@@ -158,7 +183,9 @@ function CreateActivityLog({ onSaveSuccess }: { onSaveSuccess?: () => void }) {
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
-                    {units.localizedKilometersName}
+                    {isSwimming
+                      ? localizedSwimMetersName
+                      : localizedKilometersName}
                   </InputAdornment>
                 ),
               }}

@@ -28,6 +28,8 @@ function ActivityLogRow({ logEntry: activityLog }: { logEntry: ActivityLog }) {
     showingActivityLogDetailsDialogAtom
   );
 
+  const { steps, calories, distance, duration } = activityLog;
+
   return (
     <TableRow key={activityLog.logId}>
       <TableCell>
@@ -41,21 +43,21 @@ function ActivityLogRow({ logEntry: activityLog }: { logEntry: ActivityLog }) {
         </button>
       </TableCell>
       <TableCell>{activityLog.activityName}</TableCell>
-      <TableCell>{NUMBER_FORMAT.format(activityLog.steps)}</TableCell>
       <TableCell>
-        {activityLog.distance ? (
+        {steps !== undefined ? NUMBER_FORMAT.format(steps) : "\u2014"}
+      </TableCell>
+      <TableCell>
+        {distance ? (
           <div>
-            {DISTANCE_FORMAT.format(
-              units.localizedKilometers(activityLog.distance)
-            )}{" "}
+            {DISTANCE_FORMAT.format(units.localizedKilometers(distance))}{" "}
             {units.localizedKilometersName}
           </div>
         ) : (
-          "-"
+          "\u2014"
         )}
       </TableCell>
-      <TableCell>{formatDuration(activityLog.duration)}</TableCell>
-      <TableCell>{NUMBER_FORMAT.format(activityLog.calories)}</TableCell>
+      <TableCell>{formatDuration(duration)}</TableCell>
+      <TableCell>{NUMBER_FORMAT.format(calories)}</TableCell>
     </TableRow>
   );
 }

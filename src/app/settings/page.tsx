@@ -29,12 +29,14 @@ import {
 import {
   buildUserProfileQuery,
   DistanceUnitSystem,
+  SwimUnitSystem,
   WaterUnitSystem,
   WeightUnitSystem,
 } from "@/api/user";
 import {
   distanceUnitAtom,
   foodLogTotalsPositionAtom,
+  swimUnitAtom,
   waterUnitAtom,
   weightUnitAtom,
 } from "@/storage/settings";
@@ -153,6 +155,7 @@ function FoodSettings() {
 
 function UnitSettings() {
   const [distanceUnit, setDistanceUnit] = useAtom(distanceUnitAtom);
+  const [swimUnit, setSwimUnit] = useAtom(swimUnitAtom);
   const [weightUnit, setWeightUnit] = useAtom(weightUnitAtom);
   const [waterUnit, setWaterUnit] = useAtom(waterUnitAtom);
 
@@ -171,6 +174,18 @@ function UnitSettings() {
           >
             <MenuItem value="en_US">Miles</MenuItem>
             <MenuItem value="METRIC">Kilometers</MenuItem>
+          </Select>
+        }
+      />
+      <SettingsRow
+        title="Swim distance units"
+        action={
+          <Select<SwimUnitSystem>
+            value={swimUnit}
+            onChange={(event) => setSwimUnit(event.target.value as any)}
+          >
+            <MenuItem value="en_US">Yards</MenuItem>
+            <MenuItem value="METRIC">Meters</MenuItem>
           </Select>
         }
       />

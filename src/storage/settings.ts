@@ -25,6 +25,15 @@ export const distanceUnitAtom = atomWithStorage<"en_US" | "METRIC" | undefined>(
   }
 );
 
+export const swimUnitAtom = atomWithStorage<"en_US" | "METRIC" | undefined>(
+  "unit:swim",
+  undefined,
+  undefined,
+  {
+    getOnInit: true,
+  }
+);
+
 export const allUnitsConfiguredAtom = atom(
   (get) => get(weightUnitAtom) && get(waterUnitAtom) && get(distanceUnitAtom)
 );
