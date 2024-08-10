@@ -1,4 +1,8 @@
 import {
+  Button,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   List,
   ListItem,
   ListItemAvatar,
@@ -11,7 +15,8 @@ import { useSetAtom } from "jotai";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "mui-sonner";
 import React from "react";
-import { ViewTimeline } from "@mui/icons-material";
+import { Info, ViewTimeline } from "@mui/icons-material";
+import Link from "next/link";
 
 import { DailySummaryActivityLog } from "@/api/activity";
 import { TIME } from "@/utils/date-formats";
@@ -26,6 +31,7 @@ import { buildGetActivityLogQuery } from "@/api/activity/activities";
 
 import { useDailySummary } from "./common";
 import { useTileScale } from "./tile";
+import { IconWithDialog, RenderDialogContentProps } from "./tile-with-dialog";
 
 export default function ActivitiesTileContent() {
   const { h } = useTileScale();
@@ -36,11 +42,25 @@ export default function ActivitiesTileContent() {
       <Stack
         direction="row"
         className="w-full"
+        alignItems="center"
         justifyContent="center"
-        marginInline={2}
+        paddingInline={2}
         marginBlock={h > 1 ? 2 : 1}
       >
-        <Typography variant={h > 1 ? "h6" : "body1"}>Activities</Typography>
+        <Typography
+          variant={h > 1 ? "h6" : "body1"}
+          flex={1}
+          textAlign="center"
+        >
+          Activities
+        </Typography>
+        <IconWithDialog
+          size="small"
+          dialogComponent={ActivitiesTileDialogContent}
+          dialogProps={{ maxWidth: "md", fullWidth: true }}
+        >
+          <Info />
+        </IconWithDialog>
       </Stack>
       {activities.length === 0 && <Typography>No activities</Typography>}
       {activities.length > 0 && (
@@ -130,5 +150,22 @@ function ActivityLogSummary({
         />
       </ListItemButton>
     </ListItem>
+  );
+}
+
+function ActivitiesTileDialogContent({
+  closeButton,
+}: RenderDialogContentProps) {
+  return (
+    <>
+      <DialogTitle>Activities</DialogTitle>
+      <DialogContent>No settings yet.</DialogContent>
+      <DialogActions>
+        {closeButton}
+        <Button LinkComponent={Link} href="/history/activities">
+          View all activities
+        </Button>
+      </DialogActions>
+    </>
   );
 }
