@@ -3,6 +3,7 @@ import { Paper } from "@mui/material";
 import { useAtomValue, useSetAtom } from "jotai";
 
 import { updateTileSettingsAtom } from "@/storage/tiles";
+import { ErrorBoundary, TileErrorFallback } from "@/components/error";
 
 import { editingGridAtom } from "../state";
 
@@ -29,7 +30,9 @@ export default function Tile({ children }: { children: React.ReactNode }) {
       elevation={2}
       tabIndex={0}
     >
-      <Suspense>{children}</Suspense>
+      <ErrorBoundary FallbackComponent={TileErrorFallback}>
+        <Suspense>{children}</Suspense>
+      </ErrorBoundary>
     </Paper>
   );
 }

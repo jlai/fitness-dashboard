@@ -7,6 +7,7 @@ import { AppRouterCacheProvider } from "@mui/material-nextjs/v13-appRouter";
 import { Suspense } from "react";
 
 import { CONTENT_SECURITY_POLICY } from "@/config/content-security-policy";
+import { ErrorBoundary } from "@/components/error";
 
 import Header from "./header";
 
@@ -41,11 +42,13 @@ export default function RootPageLayout({
             <ClientSideSetup>
               <Header />
               <main>
-                <Suspense>
-                  <Container maxWidth="lg" className="px-0 sm:px-6">
-                    {children}
-                  </Container>
-                </Suspense>
+                <ErrorBoundary>
+                  <Suspense>
+                    <Container maxWidth="lg" className="px-0 sm:px-6">
+                      {children}
+                    </Container>
+                  </Suspense>
+                </ErrorBoundary>
               </main>
             </ClientSideSetup>
           </AppRouterCacheProvider>
