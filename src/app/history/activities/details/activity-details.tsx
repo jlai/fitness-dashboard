@@ -29,6 +29,7 @@ import {
   SplitDatum,
   trackpointsHasDistances,
 } from "@/utils/distances";
+import { formatDuration } from "@/utils/date-formats";
 
 import {
   useFetchTcxAsString,
@@ -47,29 +48,29 @@ function ActivityOverview({
   activityLog: ActivityLog;
   tcxString?: string;
 }) {
-  const units = useUnits();
+  const { localizedKilometers, localizedKilometersName } = useUnits();
 
   const tcxFilename = `${activityLog.logId}.tcx`;
   const tcxDownloadUrl = useTcxDownloadUrl(tcxString, tcxFilename);
 
+  const { activityName, duration, distance, averageHeartRate, calories } =
+    activityLog;
+
   return (
     <HeaderBar marginTop={0} marginInline={2}>
-      <Typography variant="h5">{activityLog.activityName}</Typography>
+      <Typography variant="h5">{activityName}</Typography>
       <div className="flex-1"></div>
-      {activityLog.distance && (
+      <Typography variant="h5">{formatDuration(duration)}</Typography>
+      {distance && (
         <Typography variant="h5">
-          {FRACTION_DIGITS_1.format(
-            units.localizedKilometers(activityLog.distance)
-          )}{" "}
-          {units.localizedKilometersName}
+          {FRACTION_DIGITS_1.format(localizedKilometers(distance))}{" "}
+          {localizedKilometersName}
         </Typography>
       )}
-      {activityLog.averageHeartRate && (
-        <Typography variant="h5">{activityLog.averageHeartRate} bpm</Typography>
+      {averageHeartRate && (
+        <Typography variant="h5">{averageHeartRate} bpm</Typography>
       )}
-      {activityLog.calories && (
-        <Typography variant="h5">{activityLog.calories} calories</Typography>
-      )}
+      {calories && <Typography variant="h5">{calories} calories</Typography>}
       <Button
         disabled={!tcxDownloadUrl}
         href={tcxDownloadUrl ?? ""}
