@@ -1,6 +1,5 @@
 "use client";
 
-import { ScopeProvider } from "jotai-scope";
 import { Button, Typography } from "@mui/material";
 import { useSetAtom } from "jotai";
 import { Add as AddIcon } from "@mui/icons-material";
@@ -12,9 +11,8 @@ import CreateActivityLogDialog, {
   createActivityLogDialogOpenAtom,
 } from "@/components/logging/create-activity-log";
 
-import { ActivityLogDetailsDialog } from "./details";
+import { ActivityLogDetailsHashLoader } from "./details";
 import ActivityLogList from "./activity-log-list";
-import { showingActivityLogDetailsDialogAtom } from "./details/atoms";
 
 export default function ActivityHistoryPage() {
   const setShowingCreateActivityDialog = useSetAtom(
@@ -23,21 +21,19 @@ export default function ActivityHistoryPage() {
 
   return (
     <RequireScopes scopes={["act"]}>
-      <ScopeProvider atoms={[showingActivityLogDetailsDialogAtom]}>
-        <HeaderBar>
-          <Typography variant="h5">Activity logs</Typography>
-          <FlexSpacer />
-          <Button
-            onClick={() => setShowingCreateActivityDialog(true)}
-            startIcon={<AddIcon />}
-          >
-            Log activity
-          </Button>
-        </HeaderBar>
-        <ActivityLogList />
-        <ActivityLogDetailsDialog />
-        <CreateActivityLogDialog />
-      </ScopeProvider>
+      <HeaderBar>
+        <Typography variant="h5">Activity logs</Typography>
+        <FlexSpacer />
+        <Button
+          onClick={() => setShowingCreateActivityDialog(true)}
+          startIcon={<AddIcon />}
+        >
+          Log activity
+        </Button>
+      </HeaderBar>
+      <ActivityLogList />
+      <ActivityLogDetailsHashLoader />
+      <CreateActivityLogDialog />
     </RequireScopes>
   );
 }

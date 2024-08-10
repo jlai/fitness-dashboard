@@ -1,9 +1,16 @@
 import { atom } from "jotai";
+import { atomWithHash } from "jotai-location";
 
-import { ActivityLog } from "@/api/activity";
+import { cleanHashReplaceState } from "@/utils/hash";
 
-export const showingActivityLogDetailsDialogAtom = atom<ActivityLog | null>(
-  null
+export const activityLogIdHashAtom = atomWithHash<number | null>(
+  "activityLogId",
+  null,
+  {
+    serialize: (value: number | null) => (value ? value.toString() : ""),
+    deserialize: (value: string) => Number.parseInt(value) ?? undefined,
+    setHash: cleanHashReplaceState,
+  }
 );
 
 export type XScaleMeasureType = "time" | "distance";

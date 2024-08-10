@@ -11,10 +11,8 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { useSetAtom } from "jotai";
-import { useQueryClient } from "@tanstack/react-query";
-import { toast } from "mui-sonner";
-import React from "react";
+import { atom, useAtom, useSetAtom } from "jotai";
+import React, { Suspense } from "react";
 import { Info, ViewTimeline } from "@mui/icons-material";
 import Link from "next/link";
 
@@ -23,19 +21,18 @@ import { TIME } from "@/utils/date-formats";
 import { useUnits } from "@/config/units";
 import { FRACTION_DIGITS_0, FRACTION_DIGITS_1 } from "@/utils/number-formats";
 import { ACTIVITY_ICONS } from "@/config/common-ids";
-import {
-  ActivityLogDetailsDialog,
-  showingActivityLogDetailsDialogAtom,
-} from "@/app/history/activities/details";
-import { buildGetActivityLogQuery } from "@/api/activity/activities";
+import { ActivityLogDetailsDialog } from "@/app/history/activities/details";
 
 import { useDailySummary } from "./common";
 import { useTileScale } from "./tile";
 import { IconWithDialog, RenderDialogContentProps } from "./tile-with-dialog";
 
+const showingLogIdAtom = atom<number | null>(null);
+
 export default function ActivitiesTileContent() {
   const { h } = useTileScale();
   const { activities } = useDailySummary();
+  const [showingLogId, setShowingLogId] = useAtom(showingLogIdAtom);
 
   return (
     <Stack direction="column" alignItems="center" className="h-full">
@@ -73,7 +70,15 @@ export default function ActivitiesTileContent() {
           ))}
         </List>
       )}
-      <ActivityLogDetailsDialog />
+      {showingLogId && (
+        <Suspense>
+          <ActivityLogDetailsDialog
+            logId={showingLogId}
+            open={!!showingLogId}
+            onClose={() => setShowingLogId(null)}
+          />
+        </Suspense>
+      )}
     </Stack>
   );
 }
@@ -95,28 +100,15 @@ function ActivityLogSummary({
     activityId,
     logId,
   } = activityLog;
-  const showActivityLog = useSetAtom(showingActivityLogDetailsDialogAtom);
-  const queryClient = useQueryClient();
+  const setShowingLogId = useSetAtom(showingLogIdAtom);
 
   const icon = ACTIVITY_ICONS[activityId];
   const avatar = icon ? React.createElement(icon) : <ViewTimeline />;
   const time = TIME.format(new Date(`${startDate}T${startTime}`));
 
-  const loadAndShowActivityLog = () => {
-    // We have an incomplete activity log in the summary; get the full log
-    queryClient
-      .fetchQuery(buildGetActivityLogQuery(logId))
-      .then((fullActivityLog) => {
-        showActivityLog(fullActivityLog);
-      })
-      .catch(() => {
-        toast.error("Error loading activity log");
-      });
-  };
-
   return (
     <ListItem disablePadding className="w-full" dense={h < 2}>
-      <ListItemButton onClick={loadAndShowActivityLog}>
+      <ListItemButton onClick={() => setShowingLogId(logId)}>
         {w > 1 && avatar && <ListItemAvatar>{avatar}</ListItemAvatar>}
         <ListItemText
           primary={

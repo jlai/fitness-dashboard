@@ -18,7 +18,7 @@ import {
 
 export function buildGetActivityLogQuery(id: number) {
   return queryOptions({
-    queryKey: ["activity", id],
+    queryKey: ["activity-log", id],
     queryFn: async () => {
       const response = await makeRequest(`/1.1/user/-/activities/${id}.json`);
 

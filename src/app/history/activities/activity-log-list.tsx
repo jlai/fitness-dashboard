@@ -2,6 +2,7 @@ import { TableCell, TableRow } from "@mui/material";
 import dayjs from "dayjs";
 import { Explore as LaunchIcon } from "@mui/icons-material";
 import { useSetAtom } from "jotai";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { ActivityLog } from "@/api/activity/types";
 import { formatDuration, formatShortDateTime } from "@/utils/date-formats";
@@ -12,7 +13,7 @@ import {
 } from "@/api/activity/activities";
 import HistoryList from "@/components/history-list/history-list";
 
-import { showingActivityLogDetailsDialogAtom } from "./details/atoms";
+import { activityLogIdHashAtom } from "./details";
 
 const NUMBER_FORMAT = new Intl.NumberFormat(undefined, {
   maximumFractionDigits: 2,
@@ -24,16 +25,22 @@ const DISTANCE_FORMAT = new Intl.NumberFormat(undefined, {
 
 function ActivityLogRow({ logEntry: activityLog }: { logEntry: ActivityLog }) {
   const units = useUnits();
-  const showActivityLogDetails = useSetAtom(
-    showingActivityLogDetailsDialogAtom
-  );
+  const setHashLogId = useSetAtom(activityLogIdHashAtom);
+  const queryClient = useQueryClient();
 
-  const { steps, calories, distance, duration } = activityLog;
+  const { logId, steps, calories, distance, duration } = activityLog;
+
+  const showActivityLogDetails = () => {
+    // Prepopulate query cache
+    queryClient.setQueryData(["activity-log", logId], activityLog);
+
+    setHashLogId(logId);
+  };
 
   return (
     <TableRow key={activityLog.logId}>
       <TableCell>
-        <button onClick={() => showActivityLogDetails(activityLog)}>
+        <button onClick={() => showActivityLogDetails()}>
           <div className="flex flex-row items-center gap-x-2">
             <div>{formatShortDateTime(dayjs(activityLog.startTime))}</div>
             {isPossiblyTracked(activityLog) && (

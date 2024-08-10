@@ -1,7 +1,10 @@
 import { DialogContent, IconButton } from "@mui/material";
-import { useAtom } from "jotai";
 import dayjs from "dayjs";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
 import { useConfirm } from "material-ui-confirm";
 import { toast } from "mui-sonner";
 import { Delete } from "@mui/icons-material";
@@ -9,30 +12,37 @@ import { Delete } from "@mui/icons-material";
 import { RequireScopes } from "@/components/require-scopes";
 import { ResponsiveDialog } from "@/components/dialogs/responsive-dialog";
 import { formatShortDateTime } from "@/utils/date-formats";
-import { buildDeleteActivityLogMutation } from "@/api/activity/activities";
+import {
+  buildDeleteActivityLogMutation,
+  buildGetActivityLogQuery,
+} from "@/api/activity/activities";
 
-import { showingActivityLogDetailsDialogAtom } from "./atoms";
 import { ActivityDetails } from "./activity-details";
 
-export function ActivityLogDetailsDialog() {
-  const [showingActivityLog, setShowingActivityLog] = useAtom(
-    showingActivityLogDetailsDialogAtom
+export function ActivityLogDetailsDialog({
+  logId,
+  open,
+  onClose,
+}: {
+  logId: number;
+  open: boolean;
+  onClose: () => void;
+}) {
+  const queryClient = useQueryClient();
+
+  const { data: activityLog } = useSuspenseQuery(
+    buildGetActivityLogQuery(logId)
   );
 
-  const queryClient = useQueryClient();
   const { mutateAsync: deleteActivity } = useMutation(
     buildDeleteActivityLogMutation(queryClient)
   );
   const confirm = useConfirm();
 
+  const { activityName, startTime } = activityLog;
+
   const handleDeleteClick = () => {
     (async () => {
-      if (!showingActivityLog) {
-        return;
-      }
-
-      const { logId, activityName, startTime } = showingActivityLog;
-
       await confirm({
         title: "Delete activity log?",
         description: `Delete ${activityName} activity log at ${formatShortDateTime(
@@ -44,7 +54,7 @@ export function ActivityLogDetailsDialog() {
       await deleteActivity(logId);
       toast.success(`Deleted ${activityName} activity`);
 
-      setShowingActivityLog(null);
+      onClose();
     })();
   };
 
@@ -60,21 +70,17 @@ export function ActivityLogDetailsDialog() {
       fullWidth
       fullScreenPreferenceId="activity"
       title={
-        showingActivityLog
-          ? `${showingActivityLog.activityName} on ${formatShortDateTime(
-              dayjs(showingActivityLog.startTime)
-            )}`
+        activityLog
+          ? `${activityName} on ${formatShortDateTime(dayjs(startTime))}`
           : ""
       }
       titleActions={deleteButton}
-      open={!!showingActivityLog}
-      onClose={() => setShowingActivityLog(null)}
+      open={open}
+      onClose={onClose}
     >
       <DialogContent className="p-0 flex-1 flex flex-col">
         <RequireScopes scopes={["loc"]}>
-          {showingActivityLog && (
-            <ActivityDetails activityLog={showingActivityLog} />
-          )}
+          <ActivityDetails activityLog={activityLog} />
         </RequireScopes>
       </DialogContent>
     </ResponsiveDialog>
