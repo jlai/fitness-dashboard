@@ -18,7 +18,6 @@ import { LifetimeTileContent } from "./lifetime";
 import { WeightTileContent } from "./weight";
 import { HeartRateTileContent } from "./heart-rate";
 import { TrackerStatusTileContent } from "./tracker-status";
-import { ActivitiesTileContent } from "./activities";
 
 export interface TileDefinition {
   name: string;
@@ -158,7 +157,7 @@ export const TILE_TYPES: Record<string, TileDefinition> = {
   },
   activities: {
     name: "Activities",
-    component: ActivitiesTileContent,
+    component: lazy(() => import("./activities")),
     scopes: ["act"],
     w: 2,
     h: 2,

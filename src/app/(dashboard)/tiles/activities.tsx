@@ -27,7 +27,7 @@ import { buildGetActivityLogQuery } from "@/api/activity/activities";
 import { useDailySummary } from "./common";
 import { useTileScale } from "./tile";
 
-export function ActivitiesTileContent() {
+export default function ActivitiesTileContent() {
   const { h } = useTileScale();
   const { activities } = useDailySummary();
 
