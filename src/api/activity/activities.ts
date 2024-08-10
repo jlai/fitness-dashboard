@@ -16,7 +16,7 @@ import {
   GetActivityLogResponse,
 } from "./types";
 
-export function buildActivityQuery(id: string) {
+export function buildGetActivityLogQuery(id: number) {
   return queryOptions({
     queryKey: ["activity", id],
     queryFn: async () => {

@@ -1,3 +1,12 @@
+import {
+  DirectionsBike,
+  DirectionsRun,
+  DirectionsWalk,
+  FitnessCenter,
+  Pool,
+  Sports,
+} from "@mui/icons-material";
+
 import { ActivityType } from "@/api/activity";
 import { FoodUnit } from "@/api/nutrition";
 
@@ -42,3 +51,12 @@ export const commonActivityTypes: Array<ActivityType> = [
 
 export const ACTIVITY_TYPES_WITH_STEPS = new Set([90013, 90009]);
 export const SWIMMING_ACTIVITY_TYPE = 90024;
+
+export const ACTIVITY_ICONS: Record<string, React.ComponentType> = {
+  90013: DirectionsWalk,
+  90009: DirectionsRun,
+  90001: DirectionsBike,
+  3000: FitnessCenter,
+  15000: Sports,
+  90024: Pool,
+};

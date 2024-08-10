@@ -37,7 +37,7 @@ export interface DailySummaryActivityLog {
   activityParentName: string;
   calories: number;
   description: string;
-  distance: string;
+  distance: number;
   duration: number;
   hasActiveZoneMinutes: boolean;
   hasStartTime: boolean;
