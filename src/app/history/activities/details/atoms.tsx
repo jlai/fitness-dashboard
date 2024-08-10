@@ -8,7 +8,7 @@ export const activityLogIdHashAtom = atomWithHash<number | null>(
   null,
   {
     serialize: (value: number | null) => (value ? value.toString() : ""),
-    deserialize: (value: string) => Number.parseInt(value) ?? undefined,
+    deserialize: (value: string) => Number.parseInt(value) || null,
     setHash: cleanHashReplaceState,
   }
 );

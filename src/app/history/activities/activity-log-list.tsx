@@ -28,28 +28,38 @@ function ActivityLogRow({ logEntry: activityLog }: { logEntry: ActivityLog }) {
   const setHashLogId = useSetAtom(activityLogIdHashAtom);
   const queryClient = useQueryClient();
 
-  const { logId, steps, calories, distance, duration } = activityLog;
+  const {
+    logId,
+    steps,
+    calories,
+    distance,
+    duration,
+    startTime,
+    activityName,
+  } = activityLog;
 
-  const showActivityLogDetails = () => {
+  const showActivityLogDetails = (event: React.MouseEvent) => {
     // Prepopulate query cache
     queryClient.setQueryData(["activity-log", logId], activityLog);
 
     setHashLogId(logId);
+
+    event.preventDefault();
   };
 
   return (
-    <TableRow key={activityLog.logId}>
+    <TableRow key={logId}>
       <TableCell>
-        <button onClick={() => showActivityLogDetails()}>
+        <a onClick={showActivityLogDetails} href={`#activityLogId=${logId}`}>
           <div className="flex flex-row items-center gap-x-2">
-            <div>{formatShortDateTime(dayjs(activityLog.startTime))}</div>
+            <div>{formatShortDateTime(dayjs(startTime))}</div>
             {isPossiblyTracked(activityLog) && (
               <LaunchIcon className="text-slate-500" />
             )}
           </div>
-        </button>
+        </a>
       </TableCell>
-      <TableCell>{activityLog.activityName}</TableCell>
+      <TableCell>{activityName}</TableCell>
       <TableCell>
         {steps !== undefined ? NUMBER_FORMAT.format(steps) : "\u2014"}
       </TableCell>
