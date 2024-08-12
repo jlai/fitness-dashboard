@@ -1,3 +1,5 @@
+import { HeartRateZone } from "../times-series";
+
 // https://dev.fitbit.com/build/reference/web-api/activity/get-daily-activity-summary/
 export interface GetDailyActivitySummaryResponse {
   goals?: {
@@ -63,6 +65,7 @@ export interface ActivityLog {
   caloriesLink: string;
   duration: number;
   elevationGain: number;
+  heartRateZones: Array<HeartRateZone>;
   lastModified: string;
   logId: number;
   logType: "auto_detected" | "manual" | "mobile_run" | "tracker";

@@ -33,7 +33,10 @@ import { ParsedTcx, Trackpoint } from "@/api/activity/tcx";
 import { FRACTION_DIGITS_0, FRACTION_DIGITS_1 } from "@/utils/number-formats";
 import { useUnits } from "@/config/units";
 import { ActivityLog } from "@/api/activity";
-import { buildActivityIntradayQuery, IntradayEntry } from "@/api/intraday";
+import {
+  buildActivityIntradayQuery,
+  buildHeartRateIntradayQuery,
+} from "@/api/intraday";
 import { ENABLE_INTRADAY } from "@/config";
 import {
   augmentWithDistances,
@@ -41,6 +44,8 @@ import {
   SplitDatum,
 } from "@/utils/distances";
 import { FlexSpacer } from "@/components/layout/flex";
+import { createHeartRateZoneColorMap } from "@/config/heart-rate";
+import { ParsedHeartRateZones, parseHeartRateZones } from "@/api/heart-rate";
 
 import { useTrackpoints } from "./load-tcx";
 import { highlightedXAtom, xScaleMeasureAtom } from "./atoms";
@@ -80,8 +85,11 @@ export function ActivityTcxCharts({
 }) {
   const { localizedKilometers, localizedMeters, localizedMetersName } =
     useUnits();
-  const { hasElevation, hasHeartRate, localizedTrackpoints } =
-    useTrackpoints(parsedTcx);
+  const {
+    hasElevation,
+    hasHeartRate: hasTrackedHeartRate,
+    localizedTrackpoints,
+  } = useTrackpoints(parsedTcx);
 
   const startTime = dayjs(activityLog.startTime).startOf("minute");
   const endTime = startTime
@@ -92,6 +100,11 @@ export function ActivityTcxCharts({
   const { data: caloriesIntradayRaw } = useQuery({
     ...buildActivityIntradayQuery("calories", "1min", startTime, endTime),
     enabled: ENABLE_INTRADAY,
+  });
+
+  const { data: heartRateIntradayResponse } = useQuery({
+    ...buildHeartRateIntradayQuery("1min", startTime, endTime),
+    enabled: ENABLE_INTRADAY && !hasTrackedHeartRate,
   });
 
   const caloriesIntraday = useMemo(
@@ -106,18 +119,44 @@ export function ActivityTcxCharts({
     [caloriesIntradayRaw, distanceScale, localizedKilometers]
   );
 
+  const heartIntraday = useMemo(() => {
+    // Use TCX heartrate if available
+    if (localizedTrackpoints && hasTrackedHeartRate) {
+      return localizedTrackpoints.map((trackpoint) => ({
+        dateTime: trackpoint.dateTime,
+        value: trackpoint.heartBpm,
+        distanceMeters: trackpoint.distanceMeters,
+        distanceLocalized: trackpoint.distanceLocalized,
+      }));
+    }
+
+    return heartRateIntradayResponse
+      ? augmentWithDistances(
+          heartRateIntradayResponse.intradayData,
+          distanceScale,
+          localizedKilometers
+        )
+      : undefined;
+  }, [
+    heartRateIntradayResponse,
+    distanceScale,
+    localizedKilometers,
+    localizedTrackpoints,
+    hasTrackedHeartRate,
+  ]);
+
   const dateDomain: [Date, Date] = [startTime.toDate(), endTime.toDate()];
+
+  const { averageHeartRate, heartRateZones, elevationGain } = activityLog;
 
   return (
     <div className="p-4 h-full">
       {hasElevation && (
         <section>
           <ChartSectionHeader title="Elevation">
-            {activityLog.elevationGain > 0 && (
+            {elevationGain > 0 && (
               <Typography variant="h6">
-                {FRACTION_DIGITS_0.format(
-                  localizedMeters(activityLog.elevationGain)
-                )}{" "}
+                {FRACTION_DIGITS_0.format(localizedMeters(elevationGain))}{" "}
                 {localizedMetersName}
               </Typography>
             )}
@@ -129,12 +168,13 @@ export function ActivityTcxCharts({
           />
         </section>
       )}
-      {hasHeartRate && (
+      {(hasTrackedHeartRate || averageHeartRate) && (
         <section>
           <Typography variant="h5">Heart rate</Typography>
           <HeartRateChart
-            trackpoints={localizedTrackpoints}
+            data={heartIntraday}
             dateDomain={dateDomain}
+            heartRateZones={parseHeartRateZones(heartRateZones)}
           />
         </section>
       )}
@@ -310,11 +350,17 @@ export function SynchronizedChart({
   );
 }
 
+type IntradayEntryWithDistance = {
+  dateTime: Date;
+  value: number | undefined;
+  distanceLocalized: number | undefined;
+};
+
 export function CaloriesChart({
   data,
   dateDomain,
 }: {
-  data?: Array<IntradayEntry>;
+  data?: Array<IntradayEntryWithDistance>;
   dateDomain?: [Date, Date];
 }) {
   const valueFormatter = (value: number | null) =>
@@ -333,10 +379,12 @@ export function CaloriesChart({
 }
 
 export function HeartRateChart({
-  trackpoints,
+  data,
+  heartRateZones,
   dateDomain,
 }: {
-  trackpoints: Array<Trackpoint>;
+  data?: Array<IntradayEntryWithDistance>;
+  heartRateZones?: ParsedHeartRateZones;
   dateDomain?: [Date, Date];
 }) {
   const valueFormatter = (value: number | null) =>
@@ -344,16 +392,18 @@ export function HeartRateChart({
 
   return (
     <SynchronizedChart
-      loading={!trackpoints}
+      loading={!data}
       dateDomain={dateDomain}
-      dataset={trackpoints}
+      dataset={data}
       yAxis={[
         {
           scaleType: "linear",
+          colorMap:
+            heartRateZones && createHeartRateZoneColorMap(heartRateZones),
         },
       ]}
       series={[
-        { type: "line", dataKey: "heartBpm", showMark: false, valueFormatter },
+        { type: "line", dataKey: "value", showMark: false, valueFormatter },
       ]}
     />
   );
