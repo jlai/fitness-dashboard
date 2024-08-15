@@ -1,18 +1,26 @@
-import { DialogActions, DialogContent, DialogTitle, Tab } from "@mui/material";
+import {
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Tab,
+  Typography,
+} from "@mui/material";
 import { LineChart, PieChart, PieValueType } from "@mui/x-charts";
 import { TabContext, TabList, TabPanel } from "@mui/lab";
 import { useQuery } from "@tanstack/react-query";
+import { Suspense } from "react";
 
 import { FRACTION_DIGITS_0 } from "@/utils/number-formats";
 import { buildActivityIntradayQuery } from "@/api/intraday";
 import { ENABLE_INTRADAY } from "@/config";
+import { FormRows } from "@/components/forms/form-row";
 
 import { RenderDialogContentProps } from "../tile-with-dialog";
 import { useDailySummary } from "../common";
 import { useSelectedDay } from "../../state";
 import { useTileSetting } from "../tile";
 
-import { DailyGoalSummary } from "./goals";
+import { DailyGoalSummary, GoalSettings } from "./goals";
 
 interface CaloriesTileSettings {
   defaultTab: string;
@@ -39,18 +47,30 @@ export default function CaloriesDialogContent(props: RenderDialogContentProps) {
 
             <Tab label="By activity" value="pie" />
             {ENABLE_INTRADAY && <Tab label="Burn rate" value="intraday" />}
+            <Tab label="Settings" value="settings" />
           </TabList>
           <TabPanel value="overview">
-            <Overview />
+            <Suspense>
+              <Overview />
+            </Suspense>
           </TabPanel>
           <TabPanel value="pie">
-            <CaloriesPieChart />
+            <Suspense>
+              <CaloriesPieChart />
+            </Suspense>
           </TabPanel>
           {ENABLE_INTRADAY && (
             <TabPanel value="intraday">
-              <CaloriesIntraday />
+              <Suspense>
+                <CaloriesIntraday />
+              </Suspense>
             </TabPanel>
           )}
+          <TabPanel value="settings">
+            <Suspense>
+              <Settings />
+            </Suspense>
+          </TabPanel>
         </TabContext>
       </DialogContent>
       <DialogActions>{props.closeButton}</DialogActions>
@@ -147,5 +167,23 @@ function CaloriesIntraday() {
       yAxis={[{ label: "Cal/min" }]}
       series={[{ dataKey: "value", showMark: false, label: "Calories/minute" }]}
     />
+  );
+}
+
+function Settings() {
+  return (
+    <>
+      <Typography variant="h6">Goals</Typography>
+      <Typography variant="body1">Set daily calories burn goal.</Typography>
+
+      <FormRows mt={4}>
+        <GoalSettings
+          resource="caloriesOut"
+          period="daily"
+          label="Daily calories burned goal"
+          unit="Cal"
+        />
+      </FormRows>
+    </>
   );
 }

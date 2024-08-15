@@ -11,6 +11,7 @@ import fireIconUrl from "../assets/fire.svg";
 import { TileWithDialog } from "../tile-with-dialog";
 
 import StatGauge from "./stat-gauge";
+import ActiveMinutesDialogContent from "./active-minutes-dialog";
 
 const StepsDialogContent = lazy(async () => await import("./steps-dialog"));
 const DistanceDialogContent = lazy(
@@ -116,11 +117,16 @@ export function GaugeActiveMinutesTileContent() {
   } = useDailySummary();
 
   return (
-    <StatGauge
-      iconSrc={activeMinutesIconUrl}
-      value={fairlyActiveMinutes + veryActiveMinutes}
-      valueMax={activeMinutes ?? 0}
-      valueUnits="active mins"
-    />
+    <TileWithDialog
+      dialogComponent={ActiveMinutesDialogContent}
+      dialogProps={{ fullWidth: true, maxWidth: "lg" }}
+    >
+      <StatGauge
+        iconSrc={activeMinutesIconUrl}
+        value={fairlyActiveMinutes + veryActiveMinutes}
+        valueMax={activeMinutes ?? 0}
+        valueUnits="active mins"
+      />
+    </TileWithDialog>
   );
 }

@@ -124,8 +124,10 @@ export interface GetActivityGoalsResponse {
     activeMinutes?: number; // daily only
     activeZoneMinutes: number;
     caloriesOut?: number; // daily only
-    distance: number;
+    distance: number; // NOTE: always in user's server-side distance unit
     floors: number;
     steps: number;
   };
 }
+
+export type GoalResource = keyof GetActivityGoalsResponse["goals"];

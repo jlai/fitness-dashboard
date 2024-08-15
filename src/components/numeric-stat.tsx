@@ -16,12 +16,8 @@ export default function NumericStat({
   });
 
   return (
-    <div className={`${className}`}>
-      <Typography
-        variant="subtitle1"
-        component="span"
-        className="text-lg text-center"
-      >
+    <div className={`${className} text-center`}>
+      <Typography variant="subtitle1" component="span" className="text-lg">
         {value !== undefined ? formatter.format(value) : "\u2014"}
       </Typography>{" "}
       {unit && (

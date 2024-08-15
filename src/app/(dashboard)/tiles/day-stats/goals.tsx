@@ -1,14 +1,26 @@
-import { Box, Stack, Typography } from "@mui/material";
-import { useSuspenseQueries } from "@tanstack/react-query";
+import { Box, Button, InputAdornment, Stack, Typography } from "@mui/material";
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQueries,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
+import { FormContainer, TextFieldElement, useForm } from "react-hook-form-mui";
+import { toast } from "mui-sonner";
 
 import { FRACTION_DIGITS_1 } from "@/utils/number-formats";
 import {
   buildDailySummaryQuery,
   buildTimeSeriesQuery,
   GetDailyActivitySummaryResponse,
+  GoalResource,
   TimeSeriesResource,
 } from "@/api/activity";
-import { buildActivityGoalsQuery } from "@/api/activity/goals";
+import {
+  buildActivityGoalsQuery,
+  buildUpdateActivityGoalMutation,
+} from "@/api/activity/goals";
+import { FormRow } from "@/components/forms/form-row";
 
 import { useSelectedDay } from "../../state";
 
@@ -122,4 +134,68 @@ export function useDayAndWeekSummary(resource: TimeSeriesResource) {
   }
 
   return { daySummary, weeklyGoals, weekData };
+}
+
+interface GoalSettingsFormData {
+  goal: number;
+}
+
+export function GoalSettings({
+  resource,
+  period,
+  label,
+  unit,
+}: {
+  resource: GoalResource;
+  period: "daily" | "weekly";
+  label: string;
+  unit: string;
+}) {
+  const queryClient = useQueryClient();
+  const { data: goals } = useSuspenseQuery(buildActivityGoalsQuery(period));
+  const { mutateAsync: updateGoal } = useMutation(
+    buildUpdateActivityGoalMutation(queryClient)
+  );
+
+  const form = useForm<GoalSettingsFormData>({
+    defaultValues: {
+      goal: goals[resource],
+    },
+  });
+
+  const submit = (values: GoalSettingsFormData) => {
+    updateGoal({
+      resource,
+      period,
+      goal: values.goal,
+    }).then(
+      () => {
+        toast.success("Updated goal");
+      },
+      () => {
+        toast.error("Error updating goal");
+      }
+    );
+  };
+
+  return (
+    <FormContainer formContext={form} onSuccess={submit}>
+      <FormRow>
+        <TextFieldElement
+          type="number"
+          name="goal"
+          label={label}
+          rules={{ required: true }}
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">{unit}</InputAdornment>
+            ),
+          }}
+        />
+        <Button type="submit" disabled={!form.formState.isDirty}>
+          Update goal
+        </Button>
+      </FormRow>
+    </FormContainer>
+  );
 }

@@ -4,6 +4,7 @@ import {
   DialogTitle,
   Stack,
   Tab,
+  Typography,
 } from "@mui/material";
 import {
   BarPlot,
@@ -15,7 +16,7 @@ import {
   ResponsiveChartContainer,
 } from "@mui/x-charts";
 import { TabContext, TabList, TabPanel } from "@mui/lab";
-import { useMemo } from "react";
+import { Suspense, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { sumBy } from "lodash";
 
@@ -25,6 +26,7 @@ import { TIME } from "@/utils/date-formats";
 import { FRACTION_DIGITS_2 } from "@/utils/number-formats";
 import { aggregateByHour } from "@/components/charts/timeseries/aggregation";
 import { useUnits } from "@/config/units";
+import { FormRows } from "@/components/forms/form-row";
 
 import { RenderDialogContentProps } from "../tile-with-dialog";
 import { useSelectedDay } from "../../state";
@@ -32,6 +34,7 @@ import { useTileSetting } from "../tile";
 
 import {
   DailyGoalSummary,
+  GoalSettings,
   useDayAndWeekSummary,
   WeeklyGoalSummary,
 } from "./goals";
@@ -54,15 +57,25 @@ export default function DistanceDialogContent(props: RenderDialogContentProps) {
           <TabList onChange={(event, value) => setCurrentTab(value)}>
             <Tab label="Overview" value="overview" />
             {ENABLE_INTRADAY && <Tab label="Detailed" value="intraday" />}
+            <Tab label="Settings" value="settings" />
           </TabList>
           <TabPanel value="overview">
-            <Overview />
+            <Suspense>
+              <Overview />
+            </Suspense>
           </TabPanel>
           {ENABLE_INTRADAY && (
             <TabPanel value="intraday">
-              <DistanceIntraday />
+              <Suspense>
+                <DistanceIntraday />
+              </Suspense>
             </TabPanel>
           )}
+          <TabPanel value="settings">
+            <Suspense>
+              <Settings />
+            </Suspense>
+          </TabPanel>
         </TabContext>
       </DialogContent>
       <DialogActions>{props.closeButton}</DialogActions>
@@ -73,7 +86,7 @@ export default function DistanceDialogContent(props: RenderDialogContentProps) {
 function Overview() {
   const {
     daySummary: { summary, goals },
-    weeklyGoals: { distance: weeklyGoalKilometers },
+    weeklyGoals: { distance: weeklyGoalLocalized },
     weekData,
   } = useDayAndWeekSummary("distance");
   const { localizedKilometers, localizedKilometersNameLong } = useUnits();
@@ -88,7 +101,6 @@ function Overview() {
   const weeklyDistance = localizedKilometers(
     sumBy(weekData, (entry) => Number(entry.value))
   );
-  const weeklyGoal = localizedKilometers(weeklyGoalKilometers);
 
   return (
     <Stack direction="row" justifyContent="center">
@@ -99,7 +111,7 @@ function Overview() {
       />
       <WeeklyGoalSummary
         currentTotal={weeklyDistance}
-        weeklyGoal={weeklyGoal}
+        weeklyGoal={weeklyGoalLocalized}
         unit={localizedKilometersNameLong}
       />
     </Stack>
@@ -168,5 +180,34 @@ function DistanceIntraday() {
         <ChartsAxisHighlight />
       </ResponsiveChartContainer>
     </div>
+  );
+}
+
+function Settings() {
+  const { localizedKilometersName } = useUnits();
+
+  return (
+    <>
+      <Typography variant="h6">Goals</Typography>
+      <Typography variant="body1">
+        Set daily and weekly goals. Weekly goals are only shown in the Overview
+        tab here.
+      </Typography>
+
+      <FormRows mt={4}>
+        <GoalSettings
+          resource="distance"
+          period="daily"
+          label="Daily distance goal"
+          unit={localizedKilometersName}
+        />
+        <GoalSettings
+          resource="distance"
+          period="weekly"
+          label="Weekly distance goal"
+          unit={localizedKilometersName}
+        />
+      </FormRows>
+    </>
   );
 }
