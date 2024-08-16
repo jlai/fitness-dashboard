@@ -335,6 +335,7 @@ export function SynchronizedChart({
         },
       ]}
       {...chartProps}
+      sx={{ "&&": { touchAction: "pan-y" } }}
     >
       <ChartsOverlay loading={loading} />
       <ChartsXAxis />
