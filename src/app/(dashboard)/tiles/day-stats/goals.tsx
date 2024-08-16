@@ -3,7 +3,6 @@ import {
   useMutation,
   useQueryClient,
   useSuspenseQueries,
-  useSuspenseQuery,
 } from "@tanstack/react-query";
 import { FormContainer, TextFieldElement, useForm } from "react-hook-form-mui";
 import { toast } from "mui-sonner";
@@ -152,16 +151,21 @@ export function GoalSettings({
   unit: string;
 }) {
   const queryClient = useQueryClient();
-  const { data: goals } = useSuspenseQuery(buildActivityGoalsQuery(period));
   const { mutateAsync: updateGoal } = useMutation(
     buildUpdateActivityGoalMutation(queryClient)
   );
 
-  const form = useForm<GoalSettingsFormData>({
-    defaultValues: {
-      goal: goals[resource],
-    },
+  const fetchDefaultValues = async () => ({
+    goal: (await queryClient.fetchQuery(buildActivityGoalsQuery(period)))[
+      resource
+    ]!,
   });
+
+  const form = useForm<GoalSettingsFormData>({
+    defaultValues: fetchDefaultValues,
+  });
+
+  const { formState } = form;
 
   const submit = (values: GoalSettingsFormData) => {
     updateGoal({
@@ -171,6 +175,9 @@ export function GoalSettings({
     }).then(
       () => {
         toast.success("Updated goal");
+        form.reset({
+          goal: values.goal,
+        });
       },
       () => {
         toast.error("Error updating goal");
@@ -179,20 +186,28 @@ export function GoalSettings({
   };
 
   return (
-    <FormContainer formContext={form} onSuccess={submit}>
+    <FormContainer
+      formContext={form}
+      onSuccess={submit}
+      disabled={formState.isLoading}
+    >
       <FormRow>
         <TextFieldElement
           type="number"
           name="goal"
           label={label}
           rules={{ required: true }}
+          InputLabelProps={{ shrink: true }}
           InputProps={{
             endAdornment: (
               <InputAdornment position="end">{unit}</InputAdornment>
             ),
           }}
         />
-        <Button type="submit" disabled={!form.formState.isDirty}>
+        <Button
+          type="submit"
+          disabled={formState.isLoading || !formState.isDirty}
+        >
           Update goal
         </Button>
       </FormRow>
