@@ -9,6 +9,8 @@ import {
 import { ListItemIcon, ListItemText, Menu, MenuItem } from "@mui/material";
 import { Check } from "@mui/icons-material";
 
+import { MAP_STYLE_OPTIONS } from "./styles";
+
 export interface MapStyleControlProps {
   position?: ControlPosition;
   style: string;
@@ -35,24 +37,6 @@ function createContainer() {
   return container;
 }
 
-const STYLE_OPTIONS: Array<{
-  id: string;
-  label: string;
-}> = [
-  {
-    id: "white",
-    label: "Faded",
-  },
-  {
-    id: "light",
-    label: "Light",
-  },
-  {
-    id: "dark",
-    label: "Dark",
-  },
-];
-
 function MapStyleControl({ position, style, onChange }: MapStyleControlProps) {
   const [container] = useState(createContainer);
   const popupState = usePopupState({
@@ -78,7 +62,7 @@ function MapStyleControl({ position, style, onChange }: MapStyleControlProps) {
         <div className="p-1">{ICON}</div>
       </button>
       <Menu {...bindMenu(popupState)}>
-        {STYLE_OPTIONS.map(({ id, label }) => (
+        {MAP_STYLE_OPTIONS.map(({ id, label }) => (
           <MenuItem
             key={id}
             onClick={() => {

@@ -16,13 +16,13 @@ import type { Feature, LineString } from "geojson";
 import { bbox, getCoords } from "@turf/turf";
 import { Flag as EndIcon, PlayArrow as StartIcon } from "@mui/icons-material";
 
-import { MAPLIBRE_STYLE_URL } from "@/config";
 import { ParsedTcx, Trackpoint } from "@/api/activity/tcx";
 import { SplitDatum } from "@/utils/distances";
 import MapStyleControl from "@/components/map/style-control";
 import { mapStyleAtom } from "@/storage/settings";
 
 import "maplibre-gl/dist/maplibre-gl.css";
+import { getMapStyle } from "./styles";
 
 const layerStyle: LineLayer = {
   id: "track",
@@ -95,7 +95,7 @@ export default function ActivityMap({
     [splits, trackpoints]
   );
 
-  const [mapStyle, setMapStyle] = useAtom(mapStyleAtom);
+  const [mapStyleId, setMapStyleId] = useAtom(mapStyleAtom);
 
   return (
     <Map
@@ -114,7 +114,7 @@ export default function ActivityMap({
       }}
       refreshExpiredTiles={false}
       attributionControl={false}
-      mapStyle={MAPLIBRE_STYLE_URL?.replace("{STYLE}", mapStyle)}
+      mapStyle={getMapStyle(mapStyleId)}
     >
       <AttributionControl compact />
       <ScaleControl />
@@ -122,8 +122,8 @@ export default function ActivityMap({
       <NavigationControl visualizePitch showZoom showCompass />
       <MapStyleControl
         position="top-right"
-        style={mapStyle}
-        onChange={setMapStyle}
+        style={mapStyleId}
+        onChange={setMapStyleId}
       />
       <Source id="track" type="geojson" data={geojson}>
         <Layer {...layerStyle} />
