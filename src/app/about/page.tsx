@@ -45,10 +45,29 @@ export default function AboutPage() {
         <Typography variant="h4">Privacy</Typography>
         <Typography variant="h6">How this works</Typography>
         <Typography variant="body2">
-          This website uses the Fitbit Web API to directly get and display your
-          fitness stats, without passing through or syncing to other cloud
-          servers. This means we don&apos;t collect, store, transfer, sell, or
-          otherwise have access to your data outside your browser.
+          This website uses the{" "}
+          <a
+            href="https://dev.fitbit.com/"
+            className="underline"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Fitbit Web API
+          </a>{" "}
+          to directly get and display your fitness stats, without passing
+          through or syncing to other cloud servers. This means we don&apos;t
+          collect, store, transfer, sell, or otherwise have access to your data
+          outside your browser.
+        </Typography>
+        <Typography variant="body2">
+          When you connect with Fitbit, we redirect you to the Fitbit login
+          page. You&apos;ll be asked to grant permission to this website for
+          your Fitbit data, and you can choose what types of data you would like
+          to authorize access for. Fitbit then redirects back to this site with
+          an access token, which is stored locally in your browser. This token
+          allows your browser to request data from Fitbit&apos;s servers without
+          syncing it to another account or server like some other 3rd party
+          services.
         </Typography>
         <Typography variant="body2">
           Some features, such as displaying maps of runs, may send coordinates
