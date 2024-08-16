@@ -15,6 +15,7 @@ import { PanelGroup, Panel, PanelResizeHandle } from "react-resizable-panels";
 import { bisector } from "d3-array";
 import { useAtom, useAtomValue } from "jotai";
 import { useMemo } from "react";
+import React from "react";
 
 import { useUnits } from "@/config/units";
 import { FRACTION_DIGITS_1 } from "@/utils/number-formats";
@@ -30,6 +31,7 @@ import {
   trackpointsHasDistances,
 } from "@/utils/distances";
 import { formatDuration } from "@/utils/date-formats";
+import { ACTIVITY_ICONS } from "@/config/common-ids";
 
 import {
   useFetchTcxAsString,
@@ -53,33 +55,44 @@ function ActivityOverview({
   const tcxFilename = `${activityLog.logId}.tcx`;
   const tcxDownloadUrl = useTcxDownloadUrl(tcxString, tcxFilename);
 
-  const { activityName, duration, distance, averageHeartRate, calories } =
-    activityLog;
+  const {
+    activityTypeId,
+    activityName,
+    duration,
+    distance,
+    averageHeartRate,
+    calories,
+  } = activityLog;
+
+  const activityIcon = ACTIVITY_ICONS[activityTypeId];
 
   return (
-    <HeaderBar marginTop={0} marginInline={2}>
-      <Typography variant="h5">{activityName}</Typography>
-      <div className="flex-1"></div>
-      <Typography variant="h5">{formatDuration(duration)}</Typography>
-      {distance && (
-        <Typography variant="h5">
-          {FRACTION_DIGITS_1.format(localizedKilometers(distance))}{" "}
-          {localizedKilometersName}
-        </Typography>
-      )}
-      {averageHeartRate && (
-        <Typography variant="h5">{averageHeartRate} bpm</Typography>
-      )}
-      {calories && <Typography variant="h5">{calories} calories</Typography>}
-      <Button
-        disabled={!tcxDownloadUrl}
-        href={tcxDownloadUrl ?? ""}
-        download={tcxFilename}
-      >
-        <Download />
-        TCX
-      </Button>
-    </HeaderBar>
+    <div className="bg-slate-100 dark:bg-inherit border-b-2 border-b-slate-200 dark:border-b-slate-800">
+      <HeaderBar marginBlock={1} marginInline={2}>
+        {activityIcon && React.createElement(activityIcon)}
+        <Typography variant="h6">{activityName}</Typography>
+        <div className="flex-1"></div>
+        <Typography variant="h6">{formatDuration(duration)}</Typography>
+        {distance && (
+          <Typography variant="h6">
+            {FRACTION_DIGITS_1.format(localizedKilometers(distance))}{" "}
+            {localizedKilometersName}
+          </Typography>
+        )}
+        {averageHeartRate && (
+          <Typography variant="h6">{averageHeartRate} bpm</Typography>
+        )}
+        {calories && <Typography variant="h6">{calories} calories</Typography>}
+        <Button
+          disabled={!tcxDownloadUrl}
+          href={tcxDownloadUrl ?? ""}
+          download={tcxFilename}
+        >
+          <Download />
+          TCX
+        </Button>
+      </HeaderBar>
+    </div>
   );
 }
 
