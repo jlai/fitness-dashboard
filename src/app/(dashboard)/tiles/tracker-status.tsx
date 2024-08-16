@@ -167,7 +167,6 @@ function TrackerStatusTileDialogContent({
               value={deviceId ?? ""}
               labelId={labelId}
               label="Device"
-              hiddenLabel
               onChange={(event) => setDeviceId(event.target.value || undefined)}
             >
               <MenuItem value="">Most recent</MenuItem>
