@@ -11,6 +11,7 @@ import {
   Marker,
   LngLatBoundsLike,
 } from "react-map-gl/maplibre";
+import { useAtom } from "jotai";
 import type { Feature, LineString } from "geojson";
 import { bbox, getCoords } from "@turf/turf";
 import { Flag as EndIcon, PlayArrow as StartIcon } from "@mui/icons-material";
@@ -18,6 +19,8 @@ import { Flag as EndIcon, PlayArrow as StartIcon } from "@mui/icons-material";
 import { MAPLIBRE_STYLE_URL } from "@/config";
 import { ParsedTcx, Trackpoint } from "@/api/activity/tcx";
 import { SplitDatum } from "@/utils/distances";
+import MapStyleControl from "@/components/map/style-control";
+import { mapStyleAtom } from "@/storage/settings";
 
 import "maplibre-gl/dist/maplibre-gl.css";
 
@@ -92,6 +95,8 @@ export default function ActivityMap({
     [splits, trackpoints]
   );
 
+  const [mapStyle, setMapStyle] = useAtom(mapStyleAtom);
+
   return (
     <Map
       mapLib={import("maplibre-gl")}
@@ -109,12 +114,17 @@ export default function ActivityMap({
       }}
       refreshExpiredTiles={false}
       attributionControl={false}
-      mapStyle={MAPLIBRE_STYLE_URL}
+      mapStyle={MAPLIBRE_STYLE_URL?.replace("{STYLE}", mapStyle)}
     >
       <AttributionControl compact />
       <ScaleControl />
       <FullscreenControl />
       <NavigationControl visualizePitch showZoom showCompass />
+      <MapStyleControl
+        position="top-right"
+        style={mapStyle}
+        onChange={setMapStyle}
+      />
       <Source id="track" type="geojson" data={geojson}>
         <Layer {...layerStyle} />
       </Source>

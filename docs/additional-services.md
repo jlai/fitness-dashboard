@@ -16,5 +16,5 @@ For maps, we use [Protomaps](https://protomaps.com/) because:
 ### Configuring
 
 1. Get an API key from https://protomaps.com/dashboard
-2. Add `NEXT_PUBLIC_MAPLIBRE_STYLE_URL=https://api.protomaps.com/styles/v2/white.json?key=KEYGOESHERE`
+2. Add `NEXT_PUBLIC_MAPLIBRE_STYLE_URL=https://api.protomaps.com/styles/v2/{STYLE}.json?key=KEYGOESHERE`
    to your `.env.local`

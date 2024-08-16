@@ -43,3 +43,12 @@ export const foodLogTotalsPositionAtom = atomWithStorage<
 >("food-log:totals-position", "bottom", undefined, {
   getOnInit: true,
 });
+
+export const mapStyleAtom = atomWithStorage<string>(
+  "map:style",
+  "white",
+  undefined,
+  {
+    getOnInit: true,
+  }
+);
