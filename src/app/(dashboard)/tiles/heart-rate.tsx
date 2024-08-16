@@ -113,6 +113,7 @@ function HeartRateIntraday() {
       height={300}
       loading={!intradayData}
       dataset={intradayData ?? []}
+      tooltip={{ trigger: intradayData?.length ?? 0 > 0 ? "axis" : "none" }}
       xAxis={[{ dataKey: "dateTime", scaleType: "time" }]}
       yAxis={[
         {
