@@ -1,10 +1,18 @@
-import { Autocomplete, TextField, Typography } from "@mui/material";
+import {
+  Autocomplete,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  TextField,
+  Typography,
+} from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { FieldError, useController, UseControllerProps } from "react-hook-form";
+import React from "react";
 
 import { buildActivityTypesQuery } from "@/api/activity/activity-types";
-import { commonActivityTypes } from "@/config/common-ids";
+import { ACTIVITY_ICONS, commonActivityTypes } from "@/config/common-ids";
 
 export interface ActivityTypeOption {
   id: number;
@@ -62,7 +70,7 @@ export function ActivityTypeInput({
   }, [categorizedActivityTypes]);
 
   return (
-    <Autocomplete
+    <Autocomplete<ActivityTypeOption>
       value={value}
       onChange={(event, value) => onChange(value)}
       disabled={!options}
@@ -79,12 +87,22 @@ export function ActivityTypeInput({
           {...props}
         />
       )}
+      renderOption={(props, option) => {
+        const icon = ACTIVITY_ICONS[option.id];
+
+        return (
+          <ListItem dense {...props} key={props.key}>
+            {icon && <ListItemIcon>{React.createElement(icon)}</ListItemIcon>}
+            <ListItemText>{option.name}</ListItemText>
+          </ListItem>
+        );
+      }}
       renderGroup={(params) => (
         <li key={params.key}>
           <Typography variant="subtitle1" padding={1} className="font-semibold">
             {params.group}
           </Typography>
-          <div>{params.children}</div>
+          <ul>{params.children}</ul>
         </li>
       )}
     />
