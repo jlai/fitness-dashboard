@@ -52,7 +52,9 @@ export function DateRangePicker({
   const endDay = dayjs(selected?.to ?? "");
 
   const numDays =
-    (startDay.isValid() && endDay.isValid() && endDay.diff(startDay, "days")) ??
+    (startDay.isValid() &&
+      endDay.isValid() &&
+      endDay.diff(startDay, "days") + 1) ??
     undefined;
 
   const today = dayjs();
@@ -196,7 +198,7 @@ export function DateRangePicker({
           onSelect={(range) => setSelected(range)}
           mode="range"
           numberOfMonths={2}
-          min={2}
+          min={1}
           month={month}
           onMonthChange={setMonth}
           required
