@@ -3,16 +3,25 @@ import {
   Typography,
   InputAdornment,
   Stack,
+  IconButton,
+  IconButtonProps,
 } from "@mui/material";
 import { DateField } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import { useState } from "react";
 import { DateRange, DayPicker, Button } from "react-day-picker";
+import { ArrowDropDown } from "@mui/icons-material";
 
 import { FormRow } from "../forms/form-row";
 import { PopupMenuOption, PopupMenu } from "../popup-menu";
 
 import { DayjsRange } from "./period-navigator";
+
+const DateMenuButton = (props: Partial<IconButtonProps>) => (
+  <IconButton {...props} aria-label="set date actions">
+    <ArrowDropDown />
+  </IconButton>
+);
 
 export function DateRangePicker({
   initialRange,
@@ -152,7 +161,10 @@ export function DateRangePicker({
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
-                  <PopupMenu options={startDayMenuOptions} />
+                  <PopupMenu
+                    options={startDayMenuOptions}
+                    ButtonComponent={DateMenuButton}
+                  />
                 </InputAdornment>
               ),
             }}
@@ -170,7 +182,10 @@ export function DateRangePicker({
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
-                  <PopupMenu options={endDayMenuOptions} />
+                  <PopupMenu
+                    options={endDayMenuOptions}
+                    ButtonComponent={DateMenuButton}
+                  />
                 </InputAdornment>
               ),
             }}

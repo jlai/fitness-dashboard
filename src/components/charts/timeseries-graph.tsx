@@ -5,15 +5,21 @@ import {
   MenuItem,
   Select,
   Divider,
-  Box,
   Stack,
+  Button,
+  Chip,
+  ListItemText,
+  ListItemIcon,
 } from "@mui/material";
 import { useAtom, useAtomValue } from "jotai";
 import { createElement, useMemo, useState } from "react";
+import { Download, Save } from "@mui/icons-material";
 
 import { RequireScopes } from "../require-scopes";
 import { HeaderBar } from "../layout/rows";
 import { DayjsRange } from "../calendar/period-navigator";
+import { FlexSpacer } from "../layout/flex";
+import { PopupMenu } from "../popup-menu";
 
 import {
   CHART_RESOURCE_CONFIGS,
@@ -28,6 +34,7 @@ import {
 } from "./atoms";
 import { GraphRangeSelector, DateTimeRangeNavigator } from "./navigators";
 import { AggregationType, TimeSeriesChartContext } from "./timeseries/context";
+import { GraphExportProvider, useSaveAsCSV } from "./timeseries/graph-export";
 
 export function SeriesSelector() {
   const [selectedResource, setselectedResource] = useAtom(selectedResourceAtom);
@@ -87,6 +94,52 @@ export function TimeSeriesChart({
   );
 }
 
+function GraphExportActions() {
+  const selectedResource = useAtomValue(selectedResourceAtom);
+  const selectedRange = useAtomValue(selectedRangeAtom);
+
+  const { saveAsCSV, hasDataToExport } = useSaveAsCSV(
+    selectedResource,
+    selectedRange
+  );
+
+  return (
+    <PopupMenu
+      ButtonComponent={(props) => (
+        <Button {...props} startIcon={<Download />}>
+          Download
+        </Button>
+      )}
+      options={[
+        {
+          id: "saveCSV",
+          label: (
+            <>
+              <ListItemIcon>
+                <Save />
+              </ListItemIcon>
+              <ListItemText>
+                Save as CSV{" "}
+                <Chip
+                  className="ms-2 mb-1"
+                  size="small"
+                  label="beta"
+                  color="warning"
+                  variant="filled"
+                />
+              </ListItemText>
+            </>
+          ),
+          disabled: !hasDataToExport,
+          onClick() {
+            saveAsCSV();
+          },
+        },
+      ]}
+    />
+  );
+}
+
 /** Graph component with resource selector and navigation controls */
 export function NavigableGraphView() {
   useAtomValue(resourceChangedEffect);
@@ -100,28 +153,34 @@ export function NavigableGraphView() {
   const aggregation = selectedRangeType === "year" ? "month" : "day";
 
   return (
-    <div>
-      <HeaderBar>
-        <SeriesSelector />
-        <GraphRangeSelector resource={selectedResource} />
-        <Box flex={1} />
-        <DateTimeRangeNavigator resource={selectedResource} />
-      </HeaderBar>
-      <Stack
-        direction="row"
-        columnGap={4}
-        ref={setStatsEl}
-        padding={1}
-        justifyContent="center"
-      />
-      <div className="w-full h-[400px]">
-        <TimeSeriesChart
-          resource={selectedResource}
-          range={selectedRange}
-          aggregation={aggregation}
-          statsEl={statsEl ?? undefined}
+    <GraphExportProvider>
+      <div>
+        <HeaderBar>
+          <SeriesSelector />
+          <GraphRangeSelector resource={selectedResource} />
+          <FlexSpacer />
+          <DateTimeRangeNavigator resource={selectedResource} />
+        </HeaderBar>
+        <HeaderBar>
+          <FlexSpacer />
+          <GraphExportActions />
+        </HeaderBar>
+        <Stack
+          direction="row"
+          columnGap={4}
+          ref={setStatsEl}
+          padding={1}
+          justifyContent="center"
         />
+        <div className="w-full h-[400px]">
+          <TimeSeriesChart
+            resource={selectedResource}
+            range={selectedRange}
+            aggregation={aggregation}
+            statsEl={statsEl ?? undefined}
+          />
+        </div>
       </div>
-    </div>
+    </GraphExportProvider>
   );
 }

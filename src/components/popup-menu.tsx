@@ -1,24 +1,25 @@
-import { ArrowDropDown } from "@mui/icons-material";
-import { IconButton, Menu, MenuItem } from "@mui/material";
+import { Menu, MenuItem } from "@mui/material";
 import {
   bindMenu,
   bindTrigger,
   usePopupState,
 } from "material-ui-popup-state/hooks";
+import React from "react";
 
 export interface PopupMenuOption {
   id: string;
   label: React.ReactNode;
   onClick: () => void;
   hidden?: boolean;
+  disabled?: boolean;
 }
 
 export function PopupMenu({
   options,
-  disabled,
+  ButtonComponent,
 }: {
   options: Array<PopupMenuOption>;
-  disabled?: boolean;
+  ButtonComponent: React.ComponentType;
 }) {
   const popupState = usePopupState({
     variant: "popover",
@@ -27,19 +28,14 @@ export function PopupMenu({
 
   return (
     <>
-      <IconButton
-        aria-label="date actions"
-        disabled={disabled}
-        {...bindTrigger(popupState)}
-      >
-        <ArrowDropDown />
-      </IconButton>
+      <ButtonComponent {...bindTrigger(popupState)} />
       <Menu {...bindMenu(popupState)}>
         {options
           .filter(({ hidden }) => !hidden)
-          .map(({ id, label, onClick }) => (
+          .map(({ id, label, disabled, onClick }) => (
             <MenuItem
               key={id}
+              disabled={disabled}
               onClick={() => {
                 onClick();
                 popupState.close();

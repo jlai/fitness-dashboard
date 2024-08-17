@@ -34,6 +34,7 @@
     "@visx/visx": "^3.11.0",
     "chance": "^1.1.12",
     "cross-env": "^7.0.3",
+    "csv-stringify": "^6.5.1",
     "d3-array": "^3.2.4",
     "d3-scale": "^4.0.2",
     "dayjs": "^1.11.11",

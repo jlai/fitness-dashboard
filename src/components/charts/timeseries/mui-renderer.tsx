@@ -27,6 +27,7 @@ import {
   MONTH_YEAR_FORMAT,
 } from "./formatters";
 import { TimeSeriesChartContext } from "./context";
+import { useExportGraphData } from "./graph-export";
 
 const CHART_MARGINS = { top: 16, bottom: 28, right: 8 };
 
@@ -173,6 +174,8 @@ export function SimpleBarChart<
     ...getCommonSeriesProps({ data, config, layout }),
   }));
 
+  useExportGraphData({ data, seriesConfigs });
+
   return (
     <ResponsiveChartContainer
       series={series}
@@ -196,6 +199,8 @@ export function StackedBarChart<
     stack: "stack",
     ...getCommonSeriesProps({ data, config, layout }),
   }));
+
+  useExportGraphData({ data, seriesConfigs });
 
   return (
     <ResponsiveChartContainer
@@ -221,6 +226,8 @@ export function SimpleLineChart<
     curve: config.curve,
     ...getCommonSeriesProps({ data, config }),
   }));
+
+  useExportGraphData({ data, seriesConfigs });
 
   return (
     <ResponsiveChartContainer
