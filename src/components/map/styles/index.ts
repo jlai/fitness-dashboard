@@ -35,6 +35,7 @@ export function getMapStyle(name: string): string | MapStyle {
   switch (name) {
     case "light":
     case "white":
+    case "dark":
       return MAPLIBRE_STYLE_URL?.replace("{STYLE}", name) ?? "";
     case "openstreetmap":
       return openstreetmapStyle as MapStyle;
