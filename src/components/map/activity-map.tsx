@@ -5,7 +5,6 @@ import {
   Map,
   Source,
   ScaleControl,
-  AttributionControl,
   NavigationControl,
   FullscreenControl,
   Marker,
@@ -19,10 +18,12 @@ import { Flag as EndIcon, PlayArrow as StartIcon } from "@mui/icons-material";
 import { ParsedTcx, Trackpoint } from "@/api/activity/tcx";
 import { SplitDatum } from "@/utils/distances";
 import MapStyleControl from "@/components/map/style-control";
+import SafeAttributionControl from "@/components/map/attribution-control";
 import { mapStyleAtom } from "@/storage/settings";
 
-import "maplibre-gl/dist/maplibre-gl.css";
 import { getMapStyle } from "./styles";
+
+import "maplibre-gl/dist/maplibre-gl.css";
 
 const layerStyle: LineLayer = {
   id: "track",
@@ -116,7 +117,7 @@ export default function ActivityMap({
       attributionControl={false}
       mapStyle={getMapStyle(mapStyleId)}
     >
-      <AttributionControl compact />
+      <SafeAttributionControl />
       <ScaleControl />
       <FullscreenControl />
       <NavigationControl visualizePitch showZoom showCompass />

@@ -1,6 +1,5 @@
-import { ControlPosition, useControl } from "react-map-gl/maplibre";
-import React, { useState } from "react";
-import ReactDOM from "react-dom";
+import { ControlPosition } from "react-map-gl/maplibre";
+import React from "react";
 import {
   bindMenu,
   bindTrigger,
@@ -10,6 +9,7 @@ import { ListItemIcon, ListItemText, Menu, MenuItem } from "@mui/material";
 import { Check } from "@mui/icons-material";
 
 import { MAP_STYLE_OPTIONS } from "./styles";
+import { ReactMapControl } from "./control";
 
 export interface MapStyleControlProps {
   position?: ControlPosition;
@@ -31,33 +31,17 @@ const ICON = (
   </svg>
 );
 
-function createContainer() {
-  const container = document.createElement("div");
-  container.className = "maplibregl-ctrl maplibregl-ctrl-group";
-  return container;
-}
-
 function MapStyleControl({ position, style, onChange }: MapStyleControlProps) {
-  const [container] = useState(createContainer);
   const popupState = usePopupState({
     variant: "popper",
     popupId: "map-style-menu",
   });
 
-  useControl(
-    () => ({
-      onAdd() {
-        return container;
-      },
-      onRemove() {},
-    }),
-    {
-      position: position,
-    }
-  );
-
-  return ReactDOM.createPortal(
-    <>
+  return (
+    <ReactMapControl
+      position={position}
+      containerClassName="maplibregl-ctrl maplibregl-ctrl-group"
+    >
       <button aria-label="change style" {...bindTrigger(popupState)}>
         <div className="p-1">{ICON}</div>
       </button>
@@ -75,8 +59,7 @@ function MapStyleControl({ position, style, onChange }: MapStyleControlProps) {
           </MenuItem>
         ))}
       </Menu>
-    </>,
-    container
+    </ReactMapControl>
   );
 }
 
