@@ -143,7 +143,7 @@ export function LeanFatMassGraph() {
       <HeaderBar>
         <GraphRangeSelector resource="weight" />
         <div className="flex-1"></div>
-        <DateTimeRangeNavigator />
+        <DateTimeRangeNavigator resource="weight" />
       </HeaderBar>
       <div className="w-full h-[400px]">
         <ResponsiveChartContainer
