@@ -60,34 +60,40 @@ export function DateRangePicker({
     setSelected({ from: selected?.from, to: value });
   };
 
+  const endOrToday = endDay.isValid() ? endDay : today;
+
   const startDayMenuOptions: Array<PopupMenuOption> = [
     {
       id: "7days",
       label: "7 days before end",
       onClick() {
-        setStartDate(
-          (endDay.isValid() ? endDay : today).subtract(7, "days").toDate()
-        );
+        setStartDate(endOrToday.subtract(7, "days").toDate());
       },
     },
     {
       id: "30days",
       label: "30 days before end",
       onClick() {
-        setStartDate(
-          (endDay.isValid() ? endDay : today).subtract(30, "days").toDate()
-        );
+        setStartDate(endOrToday.subtract(30, "days").toDate());
       },
     },
     {
       id: "90days",
       label: "90 days before end",
       onClick() {
-        setStartDate(
-          (endDay.isValid() ? endDay : today).subtract(30, "days").toDate()
-        );
+        setStartDate(endOrToday.subtract(30, "days").toDate());
       },
       hidden: !!(maxDays && maxDays < 90),
+    },
+    {
+      id: "startOfYear",
+      label: "Start of year",
+      onClick() {
+        setStartDate(endOrToday.startOf("year").toDate());
+      },
+      hidden: !!(
+        maxDays && endOrToday.diff(endOrToday.startOf("year"), "days") > maxDays
+      ),
     },
   ];
 
@@ -135,6 +141,7 @@ export function DateRangePicker({
         <FormRow>
           <DateField
             label="Start"
+            disableFuture
             value={startDay.isValid() ? startDay : undefined}
             onChange={(value) => setStartDate(value?.toDate())}
             onFocus={() => {
@@ -152,6 +159,7 @@ export function DateRangePicker({
           />
           <DateField
             label="End"
+            disableFuture
             value={endDay.isValid() ? endDay : undefined}
             onChange={(value) => setEndDate(value?.toDate())}
             onFocus={() => {

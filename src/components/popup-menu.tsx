@@ -8,7 +8,7 @@ import {
 
 export interface PopupMenuOption {
   id: string;
-  label: string;
+  label: React.ReactNode;
   onClick: () => void;
   hidden?: boolean;
 }
