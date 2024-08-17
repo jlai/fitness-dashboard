@@ -21,12 +21,19 @@ interface ResponsiveDialogProps {
   children?: React.ReactNode;
   title: string;
   fullScreen?: boolean;
+  showFullScreenToggle?: boolean;
   showCloseButton?: boolean;
   titleActions?: React.ReactNode;
 
   /** If provided, remember fullscreen setting for this dialog type. */
   fullScreenPreferenceId?: string;
 }
+
+// Atom that always returns false and ignores writes
+const falseAtom = atom(
+  () => false,
+  () => {}
+);
 
 export function ResponsiveDialog({
   open,
@@ -36,15 +43,17 @@ export function ResponsiveDialog({
   titleActions,
   fullScreen: initialFullScreen,
   fullScreenPreferenceId = "",
+  showFullScreenToggle,
   showCloseButton = true,
   ...dialogProps
 }: ResponsiveDialogProps & DialogProps) {
   const theme = useTheme();
   const isMobileSize = !useMediaQuery(theme.breakpoints.up("sm"));
+
   const [fullScreenPreference, setFullScreenPreference] = useAtom(
     fullScreenPreferenceId
       ? fullScreenPreferenceFamily(fullScreenPreferenceId)
-      : atom(false)
+      : falseAtom
   );
 
   const [fullScreen, setFullScreen] = useState(
@@ -57,7 +66,6 @@ export function ResponsiveDialog({
       onClose={onClose}
       maxWidth="lg"
       fullScreen={fullScreen}
-      title={title}
       {...dialogProps}
     >
       <ResponsiveDialogTitleBar
@@ -70,7 +78,7 @@ export function ResponsiveDialog({
             setFullScreenPreference(value);
           }
         }}
-        showFullScreenToggle={!isMobileSize}
+        showFullScreenToggle={showFullScreenToggle ?? !isMobileSize}
         showCloseButton={showCloseButton}
         onClose={onClose}
         actions={titleActions}

@@ -10,6 +10,7 @@ import {
   YearNavigator,
   DayNavigator,
 } from "../calendar/period-navigator";
+import { CustomRangePicker } from "../calendar/custom-range";
 
 import { selectedRangeTypeAtom, selectedRangeAtom } from "./atoms";
 import { CHART_RESOURCE_CONFIGS, ChartResource } from "./timeseries/resources";
@@ -20,7 +21,8 @@ export function GraphRangeSelector({ resource }: { resource: ChartResource }) {
   );
 
   const maxDays = CHART_RESOURCE_CONFIGS[resource].maxDays;
-  const supportsIntraday = CHART_RESOURCE_CONFIGS[resource].supportsIntraday;
+  // const supportsIntraday = CHART_RESOURCE_CONFIGS[resource].supportsIntraday;
+  const supportsIntraday = false;
 
   return (
     <ToggleButtonGroup
@@ -28,9 +30,7 @@ export function GraphRangeSelector({ resource }: { resource: ChartResource }) {
       value={selectedRangeType}
       onChange={(event, value) => value && setSelectedRangeType(value)}
     >
-      <ToggleButton value="day" hidden={!supportsIntraday}>
-        Day
-      </ToggleButton>
+      {supportsIntraday && <ToggleButton value="day">Day</ToggleButton>}
       <ToggleButton value="week">Week</ToggleButton>
       <ToggleButton value="month" disabled={maxDays < 31}>
         Month
@@ -41,12 +41,19 @@ export function GraphRangeSelector({ resource }: { resource: ChartResource }) {
       <ToggleButton value="year" disabled={maxDays < 366}>
         Year
       </ToggleButton>
+      <ToggleButton value="custom">Custom</ToggleButton>
     </ToggleButtonGroup>
   );
 }
 
-export function DateTimeRangeNavigator() {
+export function DateTimeRangeNavigator({
+  resource,
+}: {
+  resource: ChartResource;
+}) {
   const selectedRangeType = useAtomValue(selectedRangeTypeAtom);
+
+  const maxDays = CHART_RESOURCE_CONFIGS[resource].maxDays;
 
   const [selectedRange, setSelectedRange] = useAtom(selectedRangeAtom);
 
@@ -68,6 +75,14 @@ export function DateTimeRangeNavigator() {
     case "year":
       return (
         <YearNavigator value={selectedRange} onChange={setSelectedRange} />
+      );
+    case "custom":
+      return (
+        <CustomRangePicker
+          value={selectedRange}
+          onChange={setSelectedRange}
+          maxDays={maxDays}
+        />
       );
   }
 }

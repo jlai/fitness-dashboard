@@ -123,7 +123,7 @@ export const TIME_SERIES_CONFIGS: Record<
     urlPrefix: "/1/user/-/hrv/date/",
     responseKey: "hrv",
     requiredScopes: ["hr"],
-    maxDays: 30,
+    maxDays: 31,
   },
   ["active-zone-minutes"]: {
     urlPrefix: "/1/user/-/activities/active-zone-minutes/date/",

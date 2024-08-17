@@ -105,7 +105,7 @@ export function NavigableGraphView() {
         <SeriesSelector />
         <GraphRangeSelector resource={selectedResource} />
         <Box flex={1} />
-        <DateTimeRangeNavigator />
+        <DateTimeRangeNavigator resource={selectedResource} />
       </HeaderBar>
       <Stack
         direction="row"
