@@ -2,7 +2,7 @@ import dayjs from "dayjs";
 import durationPlugin from "dayjs/plugin/duration";
 import { Fragment } from "react";
 import { Box } from "@mui/material";
-import { minBy } from "lodash";
+import { minBy } from "es-toolkit";
 
 import { SplitDatum } from "@/utils/distances";
 import { FRACTION_DIGITS_2, TWO_DIGITS } from "@/utils/number-formats";
@@ -27,7 +27,7 @@ export function formatTimeOffset(startTime: Date, time: Date) {
 
 export function SplitsChart({ splits }: { splits: Array<SplitDatum> }) {
   const { localizedKilometers, localizedKilometersName } = useUnits();
-  const bestPace = minBy(splits, "paceMillis")!.paceMillis;
+  const bestPace = minBy(splits, ({ paceMillis }) => paceMillis).paceMillis;
 
   const activityStart = splits[0].startTime;
 

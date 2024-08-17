@@ -1,6 +1,6 @@
 import dayjs, { Dayjs } from "dayjs";
 import { queryOptions } from "@tanstack/react-query";
-import { groupBy, sumBy } from "lodash";
+import { groupBy, sumBy } from "es-toolkit";
 
 import { formatAsDate } from "./datetime";
 import { makeRequest } from "./request";
@@ -144,7 +144,7 @@ export const TIME_SERIES_CONFIGS: Record<
       return Object.entries(sleepsByDate)
         .map(([dateString, sleepLogs]) => ({
           dateTime: dateString,
-          value: sumBy(sleepLogs, "minutesAsleep"),
+          value: sumBy(sleepLogs, ({ minutesAsleep }) => minutesAsleep),
         }))
         .toReversed();
     },

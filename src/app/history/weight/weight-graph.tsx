@@ -19,7 +19,6 @@ import { useAtomValue } from "jotai";
 import { ScopeProvider } from "jotai-scope";
 import { useId, useMemo } from "react";
 import { ChartsOverlay } from "@mui/x-charts/ChartsOverlay";
-import { min } from "lodash";
 
 import { buildTimeSeriesQuery } from "@/api/times-series";
 import {
@@ -97,7 +96,7 @@ export function LeanFatMassGraph() {
       }
     }
 
-    const minWeight = roundDownMinWeight(min(leanSeriesData) ?? 0);
+    const minWeight = roundDownMinWeight(Math.min(...leanSeriesData) ?? 0);
 
     const series: Array<LineSeriesType> = [
       {

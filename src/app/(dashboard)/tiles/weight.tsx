@@ -18,7 +18,7 @@ import {
   MonitorWeight,
   MoreHoriz,
 } from "@mui/icons-material";
-import { first } from "lodash";
+import { head } from "es-toolkit";
 import { DatePicker } from "@mui/x-date-pickers";
 import { useState } from "react";
 
@@ -92,7 +92,7 @@ function WeightTileDialogContent({
   latest?: WeightLog;
   data: Array<WeightLog>;
 }) {
-  const earliest = first(data);
+  const earliest = head(data);
 
   const [pastDay, setPastDay] = useState(
     earliest ? dayjs(earliest.date) : null

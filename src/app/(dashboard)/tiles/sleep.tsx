@@ -1,5 +1,5 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { sumBy } from "lodash";
+import { sumBy } from "es-toolkit";
 import { Stack, Typography } from "@mui/material";
 import Image from "next/image";
 
@@ -19,7 +19,7 @@ export function SleepTileContent() {
     buildGetSleepLogByDateQuery(selectedDay)
   );
 
-  const totalMinutes = sumBy(sleepLogs, "minutesAsleep");
+  const totalMinutes = sumBy(sleepLogs, ({ minutesAsleep }) => minutesAsleep);
 
   if (sleepLogs.length === 0) {
     return <NoSleep />;

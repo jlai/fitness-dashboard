@@ -35,7 +35,6 @@ import {
   bindTrigger,
   usePopupState,
 } from "material-ui-popup-state/hooks";
-import { map } from "lodash";
 
 import {
   buildDeleteFoodLogsMutation,
@@ -143,7 +142,7 @@ export default function FoodLog({ day }: { day: Dayjs }) {
     });
   };
 
-  const favoriteFoodIds = new Set(map(favoriteFoods, "foodId"));
+  const favoriteFoodIds = new Set(favoriteFoods.map(({ foodId }) => foodId));
   const areSelectedAllFavorites = selectedFoodLogs.every((foodLog) =>
     favoriteFoodIds.has(foodLog.loggedFood.foodId)
   );

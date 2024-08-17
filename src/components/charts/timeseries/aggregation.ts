@@ -1,6 +1,6 @@
 import { useContext, useMemo } from "react";
 import dayjs from "dayjs";
-import { groupBy, sum, sumBy } from "lodash";
+import { groupBy, isNotNil, sum, sumBy } from "es-toolkit";
 
 import { IntradayEntry } from "@/api/intraday";
 
@@ -49,7 +49,7 @@ export function useAggregation<TDatum extends TimeSeriesDatum>(
             .map((entry) => seriesConfig.yAccessor(entry))
             .filter((value) => value || value === 0);
 
-          const total = sum(values);
+          const total = sum(values.filter(isNotNil));
 
           const average = values.length > 0 ? total / values.length : null;
 

@@ -11,7 +11,7 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { find, sortBy } from "lodash";
+import { sortBy } from "es-toolkit";
 import {
   Battery0Bar,
   Battery1Bar,
@@ -45,26 +45,22 @@ export function resolveDevice(
   devices: Device[],
   { deviceId }: ResolveDeviceOptions = {}
 ) {
-  const sortedDevices = sortBy(
-    devices,
-    (device) => device.lastSyncTime || ""
-  ).toReversed();
+  const sortedDevices = sortBy(devices, ["lastSyncTime"]).toReversed();
 
   let tracker =
-    deviceId && find(sortedDevices, (device) => device.id === deviceId);
+    deviceId && sortedDevices.find((device) => device.id === deviceId);
 
   if (tracker) {
     return tracker;
   }
 
-  tracker = find(
-    sortedDevices,
+  tracker = sortedDevices.find(
     (device) =>
       device.type === "TRACKER" && device.deviceVersion !== "MobileTrack"
   );
 
   if (!tracker || !tracker.lastSyncTime) {
-    find(sortedDevices, (device) => device.deviceVersion === "MobileTrack");
+    sortedDevices.find((device) => device.deviceVersion === "MobileTrack");
   }
 
   return tracker;

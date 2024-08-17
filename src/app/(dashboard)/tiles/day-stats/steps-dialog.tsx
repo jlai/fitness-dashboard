@@ -12,7 +12,7 @@ import { BarChart } from "@mui/x-charts";
 import { TabContext, TabList, TabPanel } from "@mui/lab";
 import { Suspense, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { dropWhile, sumBy } from "lodash";
+import { dropWhile, sumBy } from "es-toolkit";
 
 import { buildActivityIntradayQuery } from "@/api/intraday";
 import { ENABLE_INTRADAY } from "@/config";
@@ -138,7 +138,7 @@ function StepsIntraday() {
     }
 
     if (trim) {
-      processed = dropWhile(processed, (data) => !data.value);
+      processed = processed && dropWhile(processed, (data) => !data.value);
     }
 
     return processed;

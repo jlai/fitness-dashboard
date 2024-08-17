@@ -1,7 +1,6 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { DialogContent, DialogTitle, Stack, Typography } from "@mui/material";
 import { LineChart, SparkLineChart, PiecewiseColorLegend } from "@mui/x-charts";
-import { map } from "lodash";
 
 import { buildHeartRateIntradayQuery } from "@/api/intraday";
 import { FRACTION_DIGITS_0 } from "@/utils/number-formats";
@@ -64,7 +63,7 @@ export function HeartRateTileContent() {
         {intradayData.length > 0 && (
           <SparkLineChart
             margin={{ top: 8, bottom: 4, left: 2, right: 2 }}
-            data={map(intradayData, "value")}
+            data={intradayData.map(({ value }) => value)}
             yAxis={{ colorMap: createHeartRateZoneColorMap(heartRateZones) }}
             curve="monotoneX"
           />

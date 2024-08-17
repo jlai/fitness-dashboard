@@ -1,6 +1,6 @@
 import { useQueries } from "@tanstack/react-query";
 import { useContext, useMemo } from "react";
-import { keyBy, sortBy, sortedUniq } from "lodash";
+import { keyBy, uniq } from "es-toolkit";
 
 import { buildTimeSeriesQuery } from "@/api/times-series";
 import { FRACTION_DIGITS_0 } from "@/utils/number-formats";
@@ -35,11 +35,11 @@ export function CalorieBalanceChart() {
 
     const data: Array<CalorieBalanceDatum> = [];
 
-    const inByDate = keyBy(caloriesInData, "dateTime");
-    const burnedByDate = keyBy(caloriesBurnedData, "dateTime");
+    const inByDate = keyBy(caloriesInData, ({ dateTime }) => dateTime);
+    const burnedByDate = keyBy(caloriesBurnedData, ({ dateTime }) => dateTime);
 
-    const dates = sortedUniq(
-      sortBy([...Object.keys(inByDate), ...Object.keys(burnedByDate)])
+    const dates = uniq(
+      [...Object.keys(inByDate), ...Object.keys(burnedByDate)].toSorted()
     );
 
     for (const date of dates) {

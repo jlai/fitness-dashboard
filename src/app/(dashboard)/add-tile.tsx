@@ -8,7 +8,6 @@ import {
 import { bindMenu, usePopupState } from "material-ui-popup-state/hooks";
 import { useAtom } from "jotai";
 import { useCallback, useMemo } from "react";
-import { map } from "lodash";
 import { Add, Check } from "@mui/icons-material";
 
 import { UserTile, userTilesAtom } from "@/storage/tiles";
@@ -24,7 +23,7 @@ export default function AddTileButton() {
   });
 
   const unaddedTileDefs = useMemo(() => {
-    const existingTypes = new Set(map(userTiles, "type"));
+    const existingTypes = new Set(userTiles.map((tile) => tile.type));
 
     return [...Object.entries(TILE_TYPES)].filter(
       ([type]) => !existingTypes.has(type)

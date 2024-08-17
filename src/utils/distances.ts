@@ -1,5 +1,5 @@
 import { ScaleLinear, scaleLinear } from "d3-scale";
-import { first, last } from "lodash";
+import { head, last } from "es-toolkit";
 
 import { IntradayEntry } from "@/api/intraday";
 import { Trackpoint } from "@/api/activity/tcx";
@@ -72,7 +72,7 @@ export function getDistanceSplits(
   const metersPerUnit =
     unitSystem === "en_US" ? (1 / MILES_PER_KM) * 1000 : 1000;
 
-  const startTime = first(distanceScale.domain());
+  const startTime = head(distanceScale.domain());
   const maxDistance = last(distanceScale.range());
 
   const splits: Array<SplitDatum> = [];

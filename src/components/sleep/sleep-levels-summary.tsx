@@ -4,7 +4,6 @@ import { scaleLinear, scaleBand } from "@visx/scale";
 import { AxisLeft } from "@visx/axis";
 import { Group } from "@visx/group";
 import { Text } from "@visx/text";
-import { max } from "lodash";
 import { Typography } from "@mui/material";
 
 import { SleepLog } from "@/api/sleep";
@@ -54,7 +53,7 @@ export function SleepLevelSummaryChart({
   };
 
   const xScale = scaleLinear({
-    domain: [0, max([wakeMins, remMins, lightMins, deepMins])!],
+    domain: [0, Math.max(wakeMins, remMins, lightMins, deepMins)],
     range: [margin.left, width - margin.left - margin.right],
   });
 

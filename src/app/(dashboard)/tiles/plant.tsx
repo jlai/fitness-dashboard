@@ -16,7 +16,7 @@ import {
 import dayjs from "dayjs";
 import { CasinoOutlined } from "@mui/icons-material";
 import { Chance } from "chance";
-import { find } from "lodash";
+import { find } from "es-toolkit/compat";
 
 import { formatAsDate } from "@/api/datetime";
 import { FormRow, FormRows } from "@/components/forms/form-row";

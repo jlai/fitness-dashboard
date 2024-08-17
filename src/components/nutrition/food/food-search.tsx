@@ -24,7 +24,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { useController, UseControllerProps } from "react-hook-form";
-import { uniqBy } from "lodash";
+import { uniqBy } from "es-toolkit";
 
 import {
   buildCustomFoodsQuery,

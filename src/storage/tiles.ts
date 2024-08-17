@@ -117,6 +117,7 @@ const defaultMobileTiles: Array<UserTile> = [
 
 const isMobile =
   typeof window !== "undefined" &&
+  typeof window.matchMedia === "function" &&
   window.matchMedia("(max-width: 600px)").matches;
 
 export const userTilesAtom = atomWithStorage(
