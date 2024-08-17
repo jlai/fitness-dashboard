@@ -62,8 +62,6 @@ function SafeAttributionControl({
       }
     });
 
-    console.log("purifying", attribution);
-
     return attribution ? purifier.sanitize(attribution) : "";
   }, [attribution]);
 
