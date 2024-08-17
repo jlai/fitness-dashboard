@@ -3,6 +3,7 @@ import { MapStyle } from "react-map-gl/maplibre";
 import { MAPLIBRE_STYLE_URL } from "@/config";
 
 import opentopomapStyle from "./opentopomap.json";
+import openstreetmapStyle from "./openstreetmap.json";
 
 export const MAP_STYLE_OPTIONS: Array<{
   id: string;
@@ -21,8 +22,12 @@ export const MAP_STYLE_OPTIONS: Array<{
     label: "Dark",
   },
   {
+    id: "openstreetmap",
+    label: "OpenStreetMap",
+  },
+  {
     id: "opentopomap",
-    label: "Topography",
+    label: "OpenTopoMap",
   },
 ];
 
@@ -31,6 +36,8 @@ export function getMapStyle(name: string): string | MapStyle {
     case "light":
     case "white":
       return MAPLIBRE_STYLE_URL?.replace("{STYLE}", name) ?? "";
+    case "openstreetmap":
+      return openstreetmapStyle as MapStyle;
     case "opentopomap":
       return opentopomapStyle as MapStyle;
     default:

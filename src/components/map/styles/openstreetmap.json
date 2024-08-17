@@ -1,0 +1,27 @@
+{
+    "version": 8,
+    "sources": {
+        "osm": {
+            "attribution": "<a href=\"https://openstreetmap.org\">OpenStreetMap</a>",
+            "type": "raster",
+            "tiles": [
+                "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+            ],
+            "maxzoom": 17
+        }
+    },
+    "layers": [
+        {
+            "id": "background",
+            "type": "background",
+            "paint": {
+                "background-color": "#cccccc"
+            }
+        },
+        {
+            "id": "osm",
+            "type": "raster",
+            "source": "osm"
+        }
+    ]
+}

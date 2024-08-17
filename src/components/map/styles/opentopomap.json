@@ -23,8 +23,7 @@
         {
             "id": "topography",
             "type": "raster",
-            "source": "opentopomap",
-            "rasterSaturation": -0.5
+            "source": "opentopomap"
         }
     ]
 }
