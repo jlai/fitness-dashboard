@@ -6,16 +6,18 @@ import {
   MenuItem,
 } from "@mui/material";
 import { bindMenu, usePopupState } from "material-ui-popup-state/hooks";
-import { useAtom } from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 import { useCallback, useMemo } from "react";
 import { Add, Check } from "@mui/icons-material";
 
 import { UserTile, userTilesAtom } from "@/storage/tiles";
+import { increasedTileLimitsAtom } from "@/storage/settings";
 
 import { TILE_TYPES, TileDefinition } from "./tiles";
 
 export default function AddTileButton() {
   const [userTiles, setUserTiles] = useAtom(userTilesAtom);
+  const increasedTileLimits = useAtomValue(increasedTileLimitsAtom);
 
   const popupState = usePopupState({
     variant: "popover",
@@ -32,11 +34,15 @@ export default function AddTileButton() {
 
   const availableTileDefs = useMemo(() => {
     return [...Object.entries(TILE_TYPES)].filter(([type, tileDef]) => {
-      const max = tileDef.max ?? 1;
+      let max = tileDef.max ?? 1;
+
+      if (increasedTileLimits && max > 1) {
+        max = Infinity;
+      }
 
       return (tileCountByType.get(type) ?? 0) < max;
     });
-  }, [tileCountByType]);
+  }, [tileCountByType, increasedTileLimits]);
 
   const addTile = useCallback(
     (type: string, tileDef: TileDefinition) => {
@@ -68,7 +74,11 @@ export default function AddTileButton() {
           <MenuItem key={type} onClick={() => addTile(type, tileDef)}>
             <ListItemText
               primary={tileDef.name}
-              secondary={tileDef.max ? `Maximum: ${tileDef.max}` : null}
+              secondary={
+                !increasedTileLimits && tileDef.max
+                  ? `Maximum: ${tileDef.max}`
+                  : null
+              }
             />
           </MenuItem>
         ))}

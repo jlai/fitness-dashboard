@@ -39,6 +39,7 @@ import {
   distanceUnitAtom,
   enableAdvancedScopesAtom,
   foodLogTotalsPositionAtom,
+  increasedTileLimitsAtom,
   swimUnitAtom,
   temperatureUnitAtom,
   waterUnitAtom,
@@ -62,7 +63,11 @@ function SettingsRow({
           {children}
         </Typography>
       </TableCell>
-      {action && <TableCell align="right">{action}</TableCell>}
+      {action && (
+        <TableCell align="right" className="min-w-[200px]">
+          {action}
+        </TableCell>
+      )}
     </TableRow>
   );
 }
@@ -176,7 +181,7 @@ function UnitSettings() {
         website.
       </SettingsRow>
       <SettingsRow
-        title="Distance Units"
+        title="Distance unit"
         action={
           <Select<DistanceUnitSystem>
             value={distanceUnit}
@@ -188,7 +193,7 @@ function UnitSettings() {
         }
       />
       <SettingsRow
-        title="Swim distance units"
+        title="Swim distance unit"
         action={
           <Select<SwimUnitSystem>
             value={swimUnit}
@@ -212,7 +217,7 @@ function UnitSettings() {
         }
       />
       <SettingsRow
-        title="Weight Units"
+        title="Weight unit"
         action={
           <Select<WeightUnitSystem>
             value={weightUnit}
@@ -225,7 +230,7 @@ function UnitSettings() {
         }
       />
       <SettingsRow
-        title="Water Units"
+        title="Water unit"
         action={
           <Select<WaterUnitSystem>
             value={waterUnit}
@@ -240,11 +245,14 @@ function UnitSettings() {
   );
 }
 
-function MainSettings() {
+function AdvancedSettings() {
   const confirm = useConfirm();
   const setUserTiles = useSetAtom(userTilesAtom);
   const [enableAdvancedScopes, setEnableAdvancedScopes] = useAtom(
     enableAdvancedScopesAtom
+  );
+  const [increasedTileLimits, setIncreasedTileLimits] = useAtom(
+    increasedTileLimitsAtom
   );
 
   const resetDashboard = useCallback(() => {
@@ -257,7 +265,7 @@ function MainSettings() {
 
   return (
     <>
-      <SettingsRow title="Settings"></SettingsRow>
+      <SettingsRow title="Advanced settings"></SettingsRow>
       <SettingsRow
         title="Show advanced body metrics"
         action={
@@ -269,6 +277,19 @@ function MainSettings() {
       >
         Enable graphs for breathing rate, skin temperature, VO2 Max. This
         requires granting additional permissions.
+      </SettingsRow>
+      <SettingsRow
+        title="Ignore tile limit"
+        action={
+          <Switch
+            checked={increasedTileLimits}
+            onChange={(_event, checked) => setIncreasedTileLimits(checked)}
+          />
+        }
+      >
+        Allow increased number of dashboard tiles. This may cause you to exceed
+        the hourly API request limit if you frequently refresh the dashboard or
+        navigate to other days.
       </SettingsRow>
       <SettingsRow
         title="Reset dashboard"
@@ -314,13 +335,13 @@ export default function SettingsPage() {
   return (
     <Container maxWidth="lg">
       <SettingsTable>
-        <MainSettings />
-      </SettingsTable>
-      <SettingsTable>
         <UnitSettings />
       </SettingsTable>
       <SettingsTable>
         <FoodSettings />
+      </SettingsTable>
+      <SettingsTable>
+        <AdvancedSettings />
       </SettingsTable>
       {loggedIn && (
         <SettingsTable>

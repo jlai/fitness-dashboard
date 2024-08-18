@@ -67,3 +67,12 @@ export const enableAdvancedScopesAtom = atomWithStorage<boolean>(
     getOnInit: true,
   }
 );
+
+export const increasedTileLimitsAtom = atomWithStorage<boolean>(
+  "dashboard:increased-tile-limits",
+  false,
+  undefined,
+  {
+    getOnInit: true,
+  }
+);
