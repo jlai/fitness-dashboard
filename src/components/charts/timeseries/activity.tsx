@@ -59,9 +59,9 @@ export function DistanceChart() {
     () =>
       singleSeriesConfig({
         label: "Distance",
-        numberFormat: (value) =>
-          FRACTION_DIGITS_2.format(localizedKilometers(value)),
+        numberFormat: (value) => FRACTION_DIGITS_2.format(value),
         unit: localizedKilometersName,
+        yAccessor: (datum) => localizedKilometers(Number(datum.value)),
       }),
     [localizedKilometers, localizedKilometersName]
   );
@@ -74,11 +74,9 @@ export function DistanceChart() {
       <GraphStats>
         <AverageAndTotalStat
           data={data}
-          yAccessor={(datum) => Number(datum.value)}
+          yAccessor={(datum) => localizedKilometers(Number(datum.value))}
           valueFormatter={(value) =>
-            `${FRACTION_DIGITS_2.format(
-              localizedKilometers(value)
-            )} ${localizedKilometersName}`
+            `${FRACTION_DIGITS_2.format(value)} ${localizedKilometersName}`
           }
         />
       </GraphStats>
