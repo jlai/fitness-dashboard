@@ -25,6 +25,7 @@ export interface TileDefinition {
   scopes: Array<string>;
   w: number;
   h: number;
+  max?: number;
 }
 
 // Don't change the ids or else this will break existing users!
@@ -35,6 +36,7 @@ export const TILE_TYPES: Record<string, TileDefinition> = {
     scopes: ["act"],
     w: 4,
     h: 2,
+    max: 3,
   },
   gaugeSteps: {
     name: "Gauge: Steps",

@@ -22,13 +22,21 @@ export default function AddTileButton() {
     popupId: "add-tile-menu",
   });
 
-  const unaddedTileDefs = useMemo(() => {
-    const existingTypes = new Set(userTiles.map((tile) => tile.type));
-
-    return [...Object.entries(TILE_TYPES)].filter(
-      ([type]) => !existingTypes.has(type)
-    );
+  const tileCountByType = useMemo(() => {
+    const countByType = new Map<string, number>();
+    for (const { type } of userTiles) {
+      countByType.set(type, (countByType.get(type) ?? 0) + 1);
+    }
+    return countByType;
   }, [userTiles]);
+
+  const availableTileDefs = useMemo(() => {
+    return [...Object.entries(TILE_TYPES)].filter(([type, tileDef]) => {
+      const max = tileDef.max ?? 1;
+
+      return (tileCountByType.get(type) ?? 0) < max;
+    });
+  }, [tileCountByType]);
 
   const addTile = useCallback(
     (type: string, tileDef: TileDefinition) => {
@@ -56,12 +64,15 @@ export default function AddTileButton() {
         Add tile
       </Button>
       <Menu {...bindMenu(popupState)}>
-        {unaddedTileDefs.map(([type, tileDef]) => (
+        {availableTileDefs.map(([type, tileDef]) => (
           <MenuItem key={type} onClick={() => addTile(type, tileDef)}>
-            {tileDef.name}
+            <ListItemText
+              primary={tileDef.name}
+              secondary={tileDef.max ? `Maximum: ${tileDef.max}` : null}
+            />
           </MenuItem>
         ))}
-        {unaddedTileDefs.length === 0 && (
+        {availableTileDefs.length === 0 && (
           <MenuItem disabled>
             <ListItemIcon>
               <Check />
