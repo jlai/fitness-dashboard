@@ -37,6 +37,7 @@ const HRV_SERIES_CONFIGS = singleSeriesConfig<HRVDatum>({
   numberFormat: FRACTION_DIGITS_0.format,
   showMark: true,
   curve: "linear",
+  unit: "milliseconds",
 });
 
 export function RestingHeartRateChart() {
@@ -108,7 +109,10 @@ export function HeartRateZonesChart() {
 }
 
 export function HeartRateVariabilityChart() {
-  const data = useTimeSeriesData<HRVDatum>("hrv");
+  const rawData = useTimeSeriesData<HRVDatum>("hrv");
+
+  // Some devices register HRV of 0 for some reason; filter them out
+  const data = rawData?.filter((datum) => datum.value.dailyRmssd);
 
   return <SimpleLineChart data={data} seriesConfigs={HRV_SERIES_CONFIGS} />;
 }
