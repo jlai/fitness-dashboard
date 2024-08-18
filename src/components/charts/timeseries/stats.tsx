@@ -1,8 +1,10 @@
 import { useContext } from "react";
 import { createPortal } from "react-dom";
 import { Typography } from "@mui/material";
+import dayjs from "dayjs";
 
 import { FRACTION_DIGITS_0 } from "@/utils/number-formats";
+import { isAfterToday } from "@/utils/date-utils";
 
 import { TimeSeriesChartContext } from "./context";
 import { TimeSeriesDatum } from "./data";
@@ -29,7 +31,6 @@ export function AverageAndTotalStat<TDatum extends TimeSeriesDatum>({
   const {
     range: { startDay, endDay },
   } = useContext(TimeSeriesChartContext);
-  const numDays = endDay.diff(startDay, "days") + 1;
 
   if (!data) {
     return;
@@ -40,7 +41,7 @@ export function AverageAndTotalStat<TDatum extends TimeSeriesDatum>({
 
   for (const datum of data) {
     const value = yAccessor(datum);
-    if (value !== null) {
+    if (value !== null && !isAfterToday(dayjs(datum.dateTime))) {
       count++;
       total += value;
     }
@@ -55,7 +56,7 @@ export function AverageAndTotalStat<TDatum extends TimeSeriesDatum>({
       </Stat>
       <Stat>
         <Typography variant="subtitle2" component="span">
-          {numDays}-day total: {valueFormatter(total)}
+          {count}-day total: {valueFormatter(total)}
         </Typography>
       </Stat>
     </>
