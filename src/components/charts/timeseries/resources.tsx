@@ -23,6 +23,9 @@ import {
   FloorsChart,
   StepsChart,
 } from "./activity";
+import { BreathingRateChart } from "./advanced/breathing-rate";
+import { SkinTemperatureChart } from "./advanced/skin-temperature";
+import { Spo2Chart } from "./advanced/spo2";
 
 export interface ChartResourceConfig {
   label: string;
@@ -113,6 +116,27 @@ export const CHART_RESOURCE_CONFIGS: Record<string, ChartResourceConfig> = {
     requiredScopes: ["act", "nut"],
     maxDays: 1095,
   },
+  "breathing-rate": {
+    label: "Breathing rate",
+    component: BreathingRateChart,
+    ...pick(TIME_SERIES_CONFIGS["breathing-rate"], [
+      "maxDays",
+      "requiredScopes",
+    ]),
+  },
+  "skin-temperature": {
+    label: "Skin temperature",
+    component: SkinTemperatureChart,
+    ...pick(TIME_SERIES_CONFIGS["skin-temperature"], [
+      "maxDays",
+      "requiredScopes",
+    ]),
+  },
+  spo2: {
+    label: "Oxygen saturation (SpO2)",
+    component: Spo2Chart,
+    ...pick(TIME_SERIES_CONFIGS["spo2"], ["maxDays", "requiredScopes"]),
+  },
 };
 
 export type ChartResource = keyof typeof CHART_RESOURCE_CONFIGS;
@@ -136,4 +160,10 @@ export const CHART_RESOURCE_MENU_ITEMS: Array<ChartResource | "-"> = [
   "calorie-balance",
   "calories-in",
   "water",
+];
+
+export const ADVANCED_CHART_RESOURCE_MENU_ITEMS: Array<ChartResource | "-"> = [
+  "breathing-rate",
+  "spo2",
+  "skin-temperature",
 ];

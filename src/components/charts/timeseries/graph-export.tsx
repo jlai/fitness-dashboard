@@ -104,13 +104,14 @@ export function useSaveAsCSV(resource: ChartResource, range: DayjsRange) {
     );
 
     const csvString = createCSV(data, seriesConfigs, range);
+    const csvBytes = new TextEncoder().encode(csvString);
 
     const label = CHART_RESOURCE_CONFIGS[resource].label;
     const filename = `${label} ${actualStartDay.format(
       "YYYY-MM-DD"
     )} to ${actualEndDay.format("YYYY-MM-DD")}.csv`;
 
-    const blob = new File([csvString], filename, {
+    const blob = new File([csvBytes], filename, {
       type: "text/plain; charset=utf-8",
     });
 

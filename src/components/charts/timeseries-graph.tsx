@@ -15,6 +15,8 @@ import { useAtom, useAtomValue } from "jotai";
 import { createElement, useMemo, useState } from "react";
 import { Download, Save } from "@mui/icons-material";
 
+import { enableAdvancedScopesAtom } from "@/storage/settings";
+
 import { RequireScopes } from "../require-scopes";
 import { HeaderBar } from "../layout/rows";
 import { DayjsRange } from "../calendar/period-navigator";
@@ -22,6 +24,7 @@ import { FlexSpacer } from "../layout/flex";
 import { PopupMenu } from "../popup-menu";
 
 import {
+  ADVANCED_CHART_RESOURCE_MENU_ITEMS,
   CHART_RESOURCE_CONFIGS,
   CHART_RESOURCE_MENU_ITEMS,
   ChartResource,
@@ -37,7 +40,12 @@ import { AggregationType, TimeSeriesChartContext } from "./timeseries/context";
 import { GraphExportProvider, useSaveAsCSV } from "./timeseries/graph-export";
 
 export function SeriesSelector() {
+  const enableAdvancedScopes = useAtomValue(enableAdvancedScopesAtom);
   const [selectedResource, setselectedResource] = useAtom(selectedResourceAtom);
+
+  const menuItems = enableAdvancedScopes
+    ? [...CHART_RESOURCE_MENU_ITEMS, "-", ...ADVANCED_CHART_RESOURCE_MENU_ITEMS]
+    : CHART_RESOURCE_MENU_ITEMS;
 
   return (
     <FormControl>
@@ -49,7 +57,7 @@ export function SeriesSelector() {
         size="small"
         SelectDisplayProps={{ "aria-label": "select resource" }}
       >
-        {CHART_RESOURCE_MENU_ITEMS.map((id, i) =>
+        {menuItems.map((id, i) =>
           id === "-" ? (
             <Divider key={i} />
           ) : (

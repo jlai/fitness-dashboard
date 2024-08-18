@@ -15,9 +15,11 @@ import {
 import { useCallback } from "react";
 import Link from "next/link";
 import { ArrowDropDown } from "@mui/icons-material";
+import { useAtomValue } from "jotai";
 
 import { redirectToLogin } from "@/api/auth";
 import { PRIVACY_POLICY_LINK, WEBSITE_NAME } from "@/config";
+import { enableAdvancedScopesAtom } from "@/storage/settings";
 
 function PermissionInfo({
   title,
@@ -74,9 +76,11 @@ function PermissionsTable() {
 }
 
 export default function LoginBox() {
+  const enableAdvancedScopes = useAtomValue(enableAdvancedScopesAtom);
+
   const login = useCallback(() => {
-    redirectToLogin();
-  }, []);
+    redirectToLogin({ requestAdvancedScopes: enableAdvancedScopes });
+  }, [enableAdvancedScopes]);
 
   return (
     <Container maxWidth="md" className="space-y-6">

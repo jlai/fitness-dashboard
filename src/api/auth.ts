@@ -31,6 +31,12 @@ const SCOPES = [
   "weight",
 ];
 
+const ADVANCED_SCOPES = [
+  "oxygen_saturation",
+  "respiratory_rate",
+  "temperature",
+];
+
 const FITBIT_TOKEN_STORAGE_KEY = "auth:fitbit-token";
 const PKCE_CODEVERIFIER_STORAGE_KEY = "auth:pkce-codeverifier";
 const AUTH_TOKEN_UPDATE_EVENT_TYPE = "authtokenupdated";
@@ -46,9 +52,11 @@ const authClient = new OAuth2Client({
 /** Redirect to Fitbit account login */
 export async function redirectToLogin({
   prompt = "none",
+  requestAdvancedScopes = false,
 }: {
   /** see https://dev.fitbit.com/build/reference/web-api/authorization/authorize/ */
   prompt?: string;
+  requestAdvancedScopes?: boolean;
 } = {}) {
   const codeVerifier = await generateCodeVerifier();
 
@@ -56,7 +64,7 @@ export async function redirectToLogin({
 
   const url = await authClient.authorizationCode.getAuthorizeUri({
     redirectUri: OAUTH_CALLBACK_URI!,
-    scope: SCOPES,
+    scope: requestAdvancedScopes ? [...SCOPES, ...ADVANCED_SCOPES] : SCOPES,
     codeVerifier,
     extraParams: {
       prompt,

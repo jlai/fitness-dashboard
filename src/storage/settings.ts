@@ -34,6 +34,12 @@ export const swimUnitAtom = atomWithStorage<"en_US" | "METRIC" | undefined>(
   }
 );
 
+export const temperatureUnitAtom = atomWithStorage<
+  "en_US" | "METRIC" | undefined
+>("unit:temperature", undefined, undefined, {
+  getOnInit: true,
+});
+
 export const allUnitsConfiguredAtom = atom(
   (get) => get(weightUnitAtom) && get(waterUnitAtom) && get(distanceUnitAtom)
 );
@@ -47,6 +53,15 @@ export const foodLogTotalsPositionAtom = atomWithStorage<
 export const mapStyleAtom = atomWithStorage<string>(
   "map:style",
   "white",
+  undefined,
+  {
+    getOnInit: true,
+  }
+);
+
+export const enableAdvancedScopesAtom = atomWithStorage<boolean>(
+  "auth:advanced-scopes",
+  false,
   undefined,
   {
     getOnInit: true,

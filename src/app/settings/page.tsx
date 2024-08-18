@@ -7,6 +7,7 @@ import {
   MenuItem,
   Paper,
   Select,
+  Switch,
   Table,
   TableBody,
   TableCell,
@@ -14,7 +15,7 @@ import {
   TableRow,
   Typography,
 } from "@mui/material";
-import { useAtom, useSetAtom } from "jotai";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { RESET } from "jotai/utils";
 import { useConfirm } from "material-ui-confirm";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -30,13 +31,16 @@ import {
   buildUserProfileQuery,
   DistanceUnitSystem,
   SwimUnitSystem,
+  TemperatureUnitSystem,
   WaterUnitSystem,
   WeightUnitSystem,
 } from "@/api/user";
 import {
   distanceUnitAtom,
+  enableAdvancedScopesAtom,
   foodLogTotalsPositionAtom,
   swimUnitAtom,
+  temperatureUnitAtom,
   waterUnitAtom,
   weightUnitAtom,
 } from "@/storage/settings";
@@ -79,13 +83,17 @@ function LoginInfo() {
 function LoginSettings() {
   const confirm = useConfirm();
   const queryClient = useQueryClient();
+  const enableAdvancedScopes = useAtomValue(enableAdvancedScopesAtom);
 
   const switchAccounts = () => {
     confirm({
       description: "Log out?",
     }).then(() => {
       queryClient.clear();
-      redirectToLogin({ prompt: "login consent" });
+      redirectToLogin({
+        prompt: "login consent",
+        requestAdvancedScopes: enableAdvancedScopes,
+      });
     });
   };
 
@@ -156,6 +164,8 @@ function FoodSettings() {
 function UnitSettings() {
   const [distanceUnit, setDistanceUnit] = useAtom(distanceUnitAtom);
   const [swimUnit, setSwimUnit] = useAtom(swimUnitAtom);
+  const [temperatureUnit, setTemperatureUnit] = useAtom(temperatureUnitAtom);
+
   const [weightUnit, setWeightUnit] = useAtom(weightUnitAtom);
   const [waterUnit, setWaterUnit] = useAtom(waterUnitAtom);
 
@@ -186,6 +196,18 @@ function UnitSettings() {
           >
             <MenuItem value="en_US">Yards</MenuItem>
             <MenuItem value="METRIC">Meters</MenuItem>
+          </Select>
+        }
+      />
+      <SettingsRow
+        title="Temperature unit"
+        action={
+          <Select<TemperatureUnitSystem>
+            value={temperatureUnit}
+            onChange={(event) => setTemperatureUnit(event.target.value as any)}
+          >
+            <MenuItem value="en_US">Fahrenheit</MenuItem>
+            <MenuItem value="METRIC">Celsius</MenuItem>
           </Select>
         }
       />
@@ -221,6 +243,9 @@ function UnitSettings() {
 function MainSettings() {
   const confirm = useConfirm();
   const setUserTiles = useSetAtom(userTilesAtom);
+  const [enableAdvancedScopes, setEnableAdvancedScopes] = useAtom(
+    enableAdvancedScopesAtom
+  );
 
   const resetDashboard = useCallback(() => {
     confirm({
@@ -233,6 +258,18 @@ function MainSettings() {
   return (
     <>
       <SettingsRow title="Settings"></SettingsRow>
+      <SettingsRow
+        title="Show advanced body metrics"
+        action={
+          <Switch
+            checked={enableAdvancedScopes}
+            onChange={(_event, checked) => setEnableAdvancedScopes(checked)}
+          />
+        }
+      >
+        Enable graphs for breathing rate, skin temperature, VO2 Max. This
+        requires granting additional permissions.
+      </SettingsRow>
       <SettingsRow
         title="Reset dashboard"
         action={

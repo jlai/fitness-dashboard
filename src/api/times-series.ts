@@ -21,7 +21,11 @@ export type TimeSeriesResource =
   | "water"
   | "calories-in"
   | "sleep"
-  | "active-zone-minutes";
+  | "active-zone-minutes"
+  | "breathing-rate"
+  | "spo2"
+  | "skin-temperature"
+  | "cardio-score";
 
 export interface HeartRateZone {
   caloriesOut: number;
@@ -149,6 +153,30 @@ export const TIME_SERIES_CONFIGS: Record<
         .toReversed();
     },
   },
+  ["breathing-rate"]: {
+    urlPrefix: "/1/user/-/br/date/",
+    responseKey: "br",
+    requiredScopes: ["res"],
+    maxDays: 31,
+  },
+  ["spo2"]: {
+    urlPrefix: "/1/user/-/spo2/date/",
+    responseKey: "",
+    requiredScopes: ["oxy"],
+    maxDays: Infinity,
+  },
+  ["cardio-score"]: {
+    urlPrefix: "/1/user/-/cardioscore/date/",
+    responseKey: "cardioScore",
+    requiredScopes: ["cf"],
+    maxDays: 31,
+  },
+  ["skin-temperature"]: {
+    urlPrefix: "/1/user/-/temp/skin/date/",
+    responseKey: "tempSkin",
+    requiredScopes: ["tem"],
+    maxDays: 31,
+  },
 };
 
 export type TimeSeriesEntry<ValueType> = {
@@ -184,9 +212,10 @@ export function buildTimeSeriesQuery<TEntry = TimeSeriesEntry<string>>(
       );
 
       const defaultExtractData = (responseBody: any) => {
-        const data = (responseBody as TimeSeriesResponse<string, TEntry>)[
-          config.responseKey
-        ];
+        const responseData = responseBody as TimeSeriesResponse<string, TEntry>;
+        const data = config.responseKey
+          ? responseData[config.responseKey]
+          : responseData;
 
         if (!data) {
           throw new Error(

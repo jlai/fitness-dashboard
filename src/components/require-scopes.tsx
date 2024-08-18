@@ -3,8 +3,10 @@
 import { Typography, Button, Stack } from "@mui/material";
 import { useCallback } from "react";
 import { useConfirm } from "material-ui-confirm";
+import { useAtomValue } from "jotai";
 
 import { getAccessTokenScopes, redirectToLogin } from "@/api/auth";
+import { enableAdvancedScopesAtom } from "@/storage/settings";
 
 const SCOPE_NAME_MAPPING: Record<string, string> = {
   pro: "profile",
@@ -13,10 +15,12 @@ const SCOPE_NAME_MAPPING: Record<string, string> = {
   sle: "sleep",
   hr: "heart rate",
   soc: "social",
-  tem: "temperature",
   wei: "weight",
   set: "device settings",
   loc: "location",
+  res: "breathing rate",
+  oxy: "oxygen saturation (SpO2)",
+  tem: "temperature",
 };
 
 function getScopeName(scope: string) {
@@ -60,6 +64,7 @@ function CompactMissingScopes({
   scopes: Array<string>;
 }) {
   const confirm = useConfirm();
+  const enableAdvancedScopes = useAtomValue(enableAdvancedScopesAtom);
 
   const handleReconsentClicked = () => {
     confirm({
@@ -73,7 +78,10 @@ function CompactMissingScopes({
         </div>
       ),
     }).then(() => {
-      redirectToLogin({ prompt: "consent" });
+      redirectToLogin({
+        prompt: "consent",
+        requestAdvancedScopes: enableAdvancedScopes,
+      });
     });
   };
 
@@ -99,9 +107,14 @@ function MissingScopes({
   name?: string;
   scopes: Array<string>;
 }) {
+  const enableAdvancedScopes = useAtomValue(enableAdvancedScopesAtom);
+
   const reconsent = useCallback(() => {
-    redirectToLogin({ prompt: "consent" });
-  }, []);
+    redirectToLogin({
+      prompt: "consent",
+      requestAdvancedScopes: enableAdvancedScopes,
+    });
+  }, [enableAdvancedScopes]);
 
   return (
     <div className="flex-grow flex flex-col items-center place-items-center p-2">

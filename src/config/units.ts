@@ -4,6 +4,7 @@ import { useAtom } from "jotai";
 import {
   distanceUnitAtom,
   swimUnitAtom,
+  temperatureUnitAtom,
   waterUnitAtom,
   weightUnitAtom,
 } from "@/storage/settings";
@@ -11,6 +12,7 @@ import {
   buildUserProfileQuery,
   DistanceUnitSystem,
   SwimUnitSystem,
+  TemperatureUnitSystem,
   WaterUnitSystem,
   WeightUnitSystem,
 } from "@/api/user";
@@ -23,6 +25,7 @@ const FLUID_OZ_PER_ML = 0.033814;
 // const CUP_PER_ML = FLUID_OZ_PER_ML / 8;
 const POUNDS_PER_KG = 2.20462;
 const STONES_PER_KG = 0.157473;
+const DEGREES_F_PER_C = 1.8;
 
 interface DistanceUnitConfig {
   distanceUnit: DistanceUnitSystem;
@@ -37,6 +40,12 @@ interface SwimUnitConfig {
   swimUnit: SwimUnitSystem;
   localizedSwimMeters: (value: number) => number;
   localizedSwimMetersName: string;
+}
+
+interface TemperatureUnitConfig {
+  temperatureUnit: TemperatureUnitSystem;
+  localizedDegreesCelsius: (value: number) => number;
+  localizedDegreesName: string;
 }
 
 interface WeightUnitConfig {
@@ -81,6 +90,18 @@ const METRIC_SWIM_UNIT_CONFIG: SwimUnitConfig = {
   localizedSwimMetersName: "m",
 };
 
+const US_TEMPERATURE_UNIT_CONFIG: TemperatureUnitConfig = {
+  temperatureUnit: "en_US",
+  localizedDegreesCelsius: (value: number) => value * DEGREES_F_PER_C,
+  localizedDegreesName: "\u00B0F",
+};
+
+const METRIC_TEMPERATURE_UNIT_CONFIG: TemperatureUnitConfig = {
+  temperatureUnit: "METRIC",
+  localizedDegreesCelsius: (value: number) => value,
+  localizedDegreesName: "\u00B0C",
+};
+
 const US_WEIGHT_UNIT_CONFIG: WeightUnitConfig = {
   weightUnit: "en_US",
   localizedKilograms: (value: number) => value * POUNDS_PER_KG,
@@ -115,6 +136,8 @@ export function useUnits() {
   const [storedDistanceUnitSystem, setDistanceUnitSystem] =
     useAtom(distanceUnitAtom);
   const [storedSwimUnitSystem, setSwimUnitSystem] = useAtom(swimUnitAtom);
+  const [storedTemperatureUnitSystem, setTemperatureUnitSystem] =
+    useAtom(temperatureUnitAtom);
   const [storedWeightUnitSystem, setWeightUnitSystem] = useAtom(weightUnitAtom);
   const [storedWaterUnitSystem, setWaterUnitSystem] = useAtom(waterUnitAtom);
 
@@ -126,6 +149,8 @@ export function useUnits() {
     queryFn: async () => {
       let distanceUnitSystem = storedDistanceUnitSystem;
       let swimUnitSystem = storedSwimUnitSystem;
+      let temperatureUnitSystem = storedTemperatureUnitSystem;
+
       let weightUnitSystem = storedWeightUnitSystem;
       let waterUnitSystem = storedWaterUnitSystem;
 
@@ -133,13 +158,15 @@ export function useUnits() {
         !distanceUnitSystem ||
         !swimUnitSystem ||
         !weightUnitSystem ||
-        !waterUnitSystem
+        !waterUnitSystem ||
+        !temperatureUnitSystem
       ) {
         if (!hasTokenScope("pro")) {
           return {
             distanceUnitSystem: "METRIC",
             weightUnitSystem: "METRIC",
             waterUnitSystem: "METRIC",
+            temperatureUnitSystem: "METRIC",
           };
         }
 
@@ -152,23 +179,29 @@ export function useUnits() {
 
         if (!swimUnitSystem) {
           swimUnitSystem = profile.swimUnit;
-          setSwimUnitSystem(profile.swimUnit);
+          setSwimUnitSystem(swimUnitSystem);
+        }
+
+        if (!temperatureUnitSystem) {
+          temperatureUnitSystem = profile.temperatureUnit;
+          setTemperatureUnitSystem(temperatureUnitSystem);
         }
 
         if (!weightUnitSystem) {
           weightUnitSystem = profile.weightUnit;
-          setWeightUnitSystem(profile.weightUnit);
+          setWeightUnitSystem(weightUnitSystem);
         }
 
         if (!waterUnitSystem) {
           waterUnitSystem = profile.waterUnit;
-          setWaterUnitSystem(profile.waterUnit);
+          setWaterUnitSystem(waterUnitSystem);
         }
       }
 
       return {
         distanceUnitSystem,
         swimUnitSystem,
+        temperatureUnitSystem,
         weightUnitSystem,
         waterUnitSystem,
       };
@@ -184,6 +217,12 @@ export function useUnits() {
     (storedSwimUnitSystem ?? profileUnits.swimUnitSystem) === "en_US"
       ? US_SWIM_UNIT_CONFIG
       : METRIC_SWIM_UNIT_CONFIG;
+
+  const temperatureUnitConfig =
+    (storedTemperatureUnitSystem ?? profileUnits.temperatureUnitSystem) ===
+    "en_US"
+      ? US_TEMPERATURE_UNIT_CONFIG
+      : METRIC_TEMPERATURE_UNIT_CONFIG;
 
   let weightUnitConfig: WeightUnitConfig;
 
@@ -207,6 +246,7 @@ export function useUnits() {
   return {
     ...distanceUnitConfig,
     ...swimUnitConfig,
+    ...temperatureUnitConfig,
     ...weightUnitConfig,
     ...waterUnitConfig,
   };

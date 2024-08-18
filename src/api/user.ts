@@ -7,6 +7,7 @@ export type DistanceUnitSystem = "en_US" | "METRIC";
 export type WaterUnitSystem = "en_US" | "METRIC";
 export type WeightUnitSystem = "en_US" | "en_GB" | "METRIC";
 export type SwimUnitSystem = "en_US" | "METRIC";
+export type TemperatureUnitSystem = "en_US" | "METRIC";
 
 // https://dev.fitbit.com/build/reference/web-api/user/get-profile/
 interface GetUserProfileResponse {
@@ -18,6 +19,7 @@ interface GetUserProfileResponse {
 
     distanceUnit: DistanceUnitSystem;
     swimUnit: SwimUnitSystem;
+    temperatureUnit: TemperatureUnitSystem;
     waterUnit: WaterUnitSystem;
     waterUnitName: string;
     weightUnit: WeightUnitSystem;
