@@ -15,15 +15,20 @@ export interface StringValueDatum {
   value: string;
 }
 
-export function useTimeSeriesData<TEntry = StringValueDatum>(
+export function useTimeSeriesQuery<TEntry = StringValueDatum>(
   resource: TimeSeriesResource
 ) {
   const {
     range: { startDay, endDay },
   } = useContext(TimeSeriesChartContext);
-  const { data } = useQuery(
-    buildTimeSeriesQuery<TEntry>(resource, startDay, endDay)
-  );
+  return buildTimeSeriesQuery<TEntry>(resource, startDay, endDay);
+}
+
+export function useTimeSeriesData<TEntry = StringValueDatum>(
+  resource: TimeSeriesResource
+) {
+  const query = useTimeSeriesQuery<TEntry>(resource);
+  const { data } = useQuery(query);
 
   return data;
 }

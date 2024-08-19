@@ -78,6 +78,7 @@ export function TimeSeriesChart({
   aggregation,
   layout,
   statsEl,
+  showGoals,
 }: {
   resource: ChartResource;
   range: DayjsRange;
@@ -85,12 +86,20 @@ export function TimeSeriesChart({
   layout?: "horizontal" | "vertical";
   formatDate?: (date: Date) => string;
   statsEl?: HTMLElement;
+  showGoals?: boolean;
 }) {
   const requiredScopes = CHART_RESOURCE_CONFIGS[resource]?.requiredScopes ?? [];
 
   const chartConfig = useMemo(
-    () => ({ range, formatDate, aggregation, layout, statsEl }),
-    [aggregation, formatDate, layout, range, statsEl]
+    () => ({
+      range,
+      formatDate,
+      aggregation,
+      layout,
+      statsEl,
+      showGoals: !!showGoals,
+    }),
+    [aggregation, formatDate, layout, range, statsEl, showGoals]
   );
 
   return (

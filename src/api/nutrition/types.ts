@@ -130,6 +130,18 @@ export interface GetWaterGoalResponse {
   };
 }
 
+// https://dev.fitbit.com/build/reference/web-api/nutrition/get-food-goals/
+export interface GetFoodGoalResponse {
+  goals: {
+    calories: number;
+  };
+  foodPlan: {
+    estimatedDate: string;
+    intensity: "MAINTAIN" | "EASIER" | "MEDIUM" | "HARDER" | "KINDAHARD";
+    personalized: boolean;
+  };
+}
+
 // https://dev.fitbit.com/build/reference/web-api/nutrition/search-foods/
 export interface SearchFoodsResponse {
   foods: Array<Food>;

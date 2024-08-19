@@ -5,7 +5,11 @@ import { formatAsDate } from "../datetime";
 import { makeRequest } from "../request";
 import { ONE_DAY_IN_MILLIS, graduallyStale } from "../cache-settings";
 
-import type { GetFoodLogResponse, GetWaterGoalResponse } from "./types";
+import type {
+  GetFoodGoalResponse,
+  GetFoodLogResponse,
+  GetWaterGoalResponse,
+} from "./types";
 
 export function buildFoodLogQuery(day: Dayjs) {
   const date = formatAsDate(day);
@@ -31,6 +35,19 @@ export function buildWaterGoalQuery() {
 
       const waterGoalResponse = (await response.json()) as GetWaterGoalResponse;
       return waterGoalResponse.goal.goal;
+    },
+    staleTime: ONE_DAY_IN_MILLIS,
+  });
+}
+
+export function buildFoodGoalQuery() {
+  return queryOptions({
+    queryKey: ["food-goal"],
+    queryFn: async () => {
+      const response = await makeRequest(`/1/user/-/foods/log/goal.json`);
+
+      const foodGoalResponse = (await response.json()) as GetFoodGoalResponse;
+      return foodGoalResponse;
     },
     staleTime: ONE_DAY_IN_MILLIS,
   });

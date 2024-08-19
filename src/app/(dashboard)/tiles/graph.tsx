@@ -9,6 +9,7 @@ import {
   Typography,
 } from "@mui/material";
 import {
+  Check,
   BookmarkBorder as SaveIcon,
   Settings as SettingsIcon,
 } from "@mui/icons-material";
@@ -29,17 +30,21 @@ import { useTileScale, useTileSettings } from "./tile";
 
 interface GraphTileSettings {
   chartResource: ChartResource;
+  showGoals?: boolean;
 }
 
 export default function GraphTileContent() {
-  const { h } = useTileScale();
+  const { w, h } = useTileScale();
   const [settings, saveSettings] = useTileSettings<GraphTileSettings>({
     chartResource: "steps",
+    showGoals: true,
   });
   const [resource, setResource] = useState<ChartResource>(
     settings.chartResource
   );
   const [statsEl, setStatsEl] = useState<HTMLElement | null>(null);
+
+  const canFitGoals = w > 1 && h > 1;
 
   const popupState = usePopupState({
     variant: "popover",
@@ -52,7 +57,16 @@ export default function GraphTileContent() {
 
   const saveDefault = () => {
     saveSettings({
+      ...settings,
       chartResource: resource,
+    });
+    popupState.close();
+  };
+
+  const toggleShowGoals = () => {
+    saveSettings({
+      ...settings,
+      showGoals: !settings.showGoals,
     });
     popupState.close();
   };
@@ -82,6 +96,14 @@ export default function GraphTileContent() {
                 </ListItemIcon>
                 <ListItemText>Save as default</ListItemText>
               </MenuItem>
+              {canFitGoals && (
+                <MenuItem onClick={toggleShowGoals}>
+                  <ListItemIcon aria-checked={!!settings.showGoals}>
+                    {settings.showGoals ? <Check /> : undefined}
+                  </ListItemIcon>
+                  <ListItemText>Show goals</ListItemText>
+                </MenuItem>
+              )}
               <Divider />
               {CHART_RESOURCE_MENU_ITEMS.map((id, i) =>
                 id === "-" ? (
@@ -114,6 +136,7 @@ export default function GraphTileContent() {
           range={{ startDay, endDay }}
           formatDate={SHORT_WEEKDAY.format}
           statsEl={statsEl ?? undefined}
+          showGoals={canFitGoals && settings.showGoals}
         />
       </div>
     </div>

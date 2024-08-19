@@ -1,15 +1,22 @@
 import { useMemo } from "react";
 import dayjs from "dayjs";
 import durationPlugin from "dayjs/plugin/duration";
+import { useQueries } from "@tanstack/react-query";
 
 import { useUnits } from "@/config/units";
 import { FRACTION_DIGITS_0, FRACTION_DIGITS_1 } from "@/utils/number-formats";
+import { buildWaterGoalQuery } from "@/api/nutrition";
 
 import { SimpleBarChart, SimpleLineChart } from "./mui-renderer";
-import { removeFutureDates, useTimeSeriesData } from "./data";
+import {
+  removeFutureDates,
+  useTimeSeriesData,
+  useTimeSeriesQuery,
+} from "./data";
 import { singleSeriesConfig } from "./series-config";
 import { durationTickFormat, durationTooltipFormat } from "./formatters";
 import { useAggregation } from "./aggregation";
+import { useTimeSeriesChartConfig } from "./context";
 
 dayjs.extend(durationPlugin);
 
@@ -48,7 +55,12 @@ export function CaloriesConsumedChart() {
 
 export function WaterChart() {
   const { localizedWaterVolume, localizedWaterVolumeName } = useUnits();
-  const data = useTimeSeriesData("water");
+
+  const { showGoals } = useTimeSeriesChartConfig();
+  const query = useTimeSeriesQuery("water");
+  const [{ data }, { data: waterGoalRaw }] = useQueries({
+    queries: [query, { ...buildWaterGoalQuery(), enabled: !!showGoals }],
+  });
 
   const seriesConfigs = useMemo(
     () =>
@@ -62,7 +74,24 @@ export function WaterChart() {
   );
 
   const props = useAggregation(data, seriesConfigs);
-  return <SimpleBarChart {...props} />;
+  const waterGoal =
+    showGoals && waterGoalRaw && localizedWaterVolume(waterGoalRaw);
+
+  return (
+    <SimpleBarChart
+      {...props}
+      referenceLine={
+        waterGoal
+          ? {
+              label: `Goal: ${FRACTION_DIGITS_0.format(
+                waterGoal
+              )} ${localizedWaterVolumeName}`,
+              value: waterGoal,
+            }
+          : undefined
+      }
+    />
+  );
 }
 
 export function WeightChart() {

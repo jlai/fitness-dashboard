@@ -1,14 +1,17 @@
 import { useMemo } from "react";
+import { useQueries } from "@tanstack/react-query";
 
 import { useUnits } from "@/config/units";
 import { FRACTION_DIGITS_0, FRACTION_DIGITS_2 } from "@/utils/number-formats";
+import { buildActivityGoalsQuery } from "@/api/activity/goals";
 
 import { useAggregation } from "./aggregation";
-import { useRangeInfo, useTimeSeriesData } from "./data";
+import { useRangeInfo, useTimeSeriesData, useTimeSeriesQuery } from "./data";
 import { SimpleBarChart } from "./mui-renderer";
 import { singleSeriesConfig } from "./series-config";
 import { GraphStats, AverageAndTotalStat } from "./stats";
 import { IntradayStepsChart } from "./intraday";
+import { useTimeSeriesChartConfig } from "./context";
 
 const STEPS_SERIES_CONFIGS = singleSeriesConfig({
   label: "Steps",
@@ -35,12 +38,33 @@ export function StepsChart() {
 }
 
 export function DailyStepsChart() {
-  const data = useTimeSeriesData("steps");
+  const { showGoals } = useTimeSeriesChartConfig();
+  const query = useTimeSeriesQuery("steps");
+
+  const [{ data }, { data: goals }] = useQueries({
+    queries: [
+      query,
+      { ...buildActivityGoalsQuery("daily"), enabled: !!showGoals },
+    ],
+  });
+
   const props = useAggregation(data, STEPS_SERIES_CONFIGS);
+
+  const stepGoal = showGoals && goals?.steps;
 
   return (
     <>
-      <SimpleBarChart {...props} />
+      <SimpleBarChart
+        {...props}
+        referenceLine={
+          stepGoal
+            ? {
+                label: `Goal: ${FRACTION_DIGITS_0.format(stepGoal)} steps`,
+                value: stepGoal,
+              }
+            : undefined
+        }
+      />
       <GraphStats>
         <AverageAndTotalStat
           data={data}
@@ -53,7 +77,15 @@ export function DailyStepsChart() {
 
 export function DistanceChart() {
   const { localizedKilometers, localizedKilometersName } = useUnits();
-  const data = useTimeSeriesData("distance");
+  const { showGoals } = useTimeSeriesChartConfig();
+  const query = useTimeSeriesQuery("distance");
+
+  const [{ data }, { data: goals }] = useQueries({
+    queries: [
+      query,
+      { ...buildActivityGoalsQuery("daily"), enabled: !!showGoals },
+    ],
+  });
 
   const seriesConfigs = useMemo(
     () =>
@@ -68,9 +100,23 @@ export function DistanceChart() {
 
   const props = useAggregation(data, seriesConfigs);
 
+  const distanceGoal = showGoals && goals?.distance;
+
   return (
     <>
-      <SimpleBarChart {...props} />
+      <SimpleBarChart
+        {...props}
+        referenceLine={
+          distanceGoal
+            ? {
+                label: `Goal: ${FRACTION_DIGITS_0.format(
+                  distanceGoal
+                )} ${localizedKilometersName}`,
+                value: distanceGoal,
+              }
+            : undefined
+        }
+      />
       <GraphStats>
         <AverageAndTotalStat
           data={data}
@@ -85,12 +131,32 @@ export function DistanceChart() {
 }
 
 export function FloorsChart() {
-  const data = useTimeSeriesData("floors");
+  const { showGoals } = useTimeSeriesChartConfig();
+  const query = useTimeSeriesQuery("floors");
+  const [{ data }, { data: goals }] = useQueries({
+    queries: [
+      query,
+      { ...buildActivityGoalsQuery("daily"), enabled: !!showGoals },
+    ],
+  });
+
   const props = useAggregation(data, FLOORS_SERIES_CONFIGS);
+
+  const floorsGoal = showGoals && goals?.floors;
 
   return (
     <>
-      <SimpleBarChart {...props} />
+      <SimpleBarChart
+        {...props}
+        referenceLine={
+          floorsGoal
+            ? {
+                label: `Goal: ${FRACTION_DIGITS_0.format(floorsGoal)} floors`,
+                value: floorsGoal,
+              }
+            : undefined
+        }
+      />
       <GraphStats>
         <AverageAndTotalStat
           data={data}

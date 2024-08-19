@@ -4,6 +4,7 @@ import {
   BarSeriesType,
   ChartsAxisHighlight,
   ChartsGrid,
+  ChartsReferenceLine,
   ChartsTooltip,
   ChartsXAxis,
   ChartsYAxis,
@@ -31,10 +32,16 @@ import { useExportGraphData } from "./graph-export";
 
 const CHART_MARGINS = { top: 16, bottom: 28, right: 8 };
 
+type ReferenceLineOptions = {
+  value: number;
+  label: string;
+};
+
 interface CommonChartProps<TDatum extends TimeSeriesDatum> {
   data: Array<TDatum> | undefined;
   seriesConfigs: Array<ChartSeriesConfig<TDatum>>;
   yAxisOptions?: YAxisOptions;
+  referenceLine?: ReferenceLineOptions;
 }
 
 type EitherAxisConfig = Partial<Omit<AxisConfig, "position">>;
@@ -122,9 +129,11 @@ function getCommonSeriesProps<TDatum extends TimeSeriesDatum>({
 function CommonChartElements({
   layout,
   loading,
+  referenceLine,
 }: {
   layout?: "horizontal" | "vertical";
   loading: boolean;
+  referenceLine?: ReferenceLineOptions;
 }) {
   const isHorizontal = layout === "horizontal";
 
@@ -140,6 +149,15 @@ function CommonChartElements({
       <ChartsTooltip />
       <MarkPlot />
       <ChartsGrid horizontal={!isHorizontal} vertical={isHorizontal} />
+      {referenceLine && (
+        <ChartsReferenceLine
+          y={referenceLine.value}
+          label={referenceLine.label}
+          labelAlign="end"
+          lineStyle={{ opacity: 0.5, stroke: "green", strokeDasharray: "4" }}
+          labelStyle={{ opacity: 0.5 }}
+        />
+      )}
     </>
   );
 }
@@ -165,7 +183,12 @@ function useAxes<TDatum extends TimeSeriesDatum>({
 
 export function SimpleBarChart<
   TDatum extends TimeSeriesDatum = TimeSeriesDatum
->({ data, seriesConfigs, yAxisOptions = {} }: CommonChartProps<TDatum>) {
+>({
+  data,
+  seriesConfigs,
+  yAxisOptions = {},
+  referenceLine,
+}: CommonChartProps<TDatum>) {
   const { layout } = useContext(TimeSeriesChartContext);
   const axesProps = useAxes({ layout, data, yAxisOptions });
 
@@ -183,14 +206,23 @@ export function SimpleBarChart<
       margin={CHART_MARGINS}
     >
       <BarPlot />
-      <CommonChartElements layout={layout} loading={!data} />
+      <CommonChartElements
+        layout={layout}
+        loading={!data}
+        referenceLine={referenceLine}
+      />
     </ResponsiveChartContainer>
   );
 }
 
 export function StackedBarChart<
   TDatum extends TimeSeriesDatum = TimeSeriesDatum
->({ data, seriesConfigs, yAxisOptions = {} }: CommonChartProps<TDatum>) {
+>({
+  data,
+  seriesConfigs,
+  yAxisOptions = {},
+  referenceLine,
+}: CommonChartProps<TDatum>) {
   const { layout } = useContext(TimeSeriesChartContext);
   const axesProps = useAxes({ layout, data, yAxisOptions });
 
@@ -209,14 +241,23 @@ export function StackedBarChart<
       margin={CHART_MARGINS}
     >
       <BarPlot />
-      <CommonChartElements layout={layout} loading={!data} />
+      <CommonChartElements
+        layout={layout}
+        loading={!data}
+        referenceLine={referenceLine}
+      />
     </ResponsiveChartContainer>
   );
 }
 
 export function SimpleLineChart<
   TDatum extends TimeSeriesDatum = TimeSeriesDatum
->({ data, seriesConfigs, yAxisOptions = {} }: CommonChartProps<TDatum>) {
+>({
+  data,
+  seriesConfigs,
+  yAxisOptions = {},
+  referenceLine,
+}: CommonChartProps<TDatum>) {
   const axesProps = useAxes({ data, yAxisOptions });
 
   const series: Array<LineSeriesType> = seriesConfigs.map((config) => ({
@@ -236,7 +277,7 @@ export function SimpleLineChart<
       margin={CHART_MARGINS}
     >
       <LinePlot />
-      <CommonChartElements loading={!data} />
+      <CommonChartElements loading={!data} referenceLine={referenceLine} />
     </ResponsiveChartContainer>
   );
 }

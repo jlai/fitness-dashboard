@@ -1,15 +1,13 @@
-import { useQuery } from "@tanstack/react-query";
-import { useAtomValue } from "jotai";
+import { useQueries } from "@tanstack/react-query";
 
-import { buildTimeSeriesQuery } from "@/api/times-series";
 import { FRACTION_DIGITS_0 } from "@/utils/number-formats";
-
-import { selectedRangeAtom } from "../atoms";
+import { buildActivityGoalsQuery } from "@/api/activity/goals";
 
 import { ChartSeriesConfig } from "./series-config";
 import { StackedBarChart } from "./mui-renderer";
-import { TimeSeriesDatum } from "./data";
+import { TimeSeriesDatum, useTimeSeriesQuery } from "./data";
 import { useAggregation } from "./aggregation";
+import { useTimeSeriesChartConfig } from "./context";
 
 type ActiveZoneMinutesDatum = TimeSeriesDatum & {
   value: {
@@ -47,15 +45,32 @@ const AZM_SERIES_CONFIGS: Array<ChartSeriesConfig<ActiveZoneMinutesDatum>> = [
 ];
 
 export function ActiveZoneMinutesChart() {
-  const { startDay, endDay } = useAtomValue(selectedRangeAtom);
-  const { data } = useQuery(
-    buildTimeSeriesQuery<ActiveZoneMinutesDatum>(
-      "active-zone-minutes",
-      startDay,
-      endDay
-    )
+  const { showGoals } = useTimeSeriesChartConfig();
+  const query = useTimeSeriesQuery<ActiveZoneMinutesDatum>(
+    "active-zone-minutes"
   );
+  const [{ data }, { data: goals }] = useQueries({
+    queries: [
+      query,
+      { ...buildActivityGoalsQuery("daily"), enabled: !!showGoals },
+    ],
+  });
 
   const props = useAggregation(data, AZM_SERIES_CONFIGS);
-  return <StackedBarChart {...props} />;
+
+  const azmGoal = showGoals && goals?.activeZoneMinutes;
+
+  return (
+    <StackedBarChart
+      {...props}
+      referenceLine={
+        azmGoal
+          ? {
+              label: `Goal: ${FRACTION_DIGITS_0.format(azmGoal)} zone mins`,
+              value: azmGoal,
+            }
+          : undefined
+      }
+    />
+  );
 }

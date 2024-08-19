@@ -1,4 +1,4 @@
-import { createContext } from "react";
+import { createContext, useContext } from "react";
 import dayjs from "dayjs";
 
 import { DayjsRange } from "@/components/calendar/period-navigator";
@@ -9,6 +9,7 @@ interface TimeSeriesChartConfig {
   range: DayjsRange;
   aggregation?: "hour" | "day" | "month";
   layout?: "horizontal" | "vertical";
+  showGoals?: boolean;
 
   // Element to portal stats into
   statsEl?: HTMLElement;
@@ -23,3 +24,7 @@ export const TimeSeriesChartContext = createContext<TimeSeriesChartConfig>({
     endDay: dayjs(),
   },
 });
+
+export function useTimeSeriesChartConfig() {
+  return useContext(TimeSeriesChartContext);
+}

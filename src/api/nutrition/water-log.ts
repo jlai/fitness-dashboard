@@ -37,6 +37,9 @@ export function buildCreateWaterLogMutation(queryClient: QueryClient) {
       queryClient.invalidateQueries({
         queryKey: ["food-log", formatAsDate(variables.day)],
       });
+      queryClient.invalidateQueries({
+        queryKey: ["timeseries", "water"],
+      });
     },
   });
 }
