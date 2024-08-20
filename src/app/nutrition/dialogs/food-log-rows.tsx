@@ -146,10 +146,38 @@ function FoodLogRow({ foodLog }: { foodLog: FoodLogEntry }) {
  * Display a meal type (e.g. Anytime, Breakfast, etc) and the food logs associated with it.
  */
 export function MealTypeRows({ summary }: { summary: MealTypeSummary }) {
+  const updateSelectedFoodLog = useSetAtom(updateSelectedFoodLogAtom);
+  const handleChange = function (foods: FoodLogEntry[], checked: boolean) {
+    foods.map((foodLog) => updateSelectedFoodLog(foodLog, checked));
+  };
+  const selectedFoodLogs = useAtomValue(selectedFoodLogsAtom);
+  const displayedFoods = summary.id == -1 ? [] : summary.foods;
+  const checked = selectedFoodLogs.filter(
+      (foodLog) => foodLog.loggedFood.mealTypeId == summary.id || summary.id == -1
+  ).size > 0;
+  const intersect = summary.foods.filter((foodLog) => selectedFoodLogs.has(foodLog));
+  const indeterminate = checked && intersect.length != summary.foods.length;
+  const label = checked ? "Select none" : "Select all";
+
   return (
     <>
       <TableRow className="bg-slate-50 dark:bg-slate-900">
-        <TableCell className="font-medium">{summary.name}</TableCell>
+        <TableCell className="font-medium">
+          <div className="flex flex-row items-center">
+            <FormControlLabel
+                control={
+                  <Checkbox
+                      size="small"
+                      checked={checked}
+                      indeterminate={indeterminate}
+                      onChange={() => handleChange(summary.foods, !checked || indeterminate)}
+                  />
+                }
+                title={label}
+                label={summary.name}
+            />
+          </div>
+        </TableCell>
         <TableCell></TableCell>
         <TableCell className="text-end">
           {NUTRIENT_FORMAT.format(summary.calories)}
@@ -160,7 +188,7 @@ export function MealTypeRows({ summary }: { summary: MealTypeSummary }) {
           </TableCell>
         ))}
       </TableRow>
-      {summary.foods.map((foodLog) => (
+      {displayedFoods.map((foodLog) => (
         <FoodLogRow key={foodLog.logId} foodLog={foodLog} />
       ))}
     </>
@@ -175,7 +203,7 @@ export function TotalsRow({
   const summary: MealTypeSummary = {
     id: -1,
     name: "Total",
-    foods: [],
+    foods: foodLogsResponse.foods,
     ...foodLogsResponse.summary,
   };
 
