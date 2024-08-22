@@ -141,7 +141,7 @@ export function CustomFoodFields() {
             getOptionKey: (option) => option.id,
             isOptionEqualToValue: (option, value) => value && option.id === value.id,
           }}
-          textFieldProps={{ sx: { minWidth: "300px" } }}
+          textFieldProps={{ sx: { minWidth: "297px" } }}
         />
       </FormRow>
       <TextFieldElement
@@ -172,6 +172,7 @@ export function CustomFoodFields() {
                     <InputAdornment position="end">{unit}</InputAdornment>
                   ),
                 }}
+                sx = {{ maxWidth: "45%" }}
               />
             ))}
           </FormRow>
