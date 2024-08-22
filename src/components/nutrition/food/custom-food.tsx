@@ -55,7 +55,7 @@ export const NUTRITION_FIELDS = {
   },
   cholesterol: {
     label: "Cholesterol",
-    unit: "g",
+    unit: "mg",
   },
   sodium: {
     label: "Sodium",
