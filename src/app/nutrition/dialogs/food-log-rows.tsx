@@ -5,10 +5,13 @@ import {
   Checkbox,
   Typography,
   Popper,
+  Chip,
+  styled,
 } from "@mui/material";
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { useAtomValue, useSetAtom } from "jotai";
 import { usePopupState, bindPopper } from "material-ui-popup-state/hooks";
-import { useCallback, ChangeEvent } from "react";
+import {useCallback, ChangeEvent, MouseEvent} from "react";
 import { EditOutlined as EditIcon } from "@mui/icons-material";
 
 import { formatFoodName } from "@/utils/other-formats";
@@ -22,6 +25,30 @@ import { EditServingSize } from "./edit-serving-size";
 
 const NUTRIENT_FORMAT = FRACTION_DIGITS_1;
 const NUTRIENT_PROPS = ["carbs", "fat", "fiber", "protein", "sodium"];
+
+
+const FlatChip = styled(Chip)(() => ({
+  borderRadius: 0,
+  fontWeight: 400,
+  fontSize: "1rem",
+  lineHeight: 1.5,
+  backgroundColor: "transparent",
+  "&:hover": {
+    backgroundColor: "transparent",
+    paddingLeft: 0,
+    "& .MuiChip-icon": {
+      display: "block"
+    },
+    '& .MuiChip-label': {
+      paddingLeft: "6px",
+    }
+  },
+  '& .MuiChip-label': {
+    paddingLeft: "24px",
+    paddingRight: 0
+  },
+  "& .MuiChip-icon": { display: "none" }
+}));
 
 function formatNutrientPropValue(
   nutritionalValues: FoodLogEntry["nutritionalValues"],
@@ -155,9 +182,18 @@ export function MealTypeRows({ summary }: { summary: MealTypeSummary }) {
   const checked = selectedFoodLogs.filter(
       (foodLog) => foodLog.loggedFood.mealTypeId == summary.id || summary.id == -1
   ).size > 0;
-  const intersect = summary.foods.filter((foodLog) => selectedFoodLogs.has(foodLog));
-  const indeterminate = checked && intersect.length != summary.foods.length;
-  const label = checked ? "Select none" : "Select all";
+  const indeterminate = checked && !summary.foods.every((foodLog) => selectedFoodLogs.has(foodLog));
+  const title = !checked || indeterminate ? "Select all" : "Select none";
+
+  async function copyTextToClipboard(e: MouseEvent) {
+    if ('clipboard' in navigator) {
+      const element = e.target as Element;
+
+      if (element && element.textContent) {
+        return await navigator.clipboard.writeText(element.textContent || "");
+      }
+    }
+  }
 
   return (
     <>
@@ -173,18 +209,18 @@ export function MealTypeRows({ summary }: { summary: MealTypeSummary }) {
                       onChange={() => handleChange(summary.foods, !checked || indeterminate)}
                   />
                 }
-                title={label}
+                title={title}
                 label={summary.name}
             />
           </div>
         </TableCell>
         <TableCell></TableCell>
         <TableCell className="text-end">
-          {NUTRIENT_FORMAT.format(summary.calories)}
+          <FlatChip size="small" icon={<ContentCopyIcon />} onClick={copyTextToClipboard} label={NUTRIENT_FORMAT.format(summary.calories)} />
         </TableCell>
         {NUTRIENT_PROPS.map((prop) => (
           <TableCell key={prop} className="text-end">
-            <Typography>{formatNutrientPropValue(summary, prop)}</Typography>
+            <FlatChip size="small" icon={<ContentCopyIcon />} onClick={copyTextToClipboard} label={formatNutrientPropValue(summary, prop)} />
           </TableCell>
         ))}
       </TableRow>
