@@ -139,9 +139,9 @@ export function CustomFoodFields() {
           loading={!allUnits}
           autocompleteProps={{
             getOptionKey: (option) => option.id,
-            isOptionEqualToValue: (option, value) => value && option.id === value.id,
+            isOptionEqualToValue: (option, value) => option.id === value.id,
+            sx: { flex: 1 },
           }}
-          textFieldProps={{ sx: { minWidth: "297px" } }}
         />
       </FormRow>
       <TextFieldElement
