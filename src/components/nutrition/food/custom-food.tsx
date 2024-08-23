@@ -167,6 +167,8 @@ export function CustomFoodFields() {
                 key={id}
                 name={`nutritionValues.${id}`}
                 label={label}
+                type="number"
+                rules={{ min: 0 }}
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">{unit}</InputAdornment>
