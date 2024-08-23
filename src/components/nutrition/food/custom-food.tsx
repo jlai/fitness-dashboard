@@ -35,6 +35,7 @@ import {
   buildCreateCustomFoodMutation,
   buildGetFoodQuery,
 } from "@/api/nutrition/foods";
+import NutritionLabel from "@/components/nutrition/label/NutritionLabel";
 
 export const NUTRITION_FIELDS = {
   caloriesFromFat: {
@@ -178,6 +179,24 @@ export function CustomFoodFields() {
               />
             ))}
           </FormRow>
+          <Box marginBottom={2} />
+          <NutritionLabel
+              width={"50%"}
+              servingText={servingText}
+              calories={watch("calories")}
+              caloriesFromFat={watch("nutritionValues.caloriesFromFat")}
+              totalFat={watch("nutritionValues.totalFat")}
+              saturatedFat={watch("nutritionValues.saturatedFat")}
+              transFat={watch("nutritionValues.transFat")}
+              cholesterol={watch("nutritionValues.cholesterol")}
+              sodium={watch("nutritionValues.sodium")}
+              potassium={watch("nutritionValues.potassium")}
+              totalCarbohydrate={watch("nutritionValues.totalCarbohydrate")}
+              dietaryFiber={watch("nutritionValues.dietaryFiber")}
+              sugars={watch("nutritionValues.sugars")}
+              protein={watch("nutritionValues.protein")}
+              vitamins={[]}
+          />
         </AccordionDetails>
       </Accordion>
     </FormRows>
