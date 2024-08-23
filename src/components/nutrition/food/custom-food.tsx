@@ -55,7 +55,7 @@ export const NUTRITION_FIELDS = {
   },
   cholesterol: {
     label: "Cholesterol",
-    unit: "g",
+    unit: "mg",
   },
   sodium: {
     label: "Sodium",
@@ -140,8 +140,8 @@ export function CustomFoodFields() {
           autocompleteProps={{
             getOptionKey: (option) => option.id,
             isOptionEqualToValue: (option, value) => option.id === value.id,
+            sx: { flex: 1 },
           }}
-          textFieldProps={{ sx: { minWidth: "300px" } }}
         />
       </FormRow>
       <TextFieldElement
@@ -167,11 +167,14 @@ export function CustomFoodFields() {
                 key={id}
                 name={`nutritionValues.${id}`}
                 label={label}
+                type="number"
+                rules={{ min: 0 }}
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">{unit}</InputAdornment>
                   ),
                 }}
+                sx = {{ maxWidth: "45%" }}
               />
             ))}
           </FormRow>
