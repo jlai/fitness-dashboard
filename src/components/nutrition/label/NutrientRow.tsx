@@ -8,22 +8,22 @@ type RowContainerProps = {
 
 const RowContainer = styled(Box)<RowContainerProps>(({ indent }) => ({
   marginTop: 0,
-  marginLeft: indent || '0pt',
+  marginLeft: indent || 0,
   padding: 0
 }));
 
 
 const TextContainer = styled(Box)(() => ({
-  lineHeight: "8pt",
-  paddingBottom: "2pt"
+  lineHeight: "0.667rem",
+  paddingBottom: "3px"
 }));
 
 const PercentDailyValueText = styled(Typography)(() => ({
-  lineHeight: "7pt",
-  fontSize: "8pt",
+  lineHeight: "0.583rem",
+  fontSize: "0.667rem",
   fontWeight: 100,
   textAlign: "right",
-  margin: "2pt 0 5pt",
+  margin: "3px 0 7px",
   float: "right"
 }));
 
@@ -34,13 +34,13 @@ type NutrientTextProps = {
 const NutrientText = styled(Typography)<NutrientTextProps>(({ isBold }) => ({
   fontWeight: isBold ? 700 : 100,
   fontFamily: "Helvetica",
-  fontSize: "8pt",
-  marginLeft: "2pt",
+  fontSize: "0.667rem",
+  marginLeft: "3px",
   padding: 0,
   display: "inline"
 }));
 
-const NutrientRowSeparatorBarHeight = '0.25pt';
+const NutrientRowSeparatorBarHeight = '0.02rem';
 
 function NutrientRow({ label, value, hideBar, color, boldLabel, indent, unit, recommended }: {
   label: string;

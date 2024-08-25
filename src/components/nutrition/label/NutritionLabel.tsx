@@ -3,7 +3,7 @@ import {styled, Box, Typography} from "@mui/material";
 import SeparatorBar from "./SeparatorBar"
 import NutrientRow from "./NutrientRow"
 
-const NUTRIENT_INDENT = "4pt";
+const NUTRIENT_INDENT = "0.33rem";
 
 interface LabelContainerProps {
     backgroundColor?: string,
@@ -15,74 +15,74 @@ const LabelContainer = styled(Box)<LabelContainerProps>(({ backgroundColor, widt
     backgroundColor: backgroundColor || "white",
     color: color || "black",
     fontFamily: ["Helvetica"],
-    padding: "3pt",
+    padding: "4px",
     textAlign: "left",
     width: width || "320px",
     margin: "auto"
 }));
 
 const Title = styled(Typography)(() => ({
-    fontSize: "21pt",
+    fontSize: "1.75rem",
     fontWeight: 900,
     margin: 0,
     fontFamily: ["Franklin Gothic Heavy", "Helvetica"],
 }));
 
 const ServingInfo = styled(Typography)(() => ({
-    fontSize: "8pt",
+    fontSize: "0.667rem",
     fontWeight: 400,
-    margin: "1pt 1pt 2pt"
+    margin: "1px 1px 3px"
 }));
 
 const AmountPerServing = styled(Typography)(() => ({
-    fontSize: "8pt",
+    fontSize: "0.667rem",
     fontWeight: 700,
-    margin: "1pt"
+    margin: "1px"
 }));
 
 const CalorieRow = styled(Box)(() => ({
     padding: 0,
-    margin: "3pt 0",
-    lineHeight: "8pt",
-    height: "8pt"
+    margin: "4px 0",
+    lineHeight: "0.667rem",
+    height: "0.667rem"
 }));
 
 const CaloriesLabel = styled(Typography)(() => ({
-    fontSize: "8pt",
+    fontSize: "0.667rem",
     fontWeight: 700,
-    margin: "0 0 0 1pt",
+    margin: "0 0 0 1px",
     float: "left"
 }));
 
 const CaloriesValue = styled(Typography)(() => ({
-    fontSize: "8pt",
+    fontSize: "0.667rem",
     fontWeight: 100,
-    margin: "0 0 0 2pt",
+    margin: "0 0 0 3px",
     float: "left"
 }));
 
 const CaloriesFromFat = styled(Typography)(() => ({
-    fontSize: "8pt",
+    fontSize: "0.667rem",
     fontWeight: 100,
     display: "inline-flex",
-    margin: "0 1pt 0 auto",
+    margin: "0 1px 0 auto",
     float: "right"
 }));
 
 const PercentDailyValueLabel = styled(Typography)(() => ({
-    lineHeight: "7pt",
-    fontSize: "8pt",
+    lineHeight: "0.583rem",
+    fontSize: "0.667rem",
     fontWeight: 100,
     textAlign: "right",
-    margin: "2pt 0 5pt",
+    margin: "3px 0 7px"
 }));
 
 const DailyValues = styled(Typography)(() => ({
-    lineHeight: "7pt",
-    fontSize: "7pt",
+    lineHeight: "0.583rem",
+    fontSize: "0.583rem",
     fontWeight: 100,
     textAlign: "left",
-    margin: "2pt 0 5pt"
+    margin: "3px 0 7px"
 }));
 
 function NutritionLabel({
@@ -115,13 +115,13 @@ function NutritionLabel({
                 {`Serving Size ${servingText}`}
             </ServingInfo>
 
-            <SeparatorBar height={"7pt"} color={backgroundColor}/>
+            <SeparatorBar height={"0.583rem"} color={backgroundColor}/>
 
             <AmountPerServing>
                 {`Amount Per Serving`}
             </AmountPerServing>
 
-            <SeparatorBar height={"0.5pt"} color={backgroundColor}/>
+            <SeparatorBar height={"1px"} color={backgroundColor}/>
 
             <CalorieRow>
                 <CaloriesLabel>
@@ -137,13 +137,13 @@ function NutritionLabel({
                 )}
             </CalorieRow>
 
-            <SeparatorBar height={"3pt"} color={backgroundColor}/>
+            <SeparatorBar height={"4px"} color={backgroundColor}/>
 
             <PercentDailyValueLabel>
                 {`% Daily Value*`}
             </PercentDailyValueLabel>
 
-            <SeparatorBar height={"0.5pt"} color={backgroundColor}/>
+            <SeparatorBar height={"1px"} color={backgroundColor}/>
 
             <NutrientRow label={"Total Fat"} value={totalFat||0} unit="g" boldLabel={true} recommended={78} />
             <NutrientRow label={"Saturated Fat"} value={saturatedFat||0} unit="g" boldLabel={false} recommended={20} indent={NUTRIENT_INDENT}/>
@@ -156,7 +156,7 @@ function NutritionLabel({
             <NutrientRow label={"Sugars"} value={sugars||0} unit="g" boldLabel={false} recommended={50} indent={NUTRIENT_INDENT}/>
             <NutrientRow label={"Protein"} value={protein||0} unit="g" boldLabel={true} recommended={50}/>
 
-            {vitamins.length > 0 && (<SeparatorBar height={"5pt"} color={backgroundColor}/>)}
+            {vitamins.length > 0 && (<SeparatorBar height={"7px"} color={backgroundColor}/>)}
             {vitamins.map(
                 (vitaminString: string) =>
                     <NutrientRow key={vitaminString} hideBar={false} label={vitaminString} value={0} unit="%"/>
