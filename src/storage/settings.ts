@@ -50,6 +50,33 @@ export const foodLogTotalsPositionAtom = atomWithStorage<
   getOnInit: true,
 });
 
+export const foodLogGoalsPositionAtom = atomWithStorage<
+    "hidden" | "top" | "bottom" | "both"
+>("macro-goals:position", "top", undefined, {
+    getOnInit: true,
+});
+
+export const caloriesGoalAtom = atomWithStorage<number>(
+    "macro-goals:calories", 2000, undefined, { getOnInit: true, });
+
+export const proteinGoalAtom = atomWithStorage<number>(
+    "macro-goals:protein", 50, undefined, { getOnInit: true, });
+
+export const carbsGoalAtom = atomWithStorage<number>(
+    "macro-goals:carbs", 275, undefined, { getOnInit: true, });
+
+export const fiberGoalAtom = atomWithStorage<number>(
+    "macro-goals:fiber", 28, undefined, { getOnInit: true, });
+
+export const sodiumGoalAtom = atomWithStorage<number>(
+    "macro-goals:sodium", 2300, undefined, { getOnInit: true, });
+
+export const fatGoalAtom = atomWithStorage<number>(
+    "macro-goals:fat", 78, undefined, { getOnInit: true, });
+
+export const enableNetCarbsAtom = atomWithStorage<boolean>(
+  "macro-goals:net-carbs", false, undefined, { getOnInit: true, });
+
 export const mapStyleAtom = atomWithStorage<string>(
   "map:style",
   "white",
