@@ -112,7 +112,7 @@ export function CustomFoodFields() {
 
   const amount = watch("amount");
   const unit = watch("unit") as FoodUnitAutocompleteOption;
-
+  const nutritionValues = watch("nutritionValues");
   const servingText =
     amount &&
     unit &&
@@ -183,18 +183,7 @@ export function CustomFoodFields() {
           <NutritionLabel
               width={"50%"}
               servingText={servingText}
-              calories={watch("calories")}
-              caloriesFromFat={watch("nutritionValues.caloriesFromFat")}
-              totalFat={watch("nutritionValues.totalFat")}
-              saturatedFat={watch("nutritionValues.saturatedFat")}
-              transFat={watch("nutritionValues.transFat")}
-              cholesterol={watch("nutritionValues.cholesterol")}
-              sodium={watch("nutritionValues.sodium")}
-              potassium={watch("nutritionValues.potassium")}
-              totalCarbohydrate={watch("nutritionValues.totalCarbohydrate")}
-              dietaryFiber={watch("nutritionValues.dietaryFiber")}
-              sugars={watch("nutritionValues.sugars")}
-              protein={watch("nutritionValues.protein")}
+              {...nutritionValues}
               vitamins={[]}
           />
         </AccordionDetails>
