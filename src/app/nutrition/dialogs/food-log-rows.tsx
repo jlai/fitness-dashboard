@@ -16,7 +16,15 @@ import { EditOutlined as EditIcon } from "@mui/icons-material";
 
 import { formatFoodName } from "@/utils/other-formats";
 import { FRACTION_DIGITS_1 } from "@/utils/number-formats";
-import { FoodLogEntry, GetFoodLogResponse } from "@/api/nutrition";
+import {FoodLogEntry, FoodLogSummary, GetFoodLogResponse, MealType} from "@/api/nutrition";
+import {
+  caloriesGoalAtom,
+  carbsGoalAtom, enableNetCarbsAtom,
+  fatGoalAtom,
+  fiberGoalAtom,
+  proteinGoalAtom,
+  sodiumGoalAtom,
+} from "@/storage/settings";
 
 import { selectedFoodLogsAtom, updateSelectedFoodLogAtom } from "../atoms";
 import { MealTypeSummary } from "../summarize-day";
@@ -25,7 +33,6 @@ import { EditServingSize } from "./edit-serving-size";
 
 const NUTRIENT_FORMAT = FRACTION_DIGITS_1;
 const NUTRIENT_PROPS = ["carbs", "fat", "fiber", "protein", "sodium"];
-
 
 const FlatChip = styled(Chip)(() => ({
   borderRadius: 0,
@@ -80,7 +87,7 @@ export function FoodLogTableHeaderRows() {
   );
 }
 
-function FoodLogRow({ foodLog }: { foodLog: FoodLogEntry }) {
+function FoodLogRow({ foodLog, readonly }: { foodLog: FoodLogEntry, readonly?: boolean }) {
   const {
     logId,
     loggedFood: { name, brand, amount, unit, calories },
@@ -105,51 +112,60 @@ function FoodLogRow({ foodLog }: { foodLog: FoodLogEntry }) {
     <TableRow key={logId}>
       <TableCell>
         <div className="flex flex-row items-center">
-          <FormControlLabel
-            control={
-              <Checkbox
-                size="small"
-                checked={selectedFoodLogs.has(foodLog)}
-                onChange={handleChange}
-              />
-            }
-            label={formatFoodName(name, brand)}
-          />
+          {!readonly ? (
+            <FormControlLabel
+              control={
+                <Checkbox
+                  size="small"
+                  checked={selectedFoodLogs.has(foodLog)}
+                  onChange={handleChange}
+                />
+              }
+              label={formatFoodName(name, brand)}
+            />) : (
+            <Typography sx={{marginLeft: "26px"}}>{formatFoodName(name, brand)}</Typography>
+         )}
         </div>
       </TableCell>
       <TableCell className="group min-w-max">
-        <button
-          className="flex flex-row items-center"
-          onClick={popupState.open}
-        >
-          <Typography
-            variant="body1"
-            sx={{
-              backgroundColor: popupState.isOpen
-                ? "rgb(252, 232, 3, 0.2)"
-                : undefined,
-            }}
-          >
-            {amount} {amount === 1 ? unit?.name : unit?.plural}
-          </Typography>
-          <div className="ms-2 invisible group-hover:visible text-slate-500">
-            <EditIcon />
-          </div>
-        </button>
-        <Popper
-          {...bindPopper(popupState)}
-          modifiers={[
-            {
-              name: "arrow",
-              enabled: true,
-              options: {
-                element: popupState.anchorEl,
-              },
-            },
-          ]}
-        >
-          <EditServingSize foodLog={foodLog} closePopover={popupState.close} />
-        </Popper>
+        { !readonly ? (
+            <div>
+              <button
+                  className="flex flex-row items-center"
+                  onClick={popupState.open}
+              >
+                <Typography
+                    variant="body1"
+                    sx={{
+                      backgroundColor: popupState.isOpen
+                          ? "rgb(252, 232, 3, 0.2)"
+                          : undefined,
+                    }}
+                >
+                  {amount} {amount === 1 ? unit?.name : unit?.plural}
+                </Typography>
+                <div className="ms-2 invisible group-hover:visible text-slate-500">
+                  <EditIcon/>
+                </div>
+              </button>
+              <Popper
+                  {...bindPopper(popupState)}
+                  modifiers={[
+                    {
+                      name: "arrow",
+                      enabled: true,
+                      options: {
+                        element: popupState.anchorEl,
+                      },
+                    },
+                  ]}
+              >
+                <EditServingSize foodLog={foodLog} closePopover={popupState.close}/>
+              </Popper>
+            </div>
+        ): (
+          <Typography>{amount} {amount === 1 ? unit?.name : unit?.plural}</Typography>
+      )}
       </TableCell>
       <TableCell className="text-end">
         {NUTRIENT_FORMAT.format(calories)}
@@ -172,7 +188,7 @@ function FoodLogRow({ foodLog }: { foodLog: FoodLogEntry }) {
 /**
  * Display a meal type (e.g. Anytime, Breakfast, etc) and the food logs associated with it.
  */
-export function MealTypeRows({ summary }: { summary: MealTypeSummary }) {
+export function MealTypeRows({ summary, readonly }: { summary: MealTypeSummary, readonly?: boolean }) {
   const updateSelectedFoodLog = useSetAtom(updateSelectedFoodLogAtom);
   const handleChange = function (foods: FoodLogEntry[], checked: boolean) {
     foods.map((foodLog) => updateSelectedFoodLog(foodLog, checked));
@@ -200,18 +216,21 @@ export function MealTypeRows({ summary }: { summary: MealTypeSummary }) {
       <TableRow className="bg-slate-50 dark:bg-slate-900">
         <TableCell className="font-medium">
           <div className="flex flex-row items-center">
-            <FormControlLabel
-                control={
-                  <Checkbox
-                      size="small"
-                      checked={checked}
-                      indeterminate={indeterminate}
-                      onChange={() => handleChange(summary.foods, !checked || indeterminate)}
-                  />
-                }
-                title={title}
-                label={summary.name}
-            />
+            {!readonly ? (
+              <FormControlLabel
+                  control={
+                    <Checkbox
+                        size="small"
+                        checked={checked}
+                        indeterminate={indeterminate}
+                        onChange={() => handleChange(summary.foods, !checked || indeterminate)}
+                    />
+                  }
+                  title={title}
+                  label={summary.name}
+            />) : (
+              <Typography sx={{marginLeft:"26px"}}>{summary.name}</Typography>
+            )}
           </div>
         </TableCell>
         <TableCell></TableCell>
@@ -225,7 +244,7 @@ export function MealTypeRows({ summary }: { summary: MealTypeSummary }) {
         ))}
       </TableRow>
       {displayedFoods.map((foodLog) => (
-        <FoodLogRow key={foodLog.logId} foodLog={foodLog} />
+        <FoodLogRow readonly={readonly} key={foodLog.logId} foodLog={foodLog} />
       ))}
     </>
   );
@@ -244,4 +263,96 @@ export function TotalsRow({
   };
 
   return <MealTypeRows summary={summary} />;
+}
+
+export function NutritionGoalsRow({ totals }: { totals: FoodLogSummary }) {
+  const calories = useAtomValue(caloriesGoalAtom);
+  const carbs = useAtomValue(carbsGoalAtom);
+  const fat = useAtomValue(fatGoalAtom);
+  const fiber = useAtomValue(fiberGoalAtom);
+  const protein = useAtomValue(proteinGoalAtom);
+  const sodium = useAtomValue(sodiumGoalAtom);
+  const useNetCars = useAtomValue(enableNetCarbsAtom);
+  const caloriesPercentage = parseFloat((totals.calories * 100/ calories).toFixed(2));
+  const totalsCarbs = useNetCars ? totals.carbs - totals.fiber : totals.carbs;
+  const summary: MealTypeSummary = {
+    id: MealType.Anytime,
+    name: "Remaining",
+    foods: [
+      {
+        logDate: "",
+        logId: -1,
+        loggedFood: {
+          mealTypeId: MealType.Anytime,
+          amount: totals.calories,
+          foodId:-1,
+          accessLevel: "PRIVATE",
+          calories:totals.calories,
+          unit: { id: 1, name: "kCal", plural: "kCal" },
+          units:[],
+          name:"Total"
+        },
+        nutritionalValues: {
+          calories: totals.calories,
+          carbs: totalsCarbs,
+          fat: totals.fat,
+          fiber: totals.fiber,
+          protein: totals.protein,
+          sodium: totals.sodium,
+        }
+      },
+      {
+        logDate: "",
+        logId: -1,
+        loggedFood: {
+          mealTypeId: MealType.Anytime,
+          amount: calories,
+          foodId:-1,
+          accessLevel: "PRIVATE",
+          calories:calories,
+          unit: { id: 1, name: "kCal", plural: "kCal" },
+          units:[],
+          name:"Nutrition goals"
+        },
+        nutritionalValues: {
+          calories: calories,
+          carbs: carbs,
+          fat: fat,
+          fiber: fiber,
+          protein: protein,
+          sodium: sodium,
+        }
+      },
+      {
+        logDate: "",
+        logId: -1,
+        loggedFood: {
+          mealTypeId: MealType.Anytime,
+          amount: caloriesPercentage,
+          foodId:-1,
+          accessLevel: "PRIVATE",
+          calories: caloriesPercentage,
+          unit: { id: 1, name: "%", plural: "%" },
+          units:[],
+          name:"Nutrition goals (%)"
+        },
+        nutritionalValues: {
+          calories: caloriesPercentage,
+          carbs: parseFloat((totalsCarbs * 100 / carbs).toFixed(2)),
+          fat: parseFloat((totals.fat * 100 / fat).toFixed(2)),
+          fiber: parseFloat((totals.fiber * 100 / fiber).toFixed(2)),
+          protein: parseFloat((totals.protein * 100 / protein).toFixed(2)),
+          sodium: parseFloat((totals.sodium * 100 / sodium).toFixed(2)),
+        }
+      }
+    ],
+    calories: calories - totals.calories,
+    carbs: carbs - totalsCarbs,
+    fat: fat - totals.fat,
+    fiber: fiber - totals.fiber,
+    protein: protein - totals.protein,
+    sodium: sodium - totals.sodium,
+  };
+
+  return <MealTypeRows summary={summary} readonly />;
 }

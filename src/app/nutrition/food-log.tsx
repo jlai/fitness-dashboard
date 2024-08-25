@@ -41,7 +41,7 @@ import {
   buildFavoriteFoodsQuery,
   buildFoodLogQuery,
 } from "@/api/nutrition";
-import { foodLogTotalsPositionAtom } from "@/storage/settings";
+import { foodLogTotalsPositionAtom, foodLogGoalsPositionAtom } from "@/storage/settings";
 import { FormActionRow } from "@/components/forms/form-row";
 import {
   buildAddFavoriteFoodsMutation,
@@ -59,6 +59,7 @@ import {
 } from "./dialogs";
 import {
   FoodLogTableHeaderRows,
+  NutritionGoalsRow,
   MealTypeRows,
   TotalsRow,
 } from "./dialogs/food-log-rows";
@@ -75,6 +76,7 @@ export default function FoodLog({ day }: { day: Dayjs }) {
   const setCopyDialogOpen = useSetAtom(copyDialogOpenAtom);
   const setCreateMealDialogOpen = useSetAtom(createMealDialogOpenAtom);
   const foodLogTotalsPosition = useAtomValue(foodLogTotalsPositionAtom);
+  const foodLogGoalsPosition = useAtomValue(foodLogGoalsPositionAtom);
 
   const confirm = useConfirm();
   const queryClient = useQueryClient();
@@ -158,6 +160,9 @@ export default function FoodLog({ day }: { day: Dayjs }) {
             {foodLogTotalsPosition !== "bottom" && (
               <TotalsRow foodLogsResponse={foodLogsResponse} />
             )}
+            {(foodLogGoalsPosition === "top" || foodLogGoalsPosition === "both") && (
+                <NutritionGoalsRow totals={foodLogsResponse.summary} />
+            )}
             {[...groupedMealTypes.values()]
               .filter(
                 (summary) => summary.foods.length > 0 || summary.id === -1
@@ -167,6 +172,9 @@ export default function FoodLog({ day }: { day: Dayjs }) {
               ))}
             {foodLogTotalsPosition !== "top" && (
               <TotalsRow foodLogsResponse={foodLogsResponse} />
+            )}
+            {(foodLogGoalsPosition === "bottom" || foodLogGoalsPosition === "both") && (
+                <NutritionGoalsRow totals={foodLogsResponse.summary} />
             )}
           </TableBody>
         </Table>
