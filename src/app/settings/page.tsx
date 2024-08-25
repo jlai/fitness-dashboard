@@ -1,19 +1,20 @@
 "use client";
 
-import { Suspense, useCallback } from "react";
+import React, { Suspense, useCallback } from "react";
 import {
-  Button,
-  Container,
-  MenuItem,
-  Paper,
-  Select,
-  Switch,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableRow,
-  Typography,
+    Button,
+    Container, InputAdornment,
+    MenuItem,
+    Paper,
+    Select,
+    Switch,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableRow,
+    TextField,
+    Typography,
 } from "@mui/material";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { RESET } from "jotai/utils";
@@ -36,15 +37,24 @@ import {
   WeightUnitSystem,
 } from "@/api/user";
 import {
-  distanceUnitAtom,
-  enableAdvancedScopesAtom,
-  foodLogTotalsPositionAtom,
-  increasedTileLimitsAtom,
-  swimUnitAtom,
-  temperatureUnitAtom,
-  waterUnitAtom,
-  weightUnitAtom,
+    distanceUnitAtom,
+    enableAdvancedScopesAtom,
+    foodLogTotalsPositionAtom,
+    increasedTileLimitsAtom,
+    swimUnitAtom,
+    temperatureUnitAtom,
+    waterUnitAtom,
+    weightUnitAtom,
+    foodLogGoalsPositionAtom,
+    enableNetCarbsAtom,
+    caloriesGoalAtom,
+    proteinGoalAtom,
+    carbsGoalAtom,
+    fiberGoalAtom,
+    fatGoalAtom,
+    sodiumGoalAtom,
 } from "@/storage/settings";
+
 
 function SettingsRow({
   title,
@@ -146,11 +156,14 @@ function FoodSettings() {
   const [totalsPosition, setTotalsPosition] = useAtom(
     foodLogTotalsPositionAtom
   );
+    const [goalsPosition, setGoalsPosition] = useAtom(
+        foodLogGoalsPositionAtom
+    );
 
   return (
     <>
       <SettingsRow
-        title="Show food totals row"
+        title="Show the food totals row"
         action={
           <Select<typeof totalsPosition>
             value={totalsPosition}
@@ -162,8 +175,145 @@ function FoodSettings() {
           </Select>
         }
       />
+      <SettingsRow
+          title="Show the nutrition goals table"
+          action={
+              <Select<typeof goalsPosition>
+                  value={goalsPosition}
+                  onChange={(event) => setGoalsPosition(event.target.value as any)}
+              >
+                  <MenuItem value="hidden">Hidden</MenuItem>
+                  <MenuItem value="top">On top</MenuItem>
+                  <MenuItem value="bottom">On bottom</MenuItem>
+                  <MenuItem value="both">Both top/bottom</MenuItem>
+              </Select>
+          }
+      />
     </>
   );
+}
+
+function MacroGoals() {
+    const [enableNetCarbs, setEnableNetCarbs] = useAtom(enableNetCarbsAtom);
+    const [caloriesGoal, setCaloriesGoal] = useAtom(caloriesGoalAtom);
+    const [proteinGoal, setProteinGoal] = useAtom(proteinGoalAtom);
+    const [fibersGoal, setFibersGoal] = useAtom(fiberGoalAtom);
+    const [sodiumGoal, setSodiumGoal] = useAtom(sodiumGoalAtom);
+    const [carbsGoal, setCarbsGoal] = useAtom(carbsGoalAtom);
+    const [fatGoal, setFatGoal] = useAtom(fatGoalAtom);
+
+    return (
+        <>
+            <SettingsRow title="Nutrition goals"></SettingsRow>
+            <SettingsRow
+                title="Calories"
+                action={
+                    <TextField
+                        onChange={(event) => setCaloriesGoal(parseInt(event.target.value))}
+                        value={caloriesGoal}
+                        name="calories-goal"
+                        type="number"
+                        InputProps={{
+                            endAdornment: (
+                                <InputAdornment position="end">kCal</InputAdornment>
+                            ),
+                        }}
+                    />
+                }
+            />
+            <SettingsRow
+                title="Carbohydrates"
+                action={
+                    <TextField
+                        onChange={(event) => setCarbsGoal(parseInt(event.target.value))}
+                        value={carbsGoal}
+                        name="carbs-goal"
+                        type="number"
+                        InputProps={{
+                            endAdornment: (
+                                <InputAdornment position="end">g</InputAdornment>
+                            ),
+                        }}
+                    />
+                }
+            />
+            <SettingsRow
+                title="Fat"
+                action={
+                    <TextField
+                        onChange={(event) => setFatGoal(parseInt(event.target.value))}
+                        value={fatGoal}
+                        name="fat-goal"
+                        type="number"
+                        InputProps={{
+                            endAdornment: (
+                                <InputAdornment position="end">g</InputAdornment>
+                            ),
+                        }}
+                    />
+                }
+            />
+            <SettingsRow
+                title="Fibers"
+                action={
+                    <TextField
+                        onChange={(event) => setFibersGoal(parseInt(event.target.value))}
+                        value={fibersGoal}
+                        name="fibers-goal"
+                        type="number"
+                        InputProps={{
+                            endAdornment: (
+                                <InputAdornment position="end">g</InputAdornment>
+                            ),
+                        }}
+                    />
+                }
+            />
+            <SettingsRow
+                title="Protein"
+                action={
+                    <TextField
+                        onChange={(event) => setProteinGoal(parseInt(event.target.value))}
+                        value={proteinGoal}
+                        name="protein-goal"
+                        type="number"
+                        InputProps={{
+                            endAdornment: (
+                                <InputAdornment position="end">g</InputAdornment>
+                            ),
+                        }}
+                    />
+                }
+            />
+            <SettingsRow
+                title="Sodium"
+                action={
+                    <TextField
+                        onChange={(event) => setSodiumGoal(parseInt(event.target.value))}
+                        value={sodiumGoal}
+                        name="sodium-goal"
+                        type="number"
+                        InputProps={{
+                            endAdornment: (
+                                <InputAdornment position="end">mg</InputAdornment>
+                            ),
+                        }}
+                    />
+                }
+            />
+            <SettingsRow
+                title="Use Net carbs"
+                action={
+                    <Switch
+                        checked={enableNetCarbs}
+                        onChange={(_event, checked) => setEnableNetCarbs(checked)}
+                    />
+                }
+            >
+                Use Net carbs (Total carbs - Fiber - Sugar Alcohols) instead of Total carbs.
+            </SettingsRow>
+        </>
+    );
 }
 
 function UnitSettings() {
@@ -339,6 +489,9 @@ export default function SettingsPage() {
       </SettingsTable>
       <SettingsTable>
         <FoodSettings />
+      </SettingsTable>
+      <SettingsTable>
+        <MacroGoals />
       </SettingsTable>
       <SettingsTable>
         <AdvancedSettings />
