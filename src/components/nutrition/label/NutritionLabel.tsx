@@ -88,7 +88,8 @@ const DailyValues = styled(Typography)(() => ({
 function NutritionLabel({
     backgroundColor, servingText, calories, caloriesFromFat, totalFat,
     saturatedFat, transFat, cholesterol, sodium, totalCarbohydrate,
-    potassium, dietaryFiber, sugars, protein, vitamins, width
+    potassium, dietaryFiber, sugars, protein, vitamins, width,
+    recommendedValues
 }: {
     backgroundColor?: string,
     servingText: string,
@@ -106,6 +107,19 @@ function NutritionLabel({
     protein: number,
     vitamins: Array<string>,
     width?: string,
+    recommendedValues?: {
+        calories?: number,
+        caloriesFromFat?: number,
+        totalFat?: number,
+        saturatedFat?: number,
+        cholesterol?: number,
+        sodium?: number,
+        potassium?: number,
+        totalCarbohydrate?: number,
+        dietaryFiber?: number,
+        sugars?: number,
+        protein?: number,
+    }
     //?=maybe for type
 }) {
     return (
@@ -145,16 +159,16 @@ function NutritionLabel({
 
             <SeparatorBar height={"1px"} color={backgroundColor}/>
 
-            <NutrientRow label={"Total Fat"} value={totalFat||0} unit="g" boldLabel={true} recommended={78} />
-            <NutrientRow label={"Saturated Fat"} value={saturatedFat||0} unit="g" boldLabel={false} recommended={20} indent={NUTRIENT_INDENT}/>
+            <NutrientRow label={"Total Fat"} value={totalFat||0} unit="g" boldLabel={true} recommended={recommendedValues?.totalFat || 78} />
+            <NutrientRow label={"Saturated Fat"} value={saturatedFat||0} unit="g" boldLabel={false} recommended={recommendedValues?.saturatedFat || 20} indent={NUTRIENT_INDENT}/>
             <NutrientRow label={"Trans Fat"} value={transFat||0} unit="g" boldLabel={false} indent={NUTRIENT_INDENT}/>
-            <NutrientRow label={"Cholesterol"} value={cholesterol||0} unit="mg" boldLabel={true} recommended={300}/>
-            <NutrientRow label={"Sodium"} value={sodium||0} unit="mg" boldLabel={true} recommended={2300}/>
-            <NutrientRow label={"Potassium"} value={potassium||0} unit="mg" boldLabel={true} recommended={4700}/>
-            <NutrientRow label={"Total Carbohydrate"} value={totalCarbohydrate||0} unit="g" boldLabel={true} recommended={275}/>
-            <NutrientRow label={"Dietary Fiber"} value={dietaryFiber||0} unit="g" boldLabel={false} recommended={28} indent={NUTRIENT_INDENT}/>
-            <NutrientRow label={"Sugars"} value={sugars||0} unit="g" boldLabel={false} recommended={50} indent={NUTRIENT_INDENT}/>
-            <NutrientRow label={"Protein"} value={protein||0} unit="g" boldLabel={true} recommended={50}/>
+            <NutrientRow label={"Cholesterol"} value={cholesterol||0} unit="mg" boldLabel={true} recommended={recommendedValues?.cholesterol || 300}/>
+            <NutrientRow label={"Sodium"} value={sodium||0} unit="mg" boldLabel={true} recommended={recommendedValues?.sodium || 2300}/>
+            <NutrientRow label={"Potassium"} value={potassium||0} unit="mg" boldLabel={true} recommended={recommendedValues?.potassium || 4700}/>
+            <NutrientRow label={"Total Carbohydrate"} value={totalCarbohydrate||0} unit="g" boldLabel={true} recommended={recommendedValues?.totalCarbohydrate || 275}/>
+            <NutrientRow label={"Dietary Fiber"} value={dietaryFiber||0} unit="g" boldLabel={false} recommended={recommendedValues?.dietaryFiber || 28} indent={NUTRIENT_INDENT}/>
+            <NutrientRow label={"Sugars"} value={sugars||0} unit="g" boldLabel={false} recommended={recommendedValues?.sugars || 50} indent={NUTRIENT_INDENT}/>
+            <NutrientRow label={"Protein"} value={protein||0} unit="g" boldLabel={true} recommended={recommendedValues?.protein || 50}/>
 
             {vitamins.length > 0 && (<SeparatorBar height={"7px"} color={backgroundColor}/>)}
             {vitamins.map(
@@ -163,7 +177,9 @@ function NutritionLabel({
             )
             }
             <DailyValues>
-                {"* Percent Daily Values are based on a 2,000 calorie diet. Your Daily Values may be higher or lower depending on your calorie needs."}
+                {recommendedValues ? "* Percent Daily Values are based on your dashboard preferences."
+                                   : "* Percent Daily Values are based on a 2,000 calorie diet. "
+                                   + "Your Daily Values may be higher or lower depending on your calorie needs."}
             </DailyValues>
         </LabelContainer>
     )
