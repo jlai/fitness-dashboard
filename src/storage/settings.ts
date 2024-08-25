@@ -77,6 +77,9 @@ export const fatGoalAtom = atomWithStorage<number>(
 export const enableNetCarbsAtom = atomWithStorage<boolean>(
   "macro-goals:net-carbs", false, undefined, { getOnInit: true, });
 
+export const useNutritionGoalsForLabelAtom = atomWithStorage<boolean>(
+    "macro-goals:use-for-label", false, undefined, { getOnInit: true, });
+
 export const mapStyleAtom = atomWithStorage<string>(
   "map:style",
   "white",

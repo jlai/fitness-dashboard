@@ -20,7 +20,7 @@ import {
   InputAdornment,
   Typography,
 } from "@mui/material";
-import { atom, useAtom } from "jotai";
+import {atom, useAtom, useAtomValue} from "jotai";
 import { ArrowDownward } from "@mui/icons-material";
 import { toast } from "mui-sonner";
 
@@ -36,6 +36,15 @@ import {
   buildGetFoodQuery,
 } from "@/api/nutrition/foods";
 import NutritionLabel from "@/components/nutrition/label/NutritionLabel";
+import {
+  useNutritionGoalsForLabelAtom,
+  caloriesGoalAtom,
+  carbsGoalAtom,
+  fatGoalAtom,
+  fiberGoalAtom,
+  proteinGoalAtom,
+  sodiumGoalAtom,
+} from "@/storage/settings";
 
 export const NUTRITION_FIELDS = {
   caloriesFromFat: {
@@ -111,6 +120,15 @@ export function CustomFoodFields() {
   }, [allUnits]);
 
   const amount = watch("amount");
+  const useNutritionGoalsForLabel = useAtomValue(useNutritionGoalsForLabelAtom);
+  const nutritionGoals = {
+    calories: useAtomValue(caloriesGoalAtom),
+    totalFat: useAtomValue(fatGoalAtom),
+    sodium: useAtomValue(sodiumGoalAtom),
+    totalCarbohydrate: useAtomValue(carbsGoalAtom),
+    dietaryFiber: useAtomValue(fiberGoalAtom),
+    protein: useAtomValue(proteinGoalAtom),
+  };
   const unit = watch("unit") as FoodUnitAutocompleteOption;
   const nutritionValues = watch("nutritionValues");
   const servingText =
@@ -185,6 +203,7 @@ export function CustomFoodFields() {
               servingText={servingText}
               {...nutritionValues}
               vitamins={[]}
+              recommendedValues={ useNutritionGoalsForLabel ? nutritionGoals : undefined }
           />
         </AccordionDetails>
       </Accordion>

@@ -45,6 +45,7 @@ import {
     temperatureUnitAtom,
     waterUnitAtom,
     weightUnitAtom,
+    useNutritionGoalsForLabelAtom,
     foodLogGoalsPositionAtom,
     enableNetCarbsAtom,
     caloriesGoalAtom,
@@ -194,6 +195,7 @@ function FoodSettings() {
 }
 
 function MacroGoals() {
+    const [useNutritionGoalsForLabel, setUseNutritionGoalsForLabel] = useAtom(useNutritionGoalsForLabelAtom);
     const [enableNetCarbs, setEnableNetCarbs] = useAtom(enableNetCarbsAtom);
     const [caloriesGoal, setCaloriesGoal] = useAtom(caloriesGoalAtom);
     const [proteinGoal, setProteinGoal] = useAtom(proteinGoalAtom);
@@ -311,6 +313,17 @@ function MacroGoals() {
                 }
             >
                 Use Net carbs (Total carbs - Fiber - Sugar Alcohols) instead of Total carbs.
+            </SettingsRow>
+            <SettingsRow
+                title="Use nutrition goals for nutrition labels"
+                action={
+                    <Switch
+                        checked={useNutritionGoalsForLabel}
+                        onChange={(_event, checked) => setUseNutritionGoalsForLabel(checked)}
+                    />
+                }
+            >
+                Use nutrition goals for nutrition labels when calculating the % of daily values.
             </SettingsRow>
         </>
     );
