@@ -12,6 +12,15 @@ export interface Serving {
 
 export type FoodAccessLevel = "PUBLIC" | "PRIVATE";
 
+export interface NutritionMacroGoals {
+  calories: number;
+  carbs: number;
+  fat: number;
+  fiber: number;
+  protein: number;
+  sodium: number;
+}
+
 export type NutritionalValues = Partial<{
   // common public
   calories: number;

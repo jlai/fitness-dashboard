@@ -59,7 +59,7 @@ import {
 } from "./dialogs";
 import {
   FoodLogTableHeaderRows,
-  NutritionGoalsRow,
+  NutritionGoalsSummary,
   MealTypeRows,
   TotalsRow,
 } from "./dialogs/food-log-rows";
@@ -157,11 +157,11 @@ export default function FoodLog({ day }: { day: Dayjs }) {
             <FoodLogTableHeaderRows />
           </TableHead>
           <TableBody>
+            {(foodLogGoalsPosition === "top" || foodLogGoalsPosition === "both") && (
+                <NutritionGoalsSummary totals={foodLogsResponse.summary} />
+            )}
             {foodLogTotalsPosition !== "bottom" && (
               <TotalsRow foodLogsResponse={foodLogsResponse} />
-            )}
-            {(foodLogGoalsPosition === "top" || foodLogGoalsPosition === "both") && (
-                <NutritionGoalsRow totals={foodLogsResponse.summary} />
             )}
             {[...groupedMealTypes.values()]
               .filter(
@@ -174,7 +174,7 @@ export default function FoodLog({ day }: { day: Dayjs }) {
               <TotalsRow foodLogsResponse={foodLogsResponse} />
             )}
             {(foodLogGoalsPosition === "bottom" || foodLogGoalsPosition === "both") && (
-                <NutritionGoalsRow totals={foodLogsResponse.summary} />
+                <NutritionGoalsSummary totals={foodLogsResponse.summary} />
             )}
           </TableBody>
         </Table>
