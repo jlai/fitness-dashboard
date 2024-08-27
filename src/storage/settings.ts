@@ -74,9 +74,6 @@ export const macroGoalsAtom = atomWithStorage<NutritionMacroGoals>(
   {getOnInit: true}
 );
 
-export const enableNetCarbsAtom = atomWithStorage<boolean>(
-  "macro-goals:net-carbs", false, undefined, { getOnInit: true, });
-
 export const mapStyleAtom = atomWithStorage<string>(
   "map:style",
   "white",

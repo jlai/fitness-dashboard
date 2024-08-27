@@ -25,7 +25,6 @@ import {
 import {
   foodLogTotalsPositionAtom,
   foodLogGoalsPositionAtom,
-  enableNetCarbsAtom,
   macroGoalsAtom,
 } from "@/storage/settings";
 
@@ -308,12 +307,10 @@ export function NutritionGoalsSummary({totals}: { totals: FoodLogSummary }) {
   const foodLogGoalsPosition = useAtomValue(foodLogGoalsPositionAtom);
   const foodLogTotalsPosition = useAtomValue(foodLogTotalsPositionAtom);
   const macroGoals = useAtomValue(macroGoalsAtom);
-  const useNetCars = useAtomValue(enableNetCarbsAtom);
 
-  const totalsCarbs = useNetCars ? totals.carbs - totals.fiber : totals.carbs;
   const remainingMacros = {
     calories: macroGoals.calories - totals.calories,
-    carbs: macroGoals.carbs - totalsCarbs,
+    carbs: macroGoals.carbs - totals.carbs,
     fat: macroGoals.fat - totals.fat,
     fiber: macroGoals.fiber - totals.fiber,
     protein: macroGoals.protein - totals.protein,
@@ -321,7 +318,7 @@ export function NutritionGoalsSummary({totals}: { totals: FoodLogSummary }) {
   }
   const macrosPercentages = {
     calories: totals.calories * 100 / macroGoals.calories,
-    carbs: totalsCarbs * 100 / macroGoals.carbs,
+    carbs: totals.carbs * 100 / macroGoals.carbs,
     fat: totals.fat * 100 / macroGoals.fat,
     fiber: totals.fiber * 100 / macroGoals.fiber,
     protein: totals.protein * 100 / macroGoals.protein,

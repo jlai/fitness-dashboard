@@ -47,7 +47,6 @@ import {
   waterUnitAtom,
   weightUnitAtom,
   foodLogGoalsPositionAtom,
-  enableNetCarbsAtom,
   macroGoalsAtom,
 } from "@/storage/settings";
 import { NutritionalValues } from "@/api/nutrition/types";
@@ -190,7 +189,6 @@ function FoodSettings() {
 }
 
 function MacroGoals() {
-  const [enableNetCarbs, setEnableNetCarbs] = useAtom(enableNetCarbsAtom);
   const [macroGoals, setMacroGoals] = useAtom(macroGoalsAtom);
   // Update one goal value
   const setMacroGoal = (key: keyof NutritionalValues, value: number) => {
@@ -299,17 +297,6 @@ function MacroGoals() {
           />
         }
       />
-      <SettingsRow
-        title="Use Net carbs"
-        action={
-          <Switch
-            checked={enableNetCarbs}
-            onChange={(_event, checked) => setEnableNetCarbs(checked)}
-          />
-        }
-      >
-        Use Net carbs (Total carbs - Fiber - Sugar Alcohols) instead of Total carbs.
-      </SettingsRow>
     </>
   );
 }
