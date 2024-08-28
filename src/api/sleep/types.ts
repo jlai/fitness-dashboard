@@ -21,7 +21,7 @@ export interface SleepLogLevelData {
 }
 
 export interface SleepLogLevelSummary {
-  number: CountQueuingStrategy;
+  count: number;
   minutes: number;
   thirtyDayAvgMinutes: number;
 }

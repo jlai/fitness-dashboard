@@ -19,6 +19,7 @@ interface SummaryDatum {
   color: string;
   ratio: number;
   thirtyDayAvgMinutes?: number;
+  count: number;
 }
 
 export function SleepLevelSummaryChart({
@@ -69,6 +70,7 @@ export function SleepLevelSummaryChart({
       color: "#fcba03",
       ratio: wakeMins / totalMins,
       thirtyDayAvgMinutes: summary.wake?.thirtyDayAvgMinutes ?? 0,
+      count: summary.wake?.count ?? 0,
     },
     {
       level: "rem",
@@ -76,6 +78,7 @@ export function SleepLevelSummaryChart({
       color: "#9ccef0",
       ratio: remMins / totalMins,
       thirtyDayAvgMinutes: summary.rem?.thirtyDayAvgMinutes ?? 0,
+      count: summary.rem?.count ?? 0,
     },
     {
       level: "light",
@@ -83,6 +86,7 @@ export function SleepLevelSummaryChart({
       color: "#0398fc",
       ratio: lightMins / totalMins,
       thirtyDayAvgMinutes: summary.light?.thirtyDayAvgMinutes ?? 0,
+      count: summary.light?.count ?? 0,
     },
     {
       level: "deep",
@@ -90,6 +94,7 @@ export function SleepLevelSummaryChart({
       color: "#5d47ff80",
       ratio: deepMins / totalMins,
       thirtyDayAvgMinutes: summary.deep?.thirtyDayAvgMinutes ?? 0,
+      count: summary.deep?.count ?? 0,
     },
   ];
 
@@ -173,7 +178,9 @@ export function SleepLevelSummaryChart({
         >
           <div>
             <Typography className="m-2">
-              <span>{LEVEL_NAMES[tooltipData.level]}: </span>
+              <span>
+                {LEVEL_NAMES[tooltipData.level]} ({tooltipData.count}x):{" "}
+              </span>
               <b>{formatMinutes(tooltipData.value)}</b>
             </Typography>
             {tooltipData?.thirtyDayAvgMinutes && (
