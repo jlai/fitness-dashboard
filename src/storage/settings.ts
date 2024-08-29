@@ -50,6 +50,15 @@ export const foodLogTotalsPositionAtom = atomWithStorage<
   getOnInit: true,
 });
 
+export const foodLogShowCopyIndividualButtonAtom = atomWithStorage<boolean>(
+  "food-log:show-copy-individual-button",
+  false,
+  undefined,
+  {
+    getOnInit: true,
+  }
+);
+
 export const mapStyleAtom = atomWithStorage<string>(
   "map:style",
   "white",
