@@ -74,6 +74,15 @@ export const macroGoalsAtom = atomWithStorage<NutritionMacroGoals>(
   {getOnInit: true}
 );
 
+export const showNutritionLabelAtom = atomWithStorage<boolean>(
+  "nutrition-facts:show-label",
+  false,
+  undefined,
+  {
+    getOnInit: true,
+  }
+);
+
 export const useNutritionGoalsForLabelAtom = atomWithStorage<boolean>(
   "macro-goals:use-for-label",
   false,

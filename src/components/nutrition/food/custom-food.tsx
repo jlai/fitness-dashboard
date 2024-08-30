@@ -38,6 +38,7 @@ import {
 import NutritionLabel from "@/components/nutrition/label/NutritionLabel";
 import {
   useNutritionGoalsForLabelAtom,
+  showNutritionLabelAtom,
   macroGoalsAtom,
 } from "@/storage/settings";
 
@@ -117,6 +118,7 @@ export function CustomFoodFields() {
   const amount = watch("amount");
   const useNutritionGoalsForLabel = useAtomValue(useNutritionGoalsForLabelAtom);
   const unit = watch("unit") as FoodUnitAutocompleteOption;
+  const showNutritionLabel = useAtomValue(showNutritionLabelAtom);
   const macroGoals = useAtomValue(macroGoalsAtom);
   const nutritionValues = watch("nutritionValues");
   const servingText =
@@ -185,14 +187,18 @@ export function CustomFoodFields() {
               />
             ))}
           </FormRow>
-          <Box marginBottom={2} />
-          <NutritionLabel
-              width={"50%"}
-              servingText={servingText}
-              {...nutritionValues}
-              vitamins={[]}
-              recommendedValues={ useNutritionGoalsForLabel ? macroGoals : undefined }
-          />
+          {(showNutritionLabel && (
+            <div>
+              <Box marginBottom={2} />
+              <NutritionLabel
+                  width={"50%"}
+                  servingText={servingText}
+                  {...nutritionValues}
+                  vitamins={[]}
+                  recommendedValues={ useNutritionGoalsForLabel ? macroGoals : undefined }
+              />
+            </div>
+          ))}
         </AccordionDetails>
       </Accordion>
     </FormRows>
