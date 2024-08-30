@@ -35,7 +35,7 @@ import {
   buildCreateCustomFoodMutation,
   buildGetFoodQuery,
 } from "@/api/nutrition/foods";
-import NutritionLabel from "@/components/nutrition/label/NutritionLabel";
+import NutritionLabel from "@/components/nutrition/label/nutrition-label";
 import {
   useNutritionGoalsForLabelAtom,
   showNutritionLabelAtom,

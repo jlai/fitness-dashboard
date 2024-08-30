@@ -1,6 +1,6 @@
 import {styled, Box, Typography} from "@mui/material"
 
-import SeparatorBar from './SeparatorBar'
+import SeparatorBar from './separator-bar'
 
 type RowContainerProps = {
   indent?: string;

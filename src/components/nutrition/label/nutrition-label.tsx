@@ -1,7 +1,7 @@
 import {styled, Box, Typography} from "@mui/material";
 
-import SeparatorBar from "./SeparatorBar"
-import NutrientRow from "./NutrientRow"
+import SeparatorBar from "./separator-bar"
+import NutrientRow from "./nutrient-row"
 
 const NUTRIENT_INDENT = "0.33rem";
 
