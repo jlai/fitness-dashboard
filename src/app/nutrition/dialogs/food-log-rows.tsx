@@ -8,15 +8,26 @@ import {
   Chip,
   styled,
 } from "@mui/material";
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { useAtomValue, useSetAtom } from "jotai";
 import { usePopupState, bindPopper } from "material-ui-popup-state/hooks";
-import {useCallback, ChangeEvent, MouseEvent} from "react";
+import { useCallback, ChangeEvent, MouseEvent } from "react";
 import { EditOutlined as EditIcon } from "@mui/icons-material";
 
 import { formatFoodName } from "@/utils/other-formats";
 import { FRACTION_DIGITS_1 } from "@/utils/number-formats";
-import { FoodLogEntry, GetFoodLogResponse } from "@/api/nutrition";
+import {
+  FoodLogEntry,
+  FoodLogSummary,
+  GetFoodLogResponse,
+  NutritionMacroGoals,
+} from "@/api/nutrition";
+import {
+  foodLogShowCopyIndividualButtonAtom,
+  foodLogTotalsPositionAtom,
+  foodLogGoalsPositionAtom,
+  macroGoalsAtom,
+} from "@/storage/settings";
 
 import { selectedFoodLogsAtom, updateSelectedFoodLogAtom } from "../atoms";
 import { MealTypeSummary } from "../summarize-day";
@@ -25,7 +36,6 @@ import { EditServingSize } from "./edit-serving-size";
 
 const NUTRIENT_FORMAT = FRACTION_DIGITS_1;
 const NUTRIENT_PROPS = ["carbs", "fat", "fiber", "protein", "sodium"];
-
 
 const FlatChip = styled(Chip)(() => ({
   borderRadius: 0,
@@ -37,17 +47,17 @@ const FlatChip = styled(Chip)(() => ({
     backgroundColor: "transparent",
     paddingLeft: 0,
     "& .MuiChip-icon": {
-      display: "block"
+      display: "block",
     },
-    '& .MuiChip-label': {
+    "& .MuiChip-label": {
       paddingLeft: "6px",
-    }
+    },
   },
-  '& .MuiChip-label': {
+  "& .MuiChip-label": {
     paddingLeft: "24px",
-    paddingRight: 0
+    paddingRight: 0,
   },
-  "& .MuiChip-icon": { display: "none" }
+  "& .MuiChip-icon": { display: "none" },
 }));
 
 function formatNutrientPropValue(
@@ -61,6 +71,16 @@ function formatNutrientPropValue(
   }
 
   return undefined;
+}
+
+async function copyTextToClipboard(e: MouseEvent) {
+  if ("clipboard" in navigator) {
+    const element = e.target as Element;
+
+    if (element && element.textContent) {
+      return await navigator.clipboard.writeText(element.textContent || "");
+    }
+  }
 }
 
 export function FoodLogTableHeaderRows() {
@@ -174,26 +194,21 @@ function FoodLogRow({ foodLog }: { foodLog: FoodLogEntry }) {
  */
 export function MealTypeRows({ summary }: { summary: MealTypeSummary }) {
   const updateSelectedFoodLog = useSetAtom(updateSelectedFoodLogAtom);
+  const showCopyIndividual = useAtomValue(foodLogShowCopyIndividualButtonAtom);
+
   const handleChange = function (foods: FoodLogEntry[], checked: boolean) {
     foods.map((foodLog) => updateSelectedFoodLog(foodLog, checked));
   };
   const selectedFoodLogs = useAtomValue(selectedFoodLogsAtom);
   const displayedFoods = summary.id == -1 ? [] : summary.foods;
-  const checked = selectedFoodLogs.filter(
-      (foodLog) => foodLog.loggedFood.mealTypeId == summary.id || summary.id == -1
-  ).size > 0;
-  const indeterminate = checked && !summary.foods.every((foodLog) => selectedFoodLogs.has(foodLog));
+  const checked =
+    selectedFoodLogs.filter(
+      (foodLog) =>
+        foodLog.loggedFood.mealTypeId == summary.id || summary.id == -1
+    ).size > 0;
+  const indeterminate =
+    checked && !summary.foods.every((foodLog) => selectedFoodLogs.has(foodLog));
   const title = !checked || indeterminate ? "Select all" : "Select none";
-
-  async function copyTextToClipboard(e: MouseEvent) {
-    if ('clipboard' in navigator) {
-      const element = e.target as Element;
-
-      if (element && element.textContent) {
-        return await navigator.clipboard.writeText(element.textContent || "");
-      }
-    }
-  }
 
   return (
     <>
@@ -201,26 +216,46 @@ export function MealTypeRows({ summary }: { summary: MealTypeSummary }) {
         <TableCell className="font-medium">
           <div className="flex flex-row items-center">
             <FormControlLabel
-                control={
-                  <Checkbox
-                      size="small"
-                      checked={checked}
-                      indeterminate={indeterminate}
-                      onChange={() => handleChange(summary.foods, !checked || indeterminate)}
-                  />
-                }
-                title={title}
-                label={summary.name}
+              control={
+                <Checkbox
+                  size="small"
+                  checked={checked}
+                  indeterminate={indeterminate}
+                  onChange={() =>
+                    handleChange(summary.foods, !checked || indeterminate)
+                  }
+                />
+              }
+              title={title}
+              label={summary.name}
             />
           </div>
         </TableCell>
         <TableCell></TableCell>
         <TableCell className="text-end">
-          <FlatChip size="small" icon={<ContentCopyIcon />} onClick={copyTextToClipboard} label={NUTRIENT_FORMAT.format(summary.calories)} />
+          {showCopyIndividual ? (
+            <FlatChip
+              size="small"
+              icon={<ContentCopyIcon />}
+              onClick={copyTextToClipboard}
+              label={NUTRIENT_FORMAT.format(summary.calories)}
+            />
+          ) : (
+            NUTRIENT_FORMAT.format(summary.calories)
+          )}
         </TableCell>
         {NUTRIENT_PROPS.map((prop) => (
           <TableCell key={prop} className="text-end">
-            <FlatChip size="small" icon={<ContentCopyIcon />} onClick={copyTextToClipboard} label={formatNutrientPropValue(summary, prop)} />
+            {showCopyIndividual ? (
+              <FlatChip
+                size="small"
+                icon={<ContentCopyIcon />}
+                onClick={copyTextToClipboard}
+                label={formatNutrientPropValue(summary, prop)}
+              />
+            ) : (
+              formatNutrientPropValue(summary, prop)
+            )}
           </TableCell>
         ))}
       </TableRow>
@@ -244,4 +279,88 @@ export function TotalsRow({
   };
 
   return <MealTypeRows summary={summary} />;
+}
+
+export function RemainingMacrosRows({values, label}: { values: NutritionMacroGoals, label: string }) {
+  return (
+    <>
+      <TableRow className="bg-slate-50 dark:bg-slate-900">
+        <TableCell colSpan={2} className="font-medium" sx={{paddingLeft: "43px"}}>
+          <div className="flex flex-row items-center">
+            <Typography>{label}</Typography>
+          </div>
+        </TableCell>
+        <TableCell className="text-end">
+          <FlatChip size="small" icon={<ContentCopyIcon/>} onClick={copyTextToClipboard}
+                    label={NUTRIENT_FORMAT.format(values.calories)}/>
+        </TableCell>
+        {NUTRIENT_PROPS.map((prop) => (
+          <TableCell key={prop} className="text-end">
+            <FlatChip size="small" icon={<ContentCopyIcon/>} onClick={copyTextToClipboard}
+                      label={formatNutrientPropValue(values, prop)}/>
+          </TableCell>
+        ))}
+      </TableRow>
+    </>
+  );
+}
+
+export function NutritionGoalsRow({values, label, unit}: {
+  values: NutritionMacroGoals,
+  label: string,
+  unit?: string
+}) {
+  return (
+    <TableRow>
+      <TableCell colSpan={2} sx={{paddingLeft: "43px"}}>
+        <div className="flex flex-row items-center">
+          <Typography>{label}</Typography>
+        </div>
+      </TableCell>
+      <TableCell className="text-end">
+        {NUTRIENT_FORMAT.format(values.calories)} {unit || ""}
+      </TableCell>
+      {NUTRIENT_PROPS.map((prop) => (
+        <TableCell key={prop} className="text-end">
+          {formatNutrientPropValue(values, prop)} {unit || ""}
+        </TableCell>
+      ))}
+    </TableRow>
+  );
+}
+
+export function NutritionGoalsSummary({totals}: { totals: FoodLogSummary }) {
+  const foodLogGoalsPosition = useAtomValue(foodLogGoalsPositionAtom);
+  const foodLogTotalsPosition = useAtomValue(foodLogTotalsPositionAtom);
+  const macroGoals = useAtomValue(macroGoalsAtom);
+
+  const remainingMacros = {
+    calories: macroGoals.calories - totals.calories,
+    carbs: macroGoals.carbs - totals.carbs,
+    fat: macroGoals.fat - totals.fat,
+    fiber: macroGoals.fiber - totals.fiber,
+    protein: macroGoals.protein - totals.protein,
+    sodium: macroGoals.sodium - totals.sodium,
+  }
+  const macrosPercentages = {
+    calories: totals.calories * 100 / macroGoals.calories,
+    carbs: totals.carbs * 100 / macroGoals.carbs,
+    fat: totals.fat * 100 / macroGoals.fat,
+    fiber: totals.fiber * 100 / macroGoals.fiber,
+    protein: totals.protein * 100 / macroGoals.protein,
+    sodium: totals.sodium * 100 / macroGoals.sodium,
+  };
+
+  return (
+    <>
+      <RemainingMacrosRows values={remainingMacros} label="Remaining"/>
+      <NutritionGoalsRow values={macrosPercentages} label="Nutrition goals (%)" unit="%"/>
+      <NutritionGoalsRow values={macroGoals} label="Nutrition goals"/>
+      {(
+        // don't repeat the total line if the settings are set to display it in the same position
+        (foodLogGoalsPosition != foodLogTotalsPosition && foodLogTotalsPosition != "both" && foodLogGoalsPosition != "both")
+        && <NutritionGoalsRow values={totals} label="Total"/>
+      )}
+    </>
+  );
 }

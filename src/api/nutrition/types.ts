@@ -12,6 +12,15 @@ export interface Serving {
 
 export type FoodAccessLevel = "PUBLIC" | "PRIVATE";
 
+export interface NutritionMacroGoals {
+  calories: number;
+  carbs: number;
+  fat: number;
+  fiber: number;
+  protein: number;
+  sodium: number;
+}
+
 export type NutritionalValues = Partial<{
   // common public
   calories: number;
@@ -105,21 +114,23 @@ export interface GetFoodResponse {
   food: Food;
 }
 
+export interface FoodLogSummary {
+  calories: number;
+  carbs: number;
+  fat: number;
+  fiber: number;
+  protein: number;
+  sodium: number;
+  water: number /** water in ml */;
+}
+
 // https://dev.fitbit.com/build/reference/web-api/nutrition/get-food-log/
 export interface GetFoodLogResponse {
   foods: Array<FoodLogEntry>;
   goals?: {
     calories: number;
   };
-  summary: {
-    calories: number;
-    carbs: number;
-    fat: number;
-    fiber: number;
-    protein: number;
-    sodium: number;
-    water: number /** water in ml */;
-  };
+  summary: FoodLogSummary;
 }
 
 // https://dev.fitbit.com/build/reference/web-api/nutrition/get-water-goal/

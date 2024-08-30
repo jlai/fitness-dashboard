@@ -1,6 +1,8 @@
 import { atom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
 
+import {NutritionMacroGoals} from "@/api/nutrition";
+
 export const weightUnitAtom = atomWithStorage<
   "en_US" | "en_GB" | "METRIC" | undefined
 >("unit:weight", undefined, undefined, {
@@ -52,33 +54,43 @@ export const foodLogTotalsPositionAtom = atomWithStorage<
 
 export const foodLogGoalsPositionAtom = atomWithStorage<
     "hidden" | "top" | "bottom" | "both"
->("macro-goals:position", "top", undefined, {
+>("macro-goals:position", "hidden", undefined, {
     getOnInit: true,
 });
 
-export const caloriesGoalAtom = atomWithStorage<number>(
-    "macro-goals:calories", 2000, undefined, { getOnInit: true, });
+const DEFAULT_FDA_MACRO_GOALS: NutritionMacroGoals = {
+  calories: 2000,
+  sodium: 2300,
+  protein: 50,
+  carbs: 275,
+  fiber: 28,
+  fat: 78
+};
 
-export const proteinGoalAtom = atomWithStorage<number>(
-    "macro-goals:protein", 50, undefined, { getOnInit: true, });
-
-export const carbsGoalAtom = atomWithStorage<number>(
-    "macro-goals:carbs", 275, undefined, { getOnInit: true, });
-
-export const fiberGoalAtom = atomWithStorage<number>(
-    "macro-goals:fiber", 28, undefined, { getOnInit: true, });
-
-export const sodiumGoalAtom = atomWithStorage<number>(
-    "macro-goals:sodium", 2300, undefined, { getOnInit: true, });
-
-export const fatGoalAtom = atomWithStorage<number>(
-    "macro-goals:fat", 78, undefined, { getOnInit: true, });
-
-export const enableNetCarbsAtom = atomWithStorage<boolean>(
-  "macro-goals:net-carbs", false, undefined, { getOnInit: true, });
+export const macroGoalsAtom = atomWithStorage<NutritionMacroGoals>(
+  "nutrition-goals:macros",
+  DEFAULT_FDA_MACRO_GOALS,
+  undefined,
+  {getOnInit: true}
+);
 
 export const useNutritionGoalsForLabelAtom = atomWithStorage<boolean>(
-    "macro-goals:use-for-label", false, undefined, { getOnInit: true, });
+  "macro-goals:use-for-label",
+  false,
+  undefined,
+  {
+    getOnInit: true,
+  }
+);
+
+export const foodLogShowCopyIndividualButtonAtom = atomWithStorage<boolean>(
+  "food-log:show-copy-individual-button",
+  false,
+  undefined,
+  {
+    getOnInit: true,
+  }
+);
 
 export const mapStyleAtom = atomWithStorage<string>(
   "map:style",

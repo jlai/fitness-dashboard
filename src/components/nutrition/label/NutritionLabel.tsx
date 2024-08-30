@@ -177,7 +177,8 @@ function NutritionLabel({
             )
             }
             <DailyValues>
-                {recommendedValues ? "* Percent Daily Values are based on your dashboard preferences."
+                {recommendedValues ? "* Percent Daily Values are based on the macro goals in your dashboard "
+                                   + `preferences for a ${recommendedValues.calories} calorie diet.`
                                    : "* Percent Daily Values are based on a 2,000 calorie diet. "
                                    + "Your Daily Values may be higher or lower depending on your calorie needs."}
             </DailyValues>

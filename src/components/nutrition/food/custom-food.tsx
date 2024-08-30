@@ -38,12 +38,7 @@ import {
 import NutritionLabel from "@/components/nutrition/label/NutritionLabel";
 import {
   useNutritionGoalsForLabelAtom,
-  caloriesGoalAtom,
-  carbsGoalAtom,
-  fatGoalAtom,
-  fiberGoalAtom,
-  proteinGoalAtom,
-  sodiumGoalAtom,
+  macroGoalsAtom,
 } from "@/storage/settings";
 
 export const NUTRITION_FIELDS = {
@@ -121,15 +116,8 @@ export function CustomFoodFields() {
 
   const amount = watch("amount");
   const useNutritionGoalsForLabel = useAtomValue(useNutritionGoalsForLabelAtom);
-  const nutritionGoals = {
-    calories: useAtomValue(caloriesGoalAtom),
-    totalFat: useAtomValue(fatGoalAtom),
-    sodium: useAtomValue(sodiumGoalAtom),
-    totalCarbohydrate: useAtomValue(carbsGoalAtom),
-    dietaryFiber: useAtomValue(fiberGoalAtom),
-    protein: useAtomValue(proteinGoalAtom),
-  };
   const unit = watch("unit") as FoodUnitAutocompleteOption;
+  const macroGoals = useAtomValue(macroGoalsAtom);
   const nutritionValues = watch("nutritionValues");
   const servingText =
     amount &&
@@ -203,7 +191,7 @@ export function CustomFoodFields() {
               servingText={servingText}
               {...nutritionValues}
               vitamins={[]}
-              recommendedValues={ useNutritionGoalsForLabel ? nutritionGoals : undefined }
+              recommendedValues={ useNutritionGoalsForLabel ? macroGoals : undefined }
           />
         </AccordionDetails>
       </Accordion>
