@@ -54,7 +54,7 @@ export const foodLogTotalsPositionAtom = atomWithStorage<
 
 export const foodLogGoalsPositionAtom = atomWithStorage<
     "hidden" | "top" | "bottom" | "both"
->("macro-goals:position", "top", undefined, {
+>("macro-goals:position", "hidden", undefined, {
     getOnInit: true,
 });
 
@@ -72,6 +72,15 @@ export const macroGoalsAtom = atomWithStorage<NutritionMacroGoals>(
   DEFAULT_FDA_MACRO_GOALS,
   undefined,
   {getOnInit: true}
+);
+
+export const foodLogShowCopyIndividualButtonAtom = atomWithStorage<boolean>(
+  "food-log:show-copy-individual-button",
+  false,
+  undefined,
+  {
+    getOnInit: true,
+  }
 );
 
 export const mapStyleAtom = atomWithStorage<string>(
