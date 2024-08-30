@@ -1,6 +1,8 @@
 import { atom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
 
+import {NutritionMacroGoals} from "@/api/nutrition";
+
 export const weightUnitAtom = atomWithStorage<
   "en_US" | "en_GB" | "METRIC" | undefined
 >("unit:weight", undefined, undefined, {
@@ -49,6 +51,28 @@ export const foodLogTotalsPositionAtom = atomWithStorage<
 >("food-log:totals-position", "bottom", undefined, {
   getOnInit: true,
 });
+
+export const foodLogGoalsPositionAtom = atomWithStorage<
+    "hidden" | "top" | "bottom" | "both"
+>("macro-goals:position", "hidden", undefined, {
+    getOnInit: true,
+});
+
+const DEFAULT_FDA_MACRO_GOALS: NutritionMacroGoals = {
+  calories: 2000,
+  sodium: 2300,
+  protein: 50,
+  carbs: 275,
+  fiber: 28,
+  fat: 78
+};
+
+export const macroGoalsAtom = atomWithStorage<NutritionMacroGoals>(
+  "nutrition-goals:macros",
+  DEFAULT_FDA_MACRO_GOALS,
+  undefined,
+  {getOnInit: true}
+);
 
 export const foodLogShowCopyIndividualButtonAtom = atomWithStorage<boolean>(
   "food-log:show-copy-individual-button",
