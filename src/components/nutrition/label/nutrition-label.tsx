@@ -159,16 +159,25 @@ function NutritionLabel({
 
             <SeparatorBar height={"1px"} color={backgroundColor}/>
 
-            <NutrientRow label={"Total Fat"} value={totalFat||0} unit="g" boldLabel={true} recommended={recommendedValues?.totalFat || 78} />
-            <NutrientRow label={"Saturated Fat"} value={saturatedFat||0} unit="g" boldLabel={false} recommended={recommendedValues?.saturatedFat || 20} indent={NUTRIENT_INDENT}/>
+            <NutrientRow label={"Total Fat"} value={totalFat||0} unit="g" boldLabel={true}
+                         recommended={recommendedValues?.totalFat || 78} />
+            <NutrientRow label={"Saturated Fat"} value={saturatedFat||0} unit="g" boldLabel={false}
+                         recommended={recommendedValues ? recommendedValues.saturatedFat : 20} indent={NUTRIENT_INDENT}/>
             <NutrientRow label={"Trans Fat"} value={transFat||0} unit="g" boldLabel={false} indent={NUTRIENT_INDENT}/>
-            <NutrientRow label={"Cholesterol"} value={cholesterol||0} unit="mg" boldLabel={true} recommended={recommendedValues?.cholesterol || 300}/>
-            <NutrientRow label={"Sodium"} value={sodium||0} unit="mg" boldLabel={true} recommended={recommendedValues?.sodium || 2300}/>
-            <NutrientRow label={"Potassium"} value={potassium||0} unit="mg" boldLabel={true} recommended={recommendedValues?.potassium || 4700}/>
-            <NutrientRow label={"Total Carbohydrate"} value={totalCarbohydrate||0} unit="g" boldLabel={true} recommended={recommendedValues?.totalCarbohydrate || 275}/>
-            <NutrientRow label={"Dietary Fiber"} value={dietaryFiber||0} unit="g" boldLabel={false} recommended={recommendedValues?.dietaryFiber || 28} indent={NUTRIENT_INDENT}/>
-            <NutrientRow label={"Sugars"} value={sugars||0} unit="g" boldLabel={false} recommended={recommendedValues?.sugars || 50} indent={NUTRIENT_INDENT}/>
-            <NutrientRow label={"Protein"} value={protein||0} unit="g" boldLabel={true} recommended={recommendedValues?.protein || 50}/>
+            <NutrientRow label={"Cholesterol"} value={cholesterol||0} unit="mg" boldLabel={true}
+                         recommended={recommendedValues ? recommendedValues.cholesterol : 300}/>
+            <NutrientRow label={"Sodium"} value={sodium||0} unit="mg" boldLabel={true}
+                         recommended={recommendedValues?.sodium || 2300}/>
+            <NutrientRow label={"Potassium"} value={potassium||0} unit="mg" boldLabel={true}
+                         recommended={recommendedValues? recommendedValues.potassium : 4700}/>
+            <NutrientRow label={"Total Carbohydrate"} value={totalCarbohydrate||0} unit="g" boldLabel={true}
+                         recommended={recommendedValues?.totalCarbohydrate || 275}/>
+            <NutrientRow label={"Dietary Fiber"} value={dietaryFiber||0} unit="g" boldLabel={false}
+                         recommended={recommendedValues?.dietaryFiber || 28} indent={NUTRIENT_INDENT}/>
+            <NutrientRow label={"Sugars"} value={sugars||0} unit="g" boldLabel={false}
+                         recommended={recommendedValues ? recommendedValues.sugars : 50} indent={NUTRIENT_INDENT}/>
+            <NutrientRow label={"Protein"} value={protein||0} unit="g" boldLabel={true}
+                         recommended={recommendedValues?.protein || 50}/>
 
             {vitamins.length > 0 && (<SeparatorBar height={"7px"} color={backgroundColor}/>)}
             {vitamins.map(
