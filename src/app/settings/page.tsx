@@ -38,6 +38,7 @@ import {
 import {
   distanceUnitAtom,
   enableAdvancedScopesAtom,
+  foodLogShowCopyIndividualButtonAtom,
   foodLogTotalsPositionAtom,
   increasedTileLimitsAtom,
   swimUnitAtom,
@@ -146,6 +147,9 @@ function FoodSettings() {
   const [totalsPosition, setTotalsPosition] = useAtom(
     foodLogTotalsPositionAtom
   );
+  const [showCopyIndividualButton, setShowCopyIndividualButton] = useAtom(
+    foodLogShowCopyIndividualButtonAtom
+  );
 
   return (
     <>
@@ -160,6 +164,15 @@ function FoodSettings() {
             <MenuItem value="bottom">On bottom</MenuItem>
             <MenuItem value="both">Both top/bottom</MenuItem>
           </Select>
+        }
+      />
+      <SettingsRow
+        title="Show copy to clipboard button for individual values"
+        action={
+          <Switch
+            checked={showCopyIndividualButton}
+            onChange={(event, value) => setShowCopyIndividualButton(value)}
+          />
         }
       />
     </>
