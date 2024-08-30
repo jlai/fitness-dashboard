@@ -117,6 +117,13 @@ export function DateRangePicker({
       },
     },
     {
+      id: "yesterday",
+      label: "Yesterday",
+      onClick() {
+        setEndDate(today.subtract(1, "day").toDate());
+      },
+    },
+    {
       id: "7days",
       label: "7 days after start",
       onClick() {
