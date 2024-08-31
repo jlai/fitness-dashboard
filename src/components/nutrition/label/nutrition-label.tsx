@@ -89,7 +89,7 @@ function NutritionLabel({
     backgroundColor, servingText, calories, caloriesFromFat, totalFat,
     saturatedFat, transFat, cholesterol, sodium, totalCarbohydrate,
     potassium, dietaryFiber, sugars, protein, vitamins, width,
-    recommendedValues
+    minWidth, recommendedValues
 }: {
     backgroundColor?: string,
     servingText: string,
@@ -106,6 +106,7 @@ function NutritionLabel({
     sugars: number,
     protein: number,
     vitamins: Array<string>,
+    minWidth?: string,
     width?: string,
     recommendedValues?: {
         calories?: number,
@@ -123,7 +124,7 @@ function NutritionLabel({
     //?=maybe for type
 }) {
     return (
-        <LabelContainer backgroundColor={backgroundColor} width={width}>
+        <LabelContainer backgroundColor={backgroundColor} width={width || "auto"} minWidth={minWidth || 0}>
             <Title>Nutrition Facts</Title>
             <ServingInfo>
                 {`Serving Size ${servingText}`}
@@ -159,24 +160,24 @@ function NutritionLabel({
 
             <SeparatorBar height={"1px"} color={backgroundColor}/>
 
-            <NutrientRow label={"Total Fat"} value={totalFat||0} unit="g" boldLabel={true}
+            <NutrientRow label={"Total Fat"} value={totalFat||0} unit="g" boldLabel
                          recommended={recommendedValues?.totalFat || 78} />
-            <NutrientRow label={"Saturated Fat"} value={saturatedFat||0} unit="g" boldLabel={false}
+            <NutrientRow label={"Saturated Fat"} value={saturatedFat||0} unit="g"
                          recommended={recommendedValues ? recommendedValues.saturatedFat : 20} indent={NUTRIENT_INDENT}/>
-            <NutrientRow label={"Trans Fat"} value={transFat||0} unit="g" boldLabel={false} indent={NUTRIENT_INDENT}/>
-            <NutrientRow label={"Cholesterol"} value={cholesterol||0} unit="mg" boldLabel={true}
+            <NutrientRow label={"Trans Fat"} value={transFat||0} unit="g" indent={NUTRIENT_INDENT}/>
+            <NutrientRow label={"Cholesterol"} value={cholesterol||0} unit="mg" boldLabel
                          recommended={recommendedValues ? recommendedValues.cholesterol : 300}/>
-            <NutrientRow label={"Sodium"} value={sodium||0} unit="mg" boldLabel={true}
+            <NutrientRow label={"Sodium"} value={sodium||0} unit="mg" boldLabel
                          recommended={recommendedValues?.sodium || 2300}/>
-            <NutrientRow label={"Potassium"} value={potassium||0} unit="mg" boldLabel={true}
+            <NutrientRow label={"Potassium"} value={potassium||0} unit="mg" boldLabel
                          recommended={recommendedValues? recommendedValues.potassium : 4700}/>
-            <NutrientRow label={"Total Carbohydrate"} value={totalCarbohydrate||0} unit="g" boldLabel={true}
+            <NutrientRow label={"Total Carbohydrate"} value={totalCarbohydrate||0} unit="g" boldLabel
                          recommended={recommendedValues?.totalCarbohydrate || 275}/>
-            <NutrientRow label={"Dietary Fiber"} value={dietaryFiber||0} unit="g" boldLabel={false}
+            <NutrientRow label={"Dietary Fiber"} value={dietaryFiber||0} unit="g"
                          recommended={recommendedValues?.dietaryFiber || 28} indent={NUTRIENT_INDENT}/>
-            <NutrientRow label={"Sugars"} value={sugars||0} unit="g" boldLabel={false}
+            <NutrientRow label={"Sugars"} value={sugars||0} unit="g"
                          recommended={recommendedValues ? recommendedValues.sugars : 50} indent={NUTRIENT_INDENT}/>
-            <NutrientRow label={"Protein"} value={protein||0} unit="g" boldLabel={true}
+            <NutrientRow label={"Protein"} value={protein||0} unit="g" boldLabel
                          recommended={recommendedValues?.protein || 50}/>
 
             {vitamins.length > 0 && (<SeparatorBar height={"7px"} color={backgroundColor}/>)}

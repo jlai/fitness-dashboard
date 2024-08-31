@@ -23,16 +23,12 @@ const PercentDailyValueText = styled(Typography)(() => ({
   fontSize: "0.667rem",
   fontWeight: 100,
   textAlign: "right",
-  margin: "3px 0 7px",
+  margin: "5px 0 7px",
   float: "right"
 }));
 
-type NutrientTextProps = {
-  isBold?: boolean;
-}
-
-const NutrientText = styled(Typography)<NutrientTextProps>(({ isBold }) => ({
-  fontWeight: isBold ? 700 : 100,
+const NutrientText = styled(Typography)(() => ({
+  fontWeight: "inherit",
   fontFamily: "Helvetica",
   fontSize: "0.667rem",
   marginLeft: "3px",
@@ -59,9 +55,11 @@ function NutrientRow({ label, value, hideBar, color, boldLabel, indent, unit, re
         color={color}
       />}
       <TextContainer>
-        <NutrientText isBold={boldLabel}>
-          {label}
-        </NutrientText>
+        <Box sx={{ fontWeight: boldLabel ? "700" : "100", float: "left" }}>
+          <NutrientText>
+            {label}
+          </NutrientText>
+        </Box>
         <NutrientText>
           {value} {unit}
         </NutrientText>
