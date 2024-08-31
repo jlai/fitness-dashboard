@@ -147,8 +147,6 @@ export function CustomFoodFields() {
           options={options}
           loading={!allUnits}
           autocompleteProps={{
-            getOptionKey: (option) => option.id,
-            isOptionEqualToValue: (option, value) => option.id === value.id,
             sx: { flex: 1 },
           }}
         />
