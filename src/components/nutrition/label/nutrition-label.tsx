@@ -1,7 +1,10 @@
 import {styled, Box, Typography} from "@mui/material";
 
+import {formatValue} from "@/utils/food-amounts";
+
 import SeparatorBar from "./separator-bar"
 import NutrientRow from "./nutrient-row"
+
 
 const NUTRIENT_INDENT = "0.33rem";
 
@@ -85,44 +88,52 @@ const DailyValues = styled(Typography)(() => ({
     margin: "3px 0 7px"
 }));
 
-function NutritionLabel({
-    backgroundColor, servingText, calories, caloriesFromFat, totalFat,
-    saturatedFat, transFat, cholesterol, sodium, totalCarbohydrate,
-    potassium, dietaryFiber, sugars, protein, vitamins, width,
-    minWidth, recommendedValues
-}: {
-    backgroundColor?: string,
-    servingText: string,
-    calories: number,
-    caloriesFromFat: number,
-    totalFat: number,
-    saturatedFat: number,
-    transFat: number,
-    cholesterol: number,
-    sodium: number,
-    potassium: number,
-    totalCarbohydrate: number,
-    dietaryFiber: number,
-    sugars: number,
-    protein: number,
-    vitamins: Array<string>,
-    minWidth?: string,
-    width?: string,
-    recommendedValues?: {
-        calories?: number,
-        caloriesFromFat?: number,
-        totalFat?: number,
-        saturatedFat?: number,
-        cholesterol?: number,
-        sodium?: number,
-        potassium?: number,
-        totalCarbohydrate?: number,
-        dietaryFiber?: number,
-        sugars?: number,
-        protein?: number,
-    }
-    //?=maybe for type
+function NutritionLabel({ backgroundColor, servingText, calories, caloriesFromFat, totalFat, saturatedFat, transFat,
+                          cholesterol, sodium, totalCarbohydrate, potassium, dietaryFiber, sugars, protein, vitamins,
+                          width, minWidth, recommendedValues: recValues, digits, multiplier }
+: {
+  backgroundColor?: string,
+  servingText: string,
+  calories: number,
+  caloriesFromFat: number,
+  totalFat: number,
+  saturatedFat: number,
+  transFat: number,
+  cholesterol: number,
+  sodium: number,
+  potassium: number,
+  totalCarbohydrate: number,
+  dietaryFiber: number,
+  sugars: number,
+  protein: number,
+  vitamins: Array<string>,
+  minWidth?: string,
+  width?: string,
+  digits?: number,
+  recommendedValues?: {
+    calories?: number,
+    caloriesFromFat?: number,
+    totalFat?: number,
+    saturatedFat?: number,
+    cholesterol?: number,
+    sodium?: number,
+    potassium?: number,
+    totalCarbohydrate?: number,
+    dietaryFiber?: number,
+    sugars?: number,
+    protein?: number,
+  },
+  multiplier?: number
 }) {
+
+    if (digits === undefined) {
+      digits = 1;
+    }
+
+    if (!multiplier || multiplier < 0) {
+      multiplier = 1;
+    }
+
     return (
         <LabelContainer backgroundColor={backgroundColor} width={width || "auto"} minWidth={minWidth || 0}>
             <Title>Nutrition Facts</Title>
@@ -133,21 +144,21 @@ function NutritionLabel({
             <SeparatorBar height={"0.583rem"} color={backgroundColor}/>
 
             <AmountPerServing>
-                {`Amount Per Serving`}
+                Amount Per Serving
             </AmountPerServing>
 
             <SeparatorBar height={"1px"} color={backgroundColor}/>
 
             <CalorieRow>
                 <CaloriesLabel>
-                    {`Calories `}
+                    Calories
                 </CaloriesLabel>
                 <CaloriesValue>
-                    {calories||0}
+                    {formatValue((calories || 0) * multiplier, 0)}
                 </CaloriesValue>
                 {caloriesFromFat > 0 && (
                     <CaloriesFromFat>
-                        {`Calories from Fat ${caloriesFromFat}`}
+                        {`Calories from Fat ${(caloriesFromFat * multiplier).toFixed(digits)}`}
                     </CaloriesFromFat>
                 )}
             </CalorieRow>
@@ -155,30 +166,30 @@ function NutritionLabel({
             <SeparatorBar height={"4px"} color={backgroundColor}/>
 
             <PercentDailyValueLabel>
-                {`% Daily Value*`}
+                % Daily Value*
             </PercentDailyValueLabel>
 
             <SeparatorBar height={"1px"} color={backgroundColor}/>
 
-            <NutrientRow label={"Total Fat"} value={totalFat||0} unit="g" boldLabel
-                         recommended={recommendedValues?.totalFat || 78} />
-            <NutrientRow label={"Saturated Fat"} value={saturatedFat||0} unit="g"
-                         recommended={recommendedValues ? recommendedValues.saturatedFat : 20} indent={NUTRIENT_INDENT}/>
-            <NutrientRow label={"Trans Fat"} value={transFat||0} unit="g" indent={NUTRIENT_INDENT}/>
-            <NutrientRow label={"Cholesterol"} value={cholesterol||0} unit="mg" boldLabel
-                         recommended={recommendedValues ? recommendedValues.cholesterol : 300}/>
-            <NutrientRow label={"Sodium"} value={sodium||0} unit="mg" boldLabel
-                         recommended={recommendedValues?.sodium || 2300}/>
-            <NutrientRow label={"Potassium"} value={potassium||0} unit="mg" boldLabel
-                         recommended={recommendedValues? recommendedValues.potassium : 4700}/>
-            <NutrientRow label={"Total Carbohydrate"} value={totalCarbohydrate||0} unit="g" boldLabel
-                         recommended={recommendedValues?.totalCarbohydrate || 275}/>
-            <NutrientRow label={"Dietary Fiber"} value={dietaryFiber||0} unit="g"
-                         recommended={recommendedValues?.dietaryFiber || 28} indent={NUTRIENT_INDENT}/>
-            <NutrientRow label={"Sugars"} value={sugars||0} unit="g"
-                         recommended={recommendedValues ? recommendedValues.sugars : 50} indent={NUTRIENT_INDENT}/>
-            <NutrientRow label={"Protein"} value={protein||0} unit="g" boldLabel
-                         recommended={recommendedValues?.protein || 50}/>
+            <NutrientRow label={"Total Fat"} value={(totalFat || 0) * multiplier} unit="g" boldLabel
+                         recommended={(recValues?.totalFat || 78)} digits={digits} />
+            <NutrientRow label={"Saturated Fat"} value={(saturatedFat || 0) * multiplier} unit="g"
+                         recommended={(recValues?.saturatedFat || 0)} digits={digits} indent={NUTRIENT_INDENT} />
+            <NutrientRow label={"Trans Fat"} value={(transFat || 0) * multiplier} digits={digits} unit="g" indent={NUTRIENT_INDENT}/>
+            <NutrientRow label={"Cholesterol"} value={(cholesterol || 0) * multiplier} unit="mg" boldLabel
+                         recommended={(recValues?.cholesterol || 0)} digits={digits}/>
+            <NutrientRow label={"Sodium"} value={(sodium || 0) * multiplier} unit="mg" boldLabel
+                         recommended={(recValues?.sodium || 2300)} digits={digits}/>
+            <NutrientRow label={"Potassium"} value={(potassium || 0) * multiplier} unit="mg" boldLabel
+                         recommended={(recValues?.potassium || 0)} digits={digits}/>
+            <NutrientRow label={"Total Carbohydrate"} value={(totalCarbohydrate || 0) * multiplier} unit="g" boldLabel
+                         recommended={(recValues?.totalCarbohydrate || 275)} digits={digits}/>
+            <NutrientRow label={"Dietary Fiber"} value={(dietaryFiber || 0) * multiplier} digits={digits} unit="g"
+                         recommended={(recValues?.dietaryFiber || 28)} indent={NUTRIENT_INDENT}/>
+            <NutrientRow label={"Sugars"} value={((sugars || 0) * multiplier)} digits={digits} unit="g"
+                         recommended={(recValues?.sugars || 0)} indent={NUTRIENT_INDENT}/>
+            <NutrientRow label={"Protein"} value={(protein || 0) * multiplier} unit="g" boldLabel
+                         recommended={(recValues?.protein || 50)} digits={digits}/>
 
             {vitamins.length > 0 && (<SeparatorBar height={"7px"} color={backgroundColor}/>)}
             {vitamins.map(
@@ -187,8 +198,8 @@ function NutritionLabel({
             )
             }
             <DailyValues>
-                {recommendedValues ? "* Percent Daily Values are based on the macro goals in your dashboard "
-                                   + `preferences for a ${recommendedValues.calories} calorie diet.`
+                {recValues ? "* Percent Daily Values are based on the macro goals in your dashboard "
+                                   + `preferences for a ${recValues.calories} calorie diet.`
                                    : "* Percent Daily Values are based on a 2,000 calorie diet. "
                                    + "Your Daily Values may be higher or lower depending on your calorie needs."}
             </DailyValues>

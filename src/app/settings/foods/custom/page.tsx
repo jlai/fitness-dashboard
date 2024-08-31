@@ -54,17 +54,22 @@ let popupState: PopupState;
 
 function ShowLabelAction({ food }: { food: Food }) {
   const setFood = useSetAtom(nutritionPopoverFoodAtom);
-  // without the timeout, the click event interferes with the clickAway event in the popper
+
   return (
     <GridActionsCellItem
       onClick={ (event) => setTimeout((target) => {
+        // without the timeout, the click event interferes with the clickAway event in the popper
         if (!popupState.isOpen) {
-          setFood(food.foodId);
+          setFood({
+            foodId: food.foodId,
+            foodLog: null,
+          });
           popupState.open(target);
         }
       }, 0, event.currentTarget)}
       icon={<ArticleOutlined />}
       label="Nutrition facts"
+      title="Nutrition facts"
       showInMenu={false}
     />
   );
@@ -120,7 +125,7 @@ export default function ManageCustomFoods() {
           Create custom food
         </Button>
       </HeaderBar>
-      <NutritionPopover macroGoals={macroGoals} popupState={popupState} />
+      <NutritionPopover macroGoals={macroGoals} popupState={popupState} offset={[0, 15]} />
       <CreateCustomFoodDialog />
       <DataGrid<Food>
         className="w-full"

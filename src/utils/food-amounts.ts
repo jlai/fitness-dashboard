@@ -18,3 +18,7 @@ export function formatServing(option: ServingSize | string | null) {
     }`;
   }
 }
+
+export function formatValue(value: number, digits?: number): number {
+  return parseFloat(value.toFixed(Math.max(digits || 0, 0)));
+}

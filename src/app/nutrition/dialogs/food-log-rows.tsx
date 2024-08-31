@@ -6,13 +6,13 @@ import {
   Typography,
   Popper,
   Chip,
-  styled,
+  styled, Toolbar, IconButton, Box,
 } from "@mui/material";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { useAtomValue, useSetAtom } from "jotai";
 import { usePopupState, bindPopper } from "material-ui-popup-state/hooks";
-import { useCallback, ChangeEvent, MouseEvent } from "react";
-import { EditOutlined as EditIcon } from "@mui/icons-material";
+import React, { useCallback, ChangeEvent, MouseEvent } from "react";
+import {ArticleOutlined, EditOutlined as EditIcon} from "@mui/icons-material";
 
 import { formatFoodName } from "@/utils/other-formats";
 import { FRACTION_DIGITS_1 } from "@/utils/number-formats";
@@ -28,6 +28,7 @@ import {
   foodLogGoalsPositionAtom,
   macroGoalsAtom,
 } from "@/storage/settings";
+import NutritionPopover, {nutritionPopoverFoodAtom} from "@/components/nutrition/label/nutrition-popover";
 
 import { selectedFoodLogsAtom, updateSelectedFoodLogAtom } from "../atoms";
 import { MealTypeSummary } from "../summarize-day";
@@ -109,7 +110,13 @@ function FoodLogRow({ foodLog }: { foodLog: FoodLogEntry }) {
 
   const selectedFoodLogs = useAtomValue(selectedFoodLogsAtom);
   const updateSelectedFoodLog = useSetAtom(updateSelectedFoodLogAtom);
-  const popupState = usePopupState({
+  const setFood = useSetAtom(nutritionPopoverFoodAtom);
+  const macroGoals = useAtomValue(macroGoalsAtom);  
+  const nutritionPopupState = usePopupState({
+    popupId: "show-nutrition-facts-popup",
+    variant: "popper",
+  });
+  const editPopupState = usePopupState({
     variant: "popper",
     popupId: "edit-food-serving-popup",
   });
@@ -120,7 +127,6 @@ function FoodLogRow({ foodLog }: { foodLog: FoodLogEntry }) {
     },
     [foodLog, updateSelectedFoodLog]
   );
-
   return (
     <TableRow key={logId}>
       <TableCell>
@@ -138,37 +144,42 @@ function FoodLogRow({ foodLog }: { foodLog: FoodLogEntry }) {
         </div>
       </TableCell>
       <TableCell className="group min-w-max">
-        <button
-          className="flex flex-row items-center"
-          onClick={popupState.open}
-        >
+        <Box className="flex flex-row items-center">
           <Typography
             variant="body1"
             sx={{
-              backgroundColor: popupState.isOpen
+              backgroundColor: editPopupState.isOpen
                 ? "rgb(252, 232, 3, 0.2)"
                 : undefined,
             }}
           >
             {amount} {amount === 1 ? unit?.name : unit?.plural}
           </Typography>
-          <div className="ms-2 invisible group-hover:visible text-slate-500">
-            <EditIcon />
-          </div>
-        </button>
-        <Popper
-          {...bindPopper(popupState)}
-          modifiers={[
-            {
-              name: "arrow",
-              enabled: true,
-              options: {
-                element: popupState.anchorEl,
-              },
-            },
-          ]}
-        >
-          <EditServingSize foodLog={foodLog} closePopover={popupState.close} />
+          <Toolbar className="invisible group-hover:visible p-1 max-h-3 min-h-2">
+            <IconButton size="small" className="text-slate-500" title="Edit serving"
+                        onClick={editPopupState.open}>
+              <EditIcon />
+            </IconButton>
+            <IconButton size="small" className="text-slate-500" title="Nutrition facts"
+                        onClick={ (event) => setTimeout((target) => {
+                          // without the timeout, the click event interferes with the clickAway event in the popper
+                          setFood({
+                            // display the info for the default serving if CTRL or ALT is pressed
+                            foodLog: event.ctrlKey || event.altKey ? null : foodLog,
+                            foodId: foodLog.loggedFood.foodId,
+                          });
+                          if (!nutritionPopupState.isOpen) {
+                            nutritionPopupState.open(target);
+                          }
+                        }, 0, event.currentTarget)
+            }>
+              <ArticleOutlined />
+            </IconButton>
+          </Toolbar>
+        </Box>
+        <NutritionPopover macroGoals={macroGoals} popupState={nutritionPopupState} placement="top" offset={[15, 0]} />
+        <Popper {...bindPopper(editPopupState)}>
+          <EditServingSize foodLog={foodLog} closePopover={editPopupState.close} />
         </Popper>
       </TableCell>
       <TableCell className="text-end">
