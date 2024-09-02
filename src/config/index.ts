@@ -1,10 +1,23 @@
 import dayjs from "dayjs";
+import DOMPurify from "dompurify";
 
 export function requiredVar(value?: string) {
   if (!value) {
     throw new Error(`Environment variable missing`);
   }
   return value;
+}
+
+function sanitizeHtml(htmlString: string | undefined) {
+  if (!htmlString) {
+    return undefined;
+  }
+
+  const purifier = DOMPurify();
+
+  return purifier.isSupported
+    ? purifier.sanitize(htmlString, { RETURN_TRUSTED_TYPE: true })
+    : "foo";
 }
 
 export const FITBIT_API_URL = requiredVar(
@@ -84,3 +97,6 @@ export const ANALYTICS_PING_URL = process.env.NEXT_PUBLIC_ANALYTICS_PING_URL;
 /** Extra content security script-src */
 export const EXTRA_CSP_SCRIPT_SRC =
   process.env.NEXT_PUBLIC_CSP_EXTRA_SCRIPT_SRC;
+
+/** Site notice to warn about API issues, etc */
+export const SITE_NOTICE_HTML = process.env.NEXT_PUBLIC_SITE_NOTICE_HTML;
