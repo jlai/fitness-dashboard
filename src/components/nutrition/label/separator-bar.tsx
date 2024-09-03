@@ -18,4 +18,4 @@ function SeparatorBar({ height, color, margin }: { height?: string, color?: stri
   )
 }
 
-export default SeparatorBar
+export default SeparatorBar;

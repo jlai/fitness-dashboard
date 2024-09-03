@@ -2,13 +2,13 @@ import {atom, useAtomValue} from "jotai";
 import {PopupState, bindPopper} from "material-ui-popup-state/hooks";
 import {useQuery} from "@tanstack/react-query";
 import React from "react";
-import {Box, ClickAwayListener, Popper, Tooltip, Typography} from "@mui/material";
+import {Box, ClickAwayListener, Paper, Popper, Tooltip, Typography} from "@mui/material";
 import {Placement} from "@floating-ui/utils";
 import {WarningOutlined} from "@mui/icons-material";
 
 import {buildGetFoodQuery} from "@/api/nutrition/foods";
 import NutritionLabel from "@/components/nutrition/label/nutrition-label";
-import {FoodLogEntry, NutritionMacroGoals} from "@/api/nutrition";
+import {Food, FoodLogEntry, NutritionMacroGoals, NutritionalValues} from "@/api/nutrition";
 import {formatServing} from "@/utils/food-amounts";
 
 export interface NutritionPopoverContext {
@@ -35,6 +35,28 @@ const NutritionPopover = function ({macroGoals, popupState, placement, offset}: 
     enabled: context.foodId > 0
   });
 
+  function getNutritionValues(food: Food, foodLog: FoodLogEntry | null): NutritionalValues {
+    const foodValues: {[index: string]: number}
+      = (food.nutritionalValues && (!foodLog || foodLog.loggedFood.accessLevel == "PRIVATE"))
+      ? { ...food.nutritionalValues } : foodLog?.nutritionalValues ? {
+        // public food data
+        totalCarbohydrate: foodLog.nutritionalValues.carbs,
+        dietaryFiber: foodLog.nutritionalValues.fiber,
+        calories: foodLog.nutritionalValues.calories,
+        protein: foodLog.nutritionalValues.protein,
+        sodium: foodLog.nutritionalValues.sodium,
+        totalFat: foodLog.nutritionalValues.fat,
+      } : {};
+    const multiplier
+      = food.calories && foodLog?.loggedFood.accessLevel == "PRIVATE"
+      ? foodLog.loggedFood.calories / (food.calories || 1) : 1;
+    const result = Object.keys(foodValues).map((key: string) => {
+      return [ key, (foodValues.hasOwnProperty(key) ? foodValues[key] : 0) * multiplier ];
+    });
+
+    return Object.fromEntries(result);
+  }
+
   return (
     <Box>
       {(food && food.defaultUnit && food.defaultServingSize) && (
@@ -60,44 +82,30 @@ const NutritionPopover = function ({macroGoals, popupState, placement, offset}: 
           ]}
         >
           <ClickAwayListener onClickAway={popupState.close}>
-            <Box className="bg-slate-50 dark:bg-slate-900 p-21">
+            <Paper className="bg-slate-50 dark:bg-slate-900 p-2">
               { context.foodLog?.loggedFood.accessLevel == "PUBLIC" && (
                 <Tooltip title="Public food entry: limited nutrition data">
                   <WarningOutlined className="float-right p-1" />
                 </Tooltip>
               )}
-              <Typography variant="subtitle1">{food.name}</Typography>
+              <Typography variant="subtitle1" sx={{
+                  margin: "0 0 0.4rem 0.25rem", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap",
+                  maxWidth: context.foodLog?.loggedFood.accessLevel == "PUBLIC" ? "17rem" : "18.75rem"
+              }} title={food.name}>
+                {food.name}
+              </Typography>
               <NutritionLabel
-                width="300px"
-                servingText={formatServing({
+                width="18.75rem"
+                servingText={
+                  formatServing({
                     amount: context.foodLog?.loggedFood.amount || food.defaultServingSize,
                     unit: context.foodLog?.loggedFood.unit || food.defaultUnit
-                  }
-                )}
-                calories={ food.calories && context.foodLog?.loggedFood.accessLevel == "PRIVATE"
-                         ? food.calories : context?.foodLog?.nutritionalValues?.calories || 0 }
-                totalCarbohydrate={ food.nutritionalValues?.totalCarbohydrate
-                                 || context?.foodLog?.nutritionalValues?.carbs || 0 }
-                caloriesFromFat={ food.nutritionalValues?.caloriesFromFat || 0 }
-                saturatedFat={ food.nutritionalValues?.saturatedFat || 0 }
-                dietaryFiber={ food.nutritionalValues?.dietaryFiber
-                            || context?.foodLog?.nutritionalValues?.fiber || 0 }
-                cholesterol={ food.nutritionalValues?.cholesterol || 0 }
-                potassium={ food.nutritionalValues?.potassium || 0 }
-                totalFat={ food.nutritionalValues?.totalFat
-                        || context?.foodLog?.nutritionalValues?.fat || 0 }
-                transFat={ food.nutritionalValues?.transFat || 0 }
-                protein={ food.nutritionalValues?.protein
-                       || context?.foodLog?.nutritionalValues?.protein || 0 }
-                sodium={ food.nutritionalValues?.sodium
-                       || context?.foodLog?.nutritionalValues?.sodium || 0 }
-                sugars={ food.nutritionalValues?.sugars || 0 }
+                  })
+                }
+                nutritionValues={getNutritionValues(food, context.foodLog)}
                 recommendedValues={macroGoals}
-                multiplier={ food.calories && context.foodLog?.loggedFood.accessLevel == "PRIVATE"
-                           ? context.foodLog.loggedFood.calories / (food.calories || 1) : 1 }
-                vitamins={[]}
               />
-            </Box>
+            </Paper>
           </ClickAwayListener>
         </Popper>
       )}

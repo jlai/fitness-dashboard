@@ -58,7 +58,7 @@ export const foodLogGoalsPositionAtom = atomWithStorage<
     getOnInit: true,
 });
 
-const DEFAULT_FDA_MACRO_GOALS: NutritionMacroGoals = {
+export const DEFAULT_FDA_MACRO_GOALS: NutritionMacroGoals = {
   calories: 2000,
   sodium: 2300,
   protein: 50,

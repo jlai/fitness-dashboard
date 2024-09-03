@@ -38,6 +38,7 @@ import {
 import NutritionLabel from "@/components/nutrition/label/nutrition-label";
 import {
   useNutritionGoalsForLabelAtom,
+  DEFAULT_FDA_MACRO_GOALS,
   showNutritionLabelAtom,
   macroGoalsAtom,
 } from "@/storage/settings";
@@ -189,11 +190,10 @@ export function CustomFoodFields() {
             <div>
               <Box marginBottom={2} />
               <NutritionLabel
-                  width={"50%"}
-                  servingText={servingText}
-                  {...nutritionValues}
-                  vitamins={[]}
-                  recommendedValues={ useNutritionGoalsForLabel ? macroGoals : undefined }
+                width={"50%"}
+                servingText={servingText}
+                nutritionValues={nutritionValues}
+                recommendedValues={ useNutritionGoalsForLabel ? macroGoals : DEFAULT_FDA_MACRO_GOALS }
               />
             </div>
           ))}
