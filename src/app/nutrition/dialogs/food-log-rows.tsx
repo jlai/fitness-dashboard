@@ -161,7 +161,7 @@ function FoodLogRow({ foodLog }: { foodLog: FoodLogEntry }) {
               <EditIcon />
             </IconButton>
             <IconButton size="small" className="text-slate-500" title="Nutrition facts"
-                        onClick={ (event) => setTimeout((target) => {
+                        onClick={ (event) => {
                           // without the timeout, the click event interferes with the clickAway event in the popper
                           setFood({
                             // display the info for the default serving if CTRL or ALT is pressed
@@ -169,9 +169,9 @@ function FoodLogRow({ foodLog }: { foodLog: FoodLogEntry }) {
                             foodId: foodLog.loggedFood.foodId,
                           });
                           if (!nutritionPopupState.isOpen) {
-                            nutritionPopupState.open(target);
+                            nutritionPopupState.open(event);
                           }
-                        }, 0, event.currentTarget)
+                        }
             }>
               <ArticleOutlined />
             </IconButton>

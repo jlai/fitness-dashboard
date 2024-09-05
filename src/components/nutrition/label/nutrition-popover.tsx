@@ -81,7 +81,9 @@ const NutritionPopover = function ({macroGoals, popupState, placement, offset}: 
             },
           ]}
         >
-          <ClickAwayListener onClickAway={popupState.close}>
+          <ClickAwayListener onClickAway={popupState.close}
+                             touchEvent="onTouchStart"
+                             mouseEvent="onMouseDown">
             <Paper className="bg-slate-50 dark:bg-slate-900 p-2">
               { context.foodLog?.loggedFood.accessLevel == "PUBLIC" && (
                 <Tooltip title="Public food entry: limited nutrition data">

@@ -25,48 +25,21 @@ import { buildDeleteCustomFoodsMutation } from "@/api/nutrition/foods";
 import NutritionPopover, { nutritionPopoverFoodAtom } from "@/components/nutrition/label/nutrition-popover";
 import { macroGoalsAtom } from "@/storage/settings";
 
-const customFoodsColumns: Array<GridColDef<Food>> = [
-  { field: "name", headerName: "Food", flex: 2 },
-  { field: "brand", headerName: "Brand", flex: 1 },
-  {
-    field: "accessLevel",
-    headerName: "Type",
-    valueFormatter: (accessLevel) =>
-      accessLevel === "PRIVATE" ? "Custom" : "Public",
-  },
-  {
-    field: "actions",
-    type: "actions",
-    headerName: "Actions",
-    width: 100,
-    getActions: ({ id, row: food }: GridRowParams<Food>) => [
-      ...(food.accessLevel === "PRIVATE"
-        ? [
-            <ShowLabelAction key={id} food={food} />,
-            <EditAction key={id} food={food} />,
-          ]
-        : []),
-    ],
-  },
-];
-
-let popupState: PopupState;
-
-function ShowLabelAction({ food }: { food: Food }) {
+function ShowLabelAction({ food, popupState }: { food: Food, popupState: PopupState }) {
   const setFood = useSetAtom(nutritionPopoverFoodAtom);
 
   return (
     <GridActionsCellItem
-      onClick={ (event) => setTimeout((target) => {
+      onClick={ (event) => {
         // without the timeout, the click event interferes with the clickAway event in the popper
         if (!popupState.isOpen) {
           setFood({
             foodId: food.foodId,
             foodLog: null,
           });
-          popupState.open(target);
+          popupState.open(event);
         }
-      }, 0, event.currentTarget)}
+      }}
       icon={<ArticleOutlined />}
       label="Nutrition facts"
       title="Nutrition facts"
@@ -100,6 +73,36 @@ export default function ManageCustomFoods() {
     buildDeleteCustomFoodsMutation(queryClient)
   );
 
+  const popupState = usePopupState({
+    popupId: "show-nutrition-facts-popup",
+    variant: "popper",
+  });
+
+  const customFoodsColumns: Array<GridColDef<Food>> = [
+    { field: "name", headerName: "Food", flex: 2 },
+    { field: "brand", headerName: "Brand", flex: 1 },
+    {
+      field: "accessLevel",
+      headerName: "Type",
+      valueFormatter: (accessLevel) =>
+        accessLevel === "PRIVATE" ? "Custom" : "Public",
+    },
+    {
+      field: "actions",
+      type: "actions",
+      headerName: "Actions",
+      width: 100,
+      getActions: ({ id, row: food }: GridRowParams<Food>) => [
+        ...(food.accessLevel === "PRIVATE"
+          ? [
+            <ShowLabelAction popupState={popupState} key={id} food={food} />,
+            <EditAction key={id} food={food} />,
+          ]
+          : []),
+      ],
+    },
+  ];
+
   const handleDeleteClicked = () => {
     (async () => {
       await confirm({
@@ -110,11 +113,6 @@ export default function ManageCustomFoods() {
       toast.success("Deleted custom foods");
     })();
   };
-
-  popupState = usePopupState({
-    popupId: "show-nutrition-facts-popup",
-    variant: "popper",
-  });
 
   return (
     <div>
