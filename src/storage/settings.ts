@@ -58,7 +58,7 @@ export const foodLogGoalsPositionAtom = atomWithStorage<
     getOnInit: true,
 });
 
-const DEFAULT_FDA_MACRO_GOALS: NutritionMacroGoals = {
+export const DEFAULT_FDA_MACRO_GOALS: NutritionMacroGoals = {
   calories: 2000,
   sodium: 2300,
   protein: 50,
@@ -72,6 +72,24 @@ export const macroGoalsAtom = atomWithStorage<NutritionMacroGoals>(
   DEFAULT_FDA_MACRO_GOALS,
   undefined,
   {getOnInit: true}
+);
+
+export const showNutritionLabelAtom = atomWithStorage<boolean>(
+  "nutrition-facts:show-label",
+  false,
+  undefined,
+  {
+    getOnInit: true,
+  }
+);
+
+export const useNutritionGoalsForLabelAtom = atomWithStorage<boolean>(
+  "macro-goals:use-for-label",
+  false,
+  undefined,
+  {
+    getOnInit: true,
+  }
 );
 
 export const foodLogShowCopyIndividualButtonAtom = atomWithStorage<boolean>(

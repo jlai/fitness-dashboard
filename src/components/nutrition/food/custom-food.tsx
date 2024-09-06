@@ -20,7 +20,7 @@ import {
   InputAdornment,
   Typography,
 } from "@mui/material";
-import { atom, useAtom } from "jotai";
+import {atom, useAtom, useAtomValue} from "jotai";
 import { ArrowDownward } from "@mui/icons-material";
 import { toast } from "mui-sonner";
 
@@ -35,6 +35,13 @@ import {
   buildCreateCustomFoodMutation,
   buildGetFoodQuery,
 } from "@/api/nutrition/foods";
+import NutritionLabel from "@/components/nutrition/label/nutrition-label";
+import {
+  useNutritionGoalsForLabelAtom,
+  DEFAULT_FDA_MACRO_GOALS,
+  showNutritionLabelAtom,
+  macroGoalsAtom,
+} from "@/storage/settings";
 
 export const NUTRITION_FIELDS = {
   caloriesFromFat: {
@@ -110,8 +117,11 @@ export function CustomFoodFields() {
   }, [allUnits]);
 
   const amount = watch("amount");
+  const useNutritionGoalsForLabel = useAtomValue(useNutritionGoalsForLabelAtom);
   const unit = watch("unit") as FoodUnitAutocompleteOption;
-
+  const showNutritionLabel = useAtomValue(showNutritionLabelAtom);
+  const macroGoals = useAtomValue(macroGoalsAtom);
+  const nutritionValues = watch("nutritionValues");
   const servingText =
     amount &&
     unit &&
@@ -138,8 +148,6 @@ export function CustomFoodFields() {
           options={options}
           loading={!allUnits}
           autocompleteProps={{
-            getOptionKey: (option) => option.id,
-            isOptionEqualToValue: (option, value) => option.id === value.id,
             sx: { flex: 1 },
           }}
         />
@@ -178,6 +186,17 @@ export function CustomFoodFields() {
               />
             ))}
           </FormRow>
+          {(showNutritionLabel && (
+            <div>
+              <Box marginBottom={2} />
+              <NutritionLabel
+                width={"50%"}
+                servingText={servingText}
+                nutritionValues={nutritionValues}
+                recommendedValues={ useNutritionGoalsForLabel ? macroGoals : DEFAULT_FDA_MACRO_GOALS }
+              />
+            </div>
+          ))}
         </AccordionDetails>
       </Accordion>
     </FormRows>

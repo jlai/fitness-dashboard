@@ -50,7 +50,7 @@ export type NutritionalValues = Partial<{
   sugars: number;
   thiamin: number;
   totalCarbohydrate: number;
-  totalFat: 15;
+  totalFat: number;
   transFat: number;
   vitaminA: number;
   vitaminB12: number;

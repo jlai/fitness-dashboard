@@ -41,6 +41,8 @@ import {
   distanceUnitAtom,
   enableAdvancedScopesAtom,
   foodLogShowCopyIndividualButtonAtom,
+  useNutritionGoalsForLabelAtom,
+  showNutritionLabelAtom,
   foodLogTotalsPositionAtom,
   increasedTileLimitsAtom,
   swimUnitAtom,
@@ -149,6 +151,12 @@ function LoginSettings() {
 }
 
 function FoodSettings() {
+  const [useNutritionGoalsForLabel, setUseNutritionGoalsForLabel] = useAtom(
+    useNutritionGoalsForLabelAtom
+  );
+  const [showNutritionLabel, setShowNutritionLabelAtom] = useAtom(
+    showNutritionLabelAtom
+  );
   const [totalsPosition, setTotalsPosition] = useAtom(
     foodLogTotalsPositionAtom
   );
@@ -188,6 +196,29 @@ function FoodSettings() {
           </Select>
         }
       />
+      <SettingsRow
+        title="Show the nutrition facts label"
+        action={
+          <Switch
+            checked={showNutritionLabel}
+            onChange={(_event, checked) => setShowNutritionLabelAtom(checked)}
+          />
+        }
+      >
+        Show the nutrition facts label in the custom food edition dialog details.
+      </SettingsRow>
+      <SettingsRow
+        title="Use nutrition goals for nutrition labels"
+        action={
+          <Switch
+            disabled={!showNutritionLabel}
+            checked={useNutritionGoalsForLabel}
+            onChange={(_event, checked) => setUseNutritionGoalsForLabel(checked)}
+          />
+        }
+      >
+        Use nutrition goals for nutrition labels when calculating the % of daily values.
+      </SettingsRow>
       <SettingsRow
         title="Show copy to clipboard button for individual values"
         action={
