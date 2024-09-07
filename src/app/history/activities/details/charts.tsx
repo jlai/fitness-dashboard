@@ -395,7 +395,7 @@ export function HeartRateChart({
     <SynchronizedChart
       loading={!data}
       dateDomain={dateDomain}
-      dataset={data}
+      dataset={data ?? []}
       yAxis={[
         {
           scaleType: "linear",
