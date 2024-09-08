@@ -6,7 +6,7 @@ import {
   useForm,
   useFormContext,
 } from "react-hook-form-mui";
-import { useCallback, useEffect, useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import {
   Accordion,
   AccordionDetails,
@@ -236,28 +236,29 @@ export default function CreateCustomFoodDialog() {
     buildCreateCustomFoodMutation(queryClient)
   );
 
-  const save = useCallback(
-    (values: CustomFoodFormData) => {
-      saveCustomFood({
-        foodId: isExistingFood ? customFoodId : undefined,
-        name: values.name,
-        brand: values.brand,
-        formType: "DRY",
+  const save = async (values: CustomFoodFormData) => {
+    if (formContext.formState.isSubmitting) {
+      return;
+    }
+
+    await saveCustomFood({
+      foodId: isExistingFood ? customFoodId : undefined,
+      name: values.name,
+      brand: values.brand,
+      formType: "DRY",
+      calories: values.calories!,
+      defaultFoodMeasurementUnitId: values.unit!.id,
+      defaultServingSize: values.amount,
+      nutritionalValues: {
+        ...values.nutritionValues,
         calories: values.calories!,
-        defaultFoodMeasurementUnitId: values.unit!.id,
-        defaultServingSize: values.amount,
-        nutritionalValues: {
-          ...values.nutritionValues,
-          calories: values.calories!,
-        },
-      }).then(() => {
-        toast.success(`Saved custom food: ${values.name}`);
-        formContext.reset();
-        setCustomFoodId(null);
-      });
-    },
-    [saveCustomFood, formContext, customFoodId, isExistingFood, setCustomFoodId]
-  );
+      },
+    }).then(() => {
+      toast.success(`Saved custom food: ${values.name}`);
+      formContext.reset();
+      setCustomFoodId(null);
+    });
+  };
 
   useEffect(() => {
     if (food && food.foodId === customFoodId) {
