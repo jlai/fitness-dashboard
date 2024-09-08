@@ -10,7 +10,6 @@ import dayjs, { Dayjs } from "dayjs";
 import Immutable from "immutable";
 import { useAtom } from "jotai";
 import { toast } from "mui-sonner";
-import { useCallback } from "react";
 import { FormContainer } from "react-hook-form-mui";
 import { DatePickerElement } from "react-hook-form-mui/date-pickers";
 
@@ -32,28 +31,29 @@ export function CopyFoodLogsDialog() {
   const queryClient = useQueryClient();
   const [selectedFoodLogs, setSelectedFoodLogs] = useAtom(selectedFoodLogsAtom);
 
-  const { mutateAsync: createFoodLogs } = useMutation(
+  const { mutateAsync: createFoodLogs, isPending: isSubmitting } = useMutation(
     buildCreateMultipleFoodLogsMutation(queryClient)
   );
 
-  const onSubmit = useCallback(
-    (values: CopyFoodLogsFormData) => {
-      createFoodLogs(
-        [...selectedFoodLogs.values()].map((foodLog) => ({
-          foodId: foodLog.loggedFood.foodId,
-          mealTypeId: values.mealType,
-          unitId: foodLog.loggedFood.unit!.id,
-          amount: foodLog.loggedFood.amount,
-          day: values.day,
-        }))
-      ).then(() => {
-        toast.success("Copied food logs");
-        setSelectedFoodLogs(Immutable.Set());
-        setOpen(false);
-      });
-    },
-    [createFoodLogs, selectedFoodLogs, setSelectedFoodLogs, setOpen]
-  );
+  const onSubmit = async (values: CopyFoodLogsFormData) => {
+    if (isSubmitting) {
+      return;
+    }
+
+    await createFoodLogs(
+      [...selectedFoodLogs.values()].map((foodLog) => ({
+        foodId: foodLog.loggedFood.foodId,
+        mealTypeId: values.mealType,
+        unitId: foodLog.loggedFood.unit!.id,
+        amount: foodLog.loggedFood.amount,
+        day: values.day,
+      }))
+    ).then(() => {
+      toast.success("Copied food logs");
+      setSelectedFoodLogs(Immutable.Set());
+      setOpen(false);
+    });
+  }
 
   return (
     <Dialog open={open} onClose={() => setOpen(false)}>
