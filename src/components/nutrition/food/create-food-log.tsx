@@ -1,6 +1,5 @@
 "use client";
 
-import { useCallback } from "react";
 import { Button, Stack } from "@mui/material";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "mui-sonner";
@@ -37,8 +36,13 @@ export function CreateFoodLogForm() {
       servingSize: null,
     },
   });
-
-  const { watch } = formContext;
+  const {
+    formState: { isSubmitting, isLoading },
+    handleSubmit,
+    control,
+    watch,
+    reset,
+  } = formContext;
 
   const queryClient = useQueryClient();
   const { mutateAsync: createFood } = useMutation(
@@ -47,41 +51,38 @@ export function CreateFoodLogForm() {
 
   const linkedDay = useAtomValue(selectedDayForPageAtom);
 
-  const logFood = useCallback(
-    (values: CreateFoodLogFormData) => {
-      const { food, servingSize, mealType, daySource } = values;
+  const logFood = async (values: CreateFoodLogFormData) => {
+    const {food, servingSize, mealType, daySource} = values;
 
-      if (!food || !servingSize) {
-        return;
-      }
+    if (!food || !servingSize || isSubmitting) {
+      return;
+    }
 
-      createFood({
-        foodId: food.foodId,
-        mealTypeId: mealType,
-        day: daySource === "today" ? dayjs() : linkedDay,
-        amount: servingSize.amount,
-        unitId: servingSize.unit.id,
-      }).then(() => {
-        toast.success(`Logged food: ${food.name}`);
-        formContext.reset({
-          food: null,
-          servingSize: null,
+    await createFood({
+      foodId: food.foodId,
+      mealTypeId: mealType,
+      day: daySource === "today" ? dayjs() : linkedDay,
+      amount: servingSize.amount,
+      unitId: servingSize.unit.id,
+    }).then(() => {
+      toast.success(`Logged food: ${food.name}`);
+      reset({
+        food: null,
+        servingSize: null,
 
-          // Stay on existing day and mealType
-          mealType: values.mealType,
-          daySource,
-        });
+        // Stay on existing day and mealType
+        mealType: values.mealType,
+        daySource,
       });
-    },
-    [createFood, linkedDay, formContext]
-  );
+    });
+  }
 
   return (
     <FormContainer<CreateFoodLogFormData>
+      handleSubmit={handleSubmit(logFood)}
       formContext={formContext}
-      onSuccess={logFood}
     >
-      <DevTool control={formContext.control} />
+      <DevTool control={control} />
       <FormRows>
         <SearchFoodsElement name="food" rules={{ required: true }} />
         <FormRow>
@@ -95,7 +96,7 @@ export function CreateFoodLogForm() {
           <div className="flex-1"></div>
           <Button
             type="submit"
-            disabled={!watch("food") || !watch("servingSize")}
+            disabled={!watch("food") || !watch("servingSize") || isLoading || isSubmitting}
           >
             Log food
           </Button>
