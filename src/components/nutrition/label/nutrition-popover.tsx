@@ -4,7 +4,9 @@ import {useQuery} from "@tanstack/react-query";
 import React from "react";
 import {Box, ClickAwayListener, Paper, Popper, Tooltip, Typography} from "@mui/material";
 import {Placement} from "@floating-ui/utils";
-import {WarningOutlined} from "@mui/icons-material";
+import {ArticleOutlined, WarningOutlined} from "@mui/icons-material";
+import {useSetAtom} from "jotai/index";
+import {GridActionsCellItem} from "@mui/x-data-grid";
 
 import {buildGetFoodQuery} from "@/api/nutrition/foods";
 import NutritionLabel from "@/components/nutrition/label/nutrition-label";
@@ -22,6 +24,29 @@ const EMPTY_CONTEXT: NutritionPopoverContext = {
 };
 
 export const nutritionPopoverFoodAtom = atom<NutritionPopoverContext>(EMPTY_CONTEXT);
+
+export function ShowLabelAction({ food, popupState }: { food: Food, popupState: PopupState }) {
+  const setFood = useSetAtom(nutritionPopoverFoodAtom);
+
+  return (
+    <GridActionsCellItem
+      onClick={ (event) => {
+        // without the timeout, the click event interferes with the clickAway event in the popper
+        if (!popupState.isOpen) {
+          setFood({
+            foodId: food.foodId,
+            foodLog: null,
+          });
+          popupState.open(event);
+        }
+      }}
+      icon={<ArticleOutlined />}
+      label="Nutrition facts"
+      title="Nutrition facts"
+      showInMenu={false}
+    />
+  );
+}
 
 const NutritionPopover = function ({macroGoals, popupState, placement, offset}: {
   macroGoals: NutritionMacroGoals,

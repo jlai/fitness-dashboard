@@ -2,7 +2,7 @@
 
 import { Button, Typography } from "@mui/material";
 import React, { useState } from "react";
-import { PopupState, usePopupState } from "material-ui-popup-state/hooks";
+import { usePopupState } from "material-ui-popup-state/hooks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   DataGrid,
@@ -10,7 +10,7 @@ import {
   GridColDef,
   GridRowParams,
 } from "@mui/x-data-grid";
-import { Edit, ArticleOutlined } from "@mui/icons-material";
+import { Edit } from "@mui/icons-material";
 import { useAtomValue, useSetAtom } from "jotai";
 import { useConfirm } from "material-ui-confirm";
 import { toast } from "mui-sonner";
@@ -22,31 +22,8 @@ import CreateCustomFoodDialog, {
   NEW_CUSTOM_FOOD,
 } from "@/components/nutrition/food/custom-food";
 import { buildDeleteCustomFoodsMutation } from "@/api/nutrition/foods";
-import NutritionPopover, { nutritionPopoverFoodAtom } from "@/components/nutrition/label/nutrition-popover";
+import NutritionPopover, { ShowLabelAction } from "@/components/nutrition/label/nutrition-popover";
 import { macroGoalsAtom } from "@/storage/settings";
-
-function ShowLabelAction({ food, popupState }: { food: Food, popupState: PopupState }) {
-  const setFood = useSetAtom(nutritionPopoverFoodAtom);
-
-  return (
-    <GridActionsCellItem
-      onClick={ (event) => {
-        // without the timeout, the click event interferes with the clickAway event in the popper
-        if (!popupState.isOpen) {
-          setFood({
-            foodId: food.foodId,
-            foodLog: null,
-          });
-          popupState.open(event);
-        }
-      }}
-      icon={<ArticleOutlined />}
-      label="Nutrition facts"
-      title="Nutrition facts"
-      showInMenu={false}
-    />
-  );
-}
 
 function EditAction({ food }: { food: Food }) {
   const setEditingCustomFood = useSetAtom(editingCustomFoodAtom);
