@@ -223,6 +223,11 @@ export default function CreateCustomFoodDialog() {
   const formContext = useForm<CustomFoodFormData>({
     defaultValues: DEFAULT_FORM_DATA,
   });
+  const {
+    formState: { isSubmitting, isLoading },
+    handleSubmit,
+    reset,
+  } = formContext;
 
   const isExistingFood = !!customFoodId && customFoodId > 0;
 
@@ -237,7 +242,7 @@ export default function CreateCustomFoodDialog() {
   );
 
   const save = async (values: CustomFoodFormData) => {
-    if (formContext.formState.isSubmitting) {
+    if (isSubmitting) {
       return;
     }
 
@@ -255,14 +260,14 @@ export default function CreateCustomFoodDialog() {
       },
     }).then(() => {
       toast.success(`Saved custom food: ${values.name}`);
-      formContext.reset();
+      reset();
       setCustomFoodId(null);
     });
   };
 
   useEffect(() => {
     if (food && food.foodId === customFoodId) {
-      formContext.reset({
+      reset({
         name: food.name,
         brand: food.brand,
         amount: food.defaultServingSize,
@@ -271,9 +276,9 @@ export default function CreateCustomFoodDialog() {
         nutritionValues: food.nutritionalValues,
       });
     } else {
-      formContext.reset(DEFAULT_FORM_DATA);
+      reset(DEFAULT_FORM_DATA);
     }
-  }, [food, formContext, customFoodId]);
+  }, [food, reset, customFoodId]);
 
   return (
     <Dialog
@@ -281,14 +286,14 @@ export default function CreateCustomFoodDialog() {
       open={!!customFoodId}
       onClose={() => setCustomFoodId(null)}
     >
-      <FormContainer formContext={formContext} onSuccess={save}>
+      <FormContainer formContext={formContext} handleSubmit={handleSubmit(save)}>
         <DialogTitle>Create custom food</DialogTitle>
         <DialogContent>
           <CustomFoodFields />
           <Box marginBottom={4} />
           <DialogActions>
             <Button onClick={() => setCustomFoodId(null)}>Cancel</Button>
-            <Button type="submit">Save</Button>
+            <Button type="submit" disabled={isSubmitting || isLoading}>Save</Button>
           </DialogActions>
         </DialogContent>
       </FormContainer>

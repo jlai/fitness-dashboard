@@ -36,8 +36,13 @@ export function CreateFoodLogForm() {
       servingSize: null,
     },
   });
-
-  const { watch } = formContext;
+  const {
+    formState: { isSubmitting, isLoading },
+    handleSubmit,
+    control,
+    watch,
+    reset,
+  } = formContext;
 
   const queryClient = useQueryClient();
   const { mutateAsync: createFood } = useMutation(
@@ -49,7 +54,7 @@ export function CreateFoodLogForm() {
   const logFood = async (values: CreateFoodLogFormData) => {
     const {food, servingSize, mealType, daySource} = values;
 
-    if (!food || !servingSize || formContext.formState.isSubmitting) {
+    if (!food || !servingSize || isSubmitting) {
       return;
     }
 
@@ -61,7 +66,7 @@ export function CreateFoodLogForm() {
       unitId: servingSize.unit.id,
     }).then(() => {
       toast.success(`Logged food: ${food.name}`);
-      formContext.reset({
+      reset({
         food: null,
         servingSize: null,
 
@@ -74,10 +79,10 @@ export function CreateFoodLogForm() {
 
   return (
     <FormContainer<CreateFoodLogFormData>
+      handleSubmit={handleSubmit(logFood)}
       formContext={formContext}
-      onSuccess={logFood}
     >
-      <DevTool control={formContext.control} />
+      <DevTool control={control} />
       <FormRows>
         <SearchFoodsElement name="food" rules={{ required: true }} />
         <FormRow>
@@ -91,7 +96,7 @@ export function CreateFoodLogForm() {
           <div className="flex-1"></div>
           <Button
             type="submit"
-            disabled={!watch("food") || !watch("servingSize")}
+            disabled={!watch("food") || !watch("servingSize") || isLoading || isSubmitting}
           >
             Log food
           </Button>
