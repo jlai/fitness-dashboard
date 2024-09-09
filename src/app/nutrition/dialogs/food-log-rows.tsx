@@ -161,23 +161,22 @@ function FoodLogRow({ foodLog }: { foodLog: FoodLogEntry }) {
               <EditIcon />
             </IconButton>
             <IconButton size="small" className="text-slate-500" title="Nutrition facts"
-                        onClick={ (event) => {
-                          // without the timeout, the click event interferes with the clickAway event in the popper
-                          setFood({
-                            // display the info for the default serving if CTRL or ALT is pressed
-                            foodLog: event.ctrlKey || event.altKey ? null : foodLog,
-                            foodId: foodLog.loggedFood.foodId,
-                          });
-                          if (!nutritionPopupState.isOpen) {
-                            nutritionPopupState.open(event);
-                          }
-                        }
+              onClick={ (event) => {
+                setFood({
+                  // display the info for the default serving if CTRL or ALT is pressed
+                  foodLog: event.ctrlKey || event.altKey ? null : foodLog,
+                  foodId: foodLog.loggedFood.foodId,
+                });
+                if (!nutritionPopupState.isOpen) {
+                  nutritionPopupState.open(event);
+                }
+              }
             }>
               <ArticleOutlined />
             </IconButton>
           </Toolbar>
         </Box>
-        <NutritionPopover macroGoals={macroGoals} popupState={nutritionPopupState} placement="top" offset={[15, 0]} />
+        <NutritionPopover macroGoals={macroGoals} popupState={nutritionPopupState} placement="top" offset={[0, 5]} />
         <Popper {...bindPopper(editPopupState)}>
           <EditServingSize foodLog={foodLog} closePopover={editPopupState.close} />
         </Popper>

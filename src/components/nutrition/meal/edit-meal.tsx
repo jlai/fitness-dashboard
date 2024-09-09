@@ -228,19 +228,19 @@ function FoodRow({
             <Toolbar className="min-h-6 p-0" sx={{margin: "0 0 0 auto"}}>
               {(food.accessLevel == "PRIVATE") ?
                 <IconButton title={"Nutrition facts"}
-                            onClick={ (event) => {
-                              setFood({
-                                // display the info for the default serving if CTRL or ALT is pressed
-                                foodLog: event.ctrlKey || event.altKey ? null : {
-                                  loggedFood: food, logId: -1, logDate: ""
-                                },
-                                foodId: food.foodId,
-                              });
+                  onClick={(event) => {
+                    setFood({
+                      // display the info for the default serving if CTRL or ALT is pressed
+                      foodLog: event.ctrlKey || event.altKey ? null : {
+                        loggedFood: food, logId: -1, logDate: ""
+                      },
+                      foodId: food.foodId,
+                    });
 
-                              if (!popupState.isOpen) {
-                                popupState.open(event);
-                              }
-                            }}
+                    if (!popupState.isOpen) {
+                      popupState.open(event);
+                    }
+                  }}
                 >
                   <ArticleOutlined />
                 </IconButton> :

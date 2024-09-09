@@ -31,7 +31,6 @@ export function ShowLabelAction({ food, popupState }: { food: Food, popupState: 
   return (
     <GridActionsCellItem
       onClick={ (event) => {
-        // without the timeout, the click event interferes with the clickAway event in the popper
         if (!popupState.isOpen) {
           setFood({
             foodId: food.foodId,
