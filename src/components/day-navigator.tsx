@@ -25,7 +25,7 @@ const OTHER_YEAR_FORMATTER = new Intl.DateTimeFormat(undefined, {
   year: "numeric",
 });
 
-function getLabel(day: Dayjs) {
+export function getLabel(day: Dayjs) {
   const today = dayjs();
 
   if (day.isSame(today, "day")) {

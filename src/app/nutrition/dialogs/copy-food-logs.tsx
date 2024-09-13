@@ -16,6 +16,8 @@ import { DatePickerElement } from "react-hook-form-mui/date-pickers";
 import { MealTypeElement } from "@/components/nutrition/food/meal-type-element";
 import { MealType, buildCreateMultipleFoodLogsMutation } from "@/api/nutrition";
 import { FormRows } from "@/components/forms/form-row";
+import { getLabel } from "@/components/day-navigator";
+import { selectedDayForPageAtom } from "@/state";
 
 import { selectedFoodLogsAtom } from "../atoms";
 
@@ -28,6 +30,7 @@ interface CopyFoodLogsFormData {
 
 export function CopyFoodLogsDialog() {
   const [open, setOpen] = useAtom(copyDialogOpenAtom);
+  const [ selectedDay, setSelectedDay ] = useAtom(selectedDayForPageAtom);
   const queryClient = useQueryClient();
   const [selectedFoodLogs, setSelectedFoodLogs] = useAtom(selectedFoodLogsAtom);
 
@@ -49,7 +52,12 @@ export function CopyFoodLogsDialog() {
         day: values.day,
       }))
     ).then(() => {
-      toast.success("Copied food logs");
+      toast.success("Copied food logs", {
+        action: !values.day.isSame(selectedDay, 'day') ? {
+          label: <>Go to {getLabel(values.day)}</>,
+          onClick: () => setSelectedDay(values.day)
+        } : undefined
+      });
       setSelectedFoodLogs(Immutable.Set());
       setOpen(false);
     });
@@ -59,7 +67,7 @@ export function CopyFoodLogsDialog() {
     <Dialog open={open} onClose={() => setOpen(false)}>
       <FormContainer
         onSuccess={onSubmit}
-        defaultValues={{ day: dayjs(), mealType: MealType.Anytime }}
+        defaultValues={{ day: dayjs().startOf('day'), mealType: MealType.Anytime }}
       >
         <DialogTitle>Copy selected foods</DialogTitle>
         <DialogContent>
