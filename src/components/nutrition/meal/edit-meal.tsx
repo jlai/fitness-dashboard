@@ -8,8 +8,9 @@ import {
   Table,
   TableBody,
   TableFooter,
+  Toolbar,
 } from "@mui/material";
-import { useEffect, useCallback, useState } from "react";
+import React, { useEffect, useCallback, useState } from "react";
 import {
   useForm,
   useController,
@@ -17,20 +18,24 @@ import {
   Controller,
   useFieldArray,
 } from "react-hook-form";
-import { Delete as DeleteIcon } from "@mui/icons-material";
+import { ArticleOutlined, Delete as DeleteIcon } from "@mui/icons-material";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
+import { PopupState, usePopupState } from "material-ui-popup-state/hooks";
+import { useAtomValue, useSetAtom } from "jotai/index";
 import { toast } from "mui-sonner";
 
 import {
   MealFood,
   Meal,
-  getDefaultServingSize,
   Food,
+  getDefaultServingSize,
   buildCreateMealMutation,
   buildDeleteMealMutation,
   buildUpdateMealMutation,
 } from "@/api/nutrition";
 import { formatFoodName } from "@/utils/other-formats";
+import NutritionPopover, { nutritionPopoverFoodAtom } from "@/components/nutrition/label/nutrition-popover";
+import { macroGoalsAtom } from "@/storage/settings";
 
 import SearchFoods from "../food/food-search";
 import { FoodServingSizeInput } from "../food/serving-size";
@@ -189,12 +194,16 @@ export function EditMeal({
 }
 
 function FoodRow({
-  index,
-  onClickRemove,
+ index,
+ onClickRemove,
+ popupState
 }: {
-  index: number;
-  onClickRemove: () => void;
+  index: number,
+  onClickRemove: () => void,
+  popupState: PopupState
 }) {
+  const setFood = useSetAtom(nutritionPopoverFoodAtom);
+
   return (
     <Controller
       name={`foods.${index}`}
@@ -215,10 +224,34 @@ function FoodRow({
               }
             />
           </TableCell>
-          <TableCell align="right">
-            <IconButton onClick={onClickRemove}>
-              <DeleteIcon />
-            </IconButton>
+          <TableCell className="w-1/12">
+            <Toolbar className="min-h-6 p-0" sx={{margin: "0 0 0 auto"}}>
+              {(food.accessLevel == "PRIVATE") ?
+                <IconButton title={"Nutrition facts"}
+                  onClick={(event) => {
+                    setFood({
+                      // display the info for the default serving if CTRL or ALT is pressed
+                      foodLog: event.ctrlKey || event.altKey ? null : {
+                        loggedFood: food, logId: -1, logDate: ""
+                      },
+                      foodId: food.foodId,
+                    });
+
+                    if (!popupState.isOpen) {
+                      popupState.open(event);
+                    }
+                  }}
+                >
+                  <ArticleOutlined />
+                </IconButton> :
+                <IconButton title="No data (public food)">
+                  <ArticleOutlined className="opacity-30" />
+                </IconButton>
+              }
+              <IconButton onClick={onClickRemove}>
+                <DeleteIcon />
+              </IconButton>
+            </Toolbar>
           </TableCell>
         </TableRow>
       )}
@@ -233,34 +266,43 @@ function EditFoodList() {
       minLength: 1,
     },
   });
+  const nutritionPopupState = usePopupState({
+    popupId: "show-nutrition-facts-popup",
+    variant: "popper",
+  });
+  const macroGoals = useAtomValue(macroGoalsAtom);
 
   return (
-    <Table>
-      <TableBody>
-        {fields.map((arrayField, index) => (
-          <FoodRow
-            key={arrayField.id}
-            index={index}
-            onClickRemove={() => remove(index)}
-          />
-        ))}
-      </TableBody>
-      <TableFooter>
-        <TableRow>
-          <TableCell colSpan={3}>
-            <AddFoodPicker
-              addFood={(food) =>
-                append({
-                  ...food,
-                  amount: food.defaultServingSize ?? 1,
-                  unit: food.defaultUnit ?? food.unit,
-                })
-              }
+    <>
+      <NutritionPopover macroGoals={macroGoals} popupState={nutritionPopupState} placement="top" />
+      <Table>
+        <TableBody>
+          {fields.map((arrayField, index) => (
+            <FoodRow
+              key={arrayField.id}
+              index={index}
+              popupState={nutritionPopupState}
+              onClickRemove={() => remove(index)}
             />
-          </TableCell>
-        </TableRow>
-      </TableFooter>
-    </Table>
+          ))}
+        </TableBody>
+        <TableFooter>
+          <TableRow>
+            <TableCell colSpan={3}>
+              <AddFoodPicker
+                addFood={(food) =>
+                  append({
+                    ...food,
+                    amount: food.defaultServingSize ?? 1,
+                    unit: food.defaultUnit ?? food.unit,
+                  })
+                }
+              />
+            </TableCell>
+          </TableRow>
+        </TableFooter>
+      </Table>
+    </>
   );
 }
 

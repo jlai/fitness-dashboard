@@ -1,11 +1,13 @@
 "use client";
 
 import { Button, Typography } from "@mui/material";
-import { useState, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { DataGrid, GridColDef } from "@mui/x-data-grid";
+import { DataGrid, GridColDef, GridRowParams } from "@mui/x-data-grid";
 import { toast } from "mui-sonner";
 import { useConfirm } from "material-ui-confirm";
+import { usePopupState } from "material-ui-popup-state/hooks";
+import { useAtomValue } from "jotai/index";
 
 import { buildFavoriteFoodsQuery, Food } from "@/api/nutrition";
 import SearchFoods from "@/components/nutrition/food/food-search";
@@ -15,22 +17,13 @@ import {
 } from "@/api/nutrition/foods";
 import { FooterActionBar } from "@/components/layout/rows";
 import { FormRow } from "@/components/forms/form-row";
-
-const favoriteFoodsColumns: Array<GridColDef<Food>> = [
-  { field: "name", headerName: "Food", flex: 2 },
-  { field: "brand", headerName: "Brand", flex: 1 },
-  {
-    field: "accessLevel",
-    headerName: "Type",
-    valueFormatter: (accessLevel) =>
-      accessLevel === "PRIVATE" ? "Custom" : "Public",
-  },
-];
+import NutritionPopover, { ShowLabelAction } from "@/components/nutrition/label/nutrition-popover";
+import { macroGoalsAtom } from "@/storage/settings";
 
 export default function ManageFavoriteFoods() {
   const confirm = useConfirm();
   const [selectedRows, setSelectedRows] = useState<Array<number>>([]);
-
+  const macroGoals = useAtomValue(macroGoalsAtom);
   const queryClient = useQueryClient();
   const { data: favoriteFoods } = useQuery(buildFavoriteFoodsQuery());
 
@@ -41,6 +34,32 @@ export default function ManageFavoriteFoods() {
   const { mutateAsync: deleteFavoriteFoodIds } = useMutation(
     buildDeleteFavoritesFoodMutation(queryClient)
   );
+
+  const popupState = usePopupState({
+    popupId: "show-nutrition-facts-popup",
+    variant: "popper",
+  });
+
+  const favoriteFoodsColumns: Array<GridColDef<Food>> = [
+    { field: "name", headerName: "Food", flex: 2 },
+    { field: "brand", headerName: "Brand", flex: 1 },
+    {
+      field: "accessLevel",
+      headerName: "Type",
+      valueFormatter: (accessLevel) =>
+        accessLevel === "PRIVATE" ? "Custom" : "Public",
+    },
+    {
+      field: "actions",
+      type: "actions",
+      headerName: "Actions",
+      width: 100,
+      getActions: ({ id, row: food }: GridRowParams<Food>) => [
+        ...(food.accessLevel === "PRIVATE"
+          ? [ <ShowLabelAction popupState={popupState} key={id} food={food} />, ] : []),
+      ],
+    },
+  ];
 
   const handleAddFavoriteFood = useCallback(
     (food: Food) => {
@@ -70,6 +89,7 @@ export default function ManageFavoriteFoods() {
       <div className="m-4">
         <AddFoodPicker addFood={handleAddFavoriteFood} />
       </div>
+      <NutritionPopover macroGoals={macroGoals} popupState={popupState} offset={[0, 15]} />
       <DataGrid<Food>
         className="w-full"
         loading={!favoriteFoods}
