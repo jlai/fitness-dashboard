@@ -55,7 +55,7 @@
     "material-ui-confirm": "^3.0.16",
     "material-ui-popup-state": "^5.1.2",
     "mui-sonner": "^1.0.0",
-    "next": "14.2.4",
+    "next": "14.2.12",
     "p-queue": "^8.0.1",
     "patch-package": "^8.0.0",
     "react": "^18",
