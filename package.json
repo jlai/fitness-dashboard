@@ -101,6 +101,9 @@
     "whatwg-fetch": "^3.6.20"
   },
   "lint-staged": {
-    "*.ts": "eslint"
+    "*.(ts|tsx)": [
+      "eslint",
+      "prettier --write"
+    ]
   }
 }
