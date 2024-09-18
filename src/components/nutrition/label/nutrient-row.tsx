@@ -1,23 +1,22 @@
-import {styled, Box, Typography} from "@mui/material"
+import { styled, Box, Typography } from "@mui/material";
 
-import {formatValue} from "@/utils/food-amounts";
+import { formatValue } from "@/utils/food-amounts";
 
-import SeparatorBar from './separator-bar'
+import SeparatorBar from "./separator-bar";
 
 type RowContainerProps = {
   indent?: string;
-}
+};
 
 const RowContainer = styled(Box)<RowContainerProps>(({ indent }) => ({
   marginLeft: indent || 0,
   marginTop: 0,
-  padding: 0
+  padding: 0,
 }));
-
 
 const TextContainer = styled(Box)(() => ({
   lineHeight: "0.667rem",
-  paddingBottom: "3px"
+  paddingBottom: "3px",
 }));
 
 const PercentDailyValueText = styled(Typography)(() => ({
@@ -32,9 +31,19 @@ const NutrientText = styled(Typography)(() => ({
   marginLeft: "3px",
 }));
 
-const NutrientRowSeparatorBarHeight = '0.02rem';
+const NutrientRowSeparatorBarHeight = "0.02rem";
 
-function NutrientRow({ label, value, hideBar, color, boldLabel, indent, unit, recommended, digits }: {
+function NutrientRow({
+  label,
+  value,
+  hideBar,
+  color,
+  boldLabel,
+  indent,
+  unit,
+  recommended,
+  digits,
+}: {
   label: string;
   value: number;
   hideBar?: boolean;
@@ -47,26 +56,26 @@ function NutrientRow({ label, value, hideBar, color, boldLabel, indent, unit, re
 }) {
   return (
     <RowContainer indent={indent}>
-      {hideBar ? null : <SeparatorBar
-        height={NutrientRowSeparatorBarHeight}
-        color={color}
-      />}
+      {hideBar ? null : (
+        <SeparatorBar height={NutrientRowSeparatorBarHeight} color={color} />
+      )}
       <TextContainer className="flex flex-row">
-        <NutrientText className={`${boldLabel ? "font-extrabold" : "font-normal"}`}>
+        <NutrientText
+          className={`${boldLabel ? "font-extrabold" : "font-normal"}`}
+        >
           {label}
         </NutrientText>
         <NutrientText>
           {formatValue(value, digits)} {unit}
         </NutrientText>
-        <PercentDailyValueText className="text-right">{
-          (recommended && recommended > 0 && value > 0) ?
-          `${formatValue(value * 100 / recommended, digits)}%` : "-"
-        }
+        <PercentDailyValueText className="text-right">
+          {recommended && recommended > 0 && value > 0
+            ? `${formatValue((value * 100) / recommended, digits)}%`
+            : "-"}
         </PercentDailyValueText>
       </TextContainer>
-
     </RowContainer>
-  )
+  );
 }
 
 export default NutrientRow;

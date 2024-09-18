@@ -20,7 +20,7 @@ import {
   InputAdornment,
   Typography,
 } from "@mui/material";
-import {atom, useAtom, useAtomValue} from "jotai";
+import { atom, useAtom, useAtomValue } from "jotai";
 import { ArrowDownward } from "@mui/icons-material";
 import { toast } from "mui-sonner";
 
@@ -182,21 +182,25 @@ export function CustomFoodFields() {
                     <InputAdornment position="end">{unit}</InputAdornment>
                   ),
                 }}
-                sx = {{ maxWidth: "45%" }}
+                sx={{ maxWidth: "45%" }}
               />
             ))}
           </FormRow>
-          {(showNutritionLabel && (
+          {showNutritionLabel && (
             <div>
               <Box marginBottom={2} />
               <NutritionLabel
                 width={"50%"}
                 servingText={servingText}
                 nutritionValues={nutritionValues}
-                recommendedValues={ useNutritionGoalsForLabel ? macroGoals : DEFAULT_FDA_MACRO_GOALS }
+                recommendedValues={
+                  useNutritionGoalsForLabel
+                    ? macroGoals
+                    : DEFAULT_FDA_MACRO_GOALS
+                }
               />
             </div>
-          ))}
+          )}
         </AccordionDetails>
       </Accordion>
     </FormRows>
@@ -286,14 +290,19 @@ export default function CreateCustomFoodDialog() {
       open={!!customFoodId}
       onClose={() => setCustomFoodId(null)}
     >
-      <FormContainer formContext={formContext} handleSubmit={handleSubmit(save)}>
+      <FormContainer
+        formContext={formContext}
+        handleSubmit={handleSubmit(save)}
+      >
         <DialogTitle>Create custom food</DialogTitle>
         <DialogContent>
           <CustomFoodFields />
           <Box marginBottom={4} />
           <DialogActions>
             <Button onClick={() => setCustomFoodId(null)}>Cancel</Button>
-            <Button type="submit" disabled={isSubmitting || isLoading}>Save</Button>
+            <Button type="submit" disabled={isSubmitting || isLoading}>
+              Save
+            </Button>
           </DialogActions>
         </DialogContent>
       </FormContainer>

@@ -17,7 +17,9 @@ import {
 } from "@/api/nutrition/foods";
 import { FooterActionBar } from "@/components/layout/rows";
 import { FormRow } from "@/components/forms/form-row";
-import NutritionPopover, { ShowLabelAction } from "@/components/nutrition/label/nutrition-popover";
+import NutritionPopover, {
+  ShowLabelAction,
+} from "@/components/nutrition/label/nutrition-popover";
 import { macroGoalsAtom } from "@/storage/settings";
 
 export default function ManageFavoriteFoods() {
@@ -56,7 +58,8 @@ export default function ManageFavoriteFoods() {
       width: 100,
       getActions: ({ id, row: food }: GridRowParams<Food>) => [
         ...(food.accessLevel === "PRIVATE"
-          ? [ <ShowLabelAction popupState={popupState} key={id} food={food} />, ] : []),
+          ? [<ShowLabelAction popupState={popupState} key={id} food={food} />]
+          : []),
       ],
     },
   ];
@@ -89,7 +92,11 @@ export default function ManageFavoriteFoods() {
       <div className="m-4">
         <AddFoodPicker addFood={handleAddFavoriteFood} />
       </div>
-      <NutritionPopover macroGoals={macroGoals} popupState={popupState} offset={[0, 15]} />
+      <NutritionPopover
+        macroGoals={macroGoals}
+        popupState={popupState}
+        offset={[0, 15]}
+      />
       <DataGrid<Food>
         className="w-full"
         loading={!favoriteFoods}

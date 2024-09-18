@@ -30,7 +30,7 @@ interface CopyFoodLogsFormData {
 
 export function CopyFoodLogsDialog() {
   const [open, setOpen] = useAtom(copyDialogOpenAtom);
-  const [ selectedDay, setSelectedDay ] = useAtom(selectedDayForPageAtom);
+  const [selectedDay, setSelectedDay] = useAtom(selectedDayForPageAtom);
   const queryClient = useQueryClient();
   const [selectedFoodLogs, setSelectedFoodLogs] = useAtom(selectedFoodLogsAtom);
 
@@ -53,21 +53,26 @@ export function CopyFoodLogsDialog() {
       }))
     ).then(() => {
       toast.success("Copied food logs", {
-        action: !values.day.isSame(selectedDay, 'day') ? {
-          label: <>Go to {getLabel(values.day)}</>,
-          onClick: () => setSelectedDay(values.day)
-        } : undefined
+        action: !values.day.isSame(selectedDay, "day")
+          ? {
+              label: <>Go to {getLabel(values.day)}</>,
+              onClick: () => setSelectedDay(values.day),
+            }
+          : undefined,
       });
       setSelectedFoodLogs(Immutable.Set());
       setOpen(false);
     });
-  }
+  };
 
   return (
     <Dialog open={open} onClose={() => setOpen(false)}>
       <FormContainer
         onSuccess={onSubmit}
-        defaultValues={{ day: dayjs().startOf('day'), mealType: MealType.Anytime }}
+        defaultValues={{
+          day: dayjs().startOf("day"),
+          mealType: MealType.Anytime,
+        }}
       >
         <DialogTitle>Copy selected foods</DialogTitle>
         <DialogContent>

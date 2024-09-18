@@ -22,7 +22,9 @@ import CreateCustomFoodDialog, {
   NEW_CUSTOM_FOOD,
 } from "@/components/nutrition/food/custom-food";
 import { buildDeleteCustomFoodsMutation } from "@/api/nutrition/foods";
-import NutritionPopover, { ShowLabelAction } from "@/components/nutrition/label/nutrition-popover";
+import NutritionPopover, {
+  ShowLabelAction,
+} from "@/components/nutrition/label/nutrition-popover";
 import { macroGoalsAtom } from "@/storage/settings";
 
 function EditAction({ food }: { food: Food }) {
@@ -72,9 +74,9 @@ export default function ManageCustomFoods() {
       getActions: ({ id, row: food }: GridRowParams<Food>) => [
         ...(food.accessLevel === "PRIVATE"
           ? [
-            <ShowLabelAction popupState={popupState} key={id} food={food} />,
-            <EditAction key={id} food={food} />,
-          ]
+              <ShowLabelAction popupState={popupState} key={id} food={food} />,
+              <EditAction key={id} food={food} />,
+            ]
           : []),
       ],
     },
@@ -100,7 +102,11 @@ export default function ManageCustomFoods() {
           Create custom food
         </Button>
       </HeaderBar>
-      <NutritionPopover macroGoals={macroGoals} popupState={popupState} offset={[0, 15]} />
+      <NutritionPopover
+        macroGoals={macroGoals}
+        popupState={popupState}
+        offset={[0, 15]}
+      />
       <CreateCustomFoodDialog />
       <DataGrid<Food>
         className="w-full"

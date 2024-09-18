@@ -163,9 +163,7 @@ function FoodSettings() {
   const [showCopyIndividualButton, setShowCopyIndividualButton] = useAtom(
     foodLogShowCopyIndividualButtonAtom
   );
-  const [goalsPosition, setGoalsPosition] = useAtom(
-      foodLogGoalsPositionAtom
-  );
+  const [goalsPosition, setGoalsPosition] = useAtom(foodLogGoalsPositionAtom);
 
   return (
     <>
@@ -205,7 +203,8 @@ function FoodSettings() {
           />
         }
       >
-        Show the nutrition facts label in the custom food edition dialog details.
+        Show the nutrition facts label in the custom food edition dialog
+        details.
       </SettingsRow>
       <SettingsRow
         title="Use nutrition goals for nutrition labels"
@@ -213,11 +212,14 @@ function FoodSettings() {
           <Switch
             disabled={!showNutritionLabel}
             checked={useNutritionGoalsForLabel}
-            onChange={(_event, checked) => setUseNutritionGoalsForLabel(checked)}
+            onChange={(_event, checked) =>
+              setUseNutritionGoalsForLabel(checked)
+            }
           />
         }
       >
-        Use nutrition goals for nutrition labels when calculating the % of daily values.
+        Use nutrition goals for nutrition labels when calculating the % of daily
+        values.
       </SettingsRow>
       <SettingsRow
         title="Show copy to clipboard button for individual values"
@@ -238,7 +240,7 @@ function MacroGoals() {
   const setMacroGoal = (key: keyof NutritionalValues, value: number) => {
     setMacroGoals({
       ...macroGoals,
-      [key]: value
+      [key]: value,
     });
   };
 
@@ -249,7 +251,9 @@ function MacroGoals() {
         title="Calories"
         action={
           <TextField
-            onChange={(event) => setMacroGoal("calories", parseInt(event.target.value))}
+            onChange={(event) =>
+              setMacroGoal("calories", parseInt(event.target.value))
+            }
             value={macroGoals.calories}
             name="calories-goal"
             type="number"
@@ -265,14 +269,14 @@ function MacroGoals() {
         title="Carbohydrates"
         action={
           <TextField
-            onChange={(event) => setMacroGoal("carbs", parseInt(event.target.value))}
+            onChange={(event) =>
+              setMacroGoal("carbs", parseInt(event.target.value))
+            }
             value={macroGoals.carbs}
             name="carbs-goal"
             type="number"
             InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">g</InputAdornment>
-              ),
+              endAdornment: <InputAdornment position="end">g</InputAdornment>,
             }}
           />
         }
@@ -281,14 +285,14 @@ function MacroGoals() {
         title="Fat"
         action={
           <TextField
-            onChange={(event) => setMacroGoal("fat", parseInt(event.target.value))}
+            onChange={(event) =>
+              setMacroGoal("fat", parseInt(event.target.value))
+            }
             value={macroGoals.fat}
             name="fat-goal"
             type="number"
             InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">g</InputAdornment>
-              ),
+              endAdornment: <InputAdornment position="end">g</InputAdornment>,
             }}
           />
         }
@@ -297,14 +301,14 @@ function MacroGoals() {
         title="Fibers"
         action={
           <TextField
-            onChange={(event) => setMacroGoal("fiber", parseInt(event.target.value))}
+            onChange={(event) =>
+              setMacroGoal("fiber", parseInt(event.target.value))
+            }
             value={macroGoals.fiber}
             name="fibers-goal"
             type="number"
             InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">g</InputAdornment>
-              ),
+              endAdornment: <InputAdornment position="end">g</InputAdornment>,
             }}
           />
         }
@@ -313,14 +317,14 @@ function MacroGoals() {
         title="Protein"
         action={
           <TextField
-            onChange={(event) => setMacroGoal("protein", parseInt(event.target.value))}
+            onChange={(event) =>
+              setMacroGoal("protein", parseInt(event.target.value))
+            }
             value={macroGoals.protein}
             name="protein-goal"
             type="number"
             InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">g</InputAdornment>
-              ),
+              endAdornment: <InputAdornment position="end">g</InputAdornment>,
             }}
           />
         }
@@ -329,14 +333,14 @@ function MacroGoals() {
         title="Sodium"
         action={
           <TextField
-            onChange={(event) => setMacroGoal("sodium", parseInt(event.target.value))}
+            onChange={(event) =>
+              setMacroGoal("sodium", parseInt(event.target.value))
+            }
             value={macroGoals.sodium}
             name="sodium-goal"
             type="number"
             InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">mg</InputAdornment>
-              ),
+              endAdornment: <InputAdornment position="end">mg</InputAdornment>,
             }}
           />
         }

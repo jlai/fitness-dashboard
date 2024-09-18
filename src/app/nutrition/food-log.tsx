@@ -41,7 +41,10 @@ import {
   buildFavoriteFoodsQuery,
   buildFoodLogQuery,
 } from "@/api/nutrition";
-import { foodLogTotalsPositionAtom, foodLogGoalsPositionAtom } from "@/storage/settings";
+import {
+  foodLogTotalsPositionAtom,
+  foodLogGoalsPositionAtom,
+} from "@/storage/settings";
 import { FormActionRow } from "@/components/forms/form-row";
 import {
   buildAddFavoriteFoodsMutation,
@@ -157,8 +160,9 @@ export default function FoodLog({ day }: { day: Dayjs }) {
             <FoodLogTableHeaderRows />
           </TableHead>
           <TableBody>
-            {(foodLogGoalsPosition === "top" || foodLogGoalsPosition === "both") && (
-                <NutritionGoalsSummary totals={foodLogsResponse.summary} />
+            {(foodLogGoalsPosition === "top" ||
+              foodLogGoalsPosition === "both") && (
+              <NutritionGoalsSummary totals={foodLogsResponse.summary} />
             )}
             {foodLogTotalsPosition !== "bottom" && (
               <TotalsRow foodLogsResponse={foodLogsResponse} />
@@ -173,8 +177,9 @@ export default function FoodLog({ day }: { day: Dayjs }) {
             {foodLogTotalsPosition !== "top" && (
               <TotalsRow foodLogsResponse={foodLogsResponse} />
             )}
-            {(foodLogGoalsPosition === "bottom" || foodLogGoalsPosition === "both") && (
-                <NutritionGoalsSummary totals={foodLogsResponse.summary} />
+            {(foodLogGoalsPosition === "bottom" ||
+              foodLogGoalsPosition === "both") && (
+              <NutritionGoalsSummary totals={foodLogsResponse.summary} />
             )}
           </TableBody>
         </Table>

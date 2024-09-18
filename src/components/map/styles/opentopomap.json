@@ -1,29 +1,29 @@
 {
-    "version": 8,
-    "sources": {
-        "opentopomap": {
-            "attribution": "OpenTopoMap (CC-BY-SA) © <a href=\"https://openstreetmap.org\">OpenStreetMap</a>",
-            "type": "raster",
-            "tiles": [
-                "https://a.tile.opentopomap.org/{z}/{x}/{y}.png",
-                "https://b.tile.opentopomap.org/{z}/{x}/{y}.png",
-                "https://c.tile.opentopomap.org/{z}/{x}/{y}.png"
-            ],
-            "maxzoom": 15
-        }
+  "version": 8,
+  "sources": {
+    "opentopomap": {
+      "attribution": "OpenTopoMap (CC-BY-SA) © <a href=\"https://openstreetmap.org\">OpenStreetMap</a>",
+      "type": "raster",
+      "tiles": [
+        "https://a.tile.opentopomap.org/{z}/{x}/{y}.png",
+        "https://b.tile.opentopomap.org/{z}/{x}/{y}.png",
+        "https://c.tile.opentopomap.org/{z}/{x}/{y}.png"
+      ],
+      "maxzoom": 15
+    }
+  },
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "paint": {
+        "background-color": "#cccccc"
+      }
     },
-    "layers": [
-        {
-            "id": "background",
-            "type": "background",
-            "paint": {
-                "background-color": "#cccccc"
-            }
-        },
-        {
-            "id": "topography",
-            "type": "raster",
-            "source": "opentopomap"
-        }
-    ]
+    {
+      "id": "topography",
+      "type": "raster",
+      "source": "opentopomap"
+    }
+  ]
 }

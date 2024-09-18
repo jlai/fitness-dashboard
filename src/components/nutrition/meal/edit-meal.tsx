@@ -34,7 +34,9 @@ import {
   buildUpdateMealMutation,
 } from "@/api/nutrition";
 import { formatFoodName } from "@/utils/other-formats";
-import NutritionPopover, { nutritionPopoverFoodAtom } from "@/components/nutrition/label/nutrition-popover";
+import NutritionPopover, {
+  nutritionPopoverFoodAtom,
+} from "@/components/nutrition/label/nutrition-popover";
 import { macroGoalsAtom } from "@/storage/settings";
 
 import SearchFoods from "../food/food-search";
@@ -194,13 +196,13 @@ export function EditMeal({
 }
 
 function FoodRow({
- index,
- onClickRemove,
- popupState
+  index,
+  onClickRemove,
+  popupState,
 }: {
-  index: number,
-  onClickRemove: () => void,
-  popupState: PopupState
+  index: number;
+  onClickRemove: () => void;
+  popupState: PopupState;
 }) {
   const setFood = useSetAtom(nutritionPopoverFoodAtom);
 
@@ -225,15 +227,21 @@ function FoodRow({
             />
           </TableCell>
           <TableCell className="w-1/12">
-            <Toolbar className="min-h-6 p-0" sx={{margin: "0 0 0 auto"}}>
-              {(food.accessLevel == "PRIVATE") ?
-                <IconButton title={"Nutrition facts"}
+            <Toolbar className="min-h-6 p-0" sx={{ margin: "0 0 0 auto" }}>
+              {food.accessLevel == "PRIVATE" ? (
+                <IconButton
+                  title={"Nutrition facts"}
                   onClick={(event) => {
                     setFood({
                       // display the info for the default serving if CTRL or ALT is pressed
-                      foodLog: event.ctrlKey || event.altKey ? null : {
-                        loggedFood: food, logId: -1, logDate: ""
-                      },
+                      foodLog:
+                        event.ctrlKey || event.altKey
+                          ? null
+                          : {
+                              loggedFood: food,
+                              logId: -1,
+                              logDate: "",
+                            },
                       foodId: food.foodId,
                     });
 
@@ -243,11 +251,12 @@ function FoodRow({
                   }}
                 >
                   <ArticleOutlined />
-                </IconButton> :
+                </IconButton>
+              ) : (
                 <IconButton title="No data (public food)">
                   <ArticleOutlined className="opacity-30" />
                 </IconButton>
-              }
+              )}
               <IconButton onClick={onClickRemove}>
                 <DeleteIcon />
               </IconButton>
@@ -274,7 +283,11 @@ function EditFoodList() {
 
   return (
     <>
-      <NutritionPopover macroGoals={macroGoals} popupState={nutritionPopupState} placement="top" />
+      <NutritionPopover
+        macroGoals={macroGoals}
+        popupState={nutritionPopupState}
+        placement="top"
+      />
       <Table>
         <TableBody>
           {fields.map((arrayField, index) => (

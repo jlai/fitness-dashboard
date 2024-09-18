@@ -6,13 +6,16 @@ import {
   Typography,
   Popper,
   Chip,
-  styled, Toolbar, IconButton, Box,
+  styled,
+  Toolbar,
+  IconButton,
+  Box,
 } from "@mui/material";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { useAtomValue, useSetAtom } from "jotai";
 import { usePopupState, bindPopper } from "material-ui-popup-state/hooks";
 import React, { useCallback, ChangeEvent, MouseEvent } from "react";
-import {ArticleOutlined, EditOutlined as EditIcon} from "@mui/icons-material";
+import { ArticleOutlined, EditOutlined as EditIcon } from "@mui/icons-material";
 
 import { formatFoodName } from "@/utils/other-formats";
 import { FRACTION_DIGITS_1 } from "@/utils/number-formats";
@@ -28,7 +31,9 @@ import {
   foodLogGoalsPositionAtom,
   macroGoalsAtom,
 } from "@/storage/settings";
-import NutritionPopover, {nutritionPopoverFoodAtom} from "@/components/nutrition/label/nutrition-popover";
+import NutritionPopover, {
+  nutritionPopoverFoodAtom,
+} from "@/components/nutrition/label/nutrition-popover";
 
 import { selectedFoodLogsAtom, updateSelectedFoodLogAtom } from "../atoms";
 import { MealTypeSummary } from "../summarize-day";
@@ -111,7 +116,7 @@ function FoodLogRow({ foodLog }: { foodLog: FoodLogEntry }) {
   const selectedFoodLogs = useAtomValue(selectedFoodLogsAtom);
   const updateSelectedFoodLog = useSetAtom(updateSelectedFoodLogAtom);
   const setFood = useSetAtom(nutritionPopoverFoodAtom);
-  const macroGoals = useAtomValue(macroGoalsAtom);  
+  const macroGoals = useAtomValue(macroGoalsAtom);
   const nutritionPopupState = usePopupState({
     popupId: "show-nutrition-facts-popup",
     variant: "popper",
@@ -156,12 +161,19 @@ function FoodLogRow({ foodLog }: { foodLog: FoodLogEntry }) {
             {amount} {amount === 1 ? unit?.name : unit?.plural}
           </Typography>
           <Toolbar className="invisible group-hover:visible p-1 max-h-3 min-h-2">
-            <IconButton size="small" className="text-slate-500" title="Edit serving"
-                        onClick={editPopupState.open}>
+            <IconButton
+              size="small"
+              className="text-slate-500"
+              title="Edit serving"
+              onClick={editPopupState.open}
+            >
               <EditIcon />
             </IconButton>
-            <IconButton size="small" className="text-slate-500" title="Nutrition facts"
-              onClick={ (event) => {
+            <IconButton
+              size="small"
+              className="text-slate-500"
+              title="Nutrition facts"
+              onClick={(event) => {
                 setFood({
                   // display the info for the default serving if CTRL or ALT is pressed
                   foodLog: event.ctrlKey || event.altKey ? null : foodLog,
@@ -170,15 +182,23 @@ function FoodLogRow({ foodLog }: { foodLog: FoodLogEntry }) {
                 if (!nutritionPopupState.isOpen) {
                   nutritionPopupState.open(event);
                 }
-              }
-            }>
+              }}
+            >
               <ArticleOutlined />
             </IconButton>
           </Toolbar>
         </Box>
-        <NutritionPopover macroGoals={macroGoals} popupState={nutritionPopupState} placement="top" offset={[0, 5]} />
+        <NutritionPopover
+          macroGoals={macroGoals}
+          popupState={nutritionPopupState}
+          placement="top"
+          offset={[0, 5]}
+        />
         <Popper {...bindPopper(editPopupState)}>
-          <EditServingSize foodLog={foodLog} closePopover={editPopupState.close} />
+          <EditServingSize
+            foodLog={foodLog}
+            closePopover={editPopupState.close}
+          />
         </Popper>
       </TableCell>
       <TableCell className="text-end">
@@ -291,23 +311,41 @@ export function TotalsRow({
   return <MealTypeRows summary={summary} />;
 }
 
-export function RemainingMacrosRows({values, label}: { values: NutritionMacroGoals, label: string }) {
+export function RemainingMacrosRows({
+  values,
+  label,
+}: {
+  values: NutritionMacroGoals;
+  label: string;
+}) {
   return (
     <>
       <TableRow className="bg-slate-50 dark:bg-slate-900">
-        <TableCell colSpan={2} className="font-medium" sx={{paddingLeft: "43px"}}>
+        <TableCell
+          colSpan={2}
+          className="font-medium"
+          sx={{ paddingLeft: "43px" }}
+        >
           <div className="flex flex-row items-center">
             <Typography>{label}</Typography>
           </div>
         </TableCell>
         <TableCell className="text-end">
-          <FlatChip size="small" icon={<ContentCopyIcon/>} onClick={copyTextToClipboard}
-                    label={NUTRIENT_FORMAT.format(values.calories)}/>
+          <FlatChip
+            size="small"
+            icon={<ContentCopyIcon />}
+            onClick={copyTextToClipboard}
+            label={NUTRIENT_FORMAT.format(values.calories)}
+          />
         </TableCell>
         {NUTRIENT_PROPS.map((prop) => (
           <TableCell key={prop} className="text-end">
-            <FlatChip size="small" icon={<ContentCopyIcon/>} onClick={copyTextToClipboard}
-                      label={formatNutrientPropValue(values, prop)}/>
+            <FlatChip
+              size="small"
+              icon={<ContentCopyIcon />}
+              onClick={copyTextToClipboard}
+              label={formatNutrientPropValue(values, prop)}
+            />
           </TableCell>
         ))}
       </TableRow>
@@ -315,14 +353,18 @@ export function RemainingMacrosRows({values, label}: { values: NutritionMacroGoa
   );
 }
 
-export function NutritionGoalsRow({values, label, unit}: {
-  values: NutritionMacroGoals,
-  label: string,
-  unit?: string
+export function NutritionGoalsRow({
+  values,
+  label,
+  unit,
+}: {
+  values: NutritionMacroGoals;
+  label: string;
+  unit?: string;
 }) {
   return (
     <TableRow>
-      <TableCell colSpan={2} sx={{paddingLeft: "43px"}}>
+      <TableCell colSpan={2} sx={{ paddingLeft: "43px" }}>
         <div className="flex flex-row items-center">
           <Typography>{label}</Typography>
         </div>
@@ -339,7 +381,7 @@ export function NutritionGoalsRow({values, label, unit}: {
   );
 }
 
-export function NutritionGoalsSummary({totals}: { totals: FoodLogSummary }) {
+export function NutritionGoalsSummary({ totals }: { totals: FoodLogSummary }) {
   const foodLogGoalsPosition = useAtomValue(foodLogGoalsPositionAtom);
   const foodLogTotalsPosition = useAtomValue(foodLogTotalsPositionAtom);
   const macroGoals = useAtomValue(macroGoalsAtom);
@@ -351,26 +393,33 @@ export function NutritionGoalsSummary({totals}: { totals: FoodLogSummary }) {
     fiber: macroGoals.fiber - totals.fiber,
     protein: macroGoals.protein - totals.protein,
     sodium: macroGoals.sodium - totals.sodium,
-  }
+  };
   const macrosPercentages = {
-    calories: totals.calories * 100 / macroGoals.calories,
-    carbs: totals.carbs * 100 / macroGoals.carbs,
-    fat: totals.fat * 100 / macroGoals.fat,
-    fiber: totals.fiber * 100 / macroGoals.fiber,
-    protein: totals.protein * 100 / macroGoals.protein,
-    sodium: totals.sodium * 100 / macroGoals.sodium,
+    calories: (totals.calories * 100) / macroGoals.calories,
+    carbs: (totals.carbs * 100) / macroGoals.carbs,
+    fat: (totals.fat * 100) / macroGoals.fat,
+    fiber: (totals.fiber * 100) / macroGoals.fiber,
+    protein: (totals.protein * 100) / macroGoals.protein,
+    sodium: (totals.sodium * 100) / macroGoals.sodium,
   };
 
   return (
     <>
-      <RemainingMacrosRows values={remainingMacros} label="Remaining"/>
-      <NutritionGoalsRow values={macrosPercentages} label="Nutrition goals (%)" unit="%"/>
-      <NutritionGoalsRow values={macroGoals} label="Nutrition goals"/>
-      {(
+      <RemainingMacrosRows values={remainingMacros} label="Remaining" />
+      <NutritionGoalsRow
+        values={macrosPercentages}
+        label="Nutrition goals (%)"
+        unit="%"
+      />
+      <NutritionGoalsRow values={macroGoals} label="Nutrition goals" />
+      {
         // don't repeat the total line if the settings are set to display it in the same position
-        (foodLogGoalsPosition != foodLogTotalsPosition && foodLogTotalsPosition != "both" && foodLogGoalsPosition != "both")
-        && <NutritionGoalsRow values={totals} label="Total"/>
-      )}
+        foodLogGoalsPosition != foodLogTotalsPosition &&
+          foodLogTotalsPosition != "both" &&
+          foodLogGoalsPosition != "both" && (
+            <NutritionGoalsRow values={totals} label="Total" />
+          )
+      }
     </>
   );
 }

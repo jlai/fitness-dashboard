@@ -52,7 +52,7 @@ export function CreateFoodLogForm() {
   const linkedDay = useAtomValue(selectedDayForPageAtom);
 
   const logFood = async (values: CreateFoodLogFormData) => {
-    const {food, servingSize, mealType, daySource} = values;
+    const { food, servingSize, mealType, daySource } = values;
 
     if (!food || !servingSize || isSubmitting) {
       return;
@@ -75,7 +75,7 @@ export function CreateFoodLogForm() {
         daySource,
       });
     });
-  }
+  };
 
   return (
     <FormContainer<CreateFoodLogFormData>
@@ -96,7 +96,12 @@ export function CreateFoodLogForm() {
           <div className="flex-1"></div>
           <Button
             type="submit"
-            disabled={!watch("food") || !watch("servingSize") || isLoading || isSubmitting}
+            disabled={
+              !watch("food") ||
+              !watch("servingSize") ||
+              isLoading ||
+              isSubmitting
+            }
           >
             Log food
           </Button>
