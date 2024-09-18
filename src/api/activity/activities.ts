@@ -77,9 +77,8 @@ export function buildCreateActivityLogMutation(queryClient: QueryClient) {
       params.set("startTime", startTime.format("HH:mm"));
       params.set("durationMillis", `${durationMinutes * 60 * 1000}`);
 
-      if (manualCalories) {
-        params.set("manualCalories", `${newActivityLog.manualCalories}`);
-      }
+      // Currently required, 0 for unknown
+      params.set("manualCalories", `${newActivityLog.manualCalories ?? 0}`);
 
       if ((distance || distance === 0) && distanceUnit) {
         params.set("distance", `${distance}`);
