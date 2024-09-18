@@ -32,6 +32,7 @@ import {
   ACTIVITY_TYPES_WITH_STEPS,
   SWIMMING_ACTIVITY_TYPE,
 } from "@/config/common-ids";
+import { isBeforeToday } from "@/utils/date-utils";
 
 import { DividedStack } from "../layout/flex";
 
@@ -146,7 +147,7 @@ function CreateActivityLog({ onSaveSuccess }: { onSaveSuccess?: () => void }) {
           <TimePickerElement
             name="startTime"
             label="Time"
-            disableFuture
+            disableFuture={!isBeforeToday(dayjs(watch("startTime")))}
             rules={{ validate: { startTime: validateStartTime } }}
           />
           <TextFieldElement
