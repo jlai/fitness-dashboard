@@ -35,6 +35,7 @@ const ADVANCED_SCOPES = [
   "oxygen_saturation",
   "respiratory_rate",
   "temperature",
+  "cardio_fitness",
 ];
 
 const FITBIT_TOKEN_STORAGE_KEY = "auth:fitbit-token";

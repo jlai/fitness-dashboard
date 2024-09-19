@@ -85,17 +85,23 @@ type NumberFormatter = (value: number) => string;
 interface YAxisOptions {
   tickFormat?: NumberFormatter;
   tooltipFormat?: NumberFormatter;
+  min?: number;
+  max?: number;
 }
 
 function getYAxisConfig({
   tickFormat,
   tooltipFormat,
+  min,
+  max,
 }: YAxisOptions): Array<EitherAxisConfig> {
   return [
     {
       id: "y",
       scaleType: "linear",
       valueFormatter: makeAxisValueFormatter({ tickFormat, tooltipFormat }),
+      min,
+      max,
     },
   ];
 }

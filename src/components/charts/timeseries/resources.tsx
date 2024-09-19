@@ -26,6 +26,7 @@ import {
 import { BreathingRateChart } from "./advanced/breathing-rate";
 import { SkinTemperatureChart } from "./advanced/skin-temperature";
 import { Spo2Chart } from "./advanced/spo2";
+import { CardioFitnessChart } from "./advanced/cardio-fitness";
 
 export interface ChartResourceConfig {
   label: string;
@@ -137,6 +138,11 @@ export const CHART_RESOURCE_CONFIGS: Record<string, ChartResourceConfig> = {
     component: Spo2Chart,
     ...pick(TIME_SERIES_CONFIGS["spo2"], ["maxDays", "requiredScopes"]),
   },
+  "cardio-score": {
+    label: "Cardio score (VO2 Max)",
+    component: CardioFitnessChart,
+    ...pick(TIME_SERIES_CONFIGS["cardio-score"], ["maxDays", "requiredScopes"]),
+  },
 };
 
 export type ChartResource = keyof typeof CHART_RESOURCE_CONFIGS;
@@ -166,4 +172,5 @@ export const ADVANCED_CHART_RESOURCE_MENU_ITEMS: Array<ChartResource | "-"> = [
   "breathing-rate",
   "spo2",
   "skin-temperature",
+  "cardio-score",
 ];

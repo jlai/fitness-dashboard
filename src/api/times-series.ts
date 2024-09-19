@@ -2,6 +2,8 @@ import dayjs, { Dayjs } from "dayjs";
 import { queryOptions } from "@tanstack/react-query";
 import { groupBy, sumBy } from "es-toolkit";
 
+import { isAfterToday } from "@/utils/date-utils";
+
 import { formatAsDate } from "./datetime";
 import { makeRequest } from "./request";
 import { ONE_MINUTE_IN_MILLIS } from "./cache-settings";
@@ -53,6 +55,7 @@ interface TimeSeriesResourceConfig {
   requiredScopes: Array<string>;
   maxDays: number;
   extractData?: (responseBody: any) => Array<TimeSeriesEntry<any>>;
+  noFuture?: boolean;
 }
 
 export const TIME_SERIES_CONFIGS: Record<
@@ -170,6 +173,7 @@ export const TIME_SERIES_CONFIGS: Record<
     responseKey: "cardioScore",
     requiredScopes: ["cf"],
     maxDays: 31,
+    noFuture: true,
   },
   ["skin-temperature"]: {
     urlPrefix: "/1/user/-/temp/skin/date/",
@@ -193,14 +197,18 @@ export function buildTimeSeriesQuery<TEntry = TimeSeriesEntry<string>>(
   startDay: Dayjs,
   endDay: Dayjs
 ) {
+  const config = TIME_SERIES_CONFIGS[resource];
+
+  if (config.noFuture && isAfterToday(endDay)) {
+    endDay = dayjs();
+  }
+
   const startDate = formatAsDate(startDay);
   const endDate = formatAsDate(endDay);
 
   return queryOptions({
-    queryKey: ["timeseries", resource, startDay, endDay],
+    queryKey: ["timeseries", resource, startDate, endDate],
     queryFn: async () => {
-      const config = TIME_SERIES_CONFIGS[resource];
-
       const response = await makeRequest(
         `${config.urlPrefix}${startDate}/${endDate}.json`,
         {
