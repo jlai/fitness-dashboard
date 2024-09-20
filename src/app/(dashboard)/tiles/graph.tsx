@@ -15,14 +15,17 @@ import {
 } from "@mui/icons-material";
 import { bindPopover, usePopupState } from "material-ui-popup-state/hooks";
 import { useState } from "react";
+import { useAtomValue } from "jotai";
 
 import { TimeSeriesChart } from "@/components/charts/timeseries-graph";
 import {
+  ADVANCED_CHART_RESOURCE_MENU_ITEMS,
   CHART_RESOURCE_CONFIGS,
   CHART_RESOURCE_MENU_ITEMS,
   ChartResource,
 } from "@/components/charts/timeseries/resources";
 import { SHORT_WEEKDAY } from "@/utils/date-formats";
+import { enableAdvancedScopesAtom } from "@/storage/settings";
 
 import { useSelectedDay } from "../state";
 
@@ -42,6 +45,7 @@ export default function GraphTileContent() {
   const [resource, setResource] = useState<ChartResource>(
     settings.chartResource
   );
+  const enableAdvancedScopes = useAtomValue(enableAdvancedScopesAtom);
   const [statsEl, setStatsEl] = useState<HTMLElement | null>(null);
 
   const canFitGoals = w > 1 && h > 1;
@@ -70,6 +74,10 @@ export default function GraphTileContent() {
     });
     popupState.close();
   };
+
+  const resourceMenuItems = enableAdvancedScopes
+    ? [...CHART_RESOURCE_MENU_ITEMS, "-", ...ADVANCED_CHART_RESOURCE_MENU_ITEMS]
+    : CHART_RESOURCE_MENU_ITEMS;
 
   return (
     <div className="size-full max-h-full relative overflow-hidden p-2">
@@ -105,7 +113,7 @@ export default function GraphTileContent() {
                 </MenuItem>
               )}
               <Divider />
-              {CHART_RESOURCE_MENU_ITEMS.map((id, i) =>
+              {resourceMenuItems.map((id, i) =>
                 id === "-" ? (
                   <Divider key={i} />
                 ) : (
