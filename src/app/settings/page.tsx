@@ -28,6 +28,7 @@ import {
   redirectToLogin,
   revokeAuthorization,
   useLoggedIn,
+  userIdAtom,
 } from "@/api/auth";
 import {
   buildUserProfileQuery,
@@ -81,14 +82,22 @@ function SettingsRow({
 }
 
 function LoginInfo() {
+  const encodedId = useAtomValue(userIdAtom);
   const { data: userProfile } = useQuery({
     ...buildUserProfileQuery(),
     enabled: hasTokenScope("pro"),
   });
 
-  return (
-    userProfile && (
-      <>You&apos;re currently logged in as {userProfile.fullName}</>
+  return userProfile ? (
+    <>
+      You&apos;re currently logged in as {userProfile.fullName} (Fitbit ID{" "}
+      <code>{encodedId}</code>)
+    </>
+  ) : (
+    encodedId && (
+      <>
+        You&apos;re currently logged in as Fitbit ID <code>{encodedId}</code>
+      </>
     )
   );
 }
