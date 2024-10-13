@@ -1,4 +1,8 @@
-import { MOBILE_TRACK_DEVICE, TRACKER_DEVICE } from "@/e2e/data/devices";
+import {
+  MOBILE_TRACK_DEVICE,
+  TRACKER_DEVICE,
+  TRACKER_DEVICE_2,
+} from "@/e2e/data/devices";
 import { test, expect } from "@/e2e/fixtures";
 
 test.describe("with no trackers", () => {
@@ -39,7 +43,7 @@ test.describe("with tracker", () => {
 
     await expect(tile).toBeVisible();
     await expect(page.getByText("53%")).toBeVisible();
-    await expect(page.getByText("12:00 PM")).toBeVisible();
+    await expect(page.getByText("12:01 PM")).toBeVisible();
   });
 
   test("shows date for older last sync time", async ({
@@ -83,7 +87,7 @@ test.describe("with tracker and MobileTrack", () => {
 
     await expect(tile).toBeVisible();
     await expect(page.getByText("53%")).toBeVisible();
-    await expect(page.getByText("12:00 PM")).toBeVisible();
+    await expect(page.getByText("12:01 PM")).toBeVisible();
   });
 });
 
@@ -100,6 +104,29 @@ test.describe("with MobileTrack", () => {
     const tile = page.getByTestId("tile-test-tile");
 
     await expect(tile).toBeVisible();
-    await expect(page.getByText("12:00 PM")).toBeVisible();
+    await expect(page.getByText("12:03 PM")).toBeVisible();
+  });
+});
+
+test.describe("with specific device id", () => {
+  test("shows last sync time", async ({ page, dashboard, devicesApi }) => {
+    await dashboard.initTiles([
+      {
+        id: "test-tile",
+        type: "trackerStatus",
+        w: 1,
+        h: 1,
+        settings: { deviceId: TRACKER_DEVICE_2.id },
+      },
+    ]);
+
+    await devicesApi.setDevicesResponse([TRACKER_DEVICE, TRACKER_DEVICE_2]);
+
+    await page.goto("/");
+
+    const tile = page.getByTestId("tile-test-tile");
+
+    await expect(tile).toBeVisible();
+    await expect(page.getByText("12:02 PM")).toBeVisible();
   });
 });

@@ -60,7 +60,9 @@ export function resolveDevice(
   );
 
   if (!tracker || !tracker.lastSyncTime) {
-    sortedDevices.find((device) => device.deviceVersion === "MobileTrack");
+    tracker = sortedDevices.find(
+      (device) => device.deviceVersion === "MobileTrack"
+    );
   }
 
   return tracker;
