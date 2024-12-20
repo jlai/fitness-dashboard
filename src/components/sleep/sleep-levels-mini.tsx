@@ -22,6 +22,7 @@ interface SleepSegmentDatum {
   value: number;
   color: string;
   ratio: number;
+  count?: number;
 }
 
 export function SleepLevelMiniSummary({
@@ -53,24 +54,28 @@ export function SleepLevelMiniSummary({
         value: wakeMins,
         color: "#fcba03",
         ratio: wakeMins / totalMins,
+        count: summary.wake?.count,
       },
       {
         level: "rem",
         value: remMins,
         color: "#9ccef0",
         ratio: remMins / totalMins,
+        count: summary.rem?.count,
       },
       {
         level: "light",
         value: lightMins,
         color: "#0398fc",
         ratio: lightMins / totalMins,
+        count: summary.light?.count,
       },
       {
         level: "deep",
         value: deepMins,
         color: "#5d47ff80",
         ratio: deepMins / totalMins,
+        count: summary.deep?.count,
       },
     ].toReversed();
   } else {
@@ -85,18 +90,21 @@ export function SleepLevelMiniSummary({
         value: awakeMins,
         color: "#fcba03",
         ratio: awakeMins / totalMins,
+        count: summary.awake?.count,
       },
       {
         level: "restless",
         value: restlessMins,
         color: "#61dde8",
         ratio: restlessMins / totalMins,
+        count: summary.restless?.count,
       },
       {
         level: "asleep",
         value: asleepMins,
         color: "#2850a1",
         ratio: asleepMins / totalMins,
+        count: summary.asleep?.count,
       },
     ].toReversed();
   }
@@ -163,7 +171,10 @@ function SleepStagesTooltip({ data }: { data: Array<SleepSegmentDatum> }) {
             columnGap={1}
           >
             <Box width="1em" height="1em" bgcolor={datum.color}></Box>
-            <div>{LEVEL_NAMES[datum.level]}</div>
+            <div>
+              {LEVEL_NAMES[datum.level]}{" "}
+              {datum?.count ? <>({datum.count}x)</> : undefined}
+            </div>
             <FlexSpacer />
             <b className="text-end">{formatMinutes(datum.value)}</b>
             <div className="text-end">
