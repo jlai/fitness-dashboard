@@ -140,7 +140,7 @@ const NutritionPopover = function ({
           ]}
         >
           <ClickAwayListener
-            onClickAway={popupState.close}
+            onClickAway={() => popupState.close()}
             touchEvent="onTouchStart"
             mouseEvent="onMouseDown"
           >
