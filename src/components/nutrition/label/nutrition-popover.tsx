@@ -1,7 +1,6 @@
 import { atom, useAtomValue } from "jotai";
 import { PopupState, bindPopper } from "material-ui-popup-state/hooks";
 import { useQuery } from "@tanstack/react-query";
-import React from "react";
 import {
   Box,
   ClickAwayListener,
