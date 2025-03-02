@@ -6,6 +6,17 @@ import { ONE_DAY_IN_MILLIS } from "../cache-settings";
 
 import { GetFoodResponse, NutritionalValues } from "./types";
 
+async function invalidateCustomFoodQueries(queryClient: QueryClient) {
+  await queryClient.invalidateQueries({
+    queryKey: ["custom-foods"],
+    refetchType: "all",
+  });
+  await queryClient.invalidateQueries({
+    queryKey: ["saved-foods"],
+    refetchType: "all",
+  });
+}
+
 export function buildAddFavoriteFoodsMutation(queryClient: QueryClient) {
   return mutationOptions({
     mutationFn: async (foodIds: Array<number>) => {
@@ -15,8 +26,8 @@ export function buildAddFavoriteFoodsMutation(queryClient: QueryClient) {
         });
       }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["favorite-foods"] });
+    onSuccess: async () => {
+      await invalidateCustomFoodQueries(queryClient);
     },
   });
 }
@@ -30,8 +41,8 @@ export function buildDeleteFavoritesFoodMutation(queryClient: QueryClient) {
         });
       }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["favorite-foods"] });
+    onSuccess: async () => {
+      await invalidateCustomFoodQueries(queryClient);
     },
   });
 }
@@ -68,8 +79,8 @@ export function buildDeleteCustomFoodsMutation(queryClient: QueryClient) {
         });
       }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["custom-foods"] });
+    onSuccess: async () => {
+      await invalidateCustomFoodQueries(queryClient);
     },
   });
 }
@@ -110,9 +121,12 @@ export function buildCreateCustomFoodMutation(queryClient: QueryClient) {
     },
     onSuccess: async (data, variables) => {
       if (variables.foodId) {
-        queryClient.invalidateQueries({ queryKey: ["food", variables.foodId] });
+        await queryClient.invalidateQueries({
+          queryKey: ["food", variables.foodId],
+        });
       }
-      await queryClient.invalidateQueries({ queryKey: ["custom-foods"] });
+
+      await invalidateCustomFoodQueries(queryClient);
     },
   });
 }
