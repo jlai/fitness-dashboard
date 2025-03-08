@@ -409,10 +409,12 @@ function HourlyStepGoalDialogContent(props: RenderDialogContentProps) {
               label="Hourly goal"
               type="number"
               rules={{ min: 100, max: 1000 }}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">steps</InputAdornment>
-                ),
+              slotProps={{
+                input: {
+                  endAdornment: (
+                    <InputAdornment position="end">steps</InputAdornment>
+                  ),
+                },
               }}
             />
             <SelectElement

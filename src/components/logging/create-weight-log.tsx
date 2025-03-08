@@ -72,12 +72,14 @@ function CreateWeightLog({ onSaveSuccess }: { onSaveSuccess?: () => void }) {
             name="weight"
             label="Weight"
             rules={{ required: true }}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  {localizedKilogramsName}
-                </InputAdornment>
-              ),
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <InputAdornment position="end">
+                    {localizedKilogramsName}
+                  </InputAdornment>
+                ),
+              },
             }}
           />
         </FormRow>
@@ -86,8 +88,10 @@ function CreateWeightLog({ onSaveSuccess }: { onSaveSuccess?: () => void }) {
             name="percentFat"
             label="Percent fat"
             helperText="Optional"
-            InputProps={{
-              endAdornment: <InputAdornment position="end">%</InputAdornment>,
+            slotProps={{
+              input: {
+                endAdornment: <InputAdornment position="end">%</InputAdornment>,
+              },
             }}
           />
         </FormRow>

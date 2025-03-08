@@ -193,11 +193,13 @@ export function GoalSettings({
           name="goal"
           label={label}
           rules={{ required: true }}
-          InputLabelProps={{ shrink: true }}
-          InputProps={{
-            endAdornment: (
-              <InputAdornment position="end">{unit}</InputAdornment>
-            ),
+          slotProps={{
+            input: {
+              endAdornment: (
+                <InputAdornment position="end">{unit}</InputAdornment>
+              ),
+            },
+            inputLabel: { shrink: true },
           }}
         />
         <Button

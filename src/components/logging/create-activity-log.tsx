@@ -140,10 +140,12 @@ function CreateActivityLog({ onSaveSuccess }: { onSaveSuccess?: () => void }) {
             label="Duration"
             autoComplete="off"
             rules={{ min: 1 }}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">mins</InputAdornment>
-              ),
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <InputAdornment position="end">mins</InputAdornment>
+                ),
+              },
             }}
           />
         </Stack>
@@ -165,14 +167,16 @@ function CreateActivityLog({ onSaveSuccess }: { onSaveSuccess?: () => void }) {
               label="Distance"
               autoComplete="off"
               rules={{ required: distanceIsRequired }}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    {isSwimming
-                      ? localizedSwimMetersName
-                      : localizedKilometersName}
-                  </InputAdornment>
-                ),
+              slotProps={{
+                input: {
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      {isSwimming
+                        ? localizedSwimMetersName
+                        : localizedKilometersName}
+                    </InputAdornment>
+                  ),
+                },
               }}
             />
           )}
@@ -182,8 +186,12 @@ function CreateActivityLog({ onSaveSuccess }: { onSaveSuccess?: () => void }) {
             label="Calories"
             autoComplete="off"
             rules={{ min: 1 }}
-            InputProps={{
-              endAdornment: <InputAdornment position="end">cal</InputAdornment>,
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <InputAdornment position="end">cal</InputAdornment>
+                ),
+              },
             }}
           />
         </Stack>

@@ -270,10 +270,12 @@ function MacroGoals() {
             value={macroGoals.calories}
             name="calories-goal"
             type="number"
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">kCal</InputAdornment>
-              ),
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <InputAdornment position="end">kCal</InputAdornment>
+                ),
+              },
             }}
           />
         }
@@ -288,8 +290,10 @@ function MacroGoals() {
             value={macroGoals.carbs}
             name="carbs-goal"
             type="number"
-            InputProps={{
-              endAdornment: <InputAdornment position="end">g</InputAdornment>,
+            slotProps={{
+              input: {
+                endAdornment: <InputAdornment position="end">g</InputAdornment>,
+              },
             }}
           />
         }
@@ -304,8 +308,10 @@ function MacroGoals() {
             value={macroGoals.fat}
             name="fat-goal"
             type="number"
-            InputProps={{
-              endAdornment: <InputAdornment position="end">g</InputAdornment>,
+            slotProps={{
+              input: {
+                endAdornment: <InputAdornment position="end">g</InputAdornment>,
+              },
             }}
           />
         }
@@ -320,8 +326,10 @@ function MacroGoals() {
             value={macroGoals.fiber}
             name="fibers-goal"
             type="number"
-            InputProps={{
-              endAdornment: <InputAdornment position="end">g</InputAdornment>,
+            slotProps={{
+              input: {
+                endAdornment: <InputAdornment position="end">g</InputAdornment>,
+              },
             }}
           />
         }
@@ -336,8 +344,10 @@ function MacroGoals() {
             value={macroGoals.protein}
             name="protein-goal"
             type="number"
-            InputProps={{
-              endAdornment: <InputAdornment position="end">g</InputAdornment>,
+            slotProps={{
+              input: {
+                endAdornment: <InputAdornment position="end">g</InputAdornment>,
+              },
             }}
           />
         }
@@ -352,8 +362,12 @@ function MacroGoals() {
             value={macroGoals.sodium}
             name="sodium-goal"
             type="number"
-            InputProps={{
-              endAdornment: <InputAdornment position="end">mg</InputAdornment>,
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <InputAdornment position="end">mg</InputAdornment>
+                ),
+              },
             }}
           />
         }

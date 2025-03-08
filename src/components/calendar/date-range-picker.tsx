@@ -167,6 +167,7 @@ export function DateRangePicker({
                 setMonth(startDay.toDate());
               }
             }}
+            // TODO: migrate when https://github.com/mui/mui-x/issues/14284 is fixed
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
@@ -188,6 +189,7 @@ export function DateRangePicker({
                 setMonth(endDay.toDate());
               }
             }}
+            // TODO: migrate when https://github.com/mui/mui-x/issues/14284 is fixed
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">

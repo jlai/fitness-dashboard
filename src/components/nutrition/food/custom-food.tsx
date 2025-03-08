@@ -177,10 +177,12 @@ export function CustomFoodFields() {
                 label={label}
                 type="number"
                 rules={{ min: 0 }}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">{unit}</InputAdornment>
-                  ),
+                slotProps={{
+                  input: {
+                    endAdornment: (
+                      <InputAdornment position="end">{unit}</InputAdornment>
+                    ),
+                  },
                 }}
                 sx={{ maxWidth: "45%" }}
               />
