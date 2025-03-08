@@ -1,10 +1,9 @@
 "use client";
 
 import { Button, Typography } from "@mui/material";
-import React, { useState, useCallback } from "react";
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { DataGrid, GridColDef, GridRowParams } from "@mui/x-data-grid";
-import { toast } from "mui-sonner";
 import { useConfirm } from "material-ui-confirm";
 import { usePopupState } from "material-ui-popup-state/hooks";
 import { useAtomValue } from "jotai/index";
@@ -21,6 +20,7 @@ import NutritionPopover, {
   ShowLabelAction,
 } from "@/components/nutrition/label/nutrition-popover";
 import { macroGoalsAtom } from "@/storage/settings";
+import { showSuccessToast, withErrorToaster } from "@/components/toast";
 
 export default function ManageFavoriteFoods() {
   const confirm = useConfirm();
@@ -64,25 +64,21 @@ export default function ManageFavoriteFoods() {
     },
   ];
 
-  const handleAddFavoriteFood = useCallback(
-    (food: Food) => {
-      addFavoriteFoodIds([food.foodId]).then(() => {
-        toast.success("Added food to favorites list");
-      });
-    },
-    [addFavoriteFoodIds]
-  );
+  const handleAddFavoriteFood = withErrorToaster(async (food: Food) => {
+    await addFavoriteFoodIds([food.foodId]);
+    showSuccessToast("Added food to favorites list");
+  }, "Error adding food to favorites");
 
-  const handleDeleteFavoritesClick = () => {
-    (async () => {
-      await confirm({
-        title: "Remove favorite foods?",
-      });
+  const handleDeleteFavoritesClick = withErrorToaster(async () => {
+    const { confirmed } = await confirm({
+      title: "Remove favorite foods?",
+    });
 
+    if (confirmed) {
       await deleteFavoriteFoodIds(selectedRows);
-      toast.success("Removed foods from favorites list");
-    })();
-  };
+      showSuccessToast("Removed foods from favorites list");
+    }
+  }, "Error removing foods from favorites");
 
   return (
     <>

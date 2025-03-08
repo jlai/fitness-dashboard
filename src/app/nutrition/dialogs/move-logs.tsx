@@ -9,12 +9,11 @@ import { useQueryClient, useMutation } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import Immutable from "immutable";
 import { useAtom } from "jotai";
-import { toast } from "mui-sonner";
-import { useCallback } from "react";
 import { FormContainer } from "react-hook-form-mui";
 
 import { MealTypeElement } from "@/components/nutrition/food/meal-type-element";
 import { MealType, buildUpdateFoodLogsMutation } from "@/api/nutrition";
+import { showSuccessToast, withErrorToaster } from "@/components/toast";
 
 import { selectedFoodLogsAtom } from "../atoms";
 
@@ -33,24 +32,20 @@ export function MoveFoodLogsDialog() {
     buildUpdateFoodLogsMutation(queryClient)
   );
 
-  const onSubmit = useCallback(
-    (values: MoveFoodLogsFormData) => {
-      updateFoodLogs(
-        [...selectedFoodLogs.values()].map((foodLog) => ({
-          foodLogId: foodLog.logId,
-          mealTypeId: values.mealType,
-          unitId: foodLog.loggedFood.unit!.id,
-          amount: foodLog.loggedFood.amount,
-          day: dayjs(foodLog.logDate),
-        }))
-      ).then(() => {
-        toast.success("Moved food logs");
-        setSelectedFoodLogs(Immutable.Set());
-        setOpen(false);
-      });
-    },
-    [updateFoodLogs, selectedFoodLogs, setSelectedFoodLogs, setOpen]
-  );
+  const onSubmit = withErrorToaster(async (values: MoveFoodLogsFormData) => {
+    await updateFoodLogs(
+      [...selectedFoodLogs.values()].map((foodLog) => ({
+        foodLogId: foodLog.logId,
+        mealTypeId: values.mealType,
+        unitId: foodLog.loggedFood.unit!.id,
+        amount: foodLog.loggedFood.amount,
+        day: dayjs(foodLog.logDate),
+      }))
+    );
+    showSuccessToast("Moved food logs");
+    setSelectedFoodLogs(Immutable.Set());
+    setOpen(false);
+  }, "Error moving food logs");
 
   return (
     <Dialog open={open} onClose={() => setOpen(false)}>

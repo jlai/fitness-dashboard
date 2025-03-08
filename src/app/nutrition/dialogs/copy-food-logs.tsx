@@ -9,7 +9,6 @@ import { useQueryClient, useMutation } from "@tanstack/react-query";
 import dayjs, { Dayjs } from "dayjs";
 import Immutable from "immutable";
 import { useAtom } from "jotai";
-import { toast } from "mui-sonner";
 import { FormContainer } from "react-hook-form-mui";
 import { DatePickerElement } from "react-hook-form-mui/date-pickers";
 
@@ -18,6 +17,7 @@ import { MealType, buildCreateMultipleFoodLogsMutation } from "@/api/nutrition";
 import { FormRows } from "@/components/forms/form-row";
 import { getLabel } from "@/components/day-navigator";
 import { selectedDayForPageAtom } from "@/state";
+import { showSuccessToast, withErrorToaster } from "@/components/toast";
 
 import { selectedFoodLogsAtom } from "../atoms";
 
@@ -38,7 +38,7 @@ export function CopyFoodLogsDialog() {
     buildCreateMultipleFoodLogsMutation(queryClient)
   );
 
-  const onSubmit = async (values: CopyFoodLogsFormData) => {
+  const onSubmit = withErrorToaster(async (values: CopyFoodLogsFormData) => {
     if (isSubmitting) {
       return;
     }
@@ -51,19 +51,20 @@ export function CopyFoodLogsDialog() {
         amount: foodLog.loggedFood.amount,
         day: values.day,
       }))
-    ).then(() => {
-      toast.success("Copied food logs", {
-        action: !values.day.isSame(selectedDay, "day")
-          ? {
-              label: <>Go to {getLabel(values.day)}</>,
-              onClick: () => setSelectedDay(values.day),
-            }
-          : undefined,
-      });
-      setSelectedFoodLogs(Immutable.Set());
-      setOpen(false);
+    );
+
+    showSuccessToast("Copied food logs", {
+      action: !values.day.isSame(selectedDay, "day")
+        ? {
+            label: <>Go to {getLabel(values.day)}</>,
+            onClick: () => setSelectedDay(values.day),
+          }
+        : undefined,
     });
-  };
+
+    setSelectedFoodLogs(Immutable.Set());
+    setOpen(false);
+  }, "Error copying food logs");
 
   return (
     <Dialog open={open} onClose={() => setOpen(false)}>

@@ -2,8 +2,6 @@ import { Remove, Add } from "@mui/icons-material";
 import { Paper, ClickAwayListener, IconButton, Button } from "@mui/material";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import dayjs from "dayjs";
-import { toast } from "mui-sonner";
-import { useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { FormContainer } from "react-hook-form-mui";
 
@@ -15,6 +13,7 @@ import {
   FoodLogEntry,
   getDefaultServingSize,
 } from "@/api/nutrition";
+import { showSuccessToast, withErrorToaster } from "@/components/toast";
 
 interface EditServingSizeFormData {
   food: Food;
@@ -40,30 +39,27 @@ export function EditServingSize({
     buildUpdateFoodLogsMutation(queryClient)
   );
 
-  const onSubmit = useCallback(
-    (values: EditServingSizeFormData) => {
-      const { servingSize } = values;
+  const onSubmit = withErrorToaster(async (values: EditServingSizeFormData) => {
+    const { servingSize } = values;
 
-      if (!servingSize) {
-        return;
-      }
+    if (!servingSize) {
+      return;
+    }
 
-      updateFoodLogs([
-        {
-          foodLogId: foodLog.logId,
-          mealTypeId: foodLog.loggedFood.mealTypeId,
-          amount: servingSize.amount,
-          unitId: servingSize.unit.id,
-          day: dayjs(foodLog.logDate),
-        },
-      ]).then(() => {
-        toast.success("Updated amount");
-      });
+    await updateFoodLogs([
+      {
+        foodLogId: foodLog.logId,
+        mealTypeId: foodLog.loggedFood.mealTypeId,
+        amount: servingSize.amount,
+        unitId: servingSize.unit.id,
+        day: dayjs(foodLog.logDate),
+      },
+    ]);
 
-      closePopover();
-    },
-    [closePopover, foodLog, updateFoodLogs]
-  );
+    showSuccessToast("Updated amount");
+
+    closePopover();
+  }, "Error updating amount");
 
   const adjustQuantity = (adjustment: number) => {
     const servingSize = formContext.getValues().servingSize;

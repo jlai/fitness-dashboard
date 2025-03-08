@@ -1,8 +1,6 @@
-import { useCallback } from "react";
 import { Button } from "@mui/material";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
-import { toast } from "mui-sonner";
 import { FormContainer, useForm } from "react-hook-form-mui";
 import { useAtomValue } from "jotai";
 import NextLink from "next/link";
@@ -17,6 +15,7 @@ import LinkedDayElement, { DaySelectorSource } from "@/components/linked-day";
 import { selectedDayForPageAtom } from "@/state";
 import { FormRow, FormRows } from "@/components/forms/form-row";
 import { DividedStack } from "@/components/layout/flex";
+import { showSuccessToast, withErrorToaster } from "@/components/toast";
 
 import { MealTypeElement } from "../food/meal-type-element";
 
@@ -46,39 +45,35 @@ export default function CreateMealLog() {
 
   const linkedDay = useAtomValue(selectedDayForPageAtom);
 
-  const logMeal = useCallback(
-    (values: CreateMealLogFormData) => {
-      const { meal, mealType, daySource } = values;
+  const logMeal = withErrorToaster(async (values: CreateMealLogFormData) => {
+    const { meal, mealType, daySource } = values;
 
-      if (!meal) {
-        return;
-      }
+    if (!meal) {
+      return;
+    }
 
-      const day = daySource === "today" ? dayjs() : linkedDay;
+    const day = daySource === "today" ? dayjs() : linkedDay;
 
-      const foods = meal.mealFoods.map(
-        (food) =>
-          ({
-            foodId: food.foodId,
-            mealTypeId: mealType,
-            unitId: food.unit!.id,
-            amount: food.amount,
-            day,
-          } as CreateFoodLogOptions)
-      );
+    const foods = meal.mealFoods.map(
+      (food) =>
+        ({
+          foodId: food.foodId,
+          mealTypeId: mealType,
+          unitId: food.unit!.id,
+          amount: food.amount,
+          day,
+        } as CreateFoodLogOptions)
+    );
 
-      logFoods(foods).then(() => {
-        toast.success(`Logged meal: ${meal.name}`);
-        formContext.reset({
-          daySource, // keep same
-          mealType, // keep same
+    await logFoods(foods);
+    showSuccessToast(`Logged meal: ${meal.name}`);
+    formContext.reset({
+      daySource, // keep same
+      mealType, // keep same
 
-          meal: null,
-        });
-      });
-    },
-    [logFoods, linkedDay, formContext]
-  );
+      meal: null,
+    });
+  }, "Error logging meal");
 
   return (
     <FormContainer<CreateMealLogFormData>

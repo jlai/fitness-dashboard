@@ -110,21 +110,25 @@ function LoginSettings() {
   const switchAccounts = () => {
     confirm({
       description: "Log out?",
-    }).then(() => {
-      queryClient.clear();
-      redirectToLogin({
-        prompt: "login consent",
-        requestAdvancedScopes: enableAdvancedScopes,
-      });
+    }).then(({ confirmed }) => {
+      if (confirmed) {
+        queryClient.clear();
+        redirectToLogin({
+          prompt: "login consent",
+          requestAdvancedScopes: enableAdvancedScopes,
+        });
+      }
     });
   };
 
   const unlinkAccount = () => {
     confirm({
       description: "Sign out and unlink this website from your Fitbit account?",
-    }).then(() => {
-      revokeAuthorization();
-      queryClient.clear();
+    }).then(({ confirmed }) => {
+      if (confirmed) {
+        revokeAuthorization();
+        queryClient.clear();
+      }
     });
   };
 
@@ -450,8 +454,10 @@ function AdvancedSettings() {
   const resetDashboard = useCallback(() => {
     confirm({
       description: "Are you sure you want to reset the dashboard?",
-    }).then(() => {
-      setUserTiles(RESET);
+    }).then(({ confirmed }) => {
+      if (confirmed) {
+        setUserTiles(RESET);
+      }
     });
   }, [confirm, setUserTiles]);
 

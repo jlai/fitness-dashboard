@@ -22,7 +22,6 @@ import {
 } from "@mui/material";
 import { atom, useAtom, useAtomValue } from "jotai";
 import { ArrowDownward } from "@mui/icons-material";
-import { toast } from "mui-sonner";
 
 import {
   buildFoodUnitsQuery,
@@ -42,7 +41,7 @@ import {
   showNutritionLabelAtom,
   macroGoalsAtom,
 } from "@/storage/settings";
-import { ServerError } from "@/api/request";
+import { showSuccessToast, withErrorToaster } from "@/components/toast";
 
 export const NUTRITION_FIELDS = {
   caloriesFromFat: {
@@ -246,7 +245,7 @@ export default function CreateCustomFoodDialog() {
     buildCreateCustomFoodMutation(queryClient)
   );
 
-  const save = async (values: CustomFoodFormData) => {
+  const save = withErrorToaster(async (values: CustomFoodFormData) => {
     if (isSubmitting) {
       return;
     }
@@ -263,18 +262,12 @@ export default function CreateCustomFoodDialog() {
         ...values.nutritionValues,
         calories: values.calories!,
       },
-    }).then(
-      () => {
-        toast.success(`Saved custom food: ${values.name}`);
-        reset();
-        setCustomFoodId(null);
-      },
-      (err: ServerError) => {
-        console.log(err);
-        toast.error(`Error saving food: ${err.errorText || err.message}`);
-      }
-    );
-  };
+    });
+
+    showSuccessToast(`Saved custom food: ${values.name}`);
+    reset();
+    setCustomFoodId(null);
+  }, "Error saving food");
 
   useEffect(() => {
     if (food && food.foodId === customFoodId) {

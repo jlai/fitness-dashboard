@@ -1,7 +1,7 @@
 "use client";
 
 import { Button, Typography } from "@mui/material";
-import React, { useState } from "react";
+import { useState } from "react";
 import { usePopupState } from "material-ui-popup-state/hooks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -13,7 +13,6 @@ import {
 import { Edit } from "@mui/icons-material";
 import { useAtomValue, useSetAtom } from "jotai";
 import { useConfirm } from "material-ui-confirm";
-import { toast } from "mui-sonner";
 
 import { buildCustomFoodsQuery, Food } from "@/api/nutrition";
 import { FooterActionBar, HeaderBar } from "@/components/layout/rows";
@@ -26,6 +25,7 @@ import NutritionPopover, {
   ShowLabelAction,
 } from "@/components/nutrition/label/nutrition-popover";
 import { macroGoalsAtom } from "@/storage/settings";
+import { showSuccessToast, withErrorToaster } from "@/components/toast";
 
 function EditAction({ food }: { food: Food }) {
   const setEditingCustomFood = useSetAtom(editingCustomFoodAtom);
@@ -82,16 +82,16 @@ export default function ManageCustomFoods() {
     },
   ];
 
-  const handleDeleteClicked = () => {
-    (async () => {
-      await confirm({
-        title: "Delete custom foods?",
-      });
+  const handleDeleteClicked = withErrorToaster(async () => {
+    const { confirmed } = await confirm({
+      title: "Delete custom foods?",
+    });
 
+    if (confirmed) {
       await deleteFoodIds(selectedRows);
-      toast.success("Deleted custom foods");
-    })();
-  };
+      showSuccessToast("Deleted custom foods");
+    }
+  }, "Error deleting custom foods");
 
   return (
     <div>

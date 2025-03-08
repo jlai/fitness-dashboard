@@ -77,11 +77,13 @@ function CompactMissingScopes({
           by this website.
         </div>
       ),
-    }).then(() => {
-      redirectToLogin({
-        prompt: "consent",
-        requestAdvancedScopes: enableAdvancedScopes,
-      });
+    }).then(({ confirmed }) => {
+      if (confirmed) {
+        redirectToLogin({
+          prompt: "consent",
+          requestAdvancedScopes: enableAdvancedScopes,
+        });
+      }
     });
   };
 

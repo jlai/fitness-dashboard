@@ -12,10 +12,9 @@ import {
   Typography,
 } from "@mui/material";
 import dayjs from "dayjs";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Add, Delete as DeleteIcon } from "@mui/icons-material";
-import { toast } from "mui-sonner";
 import { useConfirm } from "material-ui-confirm";
 import { useSetAtom } from "jotai";
 
@@ -39,6 +38,7 @@ import { FlexSpacer } from "@/components/layout/flex";
 import CreateWeightLogDialog, {
   createWeightLogDialogOpenAtom,
 } from "@/components/logging/create-weight-log";
+import { showSuccessToast, withErrorToaster } from "@/components/toast";
 
 function WeightLogRow({
   logEntry: log,
@@ -96,21 +96,19 @@ export default function WeightLogList() {
   );
 
   const confirm = useConfirm();
-  const deleteWeightLog = useCallback(
-    (weightLog: WeightLog) => {
-      (async () => {
-        await confirm({
-          title: "Delete weight log",
-          description: `Delete weight log on ${formatShortDate(
-            dayjs(weightLog.date)
-          )}?`,
-        });
-        await deleteWeightLogId(weightLog.logId);
-        toast.success("Deleted weight log");
-      })();
-    },
-    [deleteWeightLogId, confirm]
-  );
+  const deleteWeightLog = withErrorToaster(async (weightLog: WeightLog) => {
+    const { confirmed } = await confirm({
+      title: "Delete weight log",
+      description: `Delete weight log on ${formatShortDate(
+        dayjs(weightLog.date)
+      )}?`,
+    });
+
+    if (confirmed) {
+      await deleteWeightLogId(weightLog.logId);
+      showSuccessToast("Deleted weight log");
+    }
+  }, "Error deleting weight log");
 
   return (
     <div>

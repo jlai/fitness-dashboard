@@ -3,9 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import dayjs, { Dayjs } from "dayjs";
 import duration from "dayjs/plugin/duration";
 import { atom, useAtom } from "jotai";
-import { useCallback } from "react";
 import { useForm } from "react-hook-form";
-import { toast } from "mui-sonner";
 import { FormContainer } from "react-hook-form-mui";
 import {
   DatePickerElement,
@@ -18,6 +16,8 @@ import {
 import { renderTimeViewClock } from "@mui/x-date-pickers";
 
 import { buildCreateSleepLogMutation } from "@/api/sleep";
+
+import { showSuccessToast, withErrorToaster } from "../toast";
 
 dayjs.extend(duration);
 
@@ -60,23 +60,15 @@ function CreateSleepLog({ onSaveSuccess }: { onSaveSuccess?: () => void }) {
     buildCreateSleepLogMutation(queryClient)
   );
 
-  const onSubmit = useCallback(
-    (values: CreateSleepLogFormData) => {
-      createSleepLog({
-        startTime: values.startTime,
-        endTime: values.endTime,
-      }).then(
-        () => {
-          toast.success("Logged sleep");
-          onSaveSuccess?.();
-        },
-        () => {
-          toast.error("Error logging sleep");
-        }
-      );
-    },
-    [createSleepLog, onSaveSuccess]
-  );
+  const onSubmit = withErrorToaster(async (values: CreateSleepLogFormData) => {
+    await createSleepLog({
+      startTime: values.startTime,
+      endTime: values.endTime,
+    });
+
+    onSaveSuccess?.();
+    showSuccessToast("Logged sleep");
+  }, "Error logging sleep");
 
   const duration = dayjs.duration(watch("endTime").diff(watch("startTime")));
 

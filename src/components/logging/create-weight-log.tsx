@@ -8,9 +8,7 @@ import {
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import dayjs, { Dayjs } from "dayjs";
 import { atom, useAtom } from "jotai";
-import { useCallback } from "react";
 import { useForm } from "react-hook-form";
-import { toast } from "mui-sonner";
 import { FormContainer, TextFieldElement } from "react-hook-form-mui";
 import { DatePickerElement } from "react-hook-form-mui/date-pickers";
 
@@ -19,6 +17,7 @@ import { useUnits } from "@/config/units";
 import { WeightUnitSystem } from "@/api/user";
 
 import { FormActionRow, FormRow, FormRows } from "../forms/form-row";
+import { showSuccessToast, withErrorToaster } from "../toast";
 
 export const createWeightLogDialogOpenAtom = atom(false);
 
@@ -45,25 +44,16 @@ function CreateWeightLog({ onSaveSuccess }: { onSaveSuccess?: () => void }) {
     buildCreateWeightLogMutation(queryClient)
   );
 
-  const onSubmit = useCallback(
-    (values: CreateWeightLogFormData) => {
-      createWeightLog({
-        day: values.day,
-        weight: values.weight,
-        weightUnitSystem: weightUnit,
-        percentFat: values.percentFat,
-      }).then(
-        () => {
-          toast.success("Logged weight");
-          onSaveSuccess?.();
-        },
-        () => {
-          toast.error("Error logging weight");
-        }
-      );
-    },
-    [createWeightLog, onSaveSuccess, weightUnit]
-  );
+  const onSubmit = withErrorToaster(async (values: CreateWeightLogFormData) => {
+    await createWeightLog({
+      day: values.day,
+      weight: values.weight,
+      weightUnitSystem: weightUnit,
+      percentFat: values.percentFat,
+    });
+    showSuccessToast("Logged weight");
+    onSaveSuccess?.();
+  }, "Error logging weight");
 
   return (
     <FormContainer<CreateWeightLogFormData>

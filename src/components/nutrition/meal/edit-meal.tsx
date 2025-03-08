@@ -10,7 +10,7 @@ import {
   TableFooter,
   Toolbar,
 } from "@mui/material";
-import React, { useEffect, useCallback, useState } from "react";
+import { useEffect, useCallback, useState } from "react";
 import {
   useForm,
   useController,
@@ -22,7 +22,6 @@ import { ArticleOutlined, Delete as DeleteIcon } from "@mui/icons-material";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { PopupState, usePopupState } from "material-ui-popup-state/hooks";
 import { useAtomValue, useSetAtom } from "jotai/index";
-import { toast } from "mui-sonner";
 
 import {
   MealFood,
@@ -38,6 +37,7 @@ import NutritionPopover, {
   nutritionPopoverFoodAtom,
 } from "@/components/nutrition/label/nutrition-popover";
 import { macroGoalsAtom } from "@/storage/settings";
+import { showSuccessToast, withErrorToaster } from "@/components/toast";
 
 import SearchFoods from "../food/food-search";
 import { FoodServingSizeInput } from "../food/serving-size";
@@ -69,31 +69,22 @@ export function CreateOrEditMeal({
     buildDeleteMealMutation(queryClient)
   );
 
-  const saveMeal = useCallback(
-    (meal: Meal) => {
-      if (meal.id) {
-        mutateUpdateMeal(meal).then(() => {
-          toast.success(`Updated meal ${meal.name}`);
-        });
-      } else {
-        mutateCreateMeal(meal).then((newMeal) => {
-          toast.success(`Created meal ${meal.name}`);
-          onUpdateMeal(newMeal, { created: true });
-        });
-      }
-    },
-    [mutateUpdateMeal, mutateCreateMeal, onUpdateMeal]
-  );
+  const saveMeal = withErrorToaster(async (meal: Meal) => {
+    if (meal.id) {
+      await mutateUpdateMeal(meal);
+      showSuccessToast(`Updated meal ${meal.name}`);
+    } else {
+      const newMeal = await mutateCreateMeal(meal);
+      showSuccessToast(`Created meal ${meal.name}`);
+      onUpdateMeal(newMeal, { created: true });
+    }
+  }, "Error creating or updating meal");
 
-  const deleteMeal = useCallback(
-    (meal: Meal) => {
-      mutateDeleteMeal(meal.id).then(() => {
-        toast.success(`Deleted meal ${meal.name}`);
-        onUpdateMeal(null);
-      });
-    },
-    [mutateDeleteMeal, onUpdateMeal]
-  );
+  const deleteMeal = withErrorToaster(async (meal: Meal) => {
+    await mutateDeleteMeal(meal.id);
+    showSuccessToast(`Deleted meal ${meal.name}`);
+    onUpdateMeal(null);
+  }, "Error deleting meal");
 
   return (
     <EditMeal

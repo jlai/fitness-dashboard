@@ -5,7 +5,6 @@ import {
   useSuspenseQueries,
 } from "@tanstack/react-query";
 import { FormContainer, TextFieldElement, useForm } from "react-hook-form-mui";
-import { toast } from "mui-sonner";
 
 import { FRACTION_DIGITS_1 } from "@/utils/number-formats";
 import {
@@ -20,6 +19,7 @@ import {
   buildUpdateActivityGoalMutation,
 } from "@/api/activity/goals";
 import { FormRow } from "@/components/forms/form-row";
+import { showSuccessToast, withErrorToaster } from "@/components/toast";
 
 import { useSelectedDay } from "../../state";
 
@@ -167,23 +167,19 @@ export function GoalSettings({
 
   const { formState } = form;
 
-  const submit = (values: GoalSettingsFormData) => {
-    updateGoal({
+  const submit = withErrorToaster(async (values: GoalSettingsFormData) => {
+    await updateGoal({
       resource,
       period,
       goal: values.goal,
-    }).then(
-      () => {
-        toast.success("Updated goal");
-        form.reset({
-          goal: values.goal,
-        });
-      },
-      () => {
-        toast.error("Error updating goal");
-      }
-    );
-  };
+    });
+
+    form.reset({
+      goal: values.goal,
+    });
+
+    showSuccessToast("Updated goal");
+  }, "Error updating goal");
 
   return (
     <FormContainer

@@ -10,9 +10,7 @@ import {
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import dayjs, { Dayjs } from "dayjs";
 import { atom, useAtom } from "jotai";
-import { useCallback } from "react";
 import { useForm } from "react-hook-form";
-import { toast } from "mui-sonner";
 import {
   CheckboxElement,
   FormContainer,
@@ -35,6 +33,7 @@ import {
 import { isBeforeToday } from "@/utils/date-utils";
 
 import { DividedStack } from "../layout/flex";
+import { showSuccessToast, withErrorToaster } from "../toast";
 
 import { ActivityTypeElement, ActivityTypeOption } from "./activity-type-input";
 
@@ -91,43 +90,28 @@ function CreateActivityLog({ onSaveSuccess }: { onSaveSuccess?: () => void }) {
   const isSwimming = watch("activityType")?.id === SWIMMING_ACTIVITY_TYPE;
   const useSteps = supportsSteps && watch("useSteps");
 
-  const onSubmit = useCallback(
-    (values: CreateActivityFormData) => {
-      let unit: CreateActivityLogDistanceUnit =
-        distanceUnitSystem === "en_US" ? "mile" : "kilometer";
+  const onSubmit = withErrorToaster(async (values: CreateActivityFormData) => {
+    let unit: CreateActivityLogDistanceUnit =
+      distanceUnitSystem === "en_US" ? "mile" : "kilometer";
 
-      if (supportsSteps && values.useSteps) {
-        unit = "steps";
-      } else if (isSwimming) {
-        unit = swimUnitSystem === "en_US" ? "yards" : "meter";
-      }
+    if (supportsSteps && values.useSteps) {
+      unit = "steps";
+    } else if (isSwimming) {
+      unit = swimUnitSystem === "en_US" ? "yards" : "meter";
+    }
 
-      createActivityLog({
-        activityId: values.activityType!.id,
-        startTime: values.startTime,
-        durationMinutes: values.durationMinutes,
-        distance: values.distance,
-        distanceUnit: unit,
-        manualCalories: values.manualCalories,
-      }).then(
-        () => {
-          toast.success("Logged activity");
-          onSaveSuccess?.();
-        },
-        () => {
-          toast.error("Error logging activity");
-        }
-      );
-    },
-    [
-      createActivityLog,
-      onSaveSuccess,
-      supportsSteps,
-      isSwimming,
-      distanceUnitSystem,
-      swimUnitSystem,
-    ]
-  );
+    await createActivityLog({
+      activityId: values.activityType!.id,
+      startTime: values.startTime,
+      durationMinutes: values.durationMinutes,
+      distance: values.distance,
+      distanceUnit: unit,
+      manualCalories: values.manualCalories,
+    });
+
+    onSaveSuccess?.();
+    showSuccessToast("Logged activity");
+  }, "Error logging activity");
 
   return (
     <FormContainer<CreateActivityFormData>

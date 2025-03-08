@@ -29,7 +29,6 @@ import {
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import Immutable from "immutable";
 import { useConfirm } from "material-ui-confirm";
-import { toast } from "mui-sonner";
 import {
   bindMenu,
   bindTrigger,
@@ -50,6 +49,7 @@ import {
   buildAddFavoriteFoodsMutation,
   buildDeleteFavoritesFoodMutation,
 } from "@/api/nutrition/foods";
+import { showSuccessToast, withErrorToaster } from "@/components/toast";
 
 import { groupByMealType } from "./summarize-day";
 import { selectedFoodLogsAtom } from "./atoms";
@@ -107,45 +107,43 @@ export default function FoodLog({ day }: { day: Dayjs }) {
     setSelectedFoodLogs(Immutable.Set([]));
   }, [foodLogsResponse.foods, setSelectedFoodLogs]);
 
-  const deleteSelected = () => {
-    (async () => {
-      await confirm({
-        title: "Deleted selected food logs?",
-        confirmationText: "Delete",
-      });
+  const deleteSelected = withErrorToaster(async () => {
+    const { confirmed } = await confirm({
+      title: "Deleted selected food logs?",
+      confirmationText: "Delete",
+    });
 
+    if (confirmed) {
       const deletes = selectedFoodLogs.map((foodLog) => ({
         foodLogId: foodLog.logId,
         day: dayjs(foodLog.logDate),
       }));
 
       await deleteFoodLogs([...deletes]);
+      showSuccessToast("Deleted food logs");
+    }
+  }, "Error deleting food logs");
 
-      toast.success("Deleted food logs");
-    })();
-  };
-
-  const handleAddToFavoritesClick = () => {
+  const handleAddToFavoritesClick = withErrorToaster(async () => {
     menuPopupState.close();
 
     const foodIds = selectedFoodLogs.map(
       (foodLog) => foodLog.loggedFood.foodId
     );
-    addFavoriteFoods([...foodIds]).then(() => {
-      toast.success(`Added to favorites`);
-    });
-  };
 
-  const handleRemoveFromFavoritesClick = () => {
+    await addFavoriteFoods([...foodIds]);
+    showSuccessToast("Added to favorites");
+  }, "Error adding to favorites");
+
+  const handleRemoveFromFavoritesClick = withErrorToaster(async () => {
     menuPopupState.close();
 
     const foodIds = selectedFoodLogs.map(
       (foodLog) => foodLog.loggedFood.foodId
     );
-    removeFavoriteFoods([...foodIds]).then(() => {
-      toast.success(`Removed from favorites`);
-    });
-  };
+    await removeFavoriteFoods([...foodIds]);
+    showSuccessToast("Removed from favorites");
+  }, "Error removing from favorites");
 
   const favoriteFoodIds = new Set(favoriteFoods.map(({ foodId }) => foodId));
   const areSelectedAllFavorites = selectedFoodLogs.every((foodLog) =>

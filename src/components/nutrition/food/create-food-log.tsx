@@ -2,7 +2,6 @@
 
 import { Button, Stack } from "@mui/material";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "mui-sonner";
 import { FormContainer, useForm } from "react-hook-form-mui";
 import { useAtomValue } from "jotai";
 import dayjs from "dayjs";
@@ -15,6 +14,7 @@ import { selectedDayForPageAtom } from "@/state";
 import { FormRow, FormRows } from "@/components/forms/form-row";
 import { ServingSize } from "@/utils/food-amounts";
 import { DividedStack } from "@/components/layout/flex";
+import { showSuccessToast, withErrorToaster } from "@/components/toast";
 
 import { SearchFoodsElement } from "./food-search";
 import { FoodServingSizeElement } from "./serving-size";
@@ -51,7 +51,7 @@ export function CreateFoodLogForm() {
 
   const linkedDay = useAtomValue(selectedDayForPageAtom);
 
-  const logFood = async (values: CreateFoodLogFormData) => {
+  const logFood = withErrorToaster(async (values: CreateFoodLogFormData) => {
     const { food, servingSize, mealType, daySource } = values;
 
     if (!food || !servingSize || isSubmitting) {
@@ -64,18 +64,17 @@ export function CreateFoodLogForm() {
       day: daySource === "today" ? dayjs() : linkedDay,
       amount: servingSize.amount,
       unitId: servingSize.unit.id,
-    }).then(() => {
-      toast.success(`Logged food: ${food.name}`);
-      reset({
-        food: null,
-        servingSize: null,
-
-        // Stay on existing day and mealType
-        mealType: values.mealType,
-        daySource,
-      });
     });
-  };
+    showSuccessToast(`Logged food: ${food.name}`);
+    reset({
+      food: null,
+      servingSize: null,
+
+      // Stay on existing day and mealType
+      mealType: values.mealType,
+      daySource,
+    });
+  }, "Error logging food");
 
   return (
     <FormContainer<CreateFoodLogFormData>
