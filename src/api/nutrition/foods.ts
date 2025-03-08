@@ -6,6 +6,17 @@ import { ONE_DAY_IN_MILLIS } from "../cache-settings";
 
 import { GetFoodResponse, NutritionalValues } from "./types";
 
+async function invalidateFavoriteFoodQueries(queryClient: QueryClient) {
+  await queryClient.invalidateQueries({
+    queryKey: ["favorite-foods"],
+    refetchType: "all",
+  });
+  await queryClient.invalidateQueries({
+    queryKey: ["saved-foods"],
+    refetchType: "all",
+  });
+}
+
 async function invalidateCustomFoodQueries(queryClient: QueryClient) {
   await queryClient.invalidateQueries({
     queryKey: ["custom-foods"],
@@ -27,7 +38,7 @@ export function buildAddFavoriteFoodsMutation(queryClient: QueryClient) {
       }
     },
     onSuccess: async () => {
-      await invalidateCustomFoodQueries(queryClient);
+      await invalidateFavoriteFoodQueries(queryClient);
     },
   });
 }
@@ -42,7 +53,7 @@ export function buildDeleteFavoritesFoodMutation(queryClient: QueryClient) {
       }
     },
     onSuccess: async () => {
-      await invalidateCustomFoodQueries(queryClient);
+      await invalidateFavoriteFoodQueries(queryClient);
     },
   });
 }
