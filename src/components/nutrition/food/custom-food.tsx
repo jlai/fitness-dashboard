@@ -42,6 +42,7 @@ import {
   showNutritionLabelAtom,
   macroGoalsAtom,
 } from "@/storage/settings";
+import { ServerError } from "@/api/request";
 
 export const NUTRITION_FIELDS = {
   caloriesFromFat: {
@@ -262,11 +263,17 @@ export default function CreateCustomFoodDialog() {
         ...values.nutritionValues,
         calories: values.calories!,
       },
-    }).then(() => {
-      toast.success(`Saved custom food: ${values.name}`);
-      reset();
-      setCustomFoodId(null);
-    });
+    }).then(
+      () => {
+        toast.success(`Saved custom food: ${values.name}`);
+        reset();
+        setCustomFoodId(null);
+      },
+      (err: ServerError) => {
+        console.log(err);
+        toast.error(`Error saving food: ${err.errorText || err.message}`);
+      }
+    );
   };
 
   useEffect(() => {

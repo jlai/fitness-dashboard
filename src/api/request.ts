@@ -9,6 +9,19 @@ import { getFreshAccessToken } from "./auth";
 
 const RATE_LIMIT_EXCEEDED_EVENT_TYPE = "fitbitratelimitexceeded";
 
+export interface ErrorResponseBody {
+  errors: Array<{
+    errorType: string;
+    fieldName: string;
+    message: string;
+  }>;
+}
+
+export interface ServerError extends Error {
+  errors?: ErrorResponseBody["errors"];
+  errorText?: string;
+}
+
 /**
  * Make a request to the Fitbit API.
  */
@@ -31,9 +44,21 @@ export async function makeRequest(uri: string, options?: RequestInit) {
       window.dispatchEvent(new CustomEvent(RATE_LIMIT_EXCEEDED_EVENT_TYPE));
     }
 
-    throw new Error(
-      `server response (${response.status}): ${response.statusText}`
-    );
+    const errors = await extractErrors(response);
+    const errorText = errors
+      ? errors.map((error) => error.message).join(" ")
+      : undefined;
+
+    const err = new Error(
+      `server response (${response.status}): ${
+        errorText || response.statusText
+      }`
+    ) as ServerError;
+
+    err.errors = errors;
+    err.errorText = errorText;
+
+    throw err;
   }
 
   return response;
@@ -57,3 +82,21 @@ export const warnOnRateLimitExceededEffect = atomEffect((get, set) => {
     window.removeEventListener(RATE_LIMIT_EXCEEDED_EVENT_TYPE, listener);
   };
 });
+
+/**
+ * Extract error messages from response body.
+ * See https://dev.fitbit.com/build/reference/web-api/troubleshooting-guide/error-handling/
+ */
+export async function extractErrors(response: Response) {
+  try {
+    const responseObj = (await response.json()) as ErrorResponseBody;
+
+    if (Array.isArray(responseObj.errors)) {
+      return responseObj.errors;
+    }
+  } catch (err) {
+    return undefined;
+  }
+
+  return undefined;
+}
