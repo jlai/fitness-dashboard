@@ -65,7 +65,7 @@ export function SleepLevelSummaryChart({
           tickLabelProps={{ fill: "currentColor", fontSize: 14 }}
         />
         {data.map((datum) => {
-          const barWidth = xScale(datum.value);
+          const barWidth = xScale(datum.value) - margin.left;
           const canFitPercent = barWidth > 24;
 
           return (
@@ -131,16 +131,22 @@ export function SleepLevelSummaryChart({
           <div>
             <Typography className="m-2">
               <span>
-                {LEVEL_NAMES[tooltipData.level]} ({tooltipData.count}x):{" "}
+                {tooltipData.count > 0 ? (
+                  <>
+                    {LEVEL_NAMES[tooltipData.level]} ({tooltipData.count}x):{" "}
+                  </>
+                ) : (
+                  <>{LEVEL_NAMES[tooltipData.level]}: </>
+                )}
               </span>
               <b>{formatMinutes(tooltipData.value)}</b>
             </Typography>
-            {tooltipData?.thirtyDayAvgMinutes && (
+            {tooltipData?.thirtyDayAvgMinutes ? (
               <Typography className="m-2">
                 30 day average:{" "}
                 <b>{formatMinutes(tooltipData.thirtyDayAvgMinutes)}</b>
               </Typography>
-            )}
+            ) : undefined}
           </div>
         </TooltipInPortal>
       )}
