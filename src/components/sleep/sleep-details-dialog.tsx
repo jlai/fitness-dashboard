@@ -19,7 +19,7 @@ export default function SleepDetailsDialogContent({
   const startDay = dayjs(sleepLog.startTime);
   const endDay = dayjs(sleepLog.endTime);
 
-  const hasSleepStages = levels?.summary?.rem;
+  const hasLevels = !!levels;
 
   return (
     <>
@@ -34,7 +34,7 @@ export default function SleepDetailsDialogContent({
               </Stack>
             </Typography>
           </div>
-          {hasSleepStages && (
+          {hasLevels && (
             <>
               <div className="w-full mb-8 h-[300px]">
                 <Hypnogram height={300} sleepLog={sleepLog} />

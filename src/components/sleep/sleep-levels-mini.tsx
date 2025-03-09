@@ -8,6 +8,7 @@ import {
   bindPopper,
   usePopupState,
 } from "material-ui-popup-state/hooks";
+import { sum } from "es-toolkit";
 
 import { SleepLog } from "@/api/sleep";
 import { formatMinutes } from "@/utils/date-formats";
@@ -15,15 +16,7 @@ import { PERCENT_FRACTION_DIGITS_0 } from "@/utils/number-formats";
 
 import { FlexSpacer } from "../layout/flex";
 
-import { LEVEL_NAMES } from "./levels";
-
-interface SleepSegmentDatum {
-  level: string;
-  value: number;
-  color: string;
-  ratio: number;
-  count?: number;
-}
+import { getLevelSummary, LEVEL_NAMES, SleepSummaryDatum } from "./levels";
 
 export function SleepLevelMiniSummary({
   levels,
@@ -36,78 +29,8 @@ export function SleepLevelMiniSummary({
     popupId: "sleep-mini-summary",
   });
 
-  const summary = levels.summary;
-
-  let totalMins = 0;
-  let data: Array<SleepSegmentDatum> = [];
-
-  if (summary.rem) {
-    const wakeMins = summary.wake?.minutes ?? 0;
-    const remMins = summary.rem?.minutes ?? 0;
-    const lightMins = summary.light?.minutes ?? 0;
-    const deepMins = summary.deep?.minutes ?? 0;
-    totalMins = wakeMins + remMins + lightMins + deepMins;
-
-    data = [
-      {
-        level: "wake",
-        value: wakeMins,
-        color: "#fcba03",
-        ratio: wakeMins / totalMins,
-        count: summary.wake?.count,
-      },
-      {
-        level: "rem",
-        value: remMins,
-        color: "#9ccef0",
-        ratio: remMins / totalMins,
-        count: summary.rem?.count,
-      },
-      {
-        level: "light",
-        value: lightMins,
-        color: "#0398fc",
-        ratio: lightMins / totalMins,
-        count: summary.light?.count,
-      },
-      {
-        level: "deep",
-        value: deepMins,
-        color: "#5d47ff80",
-        ratio: deepMins / totalMins,
-        count: summary.deep?.count,
-      },
-    ].toReversed();
-  } else {
-    const awakeMins = summary.awake?.minutes ?? 0;
-    const restlessMins = summary.restless?.minutes ?? 0;
-    const asleepMins = summary.asleep?.minutes ?? 0;
-    totalMins = awakeMins + restlessMins + asleepMins;
-
-    data = [
-      {
-        level: "awake",
-        value: awakeMins,
-        color: "#fcba03",
-        ratio: awakeMins / totalMins,
-        count: summary.awake?.count,
-      },
-      {
-        level: "restless",
-        value: restlessMins,
-        color: "#61dde8",
-        ratio: restlessMins / totalMins,
-        count: summary.restless?.count,
-      },
-      {
-        level: "asleep",
-        value: asleepMins,
-        color: "#2850a1",
-        ratio: asleepMins / totalMins,
-        count: summary.asleep?.count,
-      },
-    ].toReversed();
-  }
+  let data = getLevelSummary(levels).toReversed();
+  let totalMins = sum(data.map((datum) => datum.value));
 
   const xScale = scaleLinear<number>({
     domain: [0, Math.max(totalMins, 10 * 60)], // 10 hours or total
@@ -157,7 +80,7 @@ export function SleepLevelMiniSummary({
   );
 }
 
-function SleepStagesTooltip({ data }: { data: Array<SleepSegmentDatum> }) {
+function SleepStagesTooltip({ data }: { data: Array<SleepSummaryDatum> }) {
   return (
     <>
       {data

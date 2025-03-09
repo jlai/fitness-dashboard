@@ -20,6 +20,10 @@ const levelIndex: Record<string, number> = {
   rem: 2,
   light: 3,
   deep: 4,
+
+  awake: 1,
+  restless: 2,
+  asleep: 3,
 };
 
 export function Hypnogram({
@@ -47,14 +51,22 @@ export function Hypnogram({
   const xAxisHeight = 40;
 
   const xScale = scaleTime<number>({
-    domain: [new Date(sleepLog.startTime), new Date(sleepLog.endTime)],
-    range: [yAxisWidth, width - yAxisWidth],
+    domain: [
+      new Date(sleepLog.startTime).getTime(),
+      new Date(sleepLog.endTime).getTime(),
+    ],
+    // Width may be 0 during initial render
+    range: [yAxisWidth, Math.max(yAxisWidth, width - yAxisWidth)],
     round: true,
     nice: true,
   });
 
+  const hasStages = !!sleepLog.levels?.summary.rem;
+
   const yScale = scaleBand({
-    domain: ["wake", "rem", "light", "deep"],
+    domain: hasStages
+      ? ["wake", "rem", "light", "deep"]
+      : ["awake", "restless", "asleep"],
     range: [0, height - xAxisHeight],
     padding: 1,
   });
@@ -88,8 +100,8 @@ export function Hypnogram({
     const datum = data[i];
     const startTime = dayjs(datum.dateTime);
     const endTime = startTime.add(datum.seconds, "seconds");
-    const startX = xScale(startTime.toDate());
-    const endX = xScale(endTime.toDate());
+    const startX = xScale(startTime.toDate().getTime());
+    const endX = xScale(endTime.toDate().getTime());
     const y = yScale(datum.level)!;
 
     const currentLevelIndex = levelIndex[datum.level];

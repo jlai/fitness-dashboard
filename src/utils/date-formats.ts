@@ -96,7 +96,7 @@ export function formatMinutes(minutes: number) {
     formatParts.push("H[h]");
   }
 
-  if (duration.minutes() > 0) {
+  if (duration.minutes() > 0 || duration.hours() === 0) {
     formatParts.push("m[m]");
   }
 

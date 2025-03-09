@@ -11,16 +11,7 @@ import { formatMinutes } from "@/utils/date-formats";
 import { PERCENT_FRACTION_DIGITS_0 } from "@/utils/number-formats";
 import { usePortalTooltip } from "@/components/charts/visx/tooltip";
 
-import { LEVEL_NAMES } from "./levels";
-
-interface SummaryDatum {
-  level: string;
-  value: number;
-  color: string;
-  ratio: number;
-  thirtyDayAvgMinutes?: number;
-  count: number;
-}
+import { getLevelSummary, SleepSummaryDatum, LEVEL_NAMES } from "./levels";
 
 export function SleepLevelSummaryChart({
   levels,
@@ -37,66 +28,27 @@ export function SleepLevelSummaryChart({
     hideTooltip,
     tooltipOpen,
     tooltipData,
-  } = usePortalTooltip<SummaryDatum>();
+  } = usePortalTooltip<SleepSummaryDatum>();
 
-  const summary = levels.summary;
-
-  const wakeMins = summary.wake?.minutes ?? 0;
-  const remMins = summary.rem?.minutes ?? 0;
-  const lightMins = summary.light?.minutes ?? 0;
-  const deepMins = summary.deep?.minutes ?? 0;
-  const totalMins = wakeMins + remMins + lightMins + deepMins;
+  const data: Array<SleepSummaryDatum> = getLevelSummary(levels);
+  const maxMins = Math.max(...data.map((datum) => datum.value));
+  const levelIds = data.map((datum) => datum.level);
 
   const margin = {
-    left: 60,
+    left: 70,
     right: 100,
     bottom: 30,
   };
 
   const xScale = scaleLinear({
-    domain: [0, Math.max(wakeMins, remMins, lightMins, deepMins)],
+    domain: [0, maxMins],
     range: [margin.left, width - margin.left - margin.right],
   });
 
   const yScale = scaleBand({
-    domain: ["wake", "rem", "light", "deep"],
+    domain: levelIds,
     range: [0, height - margin.bottom],
   });
-
-  const data: Array<SummaryDatum> = [
-    {
-      level: "wake",
-      value: wakeMins,
-      color: "#fcba03",
-      ratio: wakeMins / totalMins,
-      thirtyDayAvgMinutes: summary.wake?.thirtyDayAvgMinutes ?? 0,
-      count: summary.wake?.count ?? 0,
-    },
-    {
-      level: "rem",
-      value: remMins,
-      color: "#9ccef0",
-      ratio: remMins / totalMins,
-      thirtyDayAvgMinutes: summary.rem?.thirtyDayAvgMinutes ?? 0,
-      count: summary.rem?.count ?? 0,
-    },
-    {
-      level: "light",
-      value: lightMins,
-      color: "#0398fc",
-      ratio: lightMins / totalMins,
-      thirtyDayAvgMinutes: summary.light?.thirtyDayAvgMinutes ?? 0,
-      count: summary.light?.count ?? 0,
-    },
-    {
-      level: "deep",
-      value: deepMins,
-      color: "#5d47ff80",
-      ratio: deepMins / totalMins,
-      thirtyDayAvgMinutes: summary.deep?.thirtyDayAvgMinutes ?? 0,
-      count: summary.deep?.count ?? 0,
-    },
-  ];
 
   const rectHeight = (height - margin.bottom) / 4;
   const barHeight = (height - margin.bottom) / 5;
