@@ -105,7 +105,7 @@ function ShrinkingChip({
   icon,
   label,
 }: {
-  icon: React.ReactElement;
+  icon: React.ReactElement<any>;
   label: string;
 }) {
   return (

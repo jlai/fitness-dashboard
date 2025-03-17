@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Roboto, Poppins } from "next/font/google";
 import { HydrationProvider } from "react-hydration-provider";
-import dynamic from "next/dynamic";
 import { Container } from "@mui/material";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v13-appRouter";
 import { Suspense } from "react";
@@ -10,6 +9,7 @@ import { CONTENT_SECURITY_POLICY } from "@/config/content-security-policy";
 import { ErrorBoundary } from "@/components/error";
 
 import Header from "./header";
+import { ClientSideSetup } from "./client-layout";
 
 import "./globals.css";
 
@@ -20,10 +20,6 @@ export const metadata: Metadata = {
   title: "Dashboard",
   description: "Dashboard for Fitbit data",
 };
-
-export const ClientSideSetup = dynamic(() => import("./client-setup"), {
-  ssr: false,
-});
 
 export default function RootPageLayout({
   children,

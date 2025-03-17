@@ -37,7 +37,7 @@ export function SleepLevelMiniSummary({
     range: [0, width],
   });
 
-  const bars: Array<React.ReactElement> = [];
+  const bars: Array<React.ReactElement<any>> = [];
 
   let xOffset = 0;
   for (const datum of data) {
