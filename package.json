@@ -24,7 +24,7 @@
     "@mui/lab": "^6.0.0-beta.25",
     "@mui/material": "^6.4.2",
     "@mui/material-nextjs": "^6.4.2",
-    "@mui/x-charts": "^7.25.0",
+    "@mui/x-charts": "^7.28.0",
     "@mui/x-data-grid": "^7.25.0",
     "@mui/x-date-pickers": "^7.25.0",
     "@tanstack/query-core": "^5.48.0",
@@ -75,11 +75,11 @@
     "react-hook-form-mui": "^7.5.0",
     "react-hydration-provider": "^2.1.0",
     "react-map-gl": "^7.1.7",
-    "react-resizable-panels": "^2.0.21",
+    "react-resizable-panels": "^2.1.7",
     "react-use": "^17.5.0",
     "svg-plant": "^2.0.5",
     "typescript-eslint": "^7.17.0",
-    "usehooks-ts": "^3.1.0",
+    "usehooks-ts": "^3.1.1",
     "wonka": "^6.3.4"
   },
   "devDependencies": {
