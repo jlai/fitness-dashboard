@@ -19,9 +19,14 @@ export function ErrorBoundary({
   children: React.ReactNode;
   FallbackComponent?: ComponentType<FallbackProps>;
 }) {
+  const logError = (error: Error, info: { componentStack?: string | null }) => {
+    console.error("Error caught in ErrorBoundary:\n", error);
+  };
+
   return (
     <QueryErrorResetBoundary>
       <ReactErrorBoundary
+        onError={logError}
         FallbackComponent={FallbackComponent ?? ErrorFallback}
       >
         {children}
