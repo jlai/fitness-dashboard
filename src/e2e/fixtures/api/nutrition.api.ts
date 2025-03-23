@@ -61,6 +61,15 @@ export class NutritionApi {
       }
     );
 
+    // Create food log
+    await page.route("**/1/user/-/foods/log.json**", async (route) => {
+      if (["POST"].includes(route.request().method())) {
+        await route.fulfill({ status: 200 });
+      } else {
+        await route.fallback();
+      }
+    });
+
     // Update or delete food log
     await page.route("**/1/user/-/foods/log/*.json**", async (route) => {
       if (["POST", "DELETE"].includes(route.request().method())) {

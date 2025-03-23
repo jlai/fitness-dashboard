@@ -1,4 +1,5 @@
 import { produce } from "immer";
+import dayjs from "dayjs";
 
 import { BREAKFAST_FOOD_LOGS_RESPONSE } from "@/e2e/data/nutrition/food-log-list";
 import { test, expect } from "@/e2e/fixtures";
@@ -169,4 +170,62 @@ test("can favorite logged foods", async ({
   // Remove from favorites
   await foodPage.removeFromFavoritesAction.click();
   await removeFromFavoritesPromise;
+});
+
+test("can copy logged foods to another day", async ({
+  page,
+  pageObjects: { foodPage, toasts },
+  nutritionApi,
+}) => {
+  await nutritionApi.setFoodLogsResponse(BREAKFAST_FOOD_LOGS_RESPONSE);
+
+  await page.goto("/nutrition");
+
+  // Contains expected foods
+  const eggs = page.getByText("Scrambled Eggs");
+  await expect(eggs).toBeVisible();
+
+  const orangeJuice = page.getByText("Orange Juice");
+  await expect(orangeJuice).toBeVisible();
+
+  // Select scrambled eggs
+  const eggsCheckbox = page.getByRole("checkbox", { name: "Scrambled Eggs" });
+  await eggsCheckbox.click();
+
+  await expect(eggsCheckbox).toBeChecked();
+  await expect(foodPage.copySelectedButton).toBeEnabled();
+
+  await foodPage.copySelectedButton.click();
+
+  const copyDialog = page.getByRole("dialog");
+  const dateField = copyDialog.getByLabel("To date");
+  const confirmCopyButton = page.getByRole("button", { name: "Copy" });
+
+  // Set date to tomorrow using dayjs
+  const tomorrow = dayjs(Date.now()).add(1, "day");
+  await dateField.fill(tomorrow.format("MM/DD/YYYY"));
+
+  const updatedResponse = produce(BREAKFAST_FOOD_LOGS_RESPONSE, (draft) => {
+    draft.foods = [
+      {
+        ...draft.foods[0],
+        logId: 3,
+        logDate: tomorrow.toISOString(),
+      },
+    ];
+  });
+  await nutritionApi.setFoodLogsResponse(updatedResponse);
+
+  await confirmCopyButton.click();
+
+  // Check for success message
+  await expect(toasts.successToasts).toHaveText(/Copied food logs/);
+
+  // Navigate to tomorrow to see the copied food
+  const nextDayButton = page.getByRole("button", { name: "Next day" });
+  await nextDayButton.click();
+
+  // Verify the food was copied to the next day
+  const copiedEggs = page.getByText("Scrambled Eggs");
+  await expect(copiedEggs).toBeVisible();
 });
