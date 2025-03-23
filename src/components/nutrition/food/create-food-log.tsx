@@ -6,7 +6,6 @@ import { FormContainer, useForm } from "react-hook-form-mui";
 import { useAtomValue } from "jotai";
 import dayjs from "dayjs";
 import NextLink from "next/link";
-import { DevTool } from "@hookform/devtools";
 
 import { Food, MealType, buildCreateFoodLogMutation } from "@/api/nutrition";
 import LinkedDayElement, { DaySelectorSource } from "@/components/linked-day";
@@ -81,7 +80,6 @@ export function CreateFoodLogForm() {
       handleSubmit={handleSubmit(logFood)}
       formContext={formContext}
     >
-      <DevTool control={control} />
       <FormRows>
         <SearchFoodsElement name="food" rules={{ required: true }} />
         <FormRow>
