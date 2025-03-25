@@ -1,5 +1,7 @@
 import { test as base } from "@playwright/test";
 
+export const MOCK_DATE = "2021-02-01T10:00:00-0700";
+
 function encodeBase64URL(data: Record<string, string>) {
   return Buffer.from(JSON.stringify(data)).toString("base64url");
 }
@@ -26,7 +28,7 @@ export const test = base.extend({
     });
 
     await page.clock.install({
-      time: "2021-02-01T10:00:00-0700",
+      time: MOCK_DATE,
     });
 
     await use(page);

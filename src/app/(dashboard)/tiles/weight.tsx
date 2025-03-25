@@ -23,7 +23,7 @@ import { DatePicker } from "@mui/x-date-pickers";
 import { useState } from "react";
 
 import NumericStat from "@/components/numeric-stat";
-import { buildGetWeightTimeSeriesQuery } from "@/api/body";
+import { buildGetWeightLogsQuery } from "@/api/body";
 import { useUnits } from "@/config/units";
 import { WeightLog } from "@/api/body/types";
 import { formatShortDate } from "@/utils/date-formats";
@@ -45,7 +45,7 @@ export function WeightTileContent() {
   const day = useSelectedDay();
 
   const { data } = useSuspenseQuery(
-    buildGetWeightTimeSeriesQuery(
+    buildGetWeightLogsQuery(
       day.subtract(MAX_WEIGHT_LOG_DAYS, "days"),
       day,
       weightUnit

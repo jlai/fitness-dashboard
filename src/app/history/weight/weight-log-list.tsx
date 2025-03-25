@@ -24,7 +24,7 @@ import {
 } from "@/components/calendar/period-navigator";
 import {
   buildDeleteWeightLogMutation,
-  buildGetWeightTimeSeriesQuery,
+  buildGetWeightLogsQuery,
 } from "@/api/body";
 import { WeightLog } from "@/api/body/types";
 import { formatShortDate } from "@/utils/date-formats";
@@ -87,7 +87,7 @@ export default function WeightLogList() {
   });
 
   const { data } = useQuery(
-    buildGetWeightTimeSeriesQuery(range.startDay, range.endDay, weightUnit)
+    buildGetWeightLogsQuery(range.startDay, range.endDay, weightUnit)
   );
 
   const queryClient = useQueryClient();

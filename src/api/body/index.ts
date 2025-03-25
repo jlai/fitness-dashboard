@@ -19,6 +19,24 @@ interface CreateWeightLogOptions {
   percentFat?: number;
 }
 
+// Invalid weight logs and weight trend series
+async function invalidateAllWeightTimeSeries(queryClient: QueryClient) {
+  return Promise.all([
+    queryClient.invalidateQueries({
+      queryKey: ["weight-logs"],
+    }),
+    queryClient.invalidateQueries({
+      queryKey: ["timeseries", "weight"],
+    }),
+    queryClient.invalidateQueries({
+      queryKey: ["timeseries", "fat"],
+    }),
+    queryClient.invalidateQueries({
+      queryKey: ["timeseries", "bmi"],
+    }),
+  ]);
+}
+
 export function buildCreateWeightLogMutation(queryClient: QueryClient) {
   return mutationOptions({
     mutationFn: async (newWeightLog: CreateWeightLogOptions) => {
@@ -54,10 +72,8 @@ export function buildCreateWeightLogMutation(queryClient: QueryClient) {
         );
       }
     },
-    onSuccess: () => {
-      queryClient.resetQueries({
-        queryKey: ["weight-time-series"],
-      });
+    onSuccess: async () => {
+      await invalidateAllWeightTimeSeries(queryClient);
     },
   });
 }
@@ -69,10 +85,8 @@ export function buildDeleteWeightLogMutation(queryClient: QueryClient) {
         method: "DELETE",
       });
     },
-    onSuccess: () => {
-      queryClient.resetQueries({
-        queryKey: ["weight-time-series"],
-      });
+    onSuccess: async () => {
+      await invalidateAllWeightTimeSeries(queryClient);
     },
   });
 }
@@ -89,17 +103,13 @@ export function buildGetBodyWeightGoalQuery() {
   });
 }
 
-export function buildGetWeightTimeSeriesQuery(
+export function buildGetWeightLogsQuery(
   startDay: Dayjs,
   endDay: Dayjs,
   weightUnitSystem: WeightUnitSystem
 ) {
   return queryOptions({
-    queryKey: [
-      "weight-time-series",
-      formatAsDate(startDay),
-      formatAsDate(endDay),
-    ],
+    queryKey: ["weight-logs", formatAsDate(startDay), formatAsDate(endDay)],
     queryFn: async () => {
       const response = await makeRequest(
         `/1/user/-/body/log/weight/date/${formatAsDate(
