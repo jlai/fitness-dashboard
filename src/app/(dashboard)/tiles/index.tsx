@@ -9,6 +9,7 @@ import {
   GaugeFloorsTileContent,
   GaugeCaloriesBurnedTileContent,
   GaugeActiveMinutesTileContent,
+  GaugeActiveZoneMinutesTileContent,
 } from "./day-stats";
 import { CalorieGoalTileContent } from "./calorie-goal";
 import Tile from "./tile";
@@ -55,6 +56,13 @@ export const TILE_TYPES: Record<string, TileDefinition> = {
   gaugeActiveMinutes: {
     name: "Gauge: Active minutes",
     component: GaugeActiveMinutesTileContent,
+    scopes: ["act"],
+    w: 1,
+    h: 1,
+  },
+  gaugeActiveZoneMinutes: {
+    name: "Gauge: Active zone minutes",
+    component: GaugeActiveZoneMinutesTileContent,
     scopes: ["act"],
     w: 1,
     h: 1,

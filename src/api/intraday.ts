@@ -4,7 +4,10 @@ import { Dayjs } from "dayjs";
 import { ONE_MINUTE_IN_MILLIS } from "./cache-settings";
 import { formatAsDate, formatHoursMinutes } from "./datetime";
 import { makeRequest } from "./request";
-import { HeartRateZone } from "./times-series";
+import {
+  ActiveZoneMinutesTimeSeriesValue,
+  HeartRateZone,
+} from "./times-series";
 import { parseHeartRateZones } from "./heart-rate";
 
 type IntradayTimeEntry = {
@@ -12,16 +15,27 @@ type IntradayTimeEntry = {
   value: number;
 };
 
+type IntradayMinuteEntry<ValueType = number> = {
+  minute: string; // "2020-09-17T17:00:00"
+  value: ValueType;
+};
+
 /** Intraday entry converted to a date-time */
-export type IntradayEntry = {
+export type IntradayEntry<ValueType = number> = {
   dateTime: Date;
-  value: number;
+  value: ValueType;
 };
 
 type GetIntradayResponse = {
   [key: string]: {
     dataset: Array<IntradayTimeEntry>;
   };
+};
+
+type GetIntradayMinutesResponse<ValueType = number> = {
+  [key: string]: Array<{
+    minutes: Array<IntradayMinuteEntry<ValueType>>;
+  }>;
 };
 
 /** Convert an intraday dataset (time only) to one that has a dateTime */
@@ -44,6 +58,19 @@ export function parseIntradayDataset(
     ),
     ...rest,
   }));
+}
+
+/** Convert an intraday dataset ("minutes" array) to one that has a dateTime */
+export function parseIntradayMinutesDataset<ValueType = number>(
+  response: GetIntradayMinutesResponse<ValueType>,
+  key: string
+): Array<IntradayEntry<ValueType>> {
+  return response[key].flatMap(({ minutes }) =>
+    minutes.map((entry) => ({
+      dateTime: new Date(entry.minute),
+      value: entry.value,
+    }))
+  );
 }
 
 export function buildActivityIntradayQuery(
@@ -73,6 +100,38 @@ export function buildActivityIntradayQuery(
       ];
 
       return parseIntradayDataset(startTime, endTime, intradayData.dataset);
+    },
+    staleTime: ONE_MINUTE_IN_MILLIS,
+  });
+}
+
+export function buildActiveZoneMinutesIntradayQuery(
+  detailLevel: "1min" | "5min" | "15min",
+  startTime: Dayjs,
+  endTime: Dayjs
+) {
+  return queryOptions({
+    queryKey: [
+      "active-zone-minutes-intraday",
+      startTime.toISOString(),
+      endTime.toISOString(),
+    ],
+    queryFn: async () => {
+      const response = await makeRequest(
+        `/1/user/-/activities/active-zone-minutes/date/${formatAsDate(
+          startTime
+        )}/${formatAsDate(endTime)}/${detailLevel}/time/${formatHoursMinutes(
+          startTime
+        )}/${formatHoursMinutes(endTime)}.json`
+      );
+
+      const intradayData =
+        (await response.json()) as GetIntradayMinutesResponse<ActiveZoneMinutesTimeSeriesValue>;
+
+      return parseIntradayMinutesDataset<ActiveZoneMinutesTimeSeriesValue>(
+        intradayData,
+        "activities-active-zone-minutes-intraday"
+      );
     },
     staleTime: ONE_MINUTE_IN_MILLIS,
   });
