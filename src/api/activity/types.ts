@@ -85,7 +85,7 @@ export interface GetActivityLogResponse {
 
 // https://dev.fitbit.com/build/reference/web-api/activity/get-activity-log-list/
 export interface GetActivityLogListResponse {
-  activities: Array<ActivityLog>;
+  activities?: Array<ActivityLog>; // could be missing if no activities
   pagination: {
     afterDate: string;
     limit: number;

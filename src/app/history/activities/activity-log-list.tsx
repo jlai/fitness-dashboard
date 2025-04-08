@@ -96,7 +96,7 @@ export default function ActivityLogList() {
   return (
     <HistoryList
       buildQuery={buildGetActivityListInfiniteQuery}
-      getLogs={(page) => page.activities}
+      getLogs={(page) => page.activities ?? []}
       slots={{ row: ActivityLogRow, headerCells: ActivityLogListHeaderCells }}
     />
   );

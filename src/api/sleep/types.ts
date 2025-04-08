@@ -1,6 +1,6 @@
 // https://dev.fitbit.com/build/reference/web-api/sleep/get-sleep-log-list/
 export interface GetSleepLogListResponse {
-  sleep: Array<SleepLog>;
+  sleep?: Array<SleepLog>; // could be missing if no sleep logs
   pagination: {
     afterDate: string;
     limit: number;
