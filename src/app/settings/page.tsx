@@ -52,8 +52,10 @@ import {
   weightUnitAtom,
   foodLogGoalsPositionAtom,
   macroGoalsAtom,
+  allowAPIProxyAtom,
 } from "@/storage/settings";
 import { NutritionalValues } from "@/api/nutrition/types";
+import { FITBIT_API_PROXY_URL, HOST_WEBSITE_NAME } from "@/config";
 
 function SettingsRow({
   title,
@@ -455,6 +457,46 @@ function UnitSettings() {
   );
 }
 
+function WorkaroundSettings() {
+  const [allowAPIProxy, setAllowAPIProxy] = useAtom(allowAPIProxyAtom);
+
+  const queryClient = useQueryClient();
+
+  return (
+    <>
+      <SettingsRow title="Workarounds"></SettingsRow>
+      <SettingsRow
+        title="Access Fitbit server through Cloudflare proxy"
+        action={
+          <Switch
+            checked={allowAPIProxy}
+            onChange={(_event, checked) => {
+              setAllowAPIProxy(checked);
+              queryClient.clear();
+            }}
+          />
+        }
+      >
+        <div className="space-y-2">
+          <p>
+            Use {HOST_WEBSITE_NAME} and Cloudflare servers to access Fitbit API.
+            Instead of accessing your Fitbit data directly from Fitbit&apos;s
+            servers, the request from your browser will be passed through a 3rd
+            party server. Your data will not be stored or logged by the
+            intermediary servers.
+          </p>
+          <p>
+            This is a <i>temporary</i> option to work around a Fitbit API bug
+            (missing cross-origin request headers). If you&apos;re not
+            comfortable enabling this, hang tight and wait for Fitbit to fix
+            this API issue.
+          </p>
+        </div>
+      </SettingsRow>
+    </>
+  );
+}
+
 function AdvancedSettings() {
   const confirm = useConfirm();
   const setUserTiles = useSetAtom(userTilesAtom);
@@ -546,6 +588,11 @@ export default function SettingsPage() {
 
   return (
     <Container maxWidth="lg">
+      {FITBIT_API_PROXY_URL && (
+        <SettingsTable>
+          <WorkaroundSettings />
+        </SettingsTable>
+      )}
       <SettingsTable>
         <UnitSettings />
       </SettingsTable>

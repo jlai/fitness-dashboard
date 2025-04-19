@@ -3,7 +3,8 @@
 import { atomEffect } from "jotai-effect";
 import { toast } from "mui-sonner";
 
-import { FITBIT_API_URL } from "@/config";
+import { FITBIT_API_PROXY_URL, FITBIT_API_URL } from "@/config";
+import { isAPIProxyAllowed } from "@/storage/settings";
 
 import { getFreshAccessToken } from "./auth";
 
@@ -26,9 +27,10 @@ export interface ServerError extends Error {
  * Make a request to the Fitbit API.
  */
 export async function makeRequest(uri: string, options?: RequestInit) {
+  const useProxy = FITBIT_API_PROXY_URL && isAPIProxyAllowed();
   const authToken = await getFreshAccessToken();
 
-  const url = new URL(uri, FITBIT_API_URL);
+  const url = new URL(uri, useProxy ? FITBIT_API_PROXY_URL : FITBIT_API_URL);
 
   const response = await fetch(url, {
     ...options,

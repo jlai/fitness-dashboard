@@ -40,6 +40,10 @@ export const FITBIT_OAUTH_AUTHORIZATION_ENDPOINT = requiredVar(
   process.env.NEXT_PUBLIC_FITBIT_OAUTH_AUTHORIZATION_ENDPOINT
 );
 
+/** Proxy to work around CORS issues. Should be an API that fowards requests to api.fitbit.com */
+export const FITBIT_API_PROXY_URL =
+  process.env.NEXT_PUBLIC_FITBIT_API_PROXY_URL;
+
 /**
  * Whether to enable intraday timeseries requests
  * (see https://dev.fitbit.com/build/reference/web-api/intraday/)

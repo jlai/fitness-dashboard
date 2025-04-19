@@ -127,3 +127,22 @@ export const increasedTileLimitsAtom = atomWithStorage<boolean>(
     getOnInit: true,
   }
 );
+
+export const ALLOW_API_PROXY_STORAGE_KEY = "api:allow-api-proxy";
+
+export const allowAPIProxyAtom = atomWithStorage<boolean>(
+  ALLOW_API_PROXY_STORAGE_KEY,
+  false,
+  undefined,
+  {
+    getOnInit: true,
+  }
+);
+
+export function isAPIProxyAllowed() {
+  if (typeof localStorage === "undefined") {
+    return null;
+  }
+
+  return localStorage.getItem(ALLOW_API_PROXY_STORAGE_KEY) === "true";
+}
