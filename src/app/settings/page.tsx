@@ -61,16 +61,18 @@ function SettingsRow({
   title,
   action,
   children,
+  component = "p",
 }: {
   title: string;
   action?: React.ReactNode;
   children?: React.ReactNode;
+  component?: React.ElementType;
 }) {
   return (
     <TableRow>
       <TableCell colSpan={action ? 1 : 2}>
         <Typography variant="h5">{title}</Typography>
-        <Typography variant="body1" component="p">
+        <Typography variant="body1" component={component}>
           {children}
         </Typography>
       </TableCell>
@@ -467,6 +469,7 @@ function WorkaroundSettings() {
       <SettingsRow title="Workarounds"></SettingsRow>
       <SettingsRow
         title="Access Fitbit server through Cloudflare proxy"
+        component="div"
         action={
           <Switch
             checked={allowAPIProxy}
