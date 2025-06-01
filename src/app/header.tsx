@@ -21,6 +21,7 @@ import { SurveyButton } from "@/components/survey";
 
 import AccountMenu from "./account-menu";
 import { SiteNotice } from "./site-notice";
+import { ProxyNotice } from "./proxy-notice";
 
 function NavLink({
   href,
@@ -103,6 +104,7 @@ export default function Header() {
           </div>
         </Container>
       </AppBar>
+      <ProxyNotice />
       {SITE_NOTICE_HTML && <SiteNotice />}
     </>
   );
