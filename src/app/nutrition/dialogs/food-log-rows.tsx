@@ -242,8 +242,8 @@ export function MealTypeRows({ summary }: { summary: MealTypeSummary }) {
 
   return (
     <>
-      <TableRow className="bg-slate-50 dark:bg-slate-900">
-        <TableCell className="font-medium">
+      <TableRow className="bg-slate-100 dark:bg-slate-900">
+        <TableCell>
           <div className="flex flex-row items-center">
             <FormControlLabel
               control={
@@ -258,6 +258,11 @@ export function MealTypeRows({ summary }: { summary: MealTypeSummary }) {
               }
               title={title}
               label={summary.name}
+              slotProps={{
+                typography: {
+                  sx: { fontWeight: "medium" },
+                },
+              }}
             />
           </div>
         </TableCell>
