@@ -19,7 +19,7 @@ import Link from "next/link";
 import { DailySummaryActivityLog } from "@/api/activity";
 import { TIME } from "@/utils/date-formats";
 import { useUnits } from "@/config/units";
-import { FRACTION_DIGITS_0, FRACTION_DIGITS_1 } from "@/utils/number-formats";
+import { NumberFormats } from "@/utils/number-formats";
 import { ACTIVITY_ICONS } from "@/config/common-ids";
 import { ActivityLogDetailsDialog } from "@/app/history/activities/details";
 
@@ -125,14 +125,17 @@ function ActivityLogSummary({
                   <>
                     {" "}
                     &bull;{" "}
-                    {FRACTION_DIGITS_1.format(
+                    {NumberFormats.FRACTION_DIGITS_1.format(
                       localizedKilometers(distance)
                     )}{" "}
                     {localizedKilometersName}
                   </>
                 )}
                 {!distance && steps && (
-                  <> &bull; {FRACTION_DIGITS_0.format(steps)} steps</>
+                  <>
+                    {" "}
+                    &bull; {NumberFormats.FRACTION_DIGITS_0.format(steps)} steps
+                  </>
                 )}
               </>
             ) : (

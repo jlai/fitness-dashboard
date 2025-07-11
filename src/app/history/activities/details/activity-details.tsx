@@ -18,7 +18,7 @@ import { useMemo } from "react";
 import React from "react";
 
 import { useUnits } from "@/config/units";
-import { FRACTION_DIGITS_1 } from "@/utils/number-formats";
+import { NumberFormats } from "@/utils/number-formats";
 import { ActivityLog } from "@/api/activity";
 import { MAPLIBRE_STYLE_URL } from "@/config";
 import { HeaderBar } from "@/components/layout/rows";
@@ -75,7 +75,9 @@ function ActivityOverview({
         <Typography variant="h6">{formatDuration(duration)}</Typography>
         {distance && (
           <Typography variant="h6">
-            {FRACTION_DIGITS_1.format(localizedKilometers(distance))}{" "}
+            {NumberFormats.FRACTION_DIGITS_1.format(
+              localizedKilometers(distance)
+            )}{" "}
             {localizedKilometersName}
           </Typography>
         )}

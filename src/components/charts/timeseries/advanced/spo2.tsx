@@ -1,4 +1,4 @@
-import { FRACTION_DIGITS_1 } from "@/utils/number-formats";
+import { NumberFormats } from "@/utils/number-formats";
 
 import { TimeSeriesDatum, useTimeSeriesData } from "../data";
 import { SimpleLineChart } from "../mui-renderer";
@@ -14,7 +14,7 @@ type Spo2Datum = TimeSeriesDatum & {
 
 const SPO2_SERIES_CONFIGS = singleSeriesConfig<Spo2Datum>({
   label: "Oxygen saturation (SpO2)",
-  numberFormat: FRACTION_DIGITS_1.format,
+  numberFormat: NumberFormats.FRACTION_DIGITS_1.format,
   unit: "%",
   showMark: true,
   yAccessor: (entry) => entry.value.avg ?? null,

@@ -14,11 +14,11 @@ import {
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { useAtomValue, useSetAtom } from "jotai";
 import { usePopupState, bindPopper } from "material-ui-popup-state/hooks";
-import React, { useCallback, ChangeEvent, MouseEvent } from "react";
+import { useCallback, ChangeEvent, MouseEvent } from "react";
 import { ArticleOutlined, EditOutlined as EditIcon } from "@mui/icons-material";
 
 import { formatFoodName } from "@/utils/other-formats";
-import { FRACTION_DIGITS_1 } from "@/utils/number-formats";
+import { NumberFormats } from "@/utils/number-formats";
 import {
   FoodLogEntry,
   FoodLogSummary,
@@ -40,7 +40,7 @@ import { MealTypeSummary } from "../summarize-day";
 
 import { EditServingSize } from "./edit-serving-size";
 
-const NUTRIENT_FORMAT = FRACTION_DIGITS_1;
+const NUTRIENT_FORMAT = NumberFormats.FRACTION_DIGITS_1;
 const NUTRIENT_PROPS = ["carbs", "fat", "fiber", "protein", "sodium"];
 
 const FlatChip = styled(Chip)(() => ({

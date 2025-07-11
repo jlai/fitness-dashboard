@@ -1,6 +1,6 @@
 import { useQueries } from "@tanstack/react-query";
 
-import { FRACTION_DIGITS_0 } from "@/utils/number-formats";
+import { NumberFormats } from "@/utils/number-formats";
 import { buildActivityGoalsQuery } from "@/api/activity/goals";
 
 import { ChartSeriesConfig } from "./series-config";
@@ -22,7 +22,7 @@ const AZM_SERIES_CONFIGS: Array<ChartSeriesConfig<ActiveZoneMinutesDatum>> = [
     id: "fat-burn",
     label: "Fat burn",
     yAccessor: (d) => d.value.fatBurnActiveZoneMinutes,
-    numberFormat: FRACTION_DIGITS_0.format,
+    numberFormat: NumberFormats.FRACTION_DIGITS_0.format,
     unit: "mins",
     color: "#f5e12f",
   },
@@ -30,7 +30,7 @@ const AZM_SERIES_CONFIGS: Array<ChartSeriesConfig<ActiveZoneMinutesDatum>> = [
     id: "cardio",
     label: "Cardio",
     yAccessor: (d) => d.value.cardioActiveZoneMinutes,
-    numberFormat: FRACTION_DIGITS_0.format,
+    numberFormat: NumberFormats.FRACTION_DIGITS_0.format,
     unit: "mins",
     color: "#f59f2f",
   },
@@ -38,7 +38,7 @@ const AZM_SERIES_CONFIGS: Array<ChartSeriesConfig<ActiveZoneMinutesDatum>> = [
     id: "peak",
     label: "Peak",
     yAccessor: (d) => d.value.peakActiveZoneMinutes,
-    numberFormat: FRACTION_DIGITS_0.format,
+    numberFormat: NumberFormats.FRACTION_DIGITS_0.format,
     unit: "mins",
     color: "#f5492f",
   },
@@ -66,7 +66,9 @@ export function ActiveZoneMinutesChart() {
       referenceLine={
         azmGoal
           ? {
-              label: `Goal: ${FRACTION_DIGITS_0.format(azmGoal)} zone mins`,
+              label: `Goal: ${NumberFormats.FRACTION_DIGITS_0.format(
+                azmGoal
+              )} zone mins`,
               value: azmGoal,
             }
           : undefined

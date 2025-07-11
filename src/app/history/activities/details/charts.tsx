@@ -30,7 +30,7 @@ import { ScaleLinear } from "d3-scale";
 import { AxisValueFormatterContext } from "@mui/x-charts/internals";
 
 import { ParsedTcx, Trackpoint } from "@/api/activity/tcx";
-import { FRACTION_DIGITS_0, FRACTION_DIGITS_1 } from "@/utils/number-formats";
+import { NumberFormats } from "@/utils/number-formats";
 import { useUnits } from "@/config/units";
 import { ActivityLog } from "@/api/activity";
 import {
@@ -156,7 +156,9 @@ export function ActivityTcxCharts({
           <ChartSectionHeader title="Elevation">
             {elevationGain > 0 && (
               <Typography variant="h6">
-                {FRACTION_DIGITS_0.format(localizedMeters(elevationGain))}{" "}
+                {NumberFormats.FRACTION_DIGITS_0.format(
+                  localizedMeters(elevationGain)
+                )}{" "}
                 {localizedMetersName}
               </Typography>
             )}
@@ -319,7 +321,7 @@ export function SynchronizedChart({
           dataKey: "distanceLocalized",
           scaleType: "linear",
           valueFormatter: (value: number, context) =>
-            `${FRACTION_DIGITS_1.format(value)} ${
+            `${NumberFormats.FRACTION_DIGITS_1.format(value)} ${
               context.location === "tooltip" ? localizedKilometersName : ""
             }`,
         };
@@ -365,7 +367,7 @@ export function CaloriesChart({
   dateDomain?: [Date, Date];
 }) {
   const valueFormatter = (value: number | null) =>
-    value ? `${FRACTION_DIGITS_1.format(value)} Cal/min` : "";
+    value ? `${NumberFormats.FRACTION_DIGITS_1.format(value)} Cal/min` : "";
 
   return (
     <SynchronizedChart
@@ -389,7 +391,7 @@ export function HeartRateChart({
   dateDomain?: [Date, Date];
 }) {
   const valueFormatter = (value: number | null) =>
-    value ? `${FRACTION_DIGITS_0.format(value)} bpm` : "";
+    value ? `${NumberFormats.FRACTION_DIGITS_0.format(value)} bpm` : "";
 
   return (
     <SynchronizedChart
@@ -420,7 +422,11 @@ export function ElevationChart({
   dateDomain?: [Date, Date];
 }) {
   const valueFormatter = (value: number | null) =>
-    value ? `${FRACTION_DIGITS_0.format(value)} ${localizedMetersName}` : "";
+    value
+      ? `${NumberFormats.FRACTION_DIGITS_0.format(
+          value
+        )} ${localizedMetersName}`
+      : "";
 
   return (
     <SynchronizedChart

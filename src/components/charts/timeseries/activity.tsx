@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useQueries } from "@tanstack/react-query";
 
 import { useUnits } from "@/config/units";
-import { FRACTION_DIGITS_0, FRACTION_DIGITS_2 } from "@/utils/number-formats";
+import { NumberFormats } from "@/utils/number-formats";
 import { buildActivityGoalsQuery } from "@/api/activity/goals";
 
 import { useAggregation } from "./aggregation";
@@ -15,19 +15,19 @@ import { useTimeSeriesChartConfig } from "./context";
 
 const STEPS_SERIES_CONFIGS = singleSeriesConfig({
   label: "Steps",
-  numberFormat: FRACTION_DIGITS_0.format,
+  numberFormat: NumberFormats.FRACTION_DIGITS_0.format,
   unit: "steps",
 });
 
 const FLOORS_SERIES_CONFIGS = singleSeriesConfig({
   label: "Floors",
-  numberFormat: FRACTION_DIGITS_0.format,
+  numberFormat: NumberFormats.FRACTION_DIGITS_0.format,
   unit: "floors",
 });
 
 const CALORIES_BURNED_SERIES_CONFIGS = singleSeriesConfig({
   label: "Calories",
-  numberFormat: FRACTION_DIGITS_0.format,
+  numberFormat: NumberFormats.FRACTION_DIGITS_0.format,
   unit: "Cal",
 });
 
@@ -59,7 +59,9 @@ export function DailyStepsChart() {
         referenceLine={
           stepGoal
             ? {
-                label: `Goal: ${FRACTION_DIGITS_0.format(stepGoal)} steps`,
+                label: `Goal: ${NumberFormats.FRACTION_DIGITS_0.format(
+                  stepGoal
+                )} steps`,
                 value: stepGoal,
               }
             : undefined
@@ -91,7 +93,7 @@ export function DistanceChart() {
     () =>
       singleSeriesConfig({
         label: "Distance",
-        numberFormat: (value) => FRACTION_DIGITS_2.format(value),
+        numberFormat: (value) => NumberFormats.FRACTION_DIGITS_2.format(value),
         unit: localizedKilometersName,
         yAccessor: (datum) => localizedKilometers(Number(datum.value)),
       }),
@@ -109,7 +111,7 @@ export function DistanceChart() {
         referenceLine={
           distanceGoal
             ? {
-                label: `Goal: ${FRACTION_DIGITS_0.format(
+                label: `Goal: ${NumberFormats.FRACTION_DIGITS_0.format(
                   distanceGoal
                 )} ${localizedKilometersName}`,
                 value: distanceGoal,
@@ -122,7 +124,9 @@ export function DistanceChart() {
           data={data}
           yAccessor={(datum) => localizedKilometers(Number(datum.value))}
           valueFormatter={(value) =>
-            `${FRACTION_DIGITS_2.format(value)} ${localizedKilometersName}`
+            `${NumberFormats.FRACTION_DIGITS_2.format(
+              value
+            )} ${localizedKilometersName}`
           }
         />
       </GraphStats>
@@ -151,7 +155,9 @@ export function FloorsChart() {
         referenceLine={
           floorsGoal
             ? {
-                label: `Goal: ${FRACTION_DIGITS_0.format(floorsGoal)} floors`,
+                label: `Goal: ${NumberFormats.FRACTION_DIGITS_0.format(
+                  floorsGoal
+                )} floors`,
                 value: floorsGoal,
               }
             : undefined

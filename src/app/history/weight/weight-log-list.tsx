@@ -29,10 +29,7 @@ import {
 import { WeightLog } from "@/api/body/types";
 import { formatShortDate } from "@/utils/date-formats";
 import { useUnits } from "@/config/units";
-import {
-  FRACTION_DIGITS_1,
-  PERCENT_FRACTION_DIGITS_1,
-} from "@/utils/number-formats";
+import { NumberFormats } from "@/utils/number-formats";
 import { HeaderBar } from "@/components/layout/rows";
 import { FlexSpacer } from "@/components/layout/flex";
 import CreateWeightLogDialog, {
@@ -53,17 +50,22 @@ function WeightLogRow({
     <TableRow>
       <TableCell>{formatShortDate(dayjs(log.date))}</TableCell>
       <TableCell>
-        {log.bmi ? <>{FRACTION_DIGITS_1.format(log.bmi)}</> : <>-</>}
-      </TableCell>
-      <TableCell>
-        {log.fat ? (
-          <>{PERCENT_FRACTION_DIGITS_1.format(log.fat / 100)}</>
+        {log.bmi ? (
+          <>{NumberFormats.FRACTION_DIGITS_1.format(log.bmi)}</>
         ) : (
           <>-</>
         )}
       </TableCell>
       <TableCell>
-        {FRACTION_DIGITS_1.format(log.weight)} {units.localizedKilogramsName}
+        {log.fat ? (
+          <>{NumberFormats.PERCENT_FRACTION_DIGITS_1.format(log.fat / 100)}</>
+        ) : (
+          <>-</>
+        )}
+      </TableCell>
+      <TableCell>
+        {NumberFormats.FRACTION_DIGITS_1.format(log.weight)}{" "}
+        {units.localizedKilogramsName}
       </TableCell>
       <TableCell className="w-[40px]">
         <IconButton onClick={onDelete}>

@@ -25,7 +25,7 @@ import {
 import dayjs from "dayjs";
 import { useId } from "react";
 
-import { FRACTION_DIGITS_0 } from "@/utils/number-formats";
+import { NumberFormats } from "@/utils/number-formats";
 import { buildGetDevicesQuery, Device } from "@/api/devices";
 import { formatShortDate, TIME } from "@/utils/date-formats";
 import { FormRow } from "@/components/forms/form-row";
@@ -92,7 +92,8 @@ export function TrackerStatusTileContent() {
               <Stack direction="row" alignItems="center" columnGap={1}>
                 <BatteryIcon level={tracker.batteryLevel} />
                 <Typography>
-                  {FRACTION_DIGITS_0.format(tracker.batteryLevel)}%
+                  {NumberFormats.FRACTION_DIGITS_0.format(tracker.batteryLevel)}
+                  %
                 </Typography>
               </Stack>
             )}

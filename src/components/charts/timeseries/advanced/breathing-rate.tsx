@@ -1,4 +1,4 @@
-import { FRACTION_DIGITS_1 } from "@/utils/number-formats";
+import { NumberFormats } from "@/utils/number-formats";
 
 import { SimpleLineChart } from "../mui-renderer";
 import { TimeSeriesDatum, useTimeSeriesData } from "../data";
@@ -12,7 +12,7 @@ type BreathingRateDatum = TimeSeriesDatum & {
 
 const BREATHING_RATE_SERIES_CONFIGS = singleSeriesConfig<BreathingRateDatum>({
   label: "Breathing rate",
-  numberFormat: FRACTION_DIGITS_1.format,
+  numberFormat: NumberFormats.FRACTION_DIGITS_1.format,
   unit: "breaths/min",
   showMark: true,
   yAccessor: (entry) => entry.value.breathingRate ?? null,

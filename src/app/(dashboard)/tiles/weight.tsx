@@ -27,10 +27,7 @@ import { buildGetWeightLogsQuery } from "@/api/body";
 import { useUnits } from "@/config/units";
 import { WeightLog } from "@/api/body/types";
 import { formatShortDate } from "@/utils/date-formats";
-import {
-  FRACTION_DIGITS_1,
-  PERCENT_FRACTION_DIGITS_1,
-} from "@/utils/number-formats";
+import { NumberFormats } from "@/utils/number-formats";
 import { formatAsDate } from "@/api/datetime";
 
 import { useSelectedDay } from "../state";
@@ -178,7 +175,7 @@ function WeightLogCard({
                   ) : (
                     <ArrowDropDown className="mx-0 text-slate-500" />
                   )}
-                  {FRACTION_DIGITS_1.format(
+                  {NumberFormats.FRACTION_DIGITS_1.format(
                     Math.abs(weightLog.weight - previous.weight)
                   )}{" "}
                   {localizedKilogramsName}
@@ -190,13 +187,16 @@ function WeightLogCard({
           <div className="h-[1em]"></div>
           {weightLog.fat && (
             <Typography>
-              {PERCENT_FRACTION_DIGITS_1.format(weightLog.fat / 100)} fat
+              {NumberFormats.PERCENT_FRACTION_DIGITS_1.format(
+                weightLog.fat / 100
+              )}{" "}
+              fat
             </Typography>
           )}
 
           {weightLog.bmi && (
             <Typography>
-              {FRACTION_DIGITS_1.format(weightLog.bmi)} BMI
+              {NumberFormats.FRACTION_DIGITS_1.format(weightLog.bmi)} BMI
             </Typography>
           )}
         </Stack>

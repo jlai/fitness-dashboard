@@ -5,7 +5,7 @@ import {
 import dayjs from "dayjs";
 import durationPlugin from "dayjs/plugin/duration";
 
-import { FRACTION_DIGITS_0 } from "@/utils/number-formats";
+import { NumberFormats } from "@/utils/number-formats";
 import { DayjsRange } from "@/components/calendar/period-navigator";
 import { TIME } from "@/utils/date-formats";
 
@@ -75,8 +75,8 @@ type AxisValueFormatter = (
 ) => string;
 
 export function makeAxisValueFormatter({
-  tickFormat = FRACTION_DIGITS_0.format,
-  tooltipFormat = FRACTION_DIGITS_0.format,
+  tickFormat = NumberFormats.FRACTION_DIGITS_0.format,
+  tooltipFormat = NumberFormats.FRACTION_DIGITS_0.format,
 }: {
   tickFormat?: (value: number) => string;
   tooltipFormat?: (value: number) => string;
@@ -95,7 +95,7 @@ export function makeAxisValueFormatter({
 }
 
 export function makeSeriesValueFormatter({
-  numberFormat = FRACTION_DIGITS_0.format,
+  numberFormat = NumberFormats.FRACTION_DIGITS_0.format,
   unit,
 }: {
   numberFormat?: (value: number) => string;

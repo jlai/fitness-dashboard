@@ -1,4 +1,4 @@
-import { FRACTION_DIGITS_0 } from "@/utils/number-formats";
+import { NumberFormats } from "@/utils/number-formats";
 
 import { TimeSeriesDatum, useTimeSeriesData } from "../data";
 import { SimpleLineChart } from "../mui-renderer";
@@ -26,7 +26,7 @@ const SINGLE_CARDIO_FITNESS_CONFIGS: Array<
     id: "cardio",
     label: "Cardio score (VO2 Max)",
     yAccessor: (entry) => parseCardioScoreRange(entry.value.vo2Max)[0] ?? null,
-    numberFormat: FRACTION_DIGITS_0.format,
+    numberFormat: NumberFormats.FRACTION_DIGITS_0.format,
     unit: "mL/kg/min",
     showMark: false,
   },
@@ -39,7 +39,7 @@ const RANGED_CARDIO_FITNESS_SERIES_CONFIGS: Array<
     id: "lower",
     label: "Lower estimate",
     yAccessor: (entry) => parseCardioScoreRange(entry.value.vo2Max)[0] ?? null,
-    numberFormat: FRACTION_DIGITS_0.format,
+    numberFormat: NumberFormats.FRACTION_DIGITS_0.format,
     unit: "mL/kg/min",
     showMark: false,
   },
@@ -47,7 +47,7 @@ const RANGED_CARDIO_FITNESS_SERIES_CONFIGS: Array<
     id: "upper",
     label: "Upper estimate",
     yAccessor: (entry) => parseCardioScoreRange(entry.value.vo2Max)[1] ?? null,
-    numberFormat: FRACTION_DIGITS_0.format,
+    numberFormat: NumberFormats.FRACTION_DIGITS_0.format,
     unit: "mL/kg/min",
     showMark: false,
   },

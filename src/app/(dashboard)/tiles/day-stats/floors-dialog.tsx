@@ -15,7 +15,7 @@ import { sumBy } from "es-toolkit";
 import { buildActivityIntradayQuery } from "@/api/intraday";
 import { ENABLE_INTRADAY } from "@/config";
 import { TIME } from "@/utils/date-formats";
-import { FRACTION_DIGITS_0 } from "@/utils/number-formats";
+import { NumberFormats } from "@/utils/number-formats";
 import { aggregateByHour } from "@/components/charts/timeseries/aggregation";
 import { FormRows } from "@/components/forms/form-row";
 
@@ -132,7 +132,9 @@ function FloorsIntraday() {
           dataKey: "value",
           label: "Floors",
           valueFormatter: (value) =>
-            value || value === 0 ? FRACTION_DIGITS_0.format(value) : "",
+            value || value === 0
+              ? NumberFormats.FRACTION_DIGITS_0.format(value)
+              : "",
         },
       ]}
     />

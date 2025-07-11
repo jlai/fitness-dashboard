@@ -12,7 +12,7 @@ import { sum } from "es-toolkit";
 
 import { SleepLog } from "@/api/sleep";
 import { formatMinutes } from "@/utils/date-formats";
-import { PERCENT_FRACTION_DIGITS_0 } from "@/utils/number-formats";
+import { NumberFormats } from "@/utils/number-formats";
 
 import { FlexSpacer } from "../layout/flex";
 
@@ -101,7 +101,7 @@ function SleepStagesTooltip({ data }: { data: Array<SleepSummaryDatum> }) {
             <FlexSpacer />
             <b className="text-end">{formatMinutes(datum.value)}</b>
             <div className="text-end">
-              ({PERCENT_FRACTION_DIGITS_0.format(datum.ratio)})
+              ({NumberFormats.PERCENT_FRACTION_DIGITS_0.format(datum.ratio)})
             </div>
           </Typography>
         ))}

@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { Typography } from "@mui/material";
 import dayjs from "dayjs";
 
-import { FRACTION_DIGITS_0 } from "@/utils/number-formats";
+import { NumberFormats } from "@/utils/number-formats";
 import { isAfterToday } from "@/utils/date-utils";
 
 import { TimeSeriesChartContext } from "./context";
@@ -22,7 +22,7 @@ export function Stat({ children }: { children: React.ReactNode }) {
 export function AverageAndTotalStat<TDatum extends TimeSeriesDatum>({
   data,
   yAccessor,
-  valueFormatter = FRACTION_DIGITS_0.format,
+  valueFormatter = NumberFormats.FRACTION_DIGITS_0.format,
 }: {
   data?: Array<TDatum>;
   yAccessor: (d: TDatum) => number | null;

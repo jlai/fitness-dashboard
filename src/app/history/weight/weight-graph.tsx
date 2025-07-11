@@ -30,7 +30,7 @@ import {
   GraphRangeSelector,
 } from "@/components/charts/navigators";
 import { useUnits } from "@/config/units";
-import { FRACTION_DIGITS_1 } from "@/utils/number-formats";
+import { NumberFormats } from "@/utils/number-formats";
 import { buildGetBodyWeightGoalQuery } from "@/api/body";
 import { HeaderBar } from "@/components/layout/rows";
 import { getTickFormatterForDayRange } from "@/components/charts/timeseries/formatters";
@@ -66,7 +66,9 @@ export function LeanFatMassGraph() {
     const today = dayjs();
     const valueFormatter = (value: number | null) =>
       value
-        ? `${FRACTION_DIGITS_1.format(value)} ${localizedKilogramsName}`
+        ? `${NumberFormats.FRACTION_DIGITS_1.format(
+            value
+          )} ${localizedKilogramsName}`
         : "";
 
     const dates: Array<Date> = [];

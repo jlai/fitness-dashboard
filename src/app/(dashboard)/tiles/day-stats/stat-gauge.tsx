@@ -7,7 +7,7 @@ import Image from "next/image";
 import { Stack, Typography } from "@mui/material";
 
 import NumericStat from "@/components/numeric-stat";
-import { PERCENT_FRACTION_DIGITS_0 } from "@/utils/number-formats";
+import { NumberFormats } from "@/utils/number-formats";
 
 export default function StatGauge({
   value,
@@ -77,7 +77,7 @@ export function StatPercent({ ratio }: { ratio: number }) {
   return (
     <Stack direction="column" alignItems="center" justifyContent="center">
       <Typography variant="h5">
-        {PERCENT_FRACTION_DIGITS_0.format(ratio)}
+        {NumberFormats.PERCENT_FRACTION_DIGITS_0.format(ratio)}
       </Typography>
     </Stack>
   );

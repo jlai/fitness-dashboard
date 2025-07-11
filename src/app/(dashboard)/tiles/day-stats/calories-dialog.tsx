@@ -10,7 +10,7 @@ import { TabContext, TabList, TabPanel } from "@mui/lab";
 import { useQuery } from "@tanstack/react-query";
 import { Suspense } from "react";
 
-import { FRACTION_DIGITS_0 } from "@/utils/number-formats";
+import { NumberFormats } from "@/utils/number-formats";
 import { buildActivityIntradayQuery } from "@/api/intraday";
 import { ENABLE_INTRADAY } from "@/config";
 import { FormRows } from "@/components/forms/form-row";
@@ -136,7 +136,7 @@ function CaloriesPieChart() {
           outerRadius: 80,
           cx: 100,
           valueFormatter: ({ value }) =>
-            `${FRACTION_DIGITS_0.format(value)} Cal`,
+            `${NumberFormats.FRACTION_DIGITS_0.format(value)} Cal`,
         },
       ]}
     />

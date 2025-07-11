@@ -4,7 +4,7 @@ import durationPlugin from "dayjs/plugin/duration";
 import { useQueries } from "@tanstack/react-query";
 
 import { useUnits } from "@/config/units";
-import { FRACTION_DIGITS_0, FRACTION_DIGITS_1 } from "@/utils/number-formats";
+import { NumberFormats } from "@/utils/number-formats";
 import { buildWaterGoalQuery } from "@/api/nutrition";
 
 import { SimpleBarChart, SimpleLineChart } from "./mui-renderer";
@@ -22,20 +22,20 @@ dayjs.extend(durationPlugin);
 
 const CALORIES_SERIES_CONFIGS = singleSeriesConfig({
   label: "Calories",
-  numberFormat: FRACTION_DIGITS_0.format,
+  numberFormat: NumberFormats.FRACTION_DIGITS_0.format,
   unit: "Cal",
 });
 
 const FAT_SERIES_CONFIGS = singleSeriesConfig({
   label: "Fat %",
-  numberFormat: FRACTION_DIGITS_1.format,
+  numberFormat: NumberFormats.FRACTION_DIGITS_1.format,
   unit: "%",
   showMark: false,
 });
 
 const BMI_SERIES_CONFIGS = singleSeriesConfig({
   label: "BMI",
-  numberFormat: FRACTION_DIGITS_1.format,
+  numberFormat: NumberFormats.FRACTION_DIGITS_1.format,
   unit: "BMI",
   showMark: false,
 });
@@ -67,7 +67,7 @@ export function WaterChart() {
       singleSeriesConfig({
         label: "Water consumed",
         yAccessor: (entry) => localizedWaterVolume(Number(entry.value)),
-        numberFormat: FRACTION_DIGITS_0.format,
+        numberFormat: NumberFormats.FRACTION_DIGITS_0.format,
         unit: localizedWaterVolumeName,
       }),
     [localizedWaterVolume, localizedWaterVolumeName]
@@ -83,7 +83,7 @@ export function WaterChart() {
       referenceLine={
         waterGoal
           ? {
-              label: `Goal: ${FRACTION_DIGITS_0.format(
+              label: `Goal: ${NumberFormats.FRACTION_DIGITS_0.format(
                 waterGoal
               )} ${localizedWaterVolumeName}`,
               value: waterGoal,
@@ -103,7 +103,7 @@ export function WeightChart() {
       singleSeriesConfig({
         label: "Weight",
         yAccessor: (entry) => localizedKilograms(Number(entry.value)),
-        numberFormat: FRACTION_DIGITS_1.format,
+        numberFormat: NumberFormats.FRACTION_DIGITS_1.format,
         unit: localizedKilogramsName,
         showMark: false,
       }),
@@ -114,7 +114,7 @@ export function WeightChart() {
   return (
     <SimpleLineChart
       {...props}
-      yAxisOptions={{ tickFormat: FRACTION_DIGITS_1.format }}
+      yAxisOptions={{ tickFormat: NumberFormats.FRACTION_DIGITS_1.format }}
     />
   );
 }
@@ -125,7 +125,7 @@ export function FatChart() {
   return (
     <SimpleLineChart
       {...props}
-      yAxisOptions={{ tickFormat: FRACTION_DIGITS_1.format }}
+      yAxisOptions={{ tickFormat: NumberFormats.FRACTION_DIGITS_1.format }}
     />
   );
 }
@@ -136,7 +136,7 @@ export function BmiChart() {
   return (
     <SimpleLineChart
       {...props}
-      yAxisOptions={{ tickFormat: FRACTION_DIGITS_1.format }}
+      yAxisOptions={{ tickFormat: NumberFormats.FRACTION_DIGITS_1.format }}
     />
   );
 }

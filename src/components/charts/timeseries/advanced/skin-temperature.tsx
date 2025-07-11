@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 
-import { FRACTION_DIGITS_1 } from "@/utils/number-formats";
+import { NumberFormats } from "@/utils/number-formats";
 import { useUnits } from "@/config/units";
 
 import { TimeSeriesDatum, useTimeSeriesData } from "../data";
@@ -21,7 +21,7 @@ export function SkinTemperatureChart() {
     () =>
       singleSeriesConfig<SkinTemperatureDatum>({
         label: "Relative skin temp",
-        numberFormat: FRACTION_DIGITS_1.format,
+        numberFormat: NumberFormats.FRACTION_DIGITS_1.format,
         unit: localizedDegreesName,
         showMark: true,
         yAccessor: (entry) =>

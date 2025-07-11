@@ -3,7 +3,7 @@ import { useContext, useMemo } from "react";
 import { keyBy, uniq } from "es-toolkit";
 
 import { buildTimeSeriesQuery } from "@/api/times-series";
-import { FRACTION_DIGITS_0 } from "@/utils/number-formats";
+import { NumberFormats } from "@/utils/number-formats";
 
 import { useAggregation } from "./aggregation";
 import { TimeSeriesChartContext } from "./context";
@@ -59,14 +59,14 @@ export function CalorieBalanceChart() {
         id: "calories-in",
         label: "Calories in",
         yAccessor: (entry) => entry.caloriesIn,
-        numberFormat: FRACTION_DIGITS_0.format,
+        numberFormat: NumberFormats.FRACTION_DIGITS_0.format,
         color: "#60bd40",
       },
       {
         id: "calories-burned",
         label: "Calories burned",
         yAccessor: (entry) => entry.caloriesBurned,
-        numberFormat: FRACTION_DIGITS_0.format,
+        numberFormat: NumberFormats.FRACTION_DIGITS_0.format,
         color: "#ff9e22",
       },
     ],

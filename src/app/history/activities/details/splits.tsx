@@ -5,7 +5,7 @@ import { Box } from "@mui/material";
 import { minBy } from "es-toolkit";
 
 import { SplitDatum } from "@/utils/distances";
-import { FRACTION_DIGITS_2, TWO_DIGITS } from "@/utils/number-formats";
+import { NumberFormats } from "@/utils/number-formats";
 import { useUnits } from "@/config/units";
 
 dayjs.extend(durationPlugin);
@@ -16,7 +16,7 @@ export function formatPace(durationMillis: number) {
   const minutes = Math.floor(durationSeconds / 60);
   const seconds = Math.floor(durationSeconds % 60);
 
-  return `${minutes}' ${TWO_DIGITS.format(seconds)}"`;
+  return `${minutes}' ${NumberFormats.TWO_DIGITS.format(seconds)}"`;
 }
 
 export function formatTimeOffset(startTime: Date, time: Date) {
@@ -67,7 +67,7 @@ export function SplitsChart({ splits }: { splits: Array<SplitDatum> }) {
               {formatPace(paceMillis)} / {localizedKilometersName}
             </div>
             <div className="text-end">
-              {FRACTION_DIGITS_2.format(
+              {NumberFormats.FRACTION_DIGITS_2.format(
                 localizedKilometers(distanceCoveredMeters / 1000)
               )}{" "}
               {localizedKilometersName}

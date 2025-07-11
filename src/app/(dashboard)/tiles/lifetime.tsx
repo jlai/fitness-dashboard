@@ -2,7 +2,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { Stack, Typography } from "@mui/material";
 
 import { buildLifetimeStatsQuery } from "@/api/activity";
-import { FRACTION_DIGITS_0 } from "@/utils/number-formats";
+import { NumberFormats } from "@/utils/number-formats";
 import { useUnits } from "@/config/units";
 
 import { useTileData } from "./tile";
@@ -52,7 +52,7 @@ export function LifetimeTileContent() {
         className="text-center"
       >
         <Typography variant={w > 1 ? "h3" : "h6"}>
-          {FRACTION_DIGITS_0.format(value)}
+          {NumberFormats.FRACTION_DIGITS_0.format(value)}
         </Typography>
         <Typography variant={w > 1 ? "h6" : "subtitle1"}>{label}</Typography>
       </Stack>

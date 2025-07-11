@@ -8,7 +8,7 @@ import { Typography } from "@mui/material";
 
 import { SleepLog } from "@/api/sleep";
 import { formatMinutes } from "@/utils/date-formats";
-import { PERCENT_FRACTION_DIGITS_0 } from "@/utils/number-formats";
+import { NumberFormats } from "@/utils/number-formats";
 import { usePortalTooltip } from "@/components/charts/visx/tooltip";
 
 import { getLevelSummary, SleepSummaryDatum, LEVEL_NAMES } from "./levels";
@@ -93,7 +93,7 @@ export function SleepLevelSummaryChart({
                   fontSize={14}
                   fontWeight={500}
                 >
-                  {PERCENT_FRACTION_DIGITS_0.format(datum.ratio)}
+                  {NumberFormats.PERCENT_FRACTION_DIGITS_0.format(datum.ratio)}
                 </Text>
               )}
               <Text
@@ -109,7 +109,9 @@ export function SleepLevelSummaryChart({
                   ? formatMinutes(datum.value)
                   : `${formatMinutes(
                       datum.value
-                    )} (${PERCENT_FRACTION_DIGITS_0.format(datum.ratio)})`}
+                    )} (${NumberFormats.PERCENT_FRACTION_DIGITS_0.format(
+                      datum.ratio
+                    )})`}
               </Text>
               <rect
                 width={width - margin.left}

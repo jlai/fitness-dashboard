@@ -1,6 +1,6 @@
 import { QueryClient, queryOptions } from "@tanstack/react-query";
 
-import { FRACTION_DIGITS_0 } from "@/utils/number-formats";
+import { NumberFormats } from "@/utils/number-formats";
 
 import { makeRequest } from "../request";
 import { ONE_DAY_IN_MILLIS } from "../cache-settings";
@@ -37,7 +37,7 @@ export function buildUpdateActivityGoalMutation(queryClient: QueryClient) {
     }: UpdateActivityGoalOptions) => {
       const params = new URLSearchParams();
       params.set("type", resource);
-      params.set("value", FRACTION_DIGITS_0.format(goal));
+      params.set("value", NumberFormats.FRACTION_DIGITS_0.format(goal));
 
       const response = await makeRequest(
         `/1/user/-/activities/goals/${period}.json?${params.toString()}`,

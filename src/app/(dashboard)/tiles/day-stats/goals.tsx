@@ -6,7 +6,7 @@ import {
 } from "@tanstack/react-query";
 import { FormContainer, TextFieldElement, useForm } from "react-hook-form-mui";
 
-import { FRACTION_DIGITS_1 } from "@/utils/number-formats";
+import { NumberFormats } from "@/utils/number-formats";
 import {
   buildDailySummaryQuery,
   buildTimeSeriesQuery,
@@ -48,13 +48,15 @@ export function DailyGoalSummary({
           bottomContent={
             <Stack direction="column" alignItems="center">
               <Typography>
-                {FRACTION_DIGITS_1.format(currentTotal)} /{" "}
-                {FRACTION_DIGITS_1.format(dailyGoal)} {unit}
+                {NumberFormats.FRACTION_DIGITS_1.format(currentTotal)} /{" "}
+                {NumberFormats.FRACTION_DIGITS_1.format(dailyGoal)} {unit}
               </Typography>
               {currentTotal < dailyGoal && (
                 <Typography>
-                  {FRACTION_DIGITS_1.format(dailyGoal - currentTotal)} {unit} to
-                  go
+                  {NumberFormats.FRACTION_DIGITS_1.format(
+                    dailyGoal - currentTotal
+                  )}{" "}
+                  {unit} to go
                 </Typography>
               )}
             </Stack>
@@ -88,13 +90,15 @@ export function WeeklyGoalSummary({
           bottomContent={
             <Stack direction="column" alignItems="center">
               <Typography>
-                {FRACTION_DIGITS_1.format(currentTotal)} /{" "}
-                {FRACTION_DIGITS_1.format(weeklyGoal)} {unit}
+                {NumberFormats.FRACTION_DIGITS_1.format(currentTotal)} /{" "}
+                {NumberFormats.FRACTION_DIGITS_1.format(weeklyGoal)} {unit}
               </Typography>
               {currentTotal < weeklyGoal && (
                 <Typography>
-                  {FRACTION_DIGITS_1.format(weeklyGoal - currentTotal)} {unit}{" "}
-                  to go
+                  {NumberFormats.FRACTION_DIGITS_1.format(
+                    weeklyGoal - currentTotal
+                  )}{" "}
+                  {unit} to go
                 </Typography>
               )}
             </Stack>
