@@ -1,7 +1,13 @@
 import { atom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
+import { atomEffect } from "jotai-effect";
 
 import { NutritionMacroGoals } from "@/api/nutrition";
+import {
+  PATTERN_TO_LOCALE,
+  setNumberFormatLocale,
+} from "@/utils/number-formats";
+import { setDateFormatLocale } from "@/utils/date-formats";
 
 export const weightUnitAtom = atomWithStorage<
   "en_US" | "en_GB" | "METRIC" | undefined
@@ -127,6 +133,43 @@ export const increasedTileLimitsAtom = atomWithStorage<boolean>(
     getOnInit: true,
   }
 );
+
+export const clockHourCycleAtom = atomWithStorage<
+  Intl.DateTimeFormatOptions["hourCycle"]
+>("locale:clock-hour-cycle", undefined, undefined, {
+  getOnInit: true,
+});
+
+export const dateFormatPatternAtom = atomWithStorage<string | undefined>(
+  "locale:date-format-pattern",
+  undefined,
+  undefined,
+  {
+    getOnInit: true,
+  }
+);
+
+export const dateFormatAtomEffect = atomEffect((get) => {
+  const hourCycle = get(clockHourCycleAtom);
+
+  setDateFormatLocale(undefined, hourCycle);
+});
+
+export const numberFormatPatternAtom = atomWithStorage<string | undefined>(
+  "locale:number-format-pattern",
+  undefined,
+  undefined,
+  {
+    getOnInit: true,
+  }
+);
+
+export const numberFormatAtomEffect = atomEffect((get) => {
+  const pattern = get(numberFormatPatternAtom);
+  const locale = pattern ? PATTERN_TO_LOCALE[pattern] : undefined;
+
+  setNumberFormatLocale(locale);
+});
 
 export const ALLOW_API_PROXY_STORAGE_KEY = "api:allow-api-proxy";
 

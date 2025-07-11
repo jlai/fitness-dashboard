@@ -14,7 +14,7 @@ import { sumBy } from "es-toolkit";
 
 import { buildActivityIntradayQuery } from "@/api/intraday";
 import { ENABLE_INTRADAY } from "@/config";
-import { TIME } from "@/utils/date-formats";
+import { DateFormats } from "@/utils/date-formats";
 import { NumberFormats } from "@/utils/number-formats";
 import { aggregateByHour } from "@/components/charts/timeseries/aggregation";
 import { FormRows } from "@/components/forms/form-row";
@@ -124,7 +124,11 @@ function FloorsIntraday() {
       loading={!data}
       dataset={processedData ?? []}
       xAxis={[
-        { dataKey: "dateTime", scaleType: "band", valueFormatter: TIME.format },
+        {
+          dataKey: "dateTime",
+          scaleType: "band",
+          valueFormatter: DateFormats.TIME.format,
+        },
       ]}
       yAxis={[{ label: "Floors" }]}
       series={[

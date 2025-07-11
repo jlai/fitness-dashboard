@@ -11,7 +11,8 @@ import dayjs from "dayjs";
 import { Box, Stack, Typography } from "@mui/material";
 
 import { SleepLog, SleepLogLevelData } from "@/api/sleep";
-import { formatSeconds, TIME } from "@/utils/date-formats";
+import { formatSeconds } from "@/utils/duration-formats";
+import { DateFormats } from "@/utils/date-formats";
 
 import { LEVEL_COLORS, LEVEL_NAMES } from "./levels";
 
@@ -215,7 +216,8 @@ function SleepSegmentTooltipContent({
         </Typography>
       </Stack>
       <Typography>
-        {TIME.format(startTime)} &ndash; {TIME.format(endTime)}
+        {DateFormats.TIME.format(startTime)} &ndash;{" "}
+        {DateFormats.TIME.format(endTime)}
       </Typography>
     </div>
   );

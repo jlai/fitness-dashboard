@@ -16,7 +16,7 @@ import { dropWhile, sumBy } from "es-toolkit";
 
 import { buildActivityIntradayQuery } from "@/api/intraday";
 import { ENABLE_INTRADAY } from "@/config";
-import { TIME } from "@/utils/date-formats";
+import { DateFormats } from "@/utils/date-formats";
 import { NumberFormats } from "@/utils/number-formats";
 import { aggregateByHour } from "@/components/charts/timeseries/aggregation";
 import { HeaderBar } from "@/components/layout/rows";
@@ -167,7 +167,7 @@ function StepsIntraday() {
           {
             dataKey: "dateTime",
             scaleType: "band",
-            valueFormatter: TIME.format,
+            valueFormatter: DateFormats.TIME.format,
           },
         ]}
         yAxis={[{ label: "Steps" }]}

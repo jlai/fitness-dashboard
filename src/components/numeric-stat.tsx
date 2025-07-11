@@ -1,5 +1,7 @@
 import { Typography } from "@mui/material";
 
+import { NumberFormats } from "@/utils/number-formats";
+
 export default function NumericStat({
   value,
   unit,
@@ -11,7 +13,7 @@ export default function NumericStat({
   maximumFractionDigits?: number;
   className?: string;
 }) {
-  const formatter = new Intl.NumberFormat(undefined, {
+  const formatter = new Intl.NumberFormat(NumberFormats.locale, {
     maximumFractionDigits,
   });
 

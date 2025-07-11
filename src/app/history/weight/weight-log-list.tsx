@@ -27,7 +27,7 @@ import {
   buildGetWeightLogsQuery,
 } from "@/api/body";
 import { WeightLog } from "@/api/body/types";
-import { formatShortDate } from "@/utils/date-formats";
+import { DateFormats } from "@/utils/date-formats";
 import { useUnits } from "@/config/units";
 import { NumberFormats } from "@/utils/number-formats";
 import { HeaderBar } from "@/components/layout/rows";
@@ -48,7 +48,7 @@ function WeightLogRow({
 
   return (
     <TableRow>
-      <TableCell>{formatShortDate(dayjs(log.date))}</TableCell>
+      <TableCell>{DateFormats.formatShortDate(dayjs(log.date))}</TableCell>
       <TableCell>
         {log.bmi ? (
           <>{NumberFormats.FRACTION_DIGITS_1.format(log.bmi)}</>
@@ -101,7 +101,7 @@ export default function WeightLogList() {
   const deleteWeightLog = withErrorToaster(async (weightLog: WeightLog) => {
     const { confirmed } = await confirm({
       title: "Delete weight log",
-      description: `Delete weight log on ${formatShortDate(
+      description: `Delete weight log on ${DateFormats.formatShortDate(
         dayjs(weightLog.date)
       )}?`,
     });

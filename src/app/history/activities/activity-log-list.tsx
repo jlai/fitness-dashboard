@@ -5,7 +5,8 @@ import { useSetAtom } from "jotai";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { ActivityLog } from "@/api/activity/types";
-import { formatDuration, formatShortDateTime } from "@/utils/date-formats";
+import { formatDuration } from "@/utils/duration-formats";
+import { DateFormats } from "@/utils/date-formats";
 import { useUnits } from "@/config/units";
 import {
   buildGetActivityListInfiniteQuery,
@@ -52,7 +53,7 @@ function ActivityLogRow({ logEntry: activityLog }: { logEntry: ActivityLog }) {
       <TableCell>
         <a onClick={showActivityLogDetails} href={`#activityLogId=${logId}`}>
           <div className="flex flex-row items-center gap-x-2">
-            <div>{formatShortDateTime(dayjs(startTime))}</div>
+            <div>{DateFormats.formatShortDateTime(dayjs(startTime))}</div>
             {isPossiblyTracked(activityLog) && (
               <LaunchIcon className="text-slate-500" />
             )}

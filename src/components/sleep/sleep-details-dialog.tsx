@@ -2,7 +2,8 @@ import { DialogContent, Stack, Typography } from "@mui/material";
 import dayjs from "dayjs";
 
 import { SleepLog } from "@/api/sleep";
-import { formatMinutes, TIME } from "@/utils/date-formats";
+import { formatMinutes } from "@/utils/duration-formats";
+import { DateFormats } from "@/utils/date-formats";
 
 import { Hypnogram } from "./hypnogram";
 import { SleepLevelSummaryChart } from "./sleep-levels-summary";
@@ -28,8 +29,8 @@ export default function SleepDetailsDialogContent({
           <div className="mb-8 text-center">
             <Typography variant="h6">
               <Stack direction="row" columnGap={4} justifyContent="center">
-                <span>Sleep: {TIME.format(startDay.toDate())}</span>
-                <span>Wake: {TIME.format(endDay.toDate())}</span>
+                <span>Sleep: {DateFormats.TIME.format(startDay.toDate())}</span>
+                <span>Wake: {DateFormats.TIME.format(endDay.toDate())}</span>
                 <span>Duration: {formatMinutes(sleepLog.minutesAsleep)}</span>
               </Stack>
             </Typography>

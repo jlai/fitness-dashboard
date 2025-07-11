@@ -4,7 +4,7 @@ import { ToggleButtonGroupElement } from "react-hook-form-mui";
 import { Link as LinkIcon } from "@mui/icons-material";
 
 import { selectedDayForPageAtom } from "@/state";
-import { formatShortDate } from "@/utils/date-formats";
+import { DateFormats } from "@/utils/date-formats";
 
 export type DaySelectorSource = "today" | "linked";
 
@@ -22,7 +22,7 @@ export default function LinkedDayElement({ name }: { name: string }) {
       label: (
         <div className="flex flex-row items-center gap-x-2">
           <LinkIcon />
-          <div>{formatShortDate(linkedDay)}</div>
+          <div>{DateFormats.formatShortDate(linkedDay)}</div>
         </div>
       ),
       disabled: today.isSame(linkedDay, "day"),

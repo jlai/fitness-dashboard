@@ -10,7 +10,7 @@ import { Delete } from "@mui/icons-material";
 
 import { RequireScopes } from "@/components/require-scopes";
 import { ResponsiveDialog } from "@/components/dialogs/responsive-dialog";
-import { formatShortDateTime } from "@/utils/date-formats";
+import { DateFormats } from "@/utils/date-formats";
 import {
   buildDeleteActivityLogMutation,
   buildGetActivityLogQuery,
@@ -44,7 +44,7 @@ export function ActivityLogDetailsDialog({
   const handleDeleteClick = withErrorToaster(async () => {
     const { confirmed } = await confirm({
       title: "Delete activity log?",
-      description: `Delete ${activityName} activity log at ${formatShortDateTime(
+      description: `Delete ${activityName} activity log at ${DateFormats.formatShortDateTime(
         dayjs(startTime)
       )}? This cannot be undone.`,
       confirmationText: "Delete",
@@ -72,7 +72,9 @@ export function ActivityLogDetailsDialog({
       fullScreenPreferenceId="activity"
       title={
         activityLog
-          ? `${activityName} on ${formatShortDateTime(dayjs(startTime))}`
+          ? `${activityName} on ${DateFormats.formatShortDateTime(
+              dayjs(startTime)
+            )}`
           : ""
       }
       titleActions={deleteButton}

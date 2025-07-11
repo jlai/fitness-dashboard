@@ -22,7 +22,7 @@ import { sumBy } from "es-toolkit";
 
 import { buildActivityIntradayQuery } from "@/api/intraday";
 import { ENABLE_INTRADAY } from "@/config";
-import { TIME } from "@/utils/date-formats";
+import { DateFormats } from "@/utils/date-formats";
 import { FRACTION_DIGITS_2 } from "@/utils/number-formats";
 import { aggregateByHour } from "@/components/charts/timeseries/aggregation";
 import { useUnits } from "@/config/units";
@@ -149,7 +149,7 @@ function DistanceIntraday() {
           {
             dataKey: "dateTime",
             scaleType: "band",
-            valueFormatter: TIME.format,
+            valueFormatter: DateFormats.TIME.format,
           },
         ]}
         yAxis={[

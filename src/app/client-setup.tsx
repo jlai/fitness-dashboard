@@ -18,6 +18,10 @@ import { queryClientAtom } from "jotai-tanstack-query";
 import { syncFitbitTokenEffect } from "@/api/auth";
 import { warnOnRateLimitExceededEffect } from "@/api/request";
 import { analyticsPingEffect } from "@/storage/analytics";
+import {
+  dateFormatAtomEffect,
+  numberFormatAtomEffect,
+} from "@/storage/settings";
 
 import { buildTheme } from "./theme";
 
@@ -47,6 +51,8 @@ export default function ClientSideSetup({
 }) {
   useAtom(syncFitbitTokenEffect);
   useAtom(analyticsPingEffect);
+  useAtom(numberFormatAtomEffect);
+  useAtom(dateFormatAtomEffect);
 
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
   const theme = useMemo(

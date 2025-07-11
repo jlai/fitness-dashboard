@@ -7,7 +7,7 @@ import {
 } from "material-ui-popup-state/hooks";
 import { lazy, Suspense } from "react";
 
-import { formatShortDateTime, TIME } from "@/utils/date-formats";
+import { DateFormats } from "@/utils/date-formats";
 import { SleepLog } from "@/api/sleep/types";
 import NumericStat from "@/components/numeric-stat";
 import HistoryList from "@/components/history-list/history-list";
@@ -64,7 +64,8 @@ function SleepLogRow({ logEntry: sleep }: { logEntry: SleepLog }) {
         </button>
       </TableCell>
       <TableCell className="text-end">
-        {TIME.format(startTime)} &ndash; {TIME.format(endTime)}
+        {DateFormats.TIME.format(startTime)} &ndash;{" "}
+        {DateFormats.TIME.format(endTime)}
       </TableCell>
       <TableCell className="hidden md:table-cell md:w-[200px]">
         {sleep.levels && (
@@ -83,7 +84,9 @@ function SleepLogRow({ logEntry: sleep }: { logEntry: SleepLog }) {
         <Suspense>
           <ResponsiveDialog
             {...bindDialog(popupState)}
-            title={`Sleep ending ${formatShortDateTime(dayjs(endTime))}`}
+            title={`Sleep ending ${DateFormats.formatShortDateTime(
+              dayjs(endTime)
+            )}`}
             fullWidth
             fullScreenPreferenceId="sleep"
           >

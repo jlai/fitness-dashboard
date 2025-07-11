@@ -11,7 +11,7 @@ import {
 import { sum } from "es-toolkit";
 
 import { SleepLog } from "@/api/sleep";
-import { formatMinutes } from "@/utils/date-formats";
+import { formatMinutes } from "@/utils/duration-formats";
 import { NumberFormats } from "@/utils/number-formats";
 
 import { FlexSpacer } from "../layout/flex";

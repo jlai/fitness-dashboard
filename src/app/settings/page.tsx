@@ -53,9 +53,13 @@ import {
   foodLogGoalsPositionAtom,
   macroGoalsAtom,
   allowAPIProxyAtom,
+  clockHourCycleAtom,
+  numberFormatPatternAtom,
+  dateFormatPatternAtom,
 } from "@/storage/settings";
 import { NutritionalValues } from "@/api/nutrition/types";
 import { FITBIT_API_PROXY_URL, HOST_WEBSITE_NAME } from "@/config";
+import { PATTERN_TO_LOCALE } from "@/utils/number-formats";
 
 function SettingsRow({
   title,
@@ -459,6 +463,115 @@ function UnitSettings() {
   );
 }
 
+function LanguageSettings() {
+  const [dateFormatPattern, setDateFormatPattern] = useAtom(
+    dateFormatPatternAtom
+  );
+  const [numberFormatPattern, setNumberFormatPattern] = useAtom(
+    numberFormatPatternAtom
+  );
+  const [clockHourCycle, setClockHourCycle] = useAtom(clockHourCycleAtom);
+
+  // Hardcoded locale options
+  const dateFormatPatternOptions = [
+    { value: undefined, label: "Browser default" },
+    { value: "en", label: "English" },
+    { value: "de", label: "Deutsch" },
+    { value: "fr", label: "Francais" },
+  ];
+
+  const numberFormatPatternOptions = [
+    { value: undefined, label: "Browser default" },
+    ...Object.keys(PATTERN_TO_LOCALE).map((pattern) => ({
+      value: pattern,
+      label: pattern,
+    })),
+  ];
+
+  // Clock hour cycle options
+  const clockHourCycleOptions = [
+    { value: undefined, label: "Browser default" },
+    { value: "h12", label: "12-hour clock" },
+    { value: "h11", label: "12-hour clock (Japan)" },
+    { value: "h23", label: "24-hour clock" },
+  ];
+
+  const queryClient = useQueryClient();
+
+  return (
+    <>
+      <SettingsRow title="Language and formatting">
+        Set formatting for times and numbers. This only affects how dates and
+        numbers are displayed on this website, and does not change your Fitbit
+        account settings.
+      </SettingsRow>
+      {false /* incomplete */ && (
+        <SettingsRow
+          title="Date format"
+          action={
+            <Select
+              displayEmpty
+              value={dateFormatPattern ?? ""}
+              onChange={(e) => {
+                setDateFormatPattern((e.target.value as any) || undefined);
+                queryClient.clear();
+              }}
+            >
+              {dateFormatPatternOptions.map((opt) => (
+                <MenuItem key={opt.value ?? ""} value={opt.value ?? ""}>
+                  {opt.label}
+                </MenuItem>
+              ))}
+            </Select>
+          }
+        ></SettingsRow>
+      )}
+      <SettingsRow
+        title="Time format"
+        action={
+          <Select
+            displayEmpty
+            value={clockHourCycle ?? ""}
+            onChange={(e) => {
+              setClockHourCycle((e.target.value as any) || undefined);
+              queryClient.clear();
+            }}
+          >
+            {clockHourCycleOptions.map((opt) => (
+              <MenuItem key={opt.value ?? ""} value={opt.value ?? ""}>
+                {opt.label}
+              </MenuItem>
+            ))}
+          </Select>
+        }
+      ></SettingsRow>
+      <SettingsRow
+        title="Number format"
+        action={
+          <Select
+            displayEmpty
+            value={numberFormatPattern ?? ""}
+            onChange={(e) => {
+              setNumberFormatPattern((e.target.value as any) || undefined);
+              queryClient.clear();
+            }}
+          >
+            {numberFormatPatternOptions.map((opt) => (
+              <MenuItem
+                key={opt.value ?? ""}
+                value={opt.value ?? ""}
+                className="align-middle"
+              >
+                {opt.label}
+              </MenuItem>
+            ))}
+          </Select>
+        }
+      ></SettingsRow>
+    </>
+  );
+}
+
 function WorkaroundSettings() {
   const [allowAPIProxy, setAllowAPIProxy] = useAtom(allowAPIProxyAtom);
 
@@ -596,6 +709,9 @@ export default function SettingsPage() {
           <WorkaroundSettings />
         </SettingsTable>
       )}
+      <SettingsTable>
+        <LanguageSettings />
+      </SettingsTable>
       <SettingsTable>
         <UnitSettings />
       </SettingsTable>

@@ -27,7 +27,7 @@ import { useId } from "react";
 
 import { NumberFormats } from "@/utils/number-formats";
 import { buildGetDevicesQuery, Device } from "@/api/devices";
-import { formatShortDate, TIME } from "@/utils/date-formats";
+import { DateFormats } from "@/utils/date-formats";
 import { FormRow } from "@/components/forms/form-row";
 
 import { RenderDialogContentProps, TileWithDialog } from "./tile-with-dialog";
@@ -101,8 +101,8 @@ export function TrackerStatusTileContent() {
               <Sync titleAccess="Last sync" />
               <Typography variant="subtitle2">
                 {lastSync.isSame(today, "day")
-                  ? TIME.format(lastSync.toDate())
-                  : formatShortDate(lastSync)}
+                  ? DateFormats.TIME.format(lastSync.toDate())
+                  : DateFormats.formatShortDate(lastSync)}
               </Typography>
             </Stack>
           </>
@@ -132,7 +132,9 @@ function BatteryIcon({ level }: { level: number }) {
 }
 
 function formatOptionDetails(device: Device) {
-  const parts = [`Last sync: ${formatShortDate(dayjs(device.lastSyncTime))}`];
+  const parts = [
+    `Last sync: ${DateFormats.formatShortDate(dayjs(device.lastSyncTime))}`,
+  ];
 
   if (device.deviceVersion !== "MobileTrack") {
     parts.push(`${device.batteryLevel}%`);

@@ -30,7 +30,7 @@ import {
   SplitDatum,
   trackpointsHasDistances,
 } from "@/utils/distances";
-import { formatDuration } from "@/utils/date-formats";
+import { formatDuration } from "@/utils/duration-formats";
 import { ACTIVITY_ICONS } from "@/config/common-ids";
 
 import {

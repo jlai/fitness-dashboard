@@ -7,7 +7,7 @@ import { Text } from "@visx/text";
 import { Typography } from "@mui/material";
 
 import { SleepLog } from "@/api/sleep";
-import { formatMinutes } from "@/utils/date-formats";
+import { formatMinutes } from "@/utils/duration-formats";
 import { NumberFormats } from "@/utils/number-formats";
 import { usePortalTooltip } from "@/components/charts/visx/tooltip";
 

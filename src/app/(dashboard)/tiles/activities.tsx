@@ -17,7 +17,7 @@ import { Info, ViewTimeline } from "@mui/icons-material";
 import Link from "next/link";
 
 import { DailySummaryActivityLog } from "@/api/activity";
-import { TIME } from "@/utils/date-formats";
+import { DateFormats } from "@/utils/date-formats";
 import { useUnits } from "@/config/units";
 import { NumberFormats } from "@/utils/number-formats";
 import { ACTIVITY_ICONS } from "@/config/common-ids";
@@ -104,7 +104,7 @@ function ActivityLogSummary({
 
   const icon = ACTIVITY_ICONS[activityId];
   const avatar = icon ? React.createElement(icon) : <ViewTimeline />;
-  const time = TIME.format(new Date(`${startDate}T${startTime}`));
+  const time = DateFormats.TIME.format(new Date(`${startDate}T${startTime}`));
 
   return (
     <ListItem disablePadding className="w-full" dense={h < 2}>

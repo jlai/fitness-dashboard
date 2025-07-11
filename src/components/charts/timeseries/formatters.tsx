@@ -7,7 +7,7 @@ import durationPlugin from "dayjs/plugin/duration";
 
 import { NumberFormats } from "@/utils/number-formats";
 import { DayjsRange } from "@/components/calendar/period-navigator";
-import { TIME } from "@/utils/date-formats";
+import { DateFormats } from "@/utils/date-formats";
 
 dayjs.extend(durationPlugin);
 
@@ -55,7 +55,7 @@ export function getTooltipFormatterForDayRange({
   endDay,
 }: DayjsRange) {
   if (startDay.isSame(endDay, "day")) {
-    return TIME.format;
+    return DateFormats.TIME.format;
   }
 
   return TOOLTIP_DATE_FORMAT.format;

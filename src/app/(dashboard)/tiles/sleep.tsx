@@ -4,7 +4,7 @@ import { Stack, Typography } from "@mui/material";
 import Image from "next/image";
 
 import NumericStat from "@/components/numeric-stat";
-import { TIME } from "@/utils/date-formats";
+import { DateFormats } from "@/utils/date-formats";
 import { buildGetSleepLogByDateQuery, SleepLog } from "@/api/sleep";
 import SleepDetailsDialogContent from "@/components/sleep/sleep-details-dialog";
 
@@ -49,10 +49,12 @@ export function SleepTileContent() {
               className="text-center text-balance"
             >
               <span className="wrap">
-                {TIME.format(new Date(mainSleep.startTime))}
+                {DateFormats.TIME.format(new Date(mainSleep.startTime))}
               </span>
               <span> &ndash; </span>
-              <span>{TIME.format(new Date(mainSleep.endTime))}</span>
+              <span>
+                {DateFormats.TIME.format(new Date(mainSleep.endTime))}
+              </span>
             </Typography>
           )}
         </div>

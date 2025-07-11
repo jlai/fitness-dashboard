@@ -26,7 +26,7 @@ import NumericStat from "@/components/numeric-stat";
 import { buildGetWeightLogsQuery } from "@/api/body";
 import { useUnits } from "@/config/units";
 import { WeightLog } from "@/api/body/types";
-import { formatShortDate } from "@/utils/date-formats";
+import { DateFormats } from "@/utils/date-formats";
 import { NumberFormats } from "@/utils/number-formats";
 import { formatAsDate } from "@/api/datetime";
 
@@ -157,7 +157,7 @@ function WeightLogCard({
   return (
     <Card variant="outlined" className="p-2">
       <CardHeader
-        title={formatShortDate(dayjs(weightLog.date))}
+        title={DateFormats.formatShortDate(dayjs(weightLog.date))}
         subheader={daysAgo === 0 ? "Today" : `${daysAgo} days ago`}
       />
       <CardContent>

@@ -24,7 +24,7 @@ import {
   CHART_RESOURCE_MENU_ITEMS,
   ChartResource,
 } from "@/components/charts/timeseries/resources";
-import { SHORT_WEEKDAY } from "@/utils/date-formats";
+import { DateFormats } from "@/utils/date-formats";
 import { enableAdvancedScopesAtom } from "@/storage/settings";
 
 import { useSelectedDay } from "../state";
@@ -142,7 +142,7 @@ export default function GraphTileContent() {
         <TimeSeriesChart
           resource={resource}
           range={{ startDay, endDay }}
-          formatDate={SHORT_WEEKDAY.format}
+          formatDate={DateFormats.SHORT_WEEKDAY.format}
           statsEl={statsEl ?? undefined}
           showGoals={canFitGoals && settings.showGoals}
         />
