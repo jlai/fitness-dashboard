@@ -1,11 +1,8 @@
 "use client";
 
 import React, { useMemo } from "react";
-import {
-  StyledEngineProvider,
-  ThemeProvider,
-  useMediaQuery,
-} from "@mui/material";
+import { ThemeProvider, useMediaQuery } from "@mui/material";
+import { StyledEngineProvider } from "@mui/material/styles";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { ConfirmProvider } from "material-ui-confirm";

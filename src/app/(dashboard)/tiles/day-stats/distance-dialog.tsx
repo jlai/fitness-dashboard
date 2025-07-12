@@ -13,7 +13,7 @@ import {
   ChartsTooltip,
   ChartsXAxis,
   ChartsYAxis,
-  ResponsiveChartContainer,
+  ChartContainer,
 } from "@mui/x-charts";
 import { TabContext, TabList, TabPanel } from "@mui/lab";
 import { Suspense, useMemo } from "react";
@@ -142,7 +142,7 @@ function DistanceIntraday() {
 
   return (
     <div>
-      <ResponsiveChartContainer
+      <ChartContainer
         height={300}
         dataset={processedData ?? []}
         xAxis={[
@@ -178,7 +178,7 @@ function DistanceIntraday() {
         <ChartsYAxis />
         <ChartsTooltip />
         <ChartsAxisHighlight />
-      </ResponsiveChartContainer>
+      </ChartContainer>
     </div>
   );
 }

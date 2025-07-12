@@ -11,7 +11,7 @@ import {
   LinePlot,
   LineSeriesType,
   MarkPlot,
-  ResponsiveChartContainer,
+  ChartContainer,
 } from "@mui/x-charts";
 import { useQueries } from "@tanstack/react-query";
 import dayjs from "dayjs";
@@ -147,7 +147,7 @@ export function LeanFatMassGraph() {
         <DateTimeRangeNavigator resource="weight" />
       </HeaderBar>
       <div className="w-full h-[400px]">
-        <ResponsiveChartContainer
+        <ChartContainer
           series={series}
           xAxis={[
             {
@@ -179,7 +179,7 @@ export function LeanFatMassGraph() {
           <MarkPlot />
           <ChartsGrid horizontal />
           <ChartsOverlay loading={!weightData || !fatData} />
-        </ResponsiveChartContainer>
+        </ChartContainer>
       </div>
     </div>
   );

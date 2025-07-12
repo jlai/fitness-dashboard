@@ -2,7 +2,7 @@ import {
   AxisConfig,
   ScaleName,
   ChartsXAxisProps,
-  ResponsiveChartContainer,
+  ChartContainer,
   LinePlot,
   useDrawingArea,
   useXScale,
@@ -288,7 +288,7 @@ function SynchronizedHighlight({
 }
 
 type SynchronizedChartProps = ComponentPropsWithoutRef<
-  typeof ResponsiveChartContainer
+  typeof ChartContainer
 > & {
   loading?: boolean;
   dateDomain?: [Date, Date];
@@ -327,7 +327,7 @@ export function SynchronizedChart({
         };
 
   return (
-    <ResponsiveChartContainer
+    <ChartContainer
       ref={svgRef}
       height={200}
       xAxis={[XAXIS_CONFIG]}
@@ -349,7 +349,7 @@ export function SynchronizedChart({
       </g>
       <ChartsClipPath id={clipPathId} />
       <ChartsTooltip />
-    </ResponsiveChartContainer>
+    </ChartContainer>
   );
 }
 

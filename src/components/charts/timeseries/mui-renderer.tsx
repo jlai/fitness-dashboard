@@ -11,7 +11,7 @@ import {
   LinePlot,
   LineSeriesType,
   MarkPlot,
-  ResponsiveChartContainer,
+  ChartContainer,
 } from "@mui/x-charts";
 import dayjs from "dayjs";
 import { useContext } from "react";
@@ -206,18 +206,14 @@ export function SimpleBarChart<
   useExportGraphData({ data, seriesConfigs });
 
   return (
-    <ResponsiveChartContainer
-      series={series}
-      {...axesProps}
-      margin={CHART_MARGINS}
-    >
+    <ChartContainer series={series} {...axesProps} margin={CHART_MARGINS}>
       <BarPlot />
       <CommonChartElements
         layout={layout}
         loading={!data}
         referenceLine={referenceLine}
       />
-    </ResponsiveChartContainer>
+    </ChartContainer>
   );
 }
 
@@ -241,18 +237,14 @@ export function StackedBarChart<
   useExportGraphData({ data, seriesConfigs });
 
   return (
-    <ResponsiveChartContainer
-      series={series}
-      {...axesProps}
-      margin={CHART_MARGINS}
-    >
+    <ChartContainer series={series} {...axesProps} margin={CHART_MARGINS}>
       <BarPlot />
       <CommonChartElements
         layout={layout}
         loading={!data}
         referenceLine={referenceLine}
       />
-    </ResponsiveChartContainer>
+    </ChartContainer>
   );
 }
 
@@ -277,13 +269,9 @@ export function SimpleLineChart<
   useExportGraphData({ data, seriesConfigs });
 
   return (
-    <ResponsiveChartContainer
-      series={series}
-      {...axesProps}
-      margin={CHART_MARGINS}
-    >
+    <ChartContainer series={series} {...axesProps} margin={CHART_MARGINS}>
       <LinePlot />
       <CommonChartElements loading={!data} referenceLine={referenceLine} />
-    </ResponsiveChartContainer>
+    </ChartContainer>
   );
 }

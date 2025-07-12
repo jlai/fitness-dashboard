@@ -24,7 +24,10 @@ import { showSuccessToast, withErrorToaster } from "@/components/toast";
 
 export default function ManageFavoriteFoods() {
   const confirm = useConfirm();
-  const [selectedRows, setSelectedRows] = useState<Array<number>>([]);
+  const [selectedRows, setSelectedRows] = useState<Array<number>>({
+    type: "include",
+    ids: new Set([]),
+  });
   const macroGoals = useAtomValue(macroGoalsAtom);
   const queryClient = useQueryClient();
   const { data: favoriteFoods } = useQuery(buildFavoriteFoodsQuery());

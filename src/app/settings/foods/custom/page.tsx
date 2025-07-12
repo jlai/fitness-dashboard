@@ -41,7 +41,10 @@ function EditAction({ food }: { food: Food }) {
 }
 
 export default function ManageCustomFoods() {
-  const [selectedRows, setSelectedRows] = useState<Array<number>>([]);
+  const [selectedRows, setSelectedRows] = useState<Array<number>>({
+    type: "include",
+    ids: new Set([]),
+  });
   const setEditingCustomFood = useSetAtom(editingCustomFoodAtom);
   const macroGoals = useAtomValue(macroGoalsAtom);
   const queryClient = useQueryClient();
