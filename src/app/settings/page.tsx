@@ -497,6 +497,7 @@ function LanguageSettings() {
   ];
 
   const queryClient = useQueryClient();
+  const refreshPage = () => queryClient.resetQueries();
 
   return (
     <>
@@ -514,7 +515,6 @@ function LanguageSettings() {
               value={dateFormatPattern ?? ""}
               onChange={(e) => {
                 setDateFormatPattern((e.target.value as any) || undefined);
-                queryClient.clear();
               }}
             >
               {dateFormatPatternOptions.map((opt) => (
@@ -534,7 +534,7 @@ function LanguageSettings() {
             value={clockHourCycle ?? ""}
             onChange={(e) => {
               setClockHourCycle((e.target.value as any) || undefined);
-              queryClient.clear();
+              refreshPage();
             }}
           >
             {clockHourCycleOptions.map((opt) => (
@@ -553,7 +553,7 @@ function LanguageSettings() {
             value={numberFormatPattern ?? ""}
             onChange={(e) => {
               setNumberFormatPattern((e.target.value as any) || undefined);
-              queryClient.clear();
+              refreshPage();
             }}
           >
             {numberFormatPatternOptions.map((opt) => (

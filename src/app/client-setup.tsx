@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import React, { useMemo } from "react";
 import {
   StyledEngineProvider,
   ThemeProvider,
@@ -39,9 +39,14 @@ const queryClient = new QueryClient({
 function Setup({ children }: { children: React.ReactNode }) {
   useHydrateAtoms([[queryClientAtom, queryClient]]);
   useAtom(syncFitbitTokenEffect);
+  useAtom(analyticsPingEffect);
   useAtom(warnOnRateLimitExceededEffect);
+  useAtom(numberFormatAtomEffect);
+  useAtom(dateFormatAtomEffect);
 
-  return children;
+  return (
+    <React.Fragment key={`key-{pageRefreshKey}`}>{children}</React.Fragment>
+  );
 }
 
 export default function ClientSideSetup({
@@ -49,11 +54,6 @@ export default function ClientSideSetup({
 }: {
   children: React.ReactNode;
 }) {
-  useAtom(syncFitbitTokenEffect);
-  useAtom(analyticsPingEffect);
-  useAtom(numberFormatAtomEffect);
-  useAtom(dateFormatAtomEffect);
-
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
   const theme = useMemo(
     () => buildTheme(prefersDarkMode ? "dark" : "light"),
