@@ -54,6 +54,7 @@
     "maplibre-gl": "^4.5.0",
     "material-ui-confirm": "^4.0.0",
     "material-ui-popup-state": "^5.3.3",
+    "mui-nested-menu": "^4.0.1",
     "mui-sonner": "^1.0.0",
     "next": "^14.2.21",
     "p-queue": "^8.0.1",
