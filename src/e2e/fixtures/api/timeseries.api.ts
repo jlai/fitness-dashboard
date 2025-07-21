@@ -1,7 +1,8 @@
 import { test as base, Page } from "@playwright/test";
 
-import { TimeSeriesEntry } from "@/api/times-series";
+import { HeartTimeSeriesValue, TimeSeriesEntry } from "@/api/times-series";
 import { ActiveZoneMinutesTimeSeriesValue } from "@/api/times-series";
+import { GetDailyActivitySummaryResponse } from "@/api/activity";
 
 export class TimeSeriesApi {
   constructor(private readonly page: Page) {}
@@ -40,6 +41,20 @@ export class TimeSeriesApi {
       "**/1/user/-/activities/goals/daily.json",
       async (route) => {
         await route.fulfill({ json: {} });
+      }
+    );
+  }
+
+  async setDailySummaryResponse(
+    response: Readonly<GetDailyActivitySummaryResponse>,
+    dateRange = { start: "*" }
+  ) {
+    await this.page.route(
+      `**/1/user/-/activities/date/${dateRange.start}.json`,
+      async (route) => {
+        await route.fulfill({
+          json: response,
+        });
       }
     );
   }
@@ -86,6 +101,20 @@ export class TimeSeriesApi {
     );
   }
 
+  async setHeartTimeSeriesResponse(
+    response: Readonly<TimeSeriesEntry<HeartTimeSeriesValue>[]>,
+    dateRange = { start: "*", end: "*" }
+  ) {
+    await this.page.route(
+      `**/1/user/-/activities/heart/date/${dateRange.start}/${dateRange.end}.json`,
+      async (route) => {
+        await route.fulfill({
+          json: { "activities-heart": response },
+        });
+      }
+    );
+  }
+
   async setActiveZoneMinutesTimeSeriesResponse(
     response: Readonly<TimeSeriesEntry<ActiveZoneMinutesTimeSeriesValue>[]>,
     dateRange = { start: "*", end: "*" }
@@ -100,7 +129,10 @@ export class TimeSeriesApi {
     );
   }
 
-  async setActivityGoalsResponse(goals: { activeZoneMinutes?: number }) {
+  async setActivityGoalsResponse(goals: {
+    activeMinutes?: number;
+    activeZoneMinutes?: number;
+  }) {
     await this.page.route(
       "**/1/user/-/activities/goals/daily.json",
       async (route) => {

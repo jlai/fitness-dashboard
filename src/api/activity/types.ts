@@ -21,14 +21,16 @@ export interface GetDailyActivitySummaryResponse {
     lightlyActiveMinutes: number;
     fairlyActiveMinutes: number;
     veryActiveMinutes: number;
+
+    // seems to always be empty
+    heartRateZones?: Array<{
+      caloriesOut: number;
+      max: number;
+      min: number;
+      minutes: number;
+      name: string;
+    }>;
   };
-  heartRateZones: Array<{
-    caloriesOut: number;
-    max: number;
-    min: number;
-    minutes: number;
-    name: string;
-  }>;
   activities: Array<DailySummaryActivityLog>;
 }
 

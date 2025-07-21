@@ -18,9 +18,13 @@ import activeZoneMinutesIconUrl from "../assets/azm_24dp_FILL0_wght400_GRAD0_ops
 import fireIconUrl from "../assets/fire.svg";
 import { TileWithDialog } from "../tile-with-dialog";
 import { useSelectedDay } from "../../state";
+import { useTileSetting } from "../tile";
 
 import StatGauge from "./stat-gauge";
-import ActiveMinutesDialogContent from "./active-minutes-dialog";
+import ActiveMinutesDialogContent, {
+  ActiveMinutesTileSettings,
+  useActiveMinutes,
+} from "./active-minutes-dialog";
 import ActiveZoneMinutesDialogContent from "./active-zone-minutes-dialog";
 
 const StepsDialogContent = lazy(async () => await import("./steps-dialog"));
@@ -121,10 +125,12 @@ export function GaugeFloorsTileContent() {
 }
 
 export function GaugeActiveMinutesTileContent() {
-  const {
-    summary: { fairlyActiveMinutes, veryActiveMinutes },
-    goals: { activeMinutes } = {},
-  } = useDailySummary();
+  const [source] = useTileSetting<ActiveMinutesTileSettings, "source">(
+    "source",
+    "mets"
+  );
+
+  const { activeMinutes, activeMinutesGoal } = useActiveMinutes(source);
 
   return (
     <TileWithDialog
@@ -133,8 +139,8 @@ export function GaugeActiveMinutesTileContent() {
     >
       <StatGauge
         iconSrc={activeMinutesIconUrl}
-        value={fairlyActiveMinutes + veryActiveMinutes}
-        valueMax={activeMinutes ?? 0}
+        value={activeMinutes}
+        valueMax={activeMinutesGoal ?? 0}
         valueUnits="active mins"
       />
     </TileWithDialog>
