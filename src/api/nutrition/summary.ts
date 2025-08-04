@@ -1,5 +1,6 @@
 import { Dayjs } from "dayjs";
 import { queryOptions } from "@tanstack/react-query";
+import camelcaseKeys from "camelcase-keys";
 
 import { formatAsDate } from "../datetime";
 import { makeRequest } from "../request";
@@ -21,7 +22,10 @@ export function buildFoodLogQuery(day: Dayjs) {
         `/1/user/-/foods/log/date/${date}.json`
       );
 
-      return (await response.json()) as GetFoodLogResponse;
+      // Workaround: https://community.fitbit.com/t5/Web-API-Development/Nutrition-log-loggedFood-changed-unexpectedly-to-logged-food/m-p/5772376
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as GetFoodLogResponse;
     },
     staleTime: graduallyStale(day),
   });
