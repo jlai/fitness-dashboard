@@ -106,5 +106,8 @@
       "eslint",
       "prettier --write"
     ]
+  },
+  "overrides": {
+    "tmp": "^0.2.5"
   }
 }
