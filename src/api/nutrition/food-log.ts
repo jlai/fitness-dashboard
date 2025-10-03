@@ -130,6 +130,7 @@ export function buildDeleteFoodLogsMutation(queryClient: QueryClient) {
       for (const food of deletedFoods)
         await makeRequest(`/1/user/-/foods/log/${food.foodLogId}.json`, {
           method: "DELETE",
+          ignore502: true,
         });
     },
     onSuccess: (data, variables) => {

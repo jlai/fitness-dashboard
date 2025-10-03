@@ -28,6 +28,7 @@ export function buildCreateWaterLogMutation(queryClient: QueryClient) {
         `/1/user/-/foods/log/water.json?${params.toString()}`,
         {
           method: "POST",
+          ignore502: true,
         }
       );
 

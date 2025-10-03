@@ -23,10 +23,19 @@ export interface ServerError extends Error {
   errorText?: string;
 }
 
+export interface MakeRequestOptions {
+  // Fitbit API sometimes throws spurious 502 errors on delete, e.g.
+  // https://community.fitbit.com/t5/Web-API-Development/deletion-of-water-records-502-error/td-p/5786102
+  ignore502?: boolean;
+}
+
 /**
  * Make a request to the Fitbit API.
  */
-export async function makeRequest(uri: string, options?: RequestInit) {
+export async function makeRequest(
+  uri: string,
+  options?: RequestInit & MakeRequestOptions
+) {
   const useProxy = FITBIT_API_PROXY_URL && isAPIProxyAllowed();
   const authToken = await getFreshAccessToken();
 
@@ -44,6 +53,10 @@ export async function makeRequest(uri: string, options?: RequestInit) {
   if (!response.ok) {
     if (response.status === 429) {
       window.dispatchEvent(new CustomEvent(RATE_LIMIT_EXCEEDED_EVENT_TYPE));
+    }
+
+    if (options?.ignore502 && response.status === 502) {
+      return response;
     }
 
     const errors = await extractErrors(response);

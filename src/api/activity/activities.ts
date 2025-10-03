@@ -142,14 +142,10 @@ export function buildGetActivityListInfiniteQuery(
 export function buildDeleteActivityLogMutation(queryClient: QueryClient) {
   return mutationOptions({
     mutationFn: async (activityLogId: number) => {
-      // FIXME workaround for server 502 issue
-      try {
-        await makeRequest(`/1/user/-/activities/${activityLogId}.json`, {
-          method: "DELETE",
-        });
-      } catch (e) {
-        console.error("ignoring error", e);
-      }
+      await makeRequest(`/1/user/-/activities/${activityLogId}.json`, {
+        method: "DELETE",
+        ignore502: true,
+      });
     },
     onSuccess: () => {
       queryClient.resetQueries({
