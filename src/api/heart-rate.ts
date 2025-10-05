@@ -17,6 +17,10 @@ export interface ParsedHeartRateZones {
 export function parseHeartRateZones(zones: Array<HeartRateZone>) {
   const parsed: Partial<ParsedHeartRateZones> = {};
 
+  if (zones.length === 0) {
+    return undefined;
+  }
+
   for (const zone of zones) {
     switch (zone.name) {
       case "Out of Range":

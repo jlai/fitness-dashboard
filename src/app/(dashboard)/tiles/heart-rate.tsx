@@ -64,7 +64,11 @@ export function HeartRateTileContent() {
           <SparkLineChart
             margin={{ top: 8, bottom: 4, left: 2, right: 2 }}
             data={intradayData.map(({ value }) => value)}
-            yAxis={{ colorMap: createHeartRateZoneColorMap(heartRateZones) }}
+            yAxis={{
+              colorMap: heartRateZones
+                ? createHeartRateZoneColorMap(heartRateZones)
+                : undefined,
+            }}
             curve="monotoneX"
           />
         )}
