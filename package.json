@@ -59,7 +59,7 @@
     "mui-sonner": "^1.0.0",
     "next": "^14.2.21",
     "p-queue": "^8.0.1",
-    "patch-package": "^8.0.0",
+    "patch-package": "^8.0.1",
     "react": "^18",
     "react-day-picker": "^9.0.8",
     "react-dom": "^18",
@@ -106,8 +106,5 @@
       "eslint",
       "prettier --write"
     ]
-  },
-  "overrides": {
-    "tmp": "^0.2.5"
   }
 }
