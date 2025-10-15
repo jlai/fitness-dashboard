@@ -6,11 +6,12 @@ import { useState } from "react";
 
 import { allowAPIProxyAtom } from "@/storage/settings";
 import { FITBIT_API_PROXY_URL } from "@/config";
+import { isLoggedIn } from "@/api/auth";
 
 export function ProxyNotice() {
   const allowAPIProxy = useAtomValue(allowAPIProxyAtom);
   const [showing, setShowing] = useState(
-    FITBIT_API_PROXY_URL && !allowAPIProxy
+    FITBIT_API_PROXY_URL && isLoggedIn() && !allowAPIProxy
   );
 
   if (!showing) {
