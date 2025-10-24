@@ -2,7 +2,7 @@ import { queryOptions } from "@tanstack/react-query";
 import { queryClientAtom } from "jotai-tanstack-query";
 import { atom } from "jotai";
 
-import { makeRequest } from "../request";
+import { makeRequest, ServerError } from "../request";
 import { ONE_HOUR_IN_MILLIS } from "../cache-settings";
 
 import { Food, FoodUnit, SearchFoodsResponse } from "./types";
@@ -33,9 +33,19 @@ export function buildCustomFoodsQuery() {
   return queryOptions({
     queryKey: ["custom-foods"],
     queryFn: async () => {
-      const response = await makeRequest(`/1/user/-/foods.json`);
+      try {
+        const response = await makeRequest(`/1/user/-/foods.json`);
 
-      return ((await response.json()) as SearchFoodsResponse).foods;
+        return ((await response.json()) as SearchFoodsResponse).foods;
+      } catch (err) {
+        // Currently not working
+        // https://community.fitbit.com/t5/Web-API-Development/Undocumented-endpoint-in-foods-API/td-p/4452603
+        if ((err as ServerError)?.status === 403) {
+          return [];
+        }
+
+        throw err;
+      }
     },
     staleTime: ONE_HOUR_IN_MILLIS,
   });

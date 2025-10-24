@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Typography } from "@mui/material";
+import { Alert, Button, Typography } from "@mui/material";
 import { useState } from "react";
 import { usePopupState } from "material-ui-popup-state/hooks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -108,6 +108,10 @@ export default function ManageCustomFoods() {
         offset={[0, 15]}
       />
       <CreateCustomFoodDialog />
+      <Alert severity="error">
+        Custom foods are not currently available due to changes in the Fitbit
+        API.
+      </Alert>
       <DataGrid<Food>
         className="w-full"
         loading={!customFoods}

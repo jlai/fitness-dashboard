@@ -19,6 +19,7 @@ export interface ErrorResponseBody {
 }
 
 export interface ServerError extends Error {
+  status: Response["status"];
   errors?: ErrorResponseBody["errors"];
   errorText?: string;
 }
@@ -70,6 +71,7 @@ export async function makeRequest(
       }`
     ) as ServerError;
 
+    err.status = response.status;
     err.errors = errors;
     err.errorText = errorText;
 
