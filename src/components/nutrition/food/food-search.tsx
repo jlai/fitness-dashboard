@@ -257,7 +257,7 @@ export default function SearchFoods({
 
   return (
     <div className={className}>
-      <Autocomplete
+      <Autocomplete<FoodOption | SearchOption | null>
         loading={!savedFoods}
         value={value}
         onKeyDown={handleEnter}
@@ -294,7 +294,7 @@ export default function SearchFoods({
               <SearchOptionDisplay
                 option={option}
                 isSearching={searchPending}
-                noResults={isSuccess && searchResults?.foods.length === 0}
+                noResults={isSuccess && searchResults?.foods?.length === 0}
               />
             ) : (
               <FoodOptionDisplay option={option} />
@@ -315,7 +315,7 @@ export default function SearchFoods({
               } as SearchOption,
             ];
 
-            if (isSuccess && searchResults.foods.length === 0) {
+            if (isSuccess && searchResults.foods?.length === 0) {
               searchOptions = [
                 {
                   foodId: -2,
