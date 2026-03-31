@@ -1,8 +1,8 @@
 import { render, screen } from "@testing-library/react";
 import dayjs, { Dayjs } from "dayjs";
 
-import DayNavigator from "@/components/day-navigator";
 import { formatAsDate } from "@/api/datetime";
+import DayNavigator from "@/components/day-navigator";
 
 jest.useFakeTimers();
 
