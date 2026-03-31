@@ -10,16 +10,16 @@ import { PickerSelectionState } from "@mui/x-date-pickers/internals";
 
 dayjs.extend(localizedFormats);
 
-const WEEKDAY_FORMATTER = new Intl.DateTimeFormat(undefined, {
+const WEEKDAY_FORMATTER = new Intl.DateTimeFormat("en-US", {
   weekday: "long",
 });
 
-const SAME_YEAR_FORMATTER = new Intl.DateTimeFormat(undefined, {
+const SAME_YEAR_FORMATTER = new Intl.DateTimeFormat("en-US", {
   day: "numeric",
   month: "long",
 });
 
-const OTHER_YEAR_FORMATTER = new Intl.DateTimeFormat(undefined, {
+const OTHER_YEAR_FORMATTER = new Intl.DateTimeFormat("en-US", {
   day: "numeric",
   month: "long",
   year: "numeric",

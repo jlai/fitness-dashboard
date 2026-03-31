@@ -6,6 +6,8 @@ import { formatAsDate } from "@/api/datetime";
 
 jest.useFakeTimers();
 
+
+
 describe("DayNavigator", () => {
   it('displays "Today" for the current day', () => {
     const baseDay = dayjs("2024-02-10T12:00:00");
