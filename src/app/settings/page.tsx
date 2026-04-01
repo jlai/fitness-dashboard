@@ -24,6 +24,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { userTilesAtom } from "@/storage/tiles";
 import {
+  getAccessTokenScopes,
   hasTokenScope,
   redirectToLogin,
   revokeAuthorization,
@@ -60,6 +61,7 @@ import {
 import { NutritionalValues } from "@/api/nutrition/types";
 import { FITBIT_API_PROXY_URL, HOST_WEBSITE_NAME } from "@/config";
 import { PATTERN_TO_LOCALE } from "@/utils/number-formats";
+import { getScopeNameList } from "@/config/scopes";
 
 function SettingsRow({
   title,
@@ -114,6 +116,7 @@ function LoginSettings() {
   const confirm = useConfirm();
   const queryClient = useQueryClient();
   const enableAdvancedScopes = useAtomValue(enableAdvancedScopesAtom);
+  const scopes = getAccessTokenScopes();
 
   const switchAccounts = () => {
     confirm({
@@ -150,6 +153,15 @@ function LoginSettings() {
           <LoginInfo />
         </Suspense>
       </SettingsRow>
+      {scopes && scopes.size > 0 && (
+        <SettingsRow title="Granted permissions" component="div">
+          <div>
+            Types of data that this website is allowed to access from your
+            Fitbit account:
+          </div>
+          <div className="font-mono">{getScopeNameList([...scopes])}</div>
+        </SettingsRow>
+      )}
       <SettingsRow
         title="Change permissions / switch accounts"
         action={<Button onClick={switchAccounts}>Switch accounts</Button>}
