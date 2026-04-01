@@ -31,7 +31,8 @@
     {
       "files": ["src/e2e/**"],
       "rules": {
-        "@typescript-eslint/no-floating-promises": "error"
+        "@typescript-eslint/no-floating-promises": "error",
+        "react-hooks/rules-of-hooks": "off"
       }
     }
   ]
