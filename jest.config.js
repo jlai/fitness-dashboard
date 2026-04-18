@@ -36,14 +36,20 @@ const config = {
 
     // https://github.com/jestjs/jest/issues/12036
     '^d3-(.+)$': '<rootDir>/node_modules/d3-$1/dist/d3-$1.js',
+    
+    // Mock ES modules that cause issues
+    'mui-sonner': '<rootDir>/src/__mocks__/mui-sonner.js',
+    'camelcase-keys': '<rootDir>/src/__mocks__/camelcase-keys.js',
   },
 
   setupFiles: ['<rootDir>/setup-jest.ts'],
-
+  testEnvironmentOptions: {
+    customExportConditions: ['node', 'node-addons']
+  },
   preset: 'ts-jest',
 
   // Ignore node_modules, EXCEPT the ones listed here
-  transformIgnorePatterns: ['/node_modules/(?!(p-queue|p-timeout|mui-sonner|d3-scale)/)']
+  transformIgnorePatterns: ['/node_modules/(?!(p-queue|p-timeout|mui-sonner|d3-scale|@mui\/material-nextjs|@mui\/x-date-pickers|camelcase-keys|map-obj)/)']
 };
 
 // next adds /node_modules/ to the start of the ignore list, which we need to remove

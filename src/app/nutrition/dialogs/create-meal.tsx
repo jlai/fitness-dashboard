@@ -34,7 +34,7 @@ export function CreateMealFromFoodLogsDialog() {
     >
       <DialogTitle>Create meal</DialogTitle>
       <DialogContent>
-        <DialogContentText className="mb-4">
+        <DialogContentText component="div" className="mb-4">
           Save as a new meal that can be used later to log a group of foods
           together.
         </DialogContentText>

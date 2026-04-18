@@ -1,29 +1,24 @@
 import type { Metadata } from "next";
 import { Roboto, Poppins } from "next/font/google";
 import { HydrationProvider } from "react-hydration-provider";
-import dynamic from "next/dynamic";
 import { Container } from "@mui/material";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v13-appRouter";
 import { Suspense } from "react";
 
 import { CONTENT_SECURITY_POLICY } from "@/config/content-security-policy";
 import { ErrorBoundary } from "@/components/error";
+import { ClientSideSetup } from "./client-setup-wrapper";
 
 import Header from "./header";
 
 import "./globals.css";
 
 export const roboto = Roboto({ weight: ["400", "500"], subsets: ["latin"] });
-export const poppins = Poppins({ weight: ["400", "500"], subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Dashboard",
   description: "Dashboard for Fitbit data",
 };
-
-export const ClientSideSetup = dynamic(() => import("./client-setup"), {
-  ssr: false,
-});
 
 export default function RootPageLayout({
   children,
