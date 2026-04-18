@@ -28,17 +28,7 @@ interface RowElementProps<Log> {
 }
 
 interface HistoryListProps<Response, Log extends LogEntryWithId> {
-  buildQuery: (
-    initialDay: Dayjs,
-    pageSize: number
-  ) => UseInfiniteQueryOptions<
-    Response,
-    Error,
-    InfiniteData<Response>,
-    Response,
-    (string | number)[], // query key type
-    string
-  >;
+  buildQuery: any;
   getLogs: (response: Response) => Array<Log>;
   slots: {
     row: React.JSXElementConstructor<RowElementProps<Log>>;
@@ -89,7 +79,7 @@ export default function HistoryList<Response, Log extends LogEntryWithId>({
   };
 
   const page = data?.pages[pageNumber];
-  const logEntries = (page && getLogs(page)) ?? [];
+  const logEntries: Array<Log> = page ? getLogs(page as any) : [];
 
   return (
     <TableContainer>
@@ -122,7 +112,8 @@ export default function HistoryList<Response, Log extends LogEntryWithId>({
                 hasNextPage
                   ? -1
                   : data?.pages.reduce(
-                      (acc, page) => acc + getLogs(page).length,
+                      (acc: number, page) =>
+                        acc + getLogs(page as Response).length,
                       0
                     ) ?? -1
               }

@@ -37,18 +37,28 @@ export async function makeRequest(
   uri: string,
   options?: RequestInit & MakeRequestOptions
 ) {
-  const useProxy = FITBIT_API_PROXY_URL && isAPIProxyAllowed();
+  const startTime = Date.now();
   const authToken = await getFreshAccessToken();
 
-  const url = new URL(uri, useProxy ? FITBIT_API_PROXY_URL : FITBIT_API_URL);
+  // Use backend proxy instead of direct Fitbit API calls
+  const baseUrl =
+    typeof window !== "undefined"
+      ? window.location.origin
+      : process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+
+  const url = new URL("/api/fitbit/proxy", baseUrl);
+  url.searchParams.set("path", uri);
+
+  const method = options?.method || "GET";
 
   const response = await fetch(url, {
-    ...options,
+    method,
     headers: {
       "Accept-Language": "metric",
       ...options?.headers,
       Authorization: `Bearer ${authToken}`,
     },
+    body: options?.body,
   });
 
   if (!response.ok) {
@@ -62,7 +72,7 @@ export async function makeRequest(
 
     const errors = await extractErrors(response);
     const errorText = errors
-      ? errors.map((error) => error.message).join(" ")
+      ? errors.map((error: any) => error.message).join(" ")
       : undefined;
 
     const err = new Error(
@@ -106,14 +116,23 @@ export const warnOnRateLimitExceededEffect = atomEffect((get, set) => {
  */
 export async function extractErrors(response: Response) {
   try {
-    const responseObj = (await response.json()) as ErrorResponseBody;
+    const text = await response.text();
 
-    if (Array.isArray(responseObj.errors)) {
-      return responseObj.errors;
+    // Try to parse as JSON first
+    try {
+      const json = JSON.parse(text);
+      return json.errors;
+    } catch (parseError) {
+      // If not JSON, return the text as error message
+      return [{ message: text, errorType: "unknown", fieldName: "unknown" }];
     }
-  } catch (err) {
-    return undefined;
+  } catch (error: any) {
+    return [
+      {
+        message: "Failed to read error response",
+        errorType: "unknown",
+        fieldName: "unknown",
+      },
+    ];
   }
-
-  return undefined;
 }

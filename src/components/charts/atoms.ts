@@ -1,7 +1,7 @@
 import { atom } from "jotai";
 import dayjs from "dayjs";
 import { atomEffect } from "jotai-effect";
-import { atomFamily } from "jotai/utils";
+import { atomFamily } from "jotai-family";
 
 import { DayjsRange } from "../calendar/period-navigator";
 
