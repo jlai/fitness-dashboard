@@ -7,25 +7,7 @@ import { useAtomValue } from "jotai";
 
 import { getAccessTokenScopes, redirectToLogin } from "@/api/auth";
 import { enableAdvancedScopesAtom } from "@/storage/settings";
-
-const SCOPE_NAME_MAPPING: Record<string, string> = {
-  pro: "profile",
-  nut: "nutrition",
-  act: "activity",
-  sle: "sleep",
-  hr: "heart rate",
-  soc: "social",
-  wei: "weight",
-  set: "device settings",
-  loc: "location",
-  res: "breathing rate",
-  oxy: "oxygen saturation (SpO2)",
-  tem: "temperature",
-};
-
-function getScopeName(scope: string) {
-  return SCOPE_NAME_MAPPING[scope] ?? SCOPE_NAME_MAPPING[`w${scope}`] ?? scope;
-}
+import { getScopeName, getScopeNameList } from "@/config/scopes";
 
 export function RequireScopes({
   scopes: requiredScopes,
@@ -72,9 +54,8 @@ function CompactMissingScopes({
       description: (
         <div>
           The following permissions are needed:{" "}
-          <b>{scopes.map((scope) => getScopeName(scope)).join(", ")}</b>. Click
-          OK to be redirected to Fitbit to update the types of data accessible
-          by this website.
+          <b>{getScopeNameList(scopes)}</b>. Click OK to be redirected to Fitbit
+          to update the types of data accessible by this website.
         </div>
       ),
     }).then(({ confirmed }) => {
