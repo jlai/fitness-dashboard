@@ -10,7 +10,6 @@ import { NumberFormats } from "@/utils/number-formats";
 import {
   buildDailySummaryQuery,
   buildTimeSeriesQuery,
-  GetDailyActivitySummaryResponse,
   GoalResource,
   TimeSeriesResource,
 } from "@/api/activity";
@@ -122,19 +121,6 @@ export function useDayAndWeekSummary(resource: TimeSeriesResource) {
         buildTimeSeriesQuery(resource, startDay, endDay),
       ],
     });
-
-  // Older daily summaries seem to be missing goal information, so conditionally
-  // fetch it if needed
-  const [goalsResult] = useSuspenseQueries({
-    queries: !daySummary.goals
-      ? [buildActivityGoalsQuery("daily")]
-      : ([] as any),
-  });
-
-  if (!daySummary.goals && goalsResult) {
-    daySummary.goals =
-      goalsResult.data as GetDailyActivitySummaryResponse["goals"];
-  }
 
   return { daySummary, weeklyGoals, weekData };
 }

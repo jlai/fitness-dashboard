@@ -19,6 +19,7 @@ import { Chance } from "chance";
 import { find } from "es-toolkit/compat";
 
 import { formatAsDate } from "@/api/datetime";
+import { millimetersToKilometers } from "@/config/units";
 import { FormRow, FormRows } from "@/components/forms/form-row";
 
 import { useSelectedDay } from "../state";
@@ -112,7 +113,7 @@ export default function PlantTileContent() {
         const total =
           find(dailySummary.summary.distances, { activity: "total" })
             ?.distance ?? 0;
-        const goal = dailySummary.goals?.distance ?? 0;
+        const goal = millimetersToKilometers(dailySummary.goals?.distance ?? 0);
         progress = Math.min(1.0, total / goal);
         text = "Go the distance to grow";
       }

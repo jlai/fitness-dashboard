@@ -25,7 +25,7 @@ import { ENABLE_INTRADAY } from "@/config";
 import { DateFormats } from "@/utils/date-formats";
 import { FRACTION_DIGITS_2 } from "@/utils/number-formats";
 import { aggregateByHour } from "@/components/charts/timeseries/aggregation";
-import { useUnits } from "@/config/units";
+import { millimetersToKilometers, useUnits } from "@/config/units";
 import { FormRows } from "@/components/forms/form-row";
 
 import { RenderDialogContentProps } from "../tile-with-dialog";
@@ -96,7 +96,9 @@ function Overview() {
       ?.distance ?? 0;
 
   const dailyDistance = localizedKilometers(dailyDistanceKilometers);
-  const dailyGoal = localizedKilometers(goals?.distance ?? 0);
+  const dailyGoal = localizedKilometers(
+    millimetersToKilometers(goals?.distance ?? 0)
+  );
 
   const weeklyDistance = localizedKilometers(
     sumBy(weekData, (entry) => Number(entry.value))

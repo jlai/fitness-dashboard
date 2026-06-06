@@ -251,3 +251,7 @@ export function useUnits() {
     ...waterUnitConfig,
   };
 }
+
+export function millimetersToKilometers(millimeters: number) {
+  return millimeters / 1_000_000;
+}

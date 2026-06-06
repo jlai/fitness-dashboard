@@ -1,7 +1,7 @@
 import { lazy } from "react";
 import { useQuery } from "@tanstack/react-query";
 
-import { useUnits } from "@/config/units";
+import { millimetersToKilometers, useUnits } from "@/config/units";
 import {
   ActiveZoneMinutesTimeSeriesValue,
   buildTimeSeriesQuery,
@@ -75,7 +75,9 @@ export function GaugeDistanceTileContent() {
       <StatGauge
         iconSrc={distanceIconUrl}
         value={localizedTotalDistance}
-        valueMax={units.localizedKilometers(dailySummary.goals?.distance ?? 0)}
+        valueMax={units.localizedKilometers(
+          millimetersToKilometers(dailySummary.goals?.distance ?? 0)
+        )}
         valueUnits={units.localizedKilometersName}
       />
     </TileWithDialog>

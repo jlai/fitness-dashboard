@@ -5,7 +5,7 @@ export interface GetDailyActivitySummaryResponse {
   goals?: {
     activeMinutes: number;
     caloriesOut: number;
-    distance: number;
+    distance: number; // millimeters
     floors: number;
     steps: number;
   };
@@ -123,10 +123,10 @@ export interface GetLifetimeStatsResponse {
 
 export interface GetActivityGoalsResponse {
   goals: {
-    activeMinutes?: number; // daily only
+    activeMinutes?: number;
     activeZoneMinutes: number;
-    caloriesOut?: number; // daily only
-    distance: number; // NOTE: always in user's server-side distance unit
+    caloriesOut?: number;
+    distance: number; // NOTE: miles or km depending if user is using US or metric
     floors: number;
     steps: number;
   };
