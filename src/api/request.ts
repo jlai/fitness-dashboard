@@ -2,6 +2,7 @@
 
 import { atomEffect } from "jotai-effect";
 import { toast } from "mui-sonner";
+import JSONWithBigInt from "json-bigint-native";
 
 import { FITBIT_API_PROXY_URL, FITBIT_API_URL } from "@/config";
 import { isAPIProxyAllowed } from "@/storage/settings";
@@ -116,4 +117,10 @@ export async function extractErrors(response: Response) {
   }
 
   return undefined;
+}
+
+/** Get JSON body from a Response with BigInt support */
+export async function getJSON<T = object>(response: Response) {
+  const body = await response.text();
+  return JSONWithBigInt.parse(body) as T;
 }

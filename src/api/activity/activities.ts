@@ -5,7 +5,7 @@ import {
 } from "@tanstack/react-query";
 import { Dayjs } from "dayjs";
 
-import { makeRequest } from "../request";
+import { getJSON, makeRequest } from "../request";
 import { ONE_DAY_IN_MILLIS } from "../cache-settings";
 import mutationOptions from "../mutation-options";
 import { formatAsDate } from "../datetime";
@@ -22,7 +22,7 @@ export function buildGetActivityLogQuery(id: number) {
     queryFn: async () => {
       const response = await makeRequest(`/1.1/user/-/activities/${id}.json`);
 
-      return ((await response.json()) as GetActivityLogResponse).activityLog;
+      return (await getJSON<GetActivityLogResponse>(response)).activityLog;
     },
     staleTime: ONE_DAY_IN_MILLIS,
   });

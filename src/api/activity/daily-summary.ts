@@ -1,7 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import { Dayjs } from "dayjs";
 
-import { makeRequest } from "../request";
+import { getJSON, makeRequest } from "../request";
 import { formatAsDate } from "../datetime";
 import { graduallyStale } from "../cache-settings";
 
@@ -17,7 +17,7 @@ export function buildDailySummaryQuery(day: Dayjs) {
         `/1/user/-/activities/date/${date}.json`
       );
 
-      return (await response.json()) as GetDailyActivitySummaryResponse;
+      return await getJSON<GetDailyActivitySummaryResponse>(response);
     },
     staleTime: graduallyStale(day),
   });
