@@ -5,7 +5,5 @@ export const CONTENT_SECURITY_POLICY = `
     script-src 'self' 'unsafe-inline' blob: ${EXTRA_CSP_SCRIPT_SRC ?? ""};
     style-src 'self' 'unsafe-inline';
     img-src 'self' data: https://asset-service.fitbit.com https://tile.openstreetmap.org https://*.tile.opentopomap.org;
-    connect-src 'self' ${FITBIT_API_URL} ${
-  FITBIT_API_PROXY_URL ?? ""
-} https://api.protomaps.com https://protomaps.github.io
+    connect-src 'self' http://localhost:3000 https://api.fitbit.com https://www.fitbit.com https://api.protomaps.com https://protomaps.github.io
 `.replace(/\s+/, " ");

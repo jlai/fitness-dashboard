@@ -1,25 +1,26 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import dayjs, { Dayjs } from "dayjs";
+
 import { DateCalendar } from "@mui/x-date-pickers";
+import { PickerSelectionState } from "@mui/x-date-pickers/internals";
 import { ChevronLeft, ChevronRight, CalendarMonth } from "@mui/icons-material";
 import { IconButton, Popover, Typography } from "@mui/material";
+import dayjs, { Dayjs } from "dayjs";
 import localizedFormats from "dayjs/plugin/localizedFormat";
-import { PickerSelectionState } from "@mui/x-date-pickers/internals";
 
 dayjs.extend(localizedFormats);
 
-const WEEKDAY_FORMATTER = new Intl.DateTimeFormat(undefined, {
+const WEEKDAY_FORMATTER = new Intl.DateTimeFormat("en-US", {
   weekday: "long",
 });
 
-const SAME_YEAR_FORMATTER = new Intl.DateTimeFormat(undefined, {
+const SAME_YEAR_FORMATTER = new Intl.DateTimeFormat("en-US", {
   day: "numeric",
   month: "long",
 });
 
-const OTHER_YEAR_FORMATTER = new Intl.DateTimeFormat(undefined, {
+const OTHER_YEAR_FORMATTER = new Intl.DateTimeFormat("en-US", {
   day: "numeric",
   month: "long",
   year: "numeric",

@@ -102,7 +102,7 @@ export default function SleepLogList() {
   return (
     <HistoryList
       buildQuery={buildGetSleepLogListInfiniteQuery}
-      getLogs={(page) => page.sleep ?? []}
+      getLogs={(page: any) => page.sleep ?? []}
       slots={{ row: SleepLogRow, headerCells: SleepLogListHeaderCells }}
     />
   );
