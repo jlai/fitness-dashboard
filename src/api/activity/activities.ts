@@ -109,7 +109,7 @@ export function buildCreateActivityLogMutation(queryClient: QueryClient) {
 export function isPossiblyTracked(activity: ActivityLog) {
   return (
     (activity.logType === "mobile_run" || activity.logType === "tracker") &&
-    activity.distance
+    (activity.distance ?? 0) > 0
   );
 }
 
