@@ -24,7 +24,7 @@ export function ActivityLogDetailsDialog({
   open,
   onClose,
 }: {
-  logId: number;
+  logId: number | bigint;
   open: boolean;
   onClose: () => void;
 }) {

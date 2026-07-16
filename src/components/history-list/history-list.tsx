@@ -20,7 +20,7 @@ import { useState, useCallback } from "react";
 import JumpTo from "../jump-to";
 
 interface LogEntryWithId {
-  logId: number;
+  logId: number | bigint;
 }
 
 interface RowElementProps<Log> {
@@ -101,7 +101,7 @@ export default function HistoryList<Response, Log extends LogEntryWithId>({
         </TableHead>
         <TableBody>
           {logEntries.map((log) => (
-            <Row key={log.logId} logEntry={log} />
+            <Row key={String(log.logId)} logEntry={log} />
           ))}
           {[...Array(pageSize - logEntries.length).fill(0)].map((_, i) => (
             <TableRow key={`filler-${i}`}>

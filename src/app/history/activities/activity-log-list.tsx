@@ -41,7 +41,7 @@ function ActivityLogRow({ logEntry: activityLog }: { logEntry: ActivityLog }) {
 
   const showActivityLogDetails = (event: React.MouseEvent) => {
     // Prepopulate query cache
-    queryClient.setQueryData(["activity-log", logId], activityLog);
+    queryClient.setQueryData(["activity-log", String(logId)], activityLog);
 
     setHashLogId(logId);
 
@@ -49,7 +49,7 @@ function ActivityLogRow({ logEntry: activityLog }: { logEntry: ActivityLog }) {
   };
 
   return (
-    <TableRow key={logId}>
+    <TableRow key={String(logId)}>
       <TableCell>
         <a onClick={showActivityLogDetails} href={`#activityLogId=${logId}`}>
           <div className="flex flex-row items-center gap-x-2">

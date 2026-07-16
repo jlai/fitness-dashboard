@@ -16,9 +16,11 @@ import {
   GetActivityLogResponse,
 } from "./types";
 
-export function buildGetActivityLogQuery(id: number) {
+export function buildGetActivityLogQuery(id: number | bigint) {
   return queryOptions({
-    queryKey: ["activity-log", id],
+    // logIds can exceed Number.MAX_SAFE_INTEGER; stringify since the default
+    // query key hasher (JSON.stringify) throws on BigInts
+    queryKey: ["activity-log", String(id)],
     queryFn: async () => {
       const response = await makeRequest(`/1.1/user/-/activities/${id}.json`);
 
@@ -28,9 +30,9 @@ export function buildGetActivityLogQuery(id: number) {
   });
 }
 
-export function buildActivityTcxQuery(id: number) {
+export function buildActivityTcxQuery(id: number | bigint) {
   return queryOptions({
-    queryKey: ["activity-tcx", id],
+    queryKey: ["activity-tcx", String(id)],
     queryFn: async () => {
       const response = await makeRequest(
         `/1/user/-/activities/${id}.tcx?includePartialTCX=true`
@@ -129,7 +131,7 @@ export function buildGetActivityListInfiniteQuery(
       const response = await makeRequest(
         `/1/user/-/activities/list.json?${queryString}`
       );
-      return (await response.json()) as GetActivityLogListResponse;
+      return await getJSON<GetActivityLogListResponse>(response);
     },
     getNextPageParam: (lastPage) =>
       lastPage.pagination.next
@@ -141,7 +143,7 @@ export function buildGetActivityListInfiniteQuery(
 
 export function buildDeleteActivityLogMutation(queryClient: QueryClient) {
   return mutationOptions({
-    mutationFn: async (activityLogId: number) => {
+    mutationFn: async (activityLogId: number | bigint) => {
       await makeRequest(`/1/user/-/activities/${activityLogId}.json`, {
         method: "DELETE",
         ignore502: true,

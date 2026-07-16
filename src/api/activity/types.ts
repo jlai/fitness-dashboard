@@ -47,7 +47,7 @@ export interface DailySummaryActivityLog {
   hasStartTime: boolean;
   isFavorite: boolean;
   lastModified: string;
-  logId: number;
+  logId: number | bigint;
   name: string;
   startDate: string;
   startTime: string;
@@ -69,7 +69,7 @@ export interface ActivityLog {
   elevationGain: number;
   heartRateZones: Array<HeartRateZone>;
   lastModified: string;
-  logId: number;
+  logId: number | bigint;
   logType: "auto_detected" | "manual" | "mobile_run" | "tracker";
   originalDuration: number;
   originalStartTime: string;

@@ -47,7 +47,7 @@ export function useTcxDownloadUrl(
   return tcxDownloadUrl;
 }
 
-export function useFetchTcxAsString(activityLogId: number) {
+export function useFetchTcxAsString(activityLogId: number | bigint) {
   const { data: tcxString } = useQuery(buildActivityTcxQuery(activityLogId));
   return tcxString;
 }

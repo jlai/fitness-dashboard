@@ -27,7 +27,7 @@ import { useDailySummary } from "./common";
 import { useTileScale } from "./tile";
 import { IconWithDialog, RenderDialogContentProps } from "./tile-with-dialog";
 
-const showingLogIdAtom = atom<number | null>(null);
+const showingLogIdAtom = atom<number | bigint | null>(null);
 
 export default function ActivitiesTileContent() {
   const { h } = useTileScale();
@@ -64,7 +64,7 @@ export default function ActivitiesTileContent() {
         <List disablePadding className="w-full flex-1 overflow-y-auto">
           {activities.map((activityLog) => (
             <ActivityLogSummary
-              key={activityLog.logId}
+              key={String(activityLog.logId)}
               activityLog={activityLog}
             />
           ))}
