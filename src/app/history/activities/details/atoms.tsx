@@ -3,12 +3,20 @@ import { atomWithHash } from "jotai-location";
 
 import { cleanHashReplaceState } from "@/utils/hash";
 
-export const activityLogIdHashAtom = atomWithHash<number | null>(
+export const activityLogIdHashAtom = atomWithHash<number | bigint | null>(
   "activityLogId",
   null,
   {
-    serialize: (value: number | null) => (value ? value.toString() : ""),
-    deserialize: (value: string) => Number.parseInt(value) || null,
+    serialize: (value: number | bigint | null) =>
+      value ? value.toString() : "",
+    // Parse as BigInt since logIds can exceed Number.MAX_SAFE_INTEGER
+    deserialize: (value: string) => {
+      try {
+        return value ? BigInt(value) : null;
+      } catch {
+        return null;
+      }
+    },
     setHash: cleanHashReplaceState,
   }
 );
