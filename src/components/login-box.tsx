@@ -15,9 +15,11 @@ import {
 import { useCallback } from "react";
 import Link from "next/link";
 import { ArrowDropDown } from "@mui/icons-material";
-import { useAtomValue } from "jotai";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
+import { useRouter } from "next/navigation";
+import dayjs from "dayjs";
 
-import { redirectToLogin } from "@/api/auth";
+import { hasTokenScope, useGoogleLoginAndAuthorization } from "@/api/auth";
 import { PRIVACY_POLICY_LINK, WEBSITE_NAME } from "@/config";
 import { allUnitsConfiguredAtom } from "@/storage/settings";
 import { firstLoginDateAtom } from "@/storage/analytics";
@@ -42,12 +44,13 @@ function PermissionsTable() {
   return (
     <Table size="small">
       <TableBody>
-        <PermissionInfo title="Activity">
+        <PermissionInfo title="Activity and fitness">
           Display steps, activities, calories burned, and other stats, and log
           manual activities.
         </PermissionInfo>
-        <PermissionInfo title="Heart Rate">
-          Display resting heart rate and heart rate zone graphs.
+        <PermissionInfo title="Health metrics and measurements">
+          Display and log weight, and display heart rate, breathing rate, skin
+          temperature, and oxygen saturation graphs.
         </PermissionInfo>
         <PermissionInfo title="Location">
           Display maps of GPS-tracked activity logs.
@@ -69,9 +72,6 @@ function PermissionsTable() {
         <PermissionInfo title="Sleep">
           Display sleep logs and manually log sleep.
         </PermissionInfo>
-        <PermissionInfo title="Weight">
-          Display weight history and manually log weight.
-        </PermissionInfo>
       </TableBody>
     </Table>
   );
@@ -81,9 +81,11 @@ export default function LoginBox() {
   const router = useRouter();
   const allUnitsConfigured = useAtomValue(allUnitsConfiguredAtom);
   const [firstLoginDate, setFirstLoginDate] = useAtom(firstLoginDateAtom);
+  const { googleLoginAndAuthorization, ready } =
+    useGoogleLoginAndAuthorization();
 
   const login = useCallback(() => {
-    redirectToLogin()
+    googleLoginAndAuthorization()
       .then(() => {
         if (!firstLoginDate) {
           setFirstLoginDate(formatAsDate(dayjs()));
@@ -94,11 +96,12 @@ export default function LoginBox() {
         }
       })
       .catch(() => {
-        // redirectToLogin already toasts on failure
+        // googleLoginAndAuthorization already toasts on failure
       });
   }, [
     allUnitsConfigured,
     firstLoginDate,
+    googleLoginAndAuthorization,
     router,
     setFirstLoginDate,
   ]);
@@ -124,17 +127,18 @@ export default function LoginBox() {
       </section>
       <section>
         <Typography variant="h5" marginBottom="24px">
-          Connect your Fitbit account
+          Connect your Google account
         </Typography>
         <div className="space-y-4">
           <Typography variant="body1">
-            Connect your Fitbit account to view your daily stats, historical
-            graphs and logs, and log new activities and other data.
+            Connect the Google account holding your Google Health data to view
+            your daily stats, historical graphs and logs, and log new activities
+            and other data.
           </Typography>
           <Typography variant="body1">
             No health or personal information will be shared with the operators
-            of this website or any third party. Data retrieved from the Fitbit
-            Web API will be stored solely in your browser&apos;s memory and
+            of this website or any third party. Data retrieved from the Google
+            Health API will be stored solely in your browser&apos;s memory and
             offline storage/cache.{" "}
             {PRIVACY_POLICY_LINK && (
               <span>
@@ -166,14 +170,14 @@ export default function LoginBox() {
                   <a href="/settings" className="underline">
                     settings
                   </a>{" "}
-                  if you change your mind, or completely remove access using
-                  Fitbit&apos;s{" "}
+                  if you change your mind, or completely remove access on your
+                  Google Account&apos;s{" "}
                   <a
-                    href="https://www.fitbit.com/settings/applications"
+                    href="https://myaccount.google.com/permissions"
                     target="_blank"
                     className="underline"
                   >
-                    linked apps
+                    third-party apps
                   </a>{" "}
                   page.
                 </p>
@@ -183,8 +187,8 @@ export default function LoginBox() {
           </Accordion>
         </div>
         <div className="mt-8 flex flex-col items-center">
-          <Button variant="contained" onClick={login}>
-            Connect with Fitbit
+          <Button variant="contained" onClick={login} disabled={!ready}>
+            Connect with Google
           </Button>
         </div>
       </section>

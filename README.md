@@ -16,29 +16,27 @@ See https://dashboard.exercise.quest for a live deployment.
 
 ## Running a local development server
 
-### Register a Fitbit developer app
+### Register a Google OAuth client
 
-Go to https://dev.fitbit.com/apps/new to register an application. You'll need this
-to be able to access the Fitbit API.
+Follow https://developers.google.com/health/setup to create a Google Cloud project,
+enable the Google Health API, and configure the OAuth consent screen. On the Data
+Access page, add every Google Health API scope, since login requests all of them.
 
-Set the `OAuth 2.0 Application Type` to either Client or Personal. Personal apps will
-only be able to access your own data, and should not be used for publicly-hosted
-dashboards.
+Create an OAuth client of type `Web application`. Add your site origin (for local
+development, `http://localhost:3000`) under Authorized JavaScript origins. For
+the authorization code popup flow, also add that same origin under Authorized
+redirect URIs.
 
-For the redirect URL, use `http://localhost:3000/login/callback` (or the appropriate
-domain if hosted somewhere other than localhost). You can add multiple URLs to the
-field separated by spaces.
-
-Set the access type to read/write if you need to modify data.
-
-Once you create the application, it will be assigned a `OAuth 2.0 Client ID`. Create a
-`.env.local` file in the same directory as this README, and put the ID in it:
+Once you create the client, it will be assigned a client ID and client secret.
+Create a `.env.local` file in the same directory as this README, and put them
+in it:
 
 ```
-NEXT_PUBLIC_FITBIT_OAUTH_CLIENT_ID=idgoeshere
+NEXT_PUBLIC_GOOGLE_OAUTH_CLIENT_ID=idgoeshere
+GOOGLE_OAUTH_CLIENT_SECRET=secretgoeshere
 ```
 
-If the application type is Personal, you can enable intraday data requests
+You can enable intraday data requests
 (e.g. calories/minute) with:
 
 ```

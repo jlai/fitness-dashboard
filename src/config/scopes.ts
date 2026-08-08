@@ -1,26 +1,20 @@
 export const SCOPE_NAME_MAPPING: Record<string, string> = {
-  pro: "profile",
-  nut: "nutrition",
-  act: "activity",
-  sle: "sleep",
+  act: "activity and fitness",
+  cf: "cardio fitness (VO2 Max)",
   hr: "heart rate",
-  soc: "social",
-  wei: "weight",
-  set: "device settings",
   loc: "location",
-  res: "breathing rate",
+  nut: "nutrition",
   oxy: "oxygen saturation (SpO2)",
+  pro: "profile",
+  res: "breathing rate",
+  set: "device settings",
+  sle: "sleep",
   tem: "temperature",
+  wei: "weight",
 };
 
 export function getScopeName(scope: string) {
-  return (
-    SCOPE_NAME_MAPPING[scope] ??
-    (scope.startsWith("w")
-      ? SCOPE_NAME_MAPPING[scope.substring(1)]
-      : undefined) ??
-    scope
-  );
+  return SCOPE_NAME_MAPPING[scope] ?? scope;
 }
 
 export function getScopeNameList(scopes: string[]) {

@@ -24,21 +24,13 @@ export const FITBIT_API_URL = requiredVar(
   process.env.NEXT_PUBLIC_FITBIT_API_URL,
 );
 
-export const OAUTH_CALLBACK_URI = requiredVar(
-  process.env.NEXT_PUBLIC_FITBIT_OAUTH_REDIRECT_URI,
+export const GOOGLE_OAUTH_CLIENT_ID = requiredVar(
+  process.env.NEXT_PUBLIC_GOOGLE_OAUTH_CLIENT_ID,
 );
 
-export const FITBIT_OAUTH_SERVER = requiredVar(
-  process.env.NEXT_PUBLIC_FITBIT_OAUTH_SERVER,
-);
-
-export const FITBIT_OAUTH_CLIENT_ID = requiredVar(
-  process.env.NEXT_PUBLIC_FITBIT_OAUTH_CLIENT_ID,
-);
-
-export const FITBIT_OAUTH_AUTHORIZATION_ENDPOINT = requiredVar(
-  process.env.NEXT_PUBLIC_FITBIT_OAUTH_AUTHORIZATION_ENDPOINT,
-);
+/** Used when exchanging an authorization code / refresh token with Google. */
+export const GOOGLE_OAUTH_CLIENT_SECRET =
+  process.env.GOOGLE_OAUTH_CLIENT_SECRET ?? "";
 
 /**
  * Whether to enable intraday timeseries requests

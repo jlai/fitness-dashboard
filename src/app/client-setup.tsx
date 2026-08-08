@@ -15,8 +15,11 @@ import { Toaster } from "mui-sonner";
 import { useAtom, Provider as JotaiProvider } from "jotai";
 import { queryClientAtom } from "jotai-tanstack-query";
 
-import { syncFitbitTokenEffect } from "@/api/auth";
+import { GoogleOAuthProvider } from "@react-oauth/google";
+
+import { syncAuthTokenEffect } from "@/api/auth";
 import { warnOnRateLimitExceededEffect } from "@/api/request";
+import { GOOGLE_OAUTH_CLIENT_ID } from "@/config";
 import { analyticsPingEffect } from "@/storage/analytics";
 import {
   dateFormatAtomEffect,
@@ -38,7 +41,7 @@ const queryClient = new QueryClient({
 
 function Setup({ children }: { children: React.ReactNode }) {
   useHydrateAtoms([[queryClientAtom, queryClient]]);
-  useAtom(syncFitbitTokenEffect);
+  useAtom(syncAuthTokenEffect);
   useAtom(analyticsPingEffect);
   useAtom(warnOnRateLimitExceededEffect);
   useAtom(numberFormatAtomEffect);
@@ -61,19 +64,21 @@ export default function ClientSideSetup({
   );
 
   return (
-    <ThemeProvider theme={theme}>
-      <JotaiProvider>
-        <LocalizationProvider dateAdapter={AdapterDayjs}>
-          <StyledEngineProvider injectFirst>
-            <QueryClientProvider client={queryClient}>
-              <ConfirmProvider>
-                <Setup>{children}</Setup>
-                <Toaster />
-              </ConfirmProvider>
-            </QueryClientProvider>
-          </StyledEngineProvider>
-        </LocalizationProvider>
-      </JotaiProvider>
-    </ThemeProvider>
+    <GoogleOAuthProvider clientId={GOOGLE_OAUTH_CLIENT_ID}>
+      <ThemeProvider theme={theme}>
+        <JotaiProvider>
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <StyledEngineProvider injectFirst>
+              <QueryClientProvider client={queryClient}>
+                <ConfirmProvider>
+                  <Setup>{children}</Setup>
+                  <Toaster />
+                </ConfirmProvider>
+              </QueryClientProvider>
+            </StyledEngineProvider>
+          </LocalizationProvider>
+        </JotaiProvider>
+      </ThemeProvider>
+    </GoogleOAuthProvider>
   );
 }

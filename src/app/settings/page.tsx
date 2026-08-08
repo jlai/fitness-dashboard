@@ -26,9 +26,9 @@ import { userTilesAtom } from "@/storage/tiles";
 import {
   getAccessTokenScopes,
   hasTokenScope,
-  redirectToLogin,
   revokeAuthorization,
   useLoggedIn,
+  useGoogleLoginAndAuthorization,
   userIdAtom,
 } from "@/api/auth";
 import {
@@ -98,13 +98,13 @@ function LoginInfo() {
 
   return userProfile ? (
     <>
-      You&apos;re currently logged in as {userProfile.fullName} (Fitbit ID{" "}
+      You&apos;re currently logged in as {userProfile.fullName} (session{" "}
       <code>{encodedId}</code>)
     </>
   ) : (
     encodedId && (
       <>
-        You&apos;re currently logged in as Fitbit ID <code>{encodedId}</code>
+        You&apos;re currently logged in (session <code>{encodedId}</code>)
       </>
     )
   );
@@ -113,8 +113,10 @@ function LoginInfo() {
 function LoginSettings() {
   const confirm = useConfirm();
   const queryClient = useQueryClient();
-  const enableAdvancedScopes = useAtomValue(enableAdvancedScopesAtom);
   const scopes = getAccessTokenScopes();
+  const { googleLoginAndAuthorization } = useGoogleLoginAndAuthorization({
+    selectAccount: true,
+  });
 
   const switchAccounts = () => {
     confirm({
@@ -122,17 +124,14 @@ function LoginSettings() {
     }).then(({ confirmed }) => {
       if (confirmed) {
         queryClient.clear();
-        redirectToLogin({
-          prompt: "login consent",
-          requestAdvancedScopes: enableAdvancedScopes,
-        });
+        googleLoginAndAuthorization();
       }
     });
   };
 
   const unlinkAccount = () => {
     confirm({
-      description: "Sign out and unlink this website from your Fitbit account?",
+      description: "Sign out and unlink this website from your Google account?",
     }).then(({ confirmed }) => {
       if (confirmed) {
         revokeAuthorization();
@@ -144,7 +143,7 @@ function LoginSettings() {
   return (
     <>
       <SettingsRow
-        title="Fitbit account"
+        title="Google account"
         action={<Button onClick={switchAccounts}>Logout</Button>}
       >
         <Suspense fallback={<></>}>
@@ -155,7 +154,7 @@ function LoginSettings() {
         <SettingsRow title="Granted permissions" component="div">
           <div>
             Types of data that this website is allowed to access from your
-            Fitbit account:
+            Google Health account:
           </div>
           <div className="font-mono">{getScopeNameList([...scopes])}</div>
         </SettingsRow>
@@ -167,14 +166,14 @@ function LoginSettings() {
         Change permissions or sign in with a different account
       </SettingsRow>
       <SettingsRow
-        title="Unlink Fitbit account"
+        title="Unlink Google account"
         action={
           <Button color="error" onClick={unlinkAccount}>
             Unlink
           </Button>
         }
       >
-        Unlink access to Fitbit account from this website (across all browser
+        Unlink access to Google account from this website (across all browser
         sessions)
       </SettingsRow>
     </>
@@ -582,7 +581,6 @@ function LanguageSettings() {
   );
 }
 
-
 function AdvancedSettings() {
   const confirm = useConfirm();
   const setUserTiles = useSetAtom(userTilesAtom);
@@ -674,7 +672,6 @@ export default function SettingsPage() {
 
   return (
     <Container maxWidth="lg">
-
       <SettingsTable>
         <LanguageSettings />
       </SettingsTable>

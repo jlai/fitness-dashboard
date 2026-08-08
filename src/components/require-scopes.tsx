@@ -1,12 +1,9 @@
 "use client";
 
 import { Typography, Button, Stack } from "@mui/material";
-import { useCallback } from "react";
 import { useConfirm } from "material-ui-confirm";
-import { useAtomValue } from "jotai";
 
-import { getAccessTokenScopes, redirectToLogin } from "@/api/auth";
-import { enableAdvancedScopesAtom } from "@/storage/settings";
+import { getMissingScopes, useGoogleLoginAndAuthorization } from "@/api/auth";
 import { getScopeName, getScopeNameList } from "@/config/scopes";
 
 export function RequireScopes({
@@ -21,10 +18,7 @@ export function RequireScopes({
   name?: string;
 }) {
   if (requiredScopes) {
-    const scopes = getAccessTokenScopes();
-    const missingScopes = requiredScopes.filter(
-      (scope) => !scopes.has(scope) && !scopes.has(`w${scope}`),
-    );
+    const missingScopes = getMissingScopes(requiredScopes);
 
     if (missingScopes.length > 0) {
       return compact ? (
@@ -46,7 +40,7 @@ function CompactMissingScopes({
   scopes: Array<string>;
 }) {
   const confirm = useConfirm();
-  const enableAdvancedScopes = useAtomValue(enableAdvancedScopesAtom);
+  const { googleLoginAndAuthorization } = useGoogleLoginAndAuthorization();
 
   const handleReconsentClicked = () => {
     confirm({
@@ -54,16 +48,13 @@ function CompactMissingScopes({
       description: (
         <div>
           The following permissions are needed:{" "}
-          <b>{getScopeNameList(scopes)}</b>. Click OK to be redirected to Fitbit
+          <b>{getScopeNameList(scopes)}</b>. Click OK to be redirected to Google
           to update the types of data accessible by this website.
         </div>
       ),
     }).then(({ confirmed }) => {
       if (confirmed) {
-        redirectToLogin({
-          prompt: "consent",
-          requestAdvancedScopes: enableAdvancedScopes,
-        });
+        googleLoginAndAuthorization();
       }
     });
   };
@@ -90,22 +81,17 @@ function MissingScopes({
   name?: string;
   scopes: Array<string>;
 }) {
-  const enableAdvancedScopes = useAtomValue(enableAdvancedScopesAtom);
-
-  const reconsent = useCallback(() => {
-    redirectToLogin({
-      prompt: "consent",
-      requestAdvancedScopes: enableAdvancedScopes,
-    });
-  }, [enableAdvancedScopes]);
+  const { googleLoginAndAuthorization } = useGoogleLoginAndAuthorization();
 
   return (
     <div className="flex-grow flex flex-col items-center place-items-center p-2">
       <Typography variant="body1" className="mb-2">
-        {name ?? "This page"} requires additional permissions from your Fitbit
+        {name ?? "This page"} requires additional permissions from your Google
         account: {scopes.map((scope) => getScopeName(scope)).join(", ")}
       </Typography>
-      <Button onClick={reconsent}>Update permissions</Button>
+      <Button onClick={() => googleLoginAndAuthorization()}>
+        Update permissions
+      </Button>
     </div>
   );
 }

@@ -1,24 +1,14 @@
 import { test as base } from "@playwright/test";
 
+import { REQUESTED_SCOPES } from "@/config/google-health-scopes";
+
 export const MOCK_DATE = "2021-02-01T10:00:00-0700";
 
-function encodeBase64URL(data: Record<string, string>) {
-  return Buffer.from(JSON.stringify(data)).toString("base64url");
-}
-
-/** Create a fake JWT token with no signature */
-function encodeFakeToken(data: Record<string, string>) {
-  return `${encodeBase64URL({ alg: "none", typ: "JWT" })}.${encodeBase64URL(
-    data,
-  )}.`;
-}
-
 const TOKEN_STRING = JSON.stringify({
-  accessToken: encodeFakeToken({
-    scopes: "whr wnut wpro wsle wwei wact wloc wset",
-  }),
-  refreshToken: encodeFakeToken({}),
+  accessToken: "FAKE_ACCESS_TOKEN",
   expiresAt: Date.now() + 10 * 365 * 24 * 60 * 60 * 1000,
+  scope: REQUESTED_SCOPES.join(" "),
+  userId: "FAKE_USER_ID",
 });
 
 export const test = base.extend({
@@ -40,7 +30,7 @@ export const test = base.extend({
         {
           origin: "http://127.0.0.1:3100",
           localStorage: [
-            { name: "auth:fitbit-token", value: TOKEN_STRING },
+            { name: "auth:google-token", value: TOKEN_STRING },
             { name: "unit:distance", value: "en_US" },
             { name: "unit:water", value: "en_US" },
             { name: "unit:weight", value: "en_US" },
