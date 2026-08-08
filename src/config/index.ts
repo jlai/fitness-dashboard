@@ -20,9 +20,9 @@ function sanitizeHtml(htmlString: string | undefined) {
     : "foo";
 }
 
-export const FITBIT_API_URL = requiredVar(
-  process.env.NEXT_PUBLIC_FITBIT_API_URL,
-);
+export const GOOGLE_HEALTH_API_URL =
+  process.env.NEXT_PUBLIC_GOOGLE_HEALTH_API_URL ??
+  "https://health.googleapis.com";
 
 export const GOOGLE_OAUTH_CLIENT_ID = requiredVar(
   process.env.NEXT_PUBLIC_GOOGLE_OAUTH_CLIENT_ID,

@@ -5,7 +5,7 @@ import { toast } from "mui-sonner";
 import JSONWithBigInt from "json-bigint-native";
 
 import { getFreshAccessToken } from "./auth";
-import { FITBIT_API_URL } from "@/config";
+import { GOOGLE_HEALTH_API_URL } from "@/config";
 
 const RATE_LIMIT_EXCEEDED_EVENT_TYPE = "fitbitratelimitexceeded";
 
@@ -38,12 +38,11 @@ export async function makeRequest(
 ) {
   const authToken = await getFreshAccessToken();
 
-  const url = new URL(uri, FITBIT_API_URL);
+  const url = new URL(uri, GOOGLE_HEALTH_API_URL);
 
   const response = await fetch(url, {
     ...options,
     headers: {
-      "Accept-Language": "metric",
       ...options?.headers,
       Authorization: `Bearer ${authToken}`,
     },
@@ -52,10 +51,6 @@ export async function makeRequest(
   if (!response.ok) {
     if (response.status === 429) {
       window.dispatchEvent(new CustomEvent(RATE_LIMIT_EXCEEDED_EVENT_TYPE));
-    }
-
-    if (options?.ignore502 && response.status === 502) {
-      return response;
     }
 
     const errors = await extractErrors(response);
