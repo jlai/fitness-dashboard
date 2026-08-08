@@ -19,7 +19,9 @@ import { useAtomValue } from "jotai";
 
 import { redirectToLogin } from "@/api/auth";
 import { PRIVACY_POLICY_LINK, WEBSITE_NAME } from "@/config";
-import { enableAdvancedScopesAtom } from "@/storage/settings";
+import { allUnitsConfiguredAtom } from "@/storage/settings";
+import { firstLoginDateAtom } from "@/storage/analytics";
+import { formatAsDate } from "@/api/datetime";
 
 function PermissionInfo({
   title,
@@ -76,11 +78,30 @@ function PermissionsTable() {
 }
 
 export default function LoginBox() {
-  const enableAdvancedScopes = useAtomValue(enableAdvancedScopesAtom);
+  const router = useRouter();
+  const allUnitsConfigured = useAtomValue(allUnitsConfiguredAtom);
+  const [firstLoginDate, setFirstLoginDate] = useAtom(firstLoginDateAtom);
 
   const login = useCallback(() => {
-    redirectToLogin({ requestAdvancedScopes: enableAdvancedScopes });
-  }, [enableAdvancedScopes]);
+    redirectToLogin()
+      .then(() => {
+        if (!firstLoginDate) {
+          setFirstLoginDate(formatAsDate(dayjs()));
+        }
+
+        if (!hasTokenScope("pro") && !allUnitsConfigured) {
+          router.replace("/settings");
+        }
+      })
+      .catch(() => {
+        // redirectToLogin already toasts on failure
+      });
+  }, [
+    allUnitsConfigured,
+    firstLoginDate,
+    router,
+    setFirstLoginDate,
+  ]);
 
   return (
     <Container maxWidth="md" className="space-y-6">

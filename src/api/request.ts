@@ -5,6 +5,7 @@ import { toast } from "mui-sonner";
 import JSONWithBigInt from "json-bigint-native";
 
 import { getFreshAccessToken } from "./auth";
+import { FITBIT_API_URL } from "@/config";
 
 const RATE_LIMIT_EXCEEDED_EVENT_TYPE = "fitbitratelimitexceeded";
 
@@ -37,35 +38,15 @@ export async function makeRequest(
 ) {
   const authToken = await getFreshAccessToken();
 
-  // Use backend proxy instead of direct Fitbit API calls
-  const baseUrl =
-    typeof window !== "undefined"
-      ? window.location.origin
-      : process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-
-  const url = new URL("/api/fitbit/proxy", baseUrl);
-
-  const parsedUri = URL.parse(uri, "https://api.fitbit.com")!;
-  if (!parsedUri) {
-    throw new Error("error parsing uri");
-  }
-
-  url.searchParams.set("path", parsedUri.pathname);
-
-  for (const [key, value] of parsedUri.searchParams) {
-    url.searchParams.set(key, value);
-  }
-
-  const method = options?.method || "GET";
+  const url = new URL(uri, FITBIT_API_URL);
 
   const response = await fetch(url, {
-    method,
+    ...options,
     headers: {
       "Accept-Language": "metric",
       ...options?.headers,
       Authorization: `Bearer ${authToken}`,
     },
-    body: options?.body,
   });
 
   if (!response.ok) {
