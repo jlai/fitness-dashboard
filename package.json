@@ -18,7 +18,8 @@
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
-    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
+    "generate:google-health-api": "node scripts/generate-google-health-api.mjs"
   },
   "dependencies": {
     "@emotion/cache": "^11.11.0",
@@ -100,8 +101,10 @@
     "eslint": "^9.39.5",
     "eslint-config-next": "16.3.2",
     "eslint-plugin-import": "^2.29.1",
+    "google-discovery-to-swagger": "github:Cobalt0s/google-discovery-to-openapi",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^30.3.0",
+    "orval": "^8.24.0",
     "postcss": "^8.5.19",
     "prettier": "^3.9.6",
     "tailwindcss": "^3.4.1",

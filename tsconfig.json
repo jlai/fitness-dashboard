@@ -26,11 +26,8 @@
       "@/*": [
         "./src/*"
       ],
-      "@google-health-api": [
-        "./generated/google-health-api"
-      ],
-      "@google-health-api/*": [
-        "./generated/google-health-api/*"
+      "@generated/*": [
+        "./generated/*"
       ]
     }
   },

@@ -37,3 +37,14 @@ export function buildUserProfileQuery() {
     staleTime: ONE_DAY_IN_MILLIS,
   });
 }
+
+export function buildUserSettingsQuery() {
+  return queryOptions({
+    queryKey: ["user-settings"],
+    queryFn: async () => {
+      const response = await getUserSettings("users/me");
+      return response.data;
+    },
+    staleTime: ONE_DAY_IN_MILLIS,
+  });
+}
