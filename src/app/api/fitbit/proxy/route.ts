@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 const FITBIT_API_BASE_URL = "https://api.fitbit.com";
 const DEBUG = process.env.DEBUG === "true";
-const PATH_REGEX = /^\/[0-9]+(?:\.[0-9]+)?\/user\/-\/.+\.(json|tcx)$/;
+const PATH_REGEX = /^\/[0-9]+(?:\.[0-9]+)?\/(user\/-|foods)\/.+\.(json|tcx)$/;
 
 export async function GET(request: NextRequest) {
   return handleRequest(request, "GET");
