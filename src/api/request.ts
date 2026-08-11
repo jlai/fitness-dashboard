@@ -47,7 +47,17 @@ export async function makeRequest(
       : process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
   const url = new URL("/api/fitbit/proxy", baseUrl);
-  url.searchParams.set("path", uri);
+
+  const parsedUri = URL.parse(uri, "https://api.fitbit.com")!;
+  if (!parsedUri) {
+    throw new Error("error parsing uri");
+  }
+
+  url.searchParams.set("path", parsedUri.pathname);
+
+  for (const [key, value] of parsedUri.searchParams) {
+    url.searchParams.set(key, value);
+  }
 
   const method = options?.method || "GET";
 
