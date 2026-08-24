@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Roboto, Poppins } from "next/font/google";
 import { HydrationProvider } from "react-hydration-provider";
 import { Container } from "@mui/material";
-import { AppRouterCacheProvider } from "@mui/material-nextjs/v13-appRouter";
+import { AppRouterCacheProvider } from "@mui/material-nextjs/v16-appRouter";
 import { Suspense } from "react";
 
 import { CONTENT_SECURITY_POLICY } from "@/config/content-security-policy";

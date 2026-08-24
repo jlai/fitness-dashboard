@@ -28,7 +28,7 @@ export function parseTcx(tcxString: string): ParsedTcx {
   let lastDistanceMeters: number | undefined = undefined;
 
   tcxDocument.querySelectorAll("Trackpoint").forEach((node) => {
-    const dateTime = new Date(node.querySelector("Time")?.textContent!);
+    const dateTime = new Date(node.querySelector("Time")?.textContent ?? "");
 
     const longitudeDegrees = parseOptionalNumber(
       node.querySelector("Position LongitudeDegrees")?.textContent,

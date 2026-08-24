@@ -17,7 +17,7 @@ function SafeAttributionControl({
 }: SafeAttributionControlProps) {
   const [attribution, setAttribution] = useState<string>();
   const [expanded, setExpanded] = useState(true);
-  const mapRef = useRef<MapLibreMap>();
+  const mapRef = useRef<MapLibreMap | null>(null);
 
   const update = useCallback(() => {
     const sourceCaches = mapRef.current?.style.sourceCaches;
@@ -47,7 +47,7 @@ function SafeAttributionControl({
     (map: MapLibreMap) => {
       map.off("sourcedata", update);
 
-      mapRef.current = undefined;
+      mapRef.current = null;
     },
     [update],
   );

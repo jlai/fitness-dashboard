@@ -29,8 +29,8 @@ export function SleepLevelMiniSummary({
     popupId: "sleep-mini-summary",
   });
 
-  let data = getLevelSummary(levels).toReversed();
-  let totalMins = sum(data.map((datum) => datum.value));
+  const data = getLevelSummary(levels).toReversed();
+  const totalMins = sum(data.map((datum) => datum.value));
 
   const xScale = scaleLinear<number>({
     domain: [0, Math.max(totalMins, 10 * 60)], // 10 hours or total

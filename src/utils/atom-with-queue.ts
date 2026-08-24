@@ -22,7 +22,7 @@ export function atomWithQueue<Value, Args extends unknown[], Result>(
   read: Read<Value, Args, Result> | null,
   write: Write<Value, Args, Promise<Result>>,
 ) {
-  let queue = new PQueue({ concurrency: 1 });
+  const queue = new PQueue({ concurrency: 1 });
 
   type ReadParams = Parameters<Read<Value, Args, Result>>;
   type WriteParams = Parameters<Write<Value, Args, Result>>;

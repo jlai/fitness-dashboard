@@ -30,7 +30,7 @@ import { CardioFitnessChart } from "./advanced/cardio-fitness";
 
 export interface ChartResourceConfig {
   label: string;
-  component: React.ComponentType<{}>;
+  component: React.ComponentType<object>;
   requiredScopes: Array<string>;
   maxDays: number;
   supportsIntraday?: boolean;

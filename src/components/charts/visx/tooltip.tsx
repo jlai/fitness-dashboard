@@ -2,7 +2,7 @@ import { useCallback } from "react";
 import { useTooltip, useTooltipInPortal } from "@visx/tooltip";
 import { localPoint } from "@visx/event";
 
-export function usePortalTooltip<TDatum = {}>() {
+export function usePortalTooltip<TDatum = object>() {
   const tooltip = useTooltip<TDatum>();
   const { showTooltip } = tooltip;
 

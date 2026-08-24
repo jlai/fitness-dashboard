@@ -32,7 +32,7 @@ interface HistoryListProps<Response, Log extends LogEntryWithId> {
   getLogs: (response: Response) => Array<Log>;
   slots: {
     row: React.JSXElementConstructor<RowElementProps<Log>>;
-    headerCells: React.JSXElementConstructor<{}>;
+    headerCells: React.JSXElementConstructor<object>;
   };
 }
 

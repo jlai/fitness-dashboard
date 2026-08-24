@@ -215,7 +215,7 @@ function ChartSectionHeader({
 function SynchronizedHighlight({
   svgRef,
 }: {
-  svgRef: RefObject<SVGSVGElement>;
+  svgRef: RefObject<SVGSVGElement | null>;
 }) {
   const xScaleMeasure = useAtomValue(xScaleMeasureAtom);
   const [highlightedX, setHighlightedX] = useAtom(highlightedXAtom);

@@ -1,3 +1,5 @@
+"use client";
+
 import { AppBar, Container, Chip, Link } from "@mui/material";
 import { Poppins } from "next/font/google";
 import React from "react";
