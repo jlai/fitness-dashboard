@@ -68,13 +68,13 @@ export function SplitsChart({ splits }: { splits: Array<SplitDatum> }) {
             </div>
             <div className="text-end">
               {NumberFormats.FRACTION_DIGITS_2.format(
-                localizedKilometers(distanceCoveredMeters / 1000)
+                localizedKilometers(distanceCoveredMeters / 1000),
               )}{" "}
               {localizedKilometersName}
             </div>
             <div>{formatTimeOffset(activityStart, endTime)}</div>
           </Fragment>
-        )
+        ),
       )}
     </Box>
   );

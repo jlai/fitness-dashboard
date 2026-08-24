@@ -47,7 +47,7 @@ export function useTileScale() {
 }
 
 export function useTileSettings<TSettings>(
-  defaultSettings: TSettings
+  defaultSettings: TSettings,
 ): [TSettings, (update: TSettings) => void] {
   const { id, settings } = useTileData();
   const updateTileSettings = useSetAtom(updateTileSettingsAtom);
@@ -61,7 +61,7 @@ export function useTileSettings<TSettings>(
 /** Use a single tile settings property */
 export function useTileSetting<TSettings, TProp extends keyof TSettings>(
   prop: TProp,
-  defaultValue: TSettings[TProp]
+  defaultValue: TSettings[TProp],
 ): [TSettings[TProp], (update: TSettings[TProp]) => void] {
   const { id, settings } = useTileData() as {
     id: string;

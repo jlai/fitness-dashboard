@@ -66,7 +66,9 @@ export function buildUpdateMealMutation(queryClient: QueryClient) {
       if (meals) {
         queryClient.setQueryData(
           ["meals"],
-          meals.map((meal) => (meal.id === updatedMeal.id ? updatedMeal : meal))
+          meals.map((meal) =>
+            meal.id === updatedMeal.id ? updatedMeal : meal,
+          ),
         );
       }
     },
@@ -86,7 +88,7 @@ export function buildDeleteMealMutation(queryClient: QueryClient) {
       if (meals) {
         queryClient.setQueryData(
           ["meals"],
-          meals.filter((meal) => meal.id !== variables)
+          meals.filter((meal) => meal.id !== variables),
         );
       }
     },

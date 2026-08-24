@@ -16,7 +16,7 @@ import { SleepLevelMiniSummary } from "@/components/sleep/sleep-levels-mini";
 import { ResponsiveDialog } from "@/components/dialogs/responsive-dialog";
 
 const SleepDetailsDialogContent = lazy(
-  () => import("@/components/sleep/sleep-details-dialog")
+  () => import("@/components/sleep/sleep-details-dialog"),
 );
 
 function SleepDuration({ minutesAsleep }: { minutesAsleep: number }) {
@@ -85,7 +85,7 @@ function SleepLogRow({ logEntry: sleep }: { logEntry: SleepLog }) {
           <ResponsiveDialog
             {...bindDialog(popupState)}
             title={`Sleep ending ${DateFormats.formatShortDateTime(
-              dayjs(endTime)
+              dayjs(endTime),
             )}`}
             fullWidth
             fullScreenPreferenceId="sleep"
@@ -116,8 +116,8 @@ export function formatDay(day: Dayjs, options?: Intl.DateTimeFormatOptions) {
   return new Intl.DateTimeFormat(undefined, {
     ...options,
     weekday: "short",
-    day: isSameWeek ? undefined : options?.day ?? "numeric",
-    month: isSameWeek ? undefined : options?.month ?? "long",
+    day: isSameWeek ? undefined : (options?.day ?? "numeric"),
+    month: isSameWeek ? undefined : (options?.month ?? "long"),
     year: isSameYear ? undefined : "numeric",
   }).format(day.toDate());
 }

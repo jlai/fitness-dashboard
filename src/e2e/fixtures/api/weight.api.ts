@@ -10,7 +10,7 @@ export class WeightApi {
       "**/1/user/-/body/log/weight/date/*/*.json",
       async (route) => {
         await route.fulfill({ json: { weight: [] } });
-      }
+      },
     );
 
     // Default mock for weight and fat logging POST requests
@@ -22,7 +22,7 @@ export class WeightApi {
         } else {
           await route.fallback();
         }
-      }
+      },
     );
 
     await this.page.route("**/1/user/-/body/log/fat.json**", async (route) => {
@@ -39,7 +39,7 @@ export class WeightApi {
       `**/1/user/-/body/log/weight/date/${date}/${date}.json`,
       async (route) => {
         await route.fulfill({ json: { weight: response } });
-      }
+      },
     );
   }
 
@@ -74,7 +74,7 @@ export class WeightApi {
         } else {
           await route.fallback();
         }
-      }
+      },
     );
   }
 

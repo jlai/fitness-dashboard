@@ -93,7 +93,7 @@ export async function handleAuthCallback() {
     {
       redirectUri: OAUTH_CALLBACK_URI,
       codeVerifier,
-    }
+    },
   );
 
   saveTokenToStorage(token);
@@ -224,7 +224,7 @@ export function getAccessTokenScopes() {
 export function getMissingScopes(requiredScopes: Array<string>) {
   const currentScopes = getAccessTokenScopes();
   return requiredScopes.filter(
-    (scope) => !currentScopes.has(scope) && !currentScopes.has(`w${scope}`)
+    (scope) => !currentScopes.has(scope) && !currentScopes.has(`w${scope}`),
   );
 }
 

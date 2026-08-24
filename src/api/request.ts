@@ -33,7 +33,7 @@ export interface MakeRequestOptions {
  */
 export async function makeRequest(
   uri: string,
-  options?: RequestInit & MakeRequestOptions
+  options?: RequestInit & MakeRequestOptions,
 ) {
   const authToken = await getFreshAccessToken();
 
@@ -85,7 +85,7 @@ export async function makeRequest(
     const err = new Error(
       `server response (${response.status}): ${
         errorText || response.statusText
-      }`
+      }`,
     ) as ServerError;
 
     err.status = response.status;

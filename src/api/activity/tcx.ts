@@ -31,21 +31,21 @@ export function parseTcx(tcxString: string): ParsedTcx {
     const dateTime = new Date(node.querySelector("Time")?.textContent!);
 
     const longitudeDegrees = parseOptionalNumber(
-      node.querySelector("Position LongitudeDegrees")?.textContent
+      node.querySelector("Position LongitudeDegrees")?.textContent,
     );
 
     const latitudeDegrees = parseOptionalNumber(
-      node.querySelector("Position LatitudeDegrees")?.textContent
+      node.querySelector("Position LatitudeDegrees")?.textContent,
     );
 
     const altitudeMeters = parseOptionalNumber(
-      node.querySelector("AltitudeMeters")?.textContent
+      node.querySelector("AltitudeMeters")?.textContent,
     );
     let distanceMeters = parseOptionalNumber(
-      node.querySelector("DistanceMeters")?.textContent
+      node.querySelector("DistanceMeters")?.textContent,
     );
     const heartBpm = parseOptionalNumber(
-      node.querySelector("HeartRateBpm Value")?.textContent
+      node.querySelector("HeartRateBpm Value")?.textContent,
     );
 
     if (latitudeDegrees) {

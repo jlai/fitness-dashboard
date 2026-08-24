@@ -15,7 +15,7 @@ export const firstLoginDateAtom = atomWithStorage<string | undefined>(
   undefined,
   {
     getOnInit: true,
-  }
+  },
 );
 
 export const lastSurveyDateAtom = atomWithStorage<string | undefined>(
@@ -24,7 +24,7 @@ export const lastSurveyDateAtom = atomWithStorage<string | undefined>(
   undefined,
   {
     getOnInit: true,
-  }
+  },
 );
 
 export const lastPingDateAtom = atomWithStorage<string | undefined>(
@@ -33,7 +33,7 @@ export const lastPingDateAtom = atomWithStorage<string | undefined>(
   undefined,
   {
     getOnInit: true,
-  }
+  },
 );
 
 export const weeksActiveAtom = atomWithStorage<number>(
@@ -42,7 +42,7 @@ export const weeksActiveAtom = atomWithStorage<number>(
   undefined,
   {
     getOnInit: true,
-  }
+  },
 );
 
 /** Round down to the nearest power. */
@@ -86,7 +86,7 @@ export const analyticsPingEffect = atomEffect((get, set) => {
       },
       () => {
         console.error("failed to send analytics ping");
-      }
+      },
     );
   }
 });

@@ -40,7 +40,7 @@ function SafeAttributionControl({
 
       update();
     },
-    [update]
+    [update],
   );
 
   const onRemove = useCallback(
@@ -49,7 +49,7 @@ function SafeAttributionControl({
 
       mapRef.current = undefined;
     },
-    [update]
+    [update],
   );
 
   const safeHtml = useMemo(() => {

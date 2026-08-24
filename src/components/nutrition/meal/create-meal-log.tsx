@@ -40,7 +40,7 @@ export default function CreateMealLog() {
 
   const queryClient = useQueryClient();
   const { mutateAsync: logFoods } = useMutation(
-    buildCreateMultipleFoodLogsMutation(queryClient)
+    buildCreateMultipleFoodLogsMutation(queryClient),
   );
 
   const linkedDay = useAtomValue(selectedDayForPageAtom);
@@ -62,7 +62,7 @@ export default function CreateMealLog() {
           unitId: food.unit!.id,
           amount: food.amount,
           day,
-        } as CreateFoodLogOptions)
+        }) as CreateFoodLogOptions,
     );
 
     await logFoods(foods);

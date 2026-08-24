@@ -16,7 +16,7 @@ export interface StringValueDatum {
 }
 
 export function useTimeSeriesQuery<TEntry = StringValueDatum>(
-  resource: TimeSeriesResource
+  resource: TimeSeriesResource,
 ) {
   const {
     range: { startDay, endDay },
@@ -25,7 +25,7 @@ export function useTimeSeriesQuery<TEntry = StringValueDatum>(
 }
 
 export function useTimeSeriesData<TEntry = StringValueDatum>(
-  resource: TimeSeriesResource
+  resource: TimeSeriesResource,
 ) {
   const query = useTimeSeriesQuery<TEntry>(resource);
   const { data } = useQuery(query);
@@ -50,7 +50,7 @@ export function useRangeInfo() {
 }
 
 export function removeFutureDates<TDatum extends TimeSeriesDatum>(
-  data?: Array<TDatum>
+  data?: Array<TDatum>,
 ) {
   const today = dayjs().endOf("day");
   return data?.filter((data) => !dayjs(data.dateTime).isAfter(today));

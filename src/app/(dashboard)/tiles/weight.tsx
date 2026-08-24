@@ -45,8 +45,8 @@ export function WeightTileContent() {
     buildGetWeightLogsQuery(
       day.subtract(MAX_WEIGHT_LOG_DAYS, "days"),
       day,
-      weightUnit
-    )
+      weightUnit,
+    ),
   );
 
   let latest: WeightLog | undefined = undefined;
@@ -92,7 +92,7 @@ function WeightTileDialogContent({
   const earliest = head(data);
 
   const [pastDay, setPastDay] = useState(
-    earliest ? dayjs(earliest.date) : null
+    earliest ? dayjs(earliest.date) : null,
   );
 
   const pastLog = data.find((datum) => dayjs(datum.date).isSame(pastDay));
@@ -176,7 +176,7 @@ function WeightLogCard({
                     <ArrowDropDown className="mx-0 text-slate-500" />
                   )}
                   {NumberFormats.FRACTION_DIGITS_1.format(
-                    Math.abs(weightLog.weight - previous.weight)
+                    Math.abs(weightLog.weight - previous.weight),
                   )}{" "}
                   {localizedKilogramsName}
                 </Typography>
@@ -188,7 +188,7 @@ function WeightLogCard({
           {weightLog.fat && (
             <Typography>
               {NumberFormats.PERCENT_FRACTION_DIGITS_1.format(
-                weightLog.fat / 100
+                weightLog.fat / 100,
               )}{" "}
               fat
             </Typography>

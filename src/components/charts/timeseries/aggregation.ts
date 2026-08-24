@@ -15,7 +15,7 @@ interface MonthDatum extends TimeSeriesDatum {
 
 export function useAggregation<TDatum extends TimeSeriesDatum>(
   data: Array<TDatum> | undefined,
-  seriesConfigs: Array<ChartSeriesConfig<TDatum>>
+  seriesConfigs: Array<ChartSeriesConfig<TDatum>>,
 ): {
   data: Array<TimeSeriesDatum> | undefined;
   seriesConfigs: Array<ChartSeriesConfig<TimeSeriesDatum>>;
@@ -28,11 +28,11 @@ export function useAggregation<TDatum extends TimeSeriesDatum>(
 
       // Exclude future data
       const filteredData = data.filter((entry) =>
-        dayjs(entry.dateTime).isBefore(now)
+        dayjs(entry.dateTime).isBefore(now),
       );
 
       const months = groupBy(filteredData, (entry) =>
-        dayjs(entry.dateTime).format("YYYY-MM")
+        dayjs(entry.dateTime).format("YYYY-MM"),
       );
 
       const monthData: Array<MonthDatum> = [];
@@ -66,7 +66,7 @@ export function useAggregation<TDatum extends TimeSeriesDatum>(
             ...config,
             label: `${config.label} (daily avg)`,
             yAccessor: (entry) => entry.averageValues[config.id],
-          } as ChartSeriesConfig<MonthDatum>)
+          }) as ChartSeriesConfig<MonthDatum>,
       );
 
       return {
@@ -88,7 +88,7 @@ export function useAggregation<TDatum extends TimeSeriesDatum>(
 /** Aggregate intraday entries into hourly */
 export function aggregateByHour(data: Array<IntradayEntry>) {
   const byHour = groupBy(data, (entry) =>
-    dayjs(entry.dateTime).startOf("hour").toISOString()
+    dayjs(entry.dateTime).startOf("hour").toISOString(),
   );
 
   return Object.entries(byHour).map(([timestamp, entries]) => ({

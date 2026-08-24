@@ -66,14 +66,14 @@ export default function TileGrid() {
           settings: tile.settings,
         },
       })),
-    [userTiles]
+    [userTiles],
   );
 
   const updateTiles = useCallback(
     (event: Event, nodes: GridStackNode[]) => {
       const changesById = nodes.reduce(
         (acc, node) => (node.id !== undefined ? acc.set(node.id, node) : acc),
-        new Map<string, GridStackNode>()
+        new Map<string, GridStackNode>(),
       );
 
       const updatedTiles = userTiles.map((tile) => {
@@ -95,7 +95,7 @@ export default function TileGrid() {
         setUserTiles(updatedTiles);
       }
     },
-    [userTiles, setUserTiles, editingGrid]
+    [userTiles, setUserTiles, editingGrid],
   );
 
   const removeTiles = useCallback(
@@ -105,7 +105,7 @@ export default function TileGrid() {
 
       setUserTiles(updatedTiles);
     },
-    [userTiles, setUserTiles]
+    [userTiles, setUserTiles],
   ) as GridStackNodesHandler;
 
   return (

@@ -51,7 +51,7 @@ test("can delete logged foods", async ({
 
   const updatedResponse = produce(BREAKFAST_FOOD_LOGS_RESPONSE, (draft) => {
     draft.foods = draft.foods.filter(
-      (food) => food.loggedFood.name !== "Scrambled Eggs"
+      (food) => food.loggedFood.name !== "Scrambled Eggs",
     );
   });
   await nutritionApi.setFoodLogsResponse(updatedResponse);
@@ -100,7 +100,7 @@ test("can move logged foods to another meal time", async ({
 
   const updatedResponse = produce(BREAKFAST_FOOD_LOGS_RESPONSE, (draft) => {
     const eggs = draft.foods.find(
-      (food) => food.loggedFood.name === "Scrambled Eggs"
+      (food) => food.loggedFood.name === "Scrambled Eggs",
     );
     eggs!.loggedFood.mealTypeId = 3;
   });

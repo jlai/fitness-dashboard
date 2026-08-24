@@ -64,7 +64,7 @@ export function SeriesSelector() {
             <MenuItem key={id} value={id}>
               {CHART_RESOURCE_CONFIGS[id].label}
             </MenuItem>
-          )
+          ),
         )}
       </Select>
     </FormControl>
@@ -99,7 +99,7 @@ export function TimeSeriesChart({
       statsEl,
       showGoals: !!showGoals,
     }),
-    [aggregation, formatDate, layout, range, statsEl, showGoals]
+    [aggregation, formatDate, layout, range, statsEl, showGoals],
   );
 
   return (
@@ -117,7 +117,7 @@ function GraphExportActions() {
 
   const { saveAsCSV, hasDataToExport } = useSaveAsCSV(
     selectedResource,
-    selectedRange
+    selectedRange,
   );
 
   return (

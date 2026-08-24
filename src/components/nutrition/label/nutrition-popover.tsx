@@ -84,23 +84,23 @@ const NutritionPopover = function ({
 
   function getNutritionValues(
     food: Food,
-    foodLog: FoodLogEntry | null
+    foodLog: FoodLogEntry | null,
   ): NutritionalValues {
     const foodValues: { [index: string]: number } =
       food.nutritionalValues &&
       (!foodLog || foodLog.loggedFood.accessLevel == "PRIVATE")
         ? { ...food.nutritionalValues }
         : foodLog?.nutritionalValues
-        ? {
-            // public food data
-            totalCarbohydrate: foodLog.nutritionalValues.carbs,
-            dietaryFiber: foodLog.nutritionalValues.fiber,
-            calories: foodLog.nutritionalValues.calories,
-            protein: foodLog.nutritionalValues.protein,
-            sodium: foodLog.nutritionalValues.sodium,
-            totalFat: foodLog.nutritionalValues.fat,
-          }
-        : {};
+          ? {
+              // public food data
+              totalCarbohydrate: foodLog.nutritionalValues.carbs,
+              dietaryFiber: foodLog.nutritionalValues.fiber,
+              calories: foodLog.nutritionalValues.calories,
+              protein: foodLog.nutritionalValues.protein,
+              sodium: foodLog.nutritionalValues.sodium,
+              totalFat: foodLog.nutritionalValues.fat,
+            }
+          : {};
     const multiplier =
       food.calories && foodLog?.loggedFood.accessLevel == "PRIVATE"
         ? foodLog.loggedFood.calories / (food.calories || 1)

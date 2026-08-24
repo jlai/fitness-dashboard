@@ -29,7 +29,7 @@ export function buildCreateWaterLogMutation(queryClient: QueryClient) {
         {
           method: "POST",
           ignore502: true,
-        }
+        },
       );
 
       return response;

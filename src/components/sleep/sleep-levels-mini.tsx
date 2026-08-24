@@ -53,7 +53,7 @@ export function SleepLevelMiniSummary({
         fill={datum.color}
         left={xOffset === 0}
         right={xScale(totalMins) - xOffset - width < 2}
-      />
+      />,
     );
     xOffset += width;
   }

@@ -99,7 +99,7 @@ export function FoodServingSizeInput({
     (
       event: SyntheticEvent,
       value: string | ServingSize | null,
-      reason: AutocompleteChangeReason
+      reason: AutocompleteChangeReason,
     ) => {
       if (value && typeof value === "object" && "unit" in value) {
         onChange(value);
@@ -109,7 +109,7 @@ export function FoodServingSizeInput({
         onChange(null);
       }
     },
-    [onChange]
+    [onChange],
   );
 
   // If the user blurs an incomplete number, use default unit

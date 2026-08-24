@@ -14,7 +14,7 @@ export function buildDailySummaryQuery(day: Dayjs) {
     queryKey: ["activity-daily-summary", date],
     queryFn: async () => {
       const response = await makeRequest(
-        `/1/user/-/activities/date/${date}.json`
+        `/1/user/-/activities/date/${date}.json`,
       );
 
       return await getJSON<GetDailyActivitySummaryResponse>(response);

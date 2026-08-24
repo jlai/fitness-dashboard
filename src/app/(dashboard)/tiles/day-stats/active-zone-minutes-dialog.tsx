@@ -35,7 +35,7 @@ interface ActiveZoneMinutesTileSettings {
 }
 
 export default function ActiveZoneMinutesDialogContent(
-  props: RenderDialogContentProps
+  props: RenderDialogContentProps,
 ) {
   const [currentTab, setCurrentTab] = useTileSetting<
     ActiveZoneMinutesTileSettings,
@@ -85,12 +85,12 @@ function Overview() {
     buildTimeSeriesQuery<TimeSeriesEntry<ActiveZoneMinutesTimeSeriesValue>>(
       "active-zone-minutes",
       selectedDay,
-      selectedDay
-    )
+      selectedDay,
+    ),
   );
 
   const dayAzm = azmSeries?.find((entry) =>
-    selectedDay.isSame(entry.dateTime, "day")
+    selectedDay.isSame(entry.dateTime, "day"),
   );
   const dayAzmValue = dayAzm?.value.activeZoneMinutes ?? 0;
 
@@ -120,11 +120,11 @@ function ActiveZoneMinutesIntraday() {
 
   const [trim, setTrim] = useTileSetting<ActiveZoneMinutesTileSettings, "trim">(
     "trim",
-    false
+    false,
   );
 
   const { data } = useQuery(
-    buildActiveZoneMinutesIntradayQuery("5min", startTime, endTime)
+    buildActiveZoneMinutesIntradayQuery("5min", startTime, endTime),
   );
 
   let processedData = data?.map((entry) => ({

@@ -4,7 +4,7 @@ import { atom } from "jotai";
 import { FoodLogEntry } from "@/api/nutrition";
 
 export const selectedFoodLogsAtom = atom<Immutable.Set<FoodLogEntry>>(
-  Immutable.Set([])
+  Immutable.Set([]),
 );
 
 export const updateSelectedFoodLogAtom = atom(
@@ -13,7 +13,7 @@ export const updateSelectedFoodLogAtom = atom(
     const foodLogs = get(selectedFoodLogsAtom);
     set(
       selectedFoodLogsAtom,
-      shouldInclude ? foodLogs.add(foodLog) : foodLogs.remove(foodLog)
+      shouldInclude ? foodLogs.add(foodLog) : foodLogs.remove(foodLog),
     );
-  }
+  },
 );

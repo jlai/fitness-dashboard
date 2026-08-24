@@ -13,41 +13,41 @@ export class TimeSeriesApi {
       "**/1/user/-/body/weight/date/*/*.json",
       async (route) => {
         await route.fulfill({ json: { "body-weight": [] } });
-      }
+      },
     );
 
     await this.page.route(
       "**/1/user/-/body/fat/date/*/*.json",
       async (route) => {
         await route.fulfill({ json: { "body-fat": [] } });
-      }
+      },
     );
 
     await this.page.route(
       "**/1/user/-/body/bmi/date/*/*.json",
       async (route) => {
         await route.fulfill({ json: { "body-bmi": [] } });
-      }
+      },
     );
 
     await this.page.route(
       "**/1/user/-/activities/active-zone-minutes/date/*/*.json",
       async (route) => {
         await route.fulfill({ json: { "activities-active-zone-minutes": [] } });
-      }
+      },
     );
 
     await this.page.route(
       "**/1/user/-/activities/goals/daily.json",
       async (route) => {
         await route.fulfill({ json: {} });
-      }
+      },
     );
   }
 
   async setDailySummaryResponse(
     response: Readonly<GetDailyActivitySummaryResponse>,
-    dateRange = { start: "*" }
+    dateRange = { start: "*" },
   ) {
     await this.page.route(
       `**/1/user/-/activities/date/${dateRange.start}.json`,
@@ -55,13 +55,13 @@ export class TimeSeriesApi {
         await route.fulfill({
           json: response,
         });
-      }
+      },
     );
   }
 
   async setWeightTimeSeriesResponse(
     response: Readonly<TimeSeriesEntry<string>[]>,
-    dateRange = { start: "*", end: "*" }
+    dateRange = { start: "*", end: "*" },
   ) {
     await this.page.route(
       `**/1/user/-/body/weight/date/${dateRange.start}/${dateRange.end}.json`,
@@ -69,13 +69,13 @@ export class TimeSeriesApi {
         await route.fulfill({
           json: { "body-weight": response },
         });
-      }
+      },
     );
   }
 
   async setFatTimeSeriesResponse(
     response: Readonly<TimeSeriesEntry<string>[]>,
-    dateRange = { start: "*", end: "*" }
+    dateRange = { start: "*", end: "*" },
   ) {
     await this.page.route(
       `**/1/user/-/body/fat/date/${dateRange.start}/${dateRange.end}.json`,
@@ -83,13 +83,13 @@ export class TimeSeriesApi {
         await route.fulfill({
           json: { "body-fat": response },
         });
-      }
+      },
     );
   }
 
   async setBmiTimeSeriesResponse(
     response: Readonly<TimeSeriesEntry<string>[]>,
-    dateRange = { start: "*", end: "*" }
+    dateRange = { start: "*", end: "*" },
   ) {
     await this.page.route(
       `**/1/user/-/body/bmi/date/${dateRange.start}/${dateRange.end}.json`,
@@ -97,13 +97,13 @@ export class TimeSeriesApi {
         await route.fulfill({
           json: { "body-bmi": response },
         });
-      }
+      },
     );
   }
 
   async setHeartTimeSeriesResponse(
     response: Readonly<TimeSeriesEntry<HeartTimeSeriesValue>[]>,
-    dateRange = { start: "*", end: "*" }
+    dateRange = { start: "*", end: "*" },
   ) {
     await this.page.route(
       `**/1/user/-/activities/heart/date/${dateRange.start}/${dateRange.end}.json`,
@@ -111,13 +111,13 @@ export class TimeSeriesApi {
         await route.fulfill({
           json: { "activities-heart": response },
         });
-      }
+      },
     );
   }
 
   async setActiveZoneMinutesTimeSeriesResponse(
     response: Readonly<TimeSeriesEntry<ActiveZoneMinutesTimeSeriesValue>[]>,
-    dateRange = { start: "*", end: "*" }
+    dateRange = { start: "*", end: "*" },
   ) {
     await this.page.route(
       `**/1/user/-/activities/active-zone-minutes/date/${dateRange.start}/${dateRange.end}.json`,
@@ -125,7 +125,7 @@ export class TimeSeriesApi {
         await route.fulfill({
           json: { "activities-active-zone-minutes": response },
         });
-      }
+      },
     );
   }
 
@@ -139,7 +139,7 @@ export class TimeSeriesApi {
         await route.fulfill({
           json: goals,
         });
-      }
+      },
     );
   }
 }

@@ -80,12 +80,12 @@ function CreateActivityLog({ onSaveSuccess }: { onSaveSuccess?: () => void }) {
   const queryClient = useQueryClient();
 
   const { mutateAsync: createActivityLog } = useMutation(
-    buildCreateActivityLogMutation(queryClient)
+    buildCreateActivityLogMutation(queryClient),
   );
 
   const distanceIsRequired = watch("activityType")?.requiresDistance;
   const supportsSteps = ACTIVITY_TYPES_WITH_STEPS.has(
-    watch("activityType")?.id ?? -1
+    watch("activityType")?.id ?? -1,
   );
   const isSwimming = watch("activityType")?.id === SWIMMING_ACTIVITY_TYPE;
   const useSteps = supportsSteps && watch("useSteps");

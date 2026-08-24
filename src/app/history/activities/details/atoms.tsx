@@ -10,7 +10,7 @@ export const activityLogIdHashAtom = atomWithHash<number | null>(
     serialize: (value: number | null) => (value ? value.toString() : ""),
     deserialize: (value: string) => Number.parseInt(value) || null,
     setHash: cleanHashReplaceState,
-  }
+  },
 );
 
 export type XScaleMeasureType = "time" | "distance";

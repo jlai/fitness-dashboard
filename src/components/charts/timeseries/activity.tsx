@@ -60,7 +60,7 @@ export function DailyStepsChart() {
           stepGoal
             ? {
                 label: `Goal: ${NumberFormats.FRACTION_DIGITS_0.format(
-                  stepGoal
+                  stepGoal,
                 )} steps`,
                 value: stepGoal,
               }
@@ -97,7 +97,7 @@ export function DistanceChart() {
         unit: localizedKilometersName,
         yAccessor: (datum) => localizedKilometers(Number(datum.value)),
       }),
-    [localizedKilometers, localizedKilometersName]
+    [localizedKilometers, localizedKilometersName],
   );
 
   const props = useAggregation(data, seriesConfigs);
@@ -112,7 +112,7 @@ export function DistanceChart() {
           distanceGoal
             ? {
                 label: `Goal: ${NumberFormats.FRACTION_DIGITS_0.format(
-                  distanceGoal
+                  distanceGoal,
                 )} ${localizedKilometersName}`,
                 value: distanceGoal,
               }
@@ -125,7 +125,7 @@ export function DistanceChart() {
           yAccessor={(datum) => localizedKilometers(Number(datum.value))}
           valueFormatter={(value) =>
             `${NumberFormats.FRACTION_DIGITS_2.format(
-              value
+              value,
             )} ${localizedKilometersName}`
           }
         />
@@ -156,7 +156,7 @@ export function FloorsChart() {
           floorsGoal
             ? {
                 label: `Goal: ${NumberFormats.FRACTION_DIGITS_0.format(
-                  floorsGoal
+                  floorsGoal,
                 )} floors`,
                 value: floorsGoal,
               }

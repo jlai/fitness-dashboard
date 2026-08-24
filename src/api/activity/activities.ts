@@ -33,7 +33,7 @@ export function buildActivityTcxQuery(id: number) {
     queryKey: ["activity-tcx", id],
     queryFn: async () => {
       const response = await makeRequest(
-        `/1/user/-/activities/${id}.tcx?includePartialTCX=true`
+        `/1/user/-/activities/${id}.tcx?includePartialTCX=true`,
       );
 
       return await response.text();
@@ -44,11 +44,7 @@ export function buildActivityTcxQuery(id: number) {
 
 // Yes the pluralization is inconsistent, yes it has to be this way
 export type CreateActivityLogDistanceUnit =
-  | "mile"
-  | "steps"
-  | "yards"
-  | "meter"
-  | "kilometer";
+  "mile" | "steps" | "yards" | "meter" | "kilometer";
 
 export interface CreateActivityLogOptions {
   activityId: number;
@@ -89,7 +85,7 @@ export function buildCreateActivityLogMutation(queryClient: QueryClient) {
         `/1/user/-/activities.json?${params.toString()}`,
         {
           method: "POST",
-        }
+        },
       );
 
       return response;
@@ -115,7 +111,7 @@ export function isPossiblyTracked(activity: ActivityLog) {
 
 export function buildGetActivityListInfiniteQuery(
   initialDay: Dayjs,
-  pageSize: number
+  pageSize: number,
 ) {
   return infiniteQueryOptions({
     queryKey: ["activity-log-list", formatAsDate(initialDay), pageSize],
@@ -123,11 +119,11 @@ export function buildGetActivityListInfiniteQuery(
       const queryString =
         pageParam ||
         `limit=${pageSize}&offset=0&sort=desc&beforeDate=${encodeURIComponent(
-          initialDay.toISOString().replace("Z", "")
+          initialDay.toISOString().replace("Z", ""),
         )}`;
 
       const response = await makeRequest(
-        `/1/user/-/activities/list.json?${queryString}`
+        `/1/user/-/activities/list.json?${queryString}`,
       );
       return (await response.json()) as GetActivityLogListResponse;
     },

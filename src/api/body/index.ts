@@ -68,7 +68,7 @@ export function buildCreateWeightLogMutation(queryClient: QueryClient) {
           `/1/user/-/body/log/fat.json?${fatParams.toString()}`,
           {
             method: "POST",
-          }
+          },
         );
       }
     },
@@ -106,20 +106,20 @@ export function buildGetBodyWeightGoalQuery() {
 export function buildGetWeightLogsQuery(
   startDay: Dayjs,
   endDay: Dayjs,
-  weightUnitSystem: WeightUnitSystem
+  weightUnitSystem: WeightUnitSystem,
 ) {
   return queryOptions({
     queryKey: ["weight-logs", formatAsDate(startDay), formatAsDate(endDay)],
     queryFn: async () => {
       const response = await makeRequest(
         `/1/user/-/body/log/weight/date/${formatAsDate(
-          startDay
+          startDay,
         )}/${formatAsDate(endDay)}.json`,
         {
           headers: {
             "Accept-Language": weightUnitSystem,
           },
-        }
+        },
       );
 
       return ((await response.json()) as GetWeightTimeSeriesResponse).weight;

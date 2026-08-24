@@ -17,7 +17,7 @@ import { CHART_RESOURCE_CONFIGS, ChartResource } from "./timeseries/resources";
 
 export function GraphRangeSelector({ resource }: { resource: ChartResource }) {
   const [selectedRangeType, setSelectedRangeType] = useAtom(
-    selectedRangeTypeAtom
+    selectedRangeTypeAtom,
   );
 
   const maxDays = CHART_RESOURCE_CONFIGS[resource].maxDays;

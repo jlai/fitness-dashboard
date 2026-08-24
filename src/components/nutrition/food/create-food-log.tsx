@@ -46,7 +46,7 @@ export function CreateFoodLogForm() {
 
   const queryClient = useQueryClient();
   const { mutateAsync: createFood } = useMutation(
-    buildCreateFoodLogMutation(queryClient)
+    buildCreateFoodLogMutation(queryClient),
   );
 
   const linkedDay = useAtomValue(selectedDayForPageAtom);

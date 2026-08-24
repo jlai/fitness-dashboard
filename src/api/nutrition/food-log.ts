@@ -49,7 +49,7 @@ async function logFood(newFood: CreateFoodLogOptions) {
     `/1/user/-/foods/log.json?${params.toString()}`,
     {
       method: "POST",
-    }
+    },
   );
 
   return response;
@@ -65,7 +65,7 @@ async function updateFood(updatedFood: UpdateFoodLogOptions) {
     `/1/user/-/foods/log/${updatedFood.foodLogId}.json?${params.toString()}`,
     {
       method: "POST",
-    }
+    },
   );
 
   return response;
@@ -112,7 +112,7 @@ export function buildUpdateFoodLogsMutation(queryClient: QueryClient) {
     },
     onSuccess: (data, variables) => {
       const days = new Set(
-        variables.map((foodLog) => formatAsDate(foodLog.day))
+        variables.map((foodLog) => formatAsDate(foodLog.day)),
       );
 
       for (const date of days) {
@@ -135,7 +135,7 @@ export function buildDeleteFoodLogsMutation(queryClient: QueryClient) {
     },
     onSuccess: (data, variables) => {
       const days = new Set(
-        variables.map((foodLog) => formatAsDate(foodLog.day))
+        variables.map((foodLog) => formatAsDate(foodLog.day)),
       );
 
       for (const date of days) {

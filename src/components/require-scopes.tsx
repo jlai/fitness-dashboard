@@ -23,7 +23,7 @@ export function RequireScopes({
   if (requiredScopes) {
     const scopes = getAccessTokenScopes();
     const missingScopes = requiredScopes.filter(
-      (scope) => !scopes.has(scope) && !scopes.has(`w${scope}`)
+      (scope) => !scopes.has(scope) && !scopes.has(`w${scope}`),
     );
 
     if (missingScopes.length > 0) {

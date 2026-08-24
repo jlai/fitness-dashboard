@@ -29,7 +29,7 @@ export function HeartRateTileContent() {
   const {
     data: { intradayData, heartRateZones },
   } = useSuspenseQuery(
-    buildHeartRateIntradayQuery("5min", day.startOf("day"), day.endOf("day"))
+    buildHeartRateIntradayQuery("5min", day.startOf("day"), day.endOf("day")),
   );
 
   let low: number | undefined = undefined;
@@ -116,7 +116,7 @@ function HeartRateIntraday() {
       height={300}
       loading={!intradayData}
       dataset={intradayData ?? []}
-      tooltip={{ trigger: intradayData?.length ?? 0 > 0 ? "axis" : "none" }}
+      tooltip={{ trigger: (intradayData?.length ?? 0 > 0) ? "axis" : "none" }}
       xAxis={[{ dataKey: "dateTime", scaleType: "time" }]}
       yAxis={[
         {

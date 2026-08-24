@@ -149,7 +149,7 @@ function CaloriesIntraday() {
   const endTime = day.endOf("day");
 
   const { data } = useQuery(
-    buildActivityIntradayQuery("calories", "5min", startTime, endTime)
+    buildActivityIntradayQuery("calories", "5min", startTime, endTime),
   );
 
   const processedData = data?.map((entry) => ({

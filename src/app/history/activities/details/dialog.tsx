@@ -31,11 +31,11 @@ export function ActivityLogDetailsDialog({
   const queryClient = useQueryClient();
 
   const { data: activityLog } = useSuspenseQuery(
-    buildGetActivityLogQuery(logId)
+    buildGetActivityLogQuery(logId),
   );
 
   const { mutateAsync: deleteActivity } = useMutation(
-    buildDeleteActivityLogMutation(queryClient)
+    buildDeleteActivityLogMutation(queryClient),
   );
   const confirm = useConfirm();
 
@@ -45,7 +45,7 @@ export function ActivityLogDetailsDialog({
     const { confirmed } = await confirm({
       title: "Delete activity log?",
       description: `Delete ${activityName} activity log at ${DateFormats.formatShortDateTime(
-        dayjs(startTime)
+        dayjs(startTime),
       )}? This cannot be undone.`,
       confirmationText: "Delete",
       confirmationButtonProps: { color: "warning" },
@@ -73,7 +73,7 @@ export function ActivityLogDetailsDialog({
       title={
         activityLog
           ? `${activityName} on ${DateFormats.formatShortDateTime(
-              dayjs(startTime)
+              dayjs(startTime),
             )}`
           : ""
       }

@@ -109,12 +109,12 @@ function FloorsIntraday() {
   const endTime = day.endOf("day");
 
   const { data } = useQuery(
-    buildActivityIntradayQuery("floors", "15min", startTime, endTime)
+    buildActivityIntradayQuery("floors", "15min", startTime, endTime),
   );
 
   const processedData = useMemo(
     () => (data ? aggregateByHour(data) : data),
-    [data]
+    [data],
   );
 
   return (

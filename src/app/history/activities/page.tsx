@@ -16,7 +16,7 @@ import ActivityLogList from "./activity-log-list";
 
 export default function ActivityHistoryPage() {
   const setShowingCreateActivityDialog = useSetAtom(
-    createActivityLogDialogOpenAtom
+    createActivityLogDialogOpenAtom,
   );
 
   return (

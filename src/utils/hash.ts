@@ -14,6 +14,6 @@ export function cleanHashReplaceState(searchParamsStr: string) {
   window.history.replaceState(
     window.history.state,
     "",
-    `${window.location.pathname}${window.location.search}${hashStr}`
+    `${window.location.pathname}${window.location.search}${hashStr}`,
   );
 }

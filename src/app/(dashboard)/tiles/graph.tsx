@@ -167,7 +167,7 @@ export function GraphSettingsMenuButton({
             >
               {CHART_RESOURCE_CONFIGS[id].label}
             </MenuItem>
-          )
+          ),
         )}
       </Menu>
     </>
@@ -213,7 +213,7 @@ export default function GraphTileContent() {
   const { w, h } = useTileScale();
   const [settings] = useTileSettings<GraphTileSettings>(DEFAULT_SETTINGS);
   const [resource, setResource] = useState<ChartResource>(
-    settings.chartResource
+    settings.chartResource,
   );
   const [period, setPeriod] = useState<GraphPeriod>(settings.period || "7d");
   const [statsEl, setStatsEl] = useState<HTMLElement | null>(null);

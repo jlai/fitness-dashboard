@@ -121,7 +121,7 @@ export default function WaterEntryPanel() {
 
   const queryClient = useQueryClient();
   const { mutateAsync: createWaterLog } = useMutation(
-    buildCreateWaterLogMutation(queryClient)
+    buildCreateWaterLogMutation(queryClient),
   );
 
   const addQuantity = useCallback(
@@ -131,7 +131,7 @@ export default function WaterEntryPanel() {
         shouldValidate: true,
       });
     },
-    [setValue, getValues]
+    [setValue, getValues],
   );
 
   const onSubmit = useCallback(
@@ -146,10 +146,10 @@ export default function WaterEntryPanel() {
         },
         () => {
           toast.error("Error logging water");
-        }
+        },
       );
     },
-    [createWaterLog, day, localizedWaterUnit, machineWaterUnit]
+    [createWaterLog, day, localizedWaterUnit, machineWaterUnit],
   );
 
   return (

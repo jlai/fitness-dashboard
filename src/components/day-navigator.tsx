@@ -85,7 +85,7 @@ export default function DayNavigator({
         }
       }
     },
-    [onSelectDay]
+    [onSelectDay],
   );
 
   const label = getLabel(selectedDay);

@@ -29,7 +29,7 @@ export function MoveFoodLogsDialog() {
   const [selectedFoodLogs, setSelectedFoodLogs] = useAtom(selectedFoodLogsAtom);
 
   const { mutateAsync: updateFoodLogs } = useMutation(
-    buildUpdateFoodLogsMutation(queryClient)
+    buildUpdateFoodLogsMutation(queryClient),
   );
 
   const onSubmit = withErrorToaster(async (values: MoveFoodLogsFormData) => {
@@ -40,7 +40,7 @@ export function MoveFoodLogsDialog() {
         unitId: foodLog.loggedFood.unit!.id,
         amount: foodLog.loggedFood.amount,
         day: dayjs(foodLog.logDate),
-      }))
+      })),
     );
     showSuccessToast("Moved food logs");
     setSelectedFoodLogs(Immutable.Set());

@@ -20,7 +20,7 @@ export function buildSearchFoodsQuery(query: string) {
             Accept: "application/json",
             "Accept-Locale": "en_US",
           },
-        }
+        },
       );
 
       return (await response.json()) as SearchFoodsResponse;

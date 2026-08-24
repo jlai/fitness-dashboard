@@ -41,7 +41,7 @@ function CreateWeightLog({ onSaveSuccess }: { onSaveSuccess?: () => void }) {
   const queryClient = useQueryClient();
 
   const { mutateAsync: createWeightLog } = useMutation(
-    buildCreateWeightLogMutation(queryClient)
+    buildCreateWeightLogMutation(queryClient),
   );
 
   const onSubmit = withErrorToaster(async (values: CreateWeightLogFormData) => {

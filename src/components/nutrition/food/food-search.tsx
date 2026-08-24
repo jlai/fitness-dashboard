@@ -49,7 +49,7 @@ type SearchOption = {
 };
 
 function isSearchOption(
-  option: FoodOption | SearchOption | null
+  option: FoodOption | SearchOption | null,
 ): option is SearchOption {
   return option ? "search" in option && option.search === true : false;
 }
@@ -215,7 +215,7 @@ export default function SearchFoods({
     (
       event: SyntheticEvent,
       value: FoodOption | SearchOption | null,
-      reason: AutocompleteChangeReason
+      reason: AutocompleteChangeReason,
     ) => {
       if (isSearchOption(value)) {
         setInputValue(inputValue);
@@ -225,21 +225,21 @@ export default function SearchFoods({
 
       onChange?.(value);
     },
-    [onChange, inputValue]
+    [onChange, inputValue],
   );
 
   const handleInputChange = useCallback(
     (event: SyntheticEvent, value: string) => {
       setInputValue(value);
     },
-    []
+    [],
   );
 
   const handleEnter = useCallback(
     (
       event: React.KeyboardEvent<HTMLDivElement> & {
         defaultMuiPrevented?: boolean;
-      }
+      },
     ) => {
       if (event.key === "Enter") {
         event.defaultMuiPrevented = true;
@@ -247,12 +247,12 @@ export default function SearchFoods({
         setSearchString(inputValue);
       }
     },
-    [setSearchString, inputValue]
+    [setSearchString, inputValue],
   );
 
   const allOptions = useMemo(
     () => [...(savedFoods ?? []), ...(searchResults?.foods ?? [])],
-    [savedFoods, searchResults]
+    [savedFoods, searchResults],
   );
 
   return (

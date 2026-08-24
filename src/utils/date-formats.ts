@@ -4,7 +4,7 @@ import dayjs, { Dayjs } from "dayjs";
 
 function createDateFormats(
   locale: string | undefined,
-  hourCycle: Intl.DateTimeFormatOptions["hourCycle"]
+  hourCycle: Intl.DateTimeFormatOptions["hourCycle"],
 ) {
   const SHORT_DATE_OPTIONS: Intl.DateTimeFormatOptions = {
     day: "numeric",
@@ -85,7 +85,7 @@ function createDateFormats(
       return new Intl.DateTimeFormat(undefined, {
         ...options,
         month: "long",
-        year: isSameYear ? undefined : options?.year ?? "numeric",
+        year: isSameYear ? undefined : (options?.year ?? "numeric"),
       }).format(day.toDate());
     },
   };
@@ -95,7 +95,7 @@ export let DateFormats = createDateFormats(undefined, undefined);
 
 export function setDateFormatLocale(
   locale: string | undefined,
-  hourCycle: Intl.DateTimeFormatOptions["hourCycle"]
+  hourCycle: Intl.DateTimeFormatOptions["hourCycle"],
 ) {
   DateFormats = createDateFormats(locale, hourCycle);
 }

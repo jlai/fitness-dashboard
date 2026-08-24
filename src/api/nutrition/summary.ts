@@ -19,7 +19,7 @@ export function buildFoodLogQuery(day: Dayjs) {
     queryKey: ["food-log", date],
     queryFn: async () => {
       const response = await makeRequest(
-        `/1/user/-/foods/log/date/${date}.json`
+        `/1/user/-/foods/log/date/${date}.json`,
       );
 
       // Workaround: https://community.fitbit.com/t5/Web-API-Development/Nutrition-log-loggedFood-changed-unexpectedly-to-logged-food/m-p/5772376

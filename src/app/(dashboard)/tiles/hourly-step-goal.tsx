@@ -83,7 +83,7 @@ const STYLE_OPTIONS = [{ id: "dots", label: "Dots" }];
 function assertValidHours(startHour: number, endHour: number) {
   if (startHour > endHour) {
     throw new Error(
-      `startHour (${startHour}) cannot be after endHour (${endHour})`
+      `startHour (${startHour}) cannot be after endHour (${endHour})`,
     );
   }
 }
@@ -107,7 +107,7 @@ export default function HourlyStepGoalTileContent() {
       "steps",
       "15min",
       day.startOf("day"),
-      day.endOf("day")
+      day.endOf("day"),
     ),
     refetchInterval: Math.max(1.0, refetchIntervalMinutes) * 60 * 1000,
   });
@@ -242,7 +242,7 @@ function HourlyDots({
         fill={metGoal ? "red" : "#d4d4d8"}
         onMouseMove={(event) => handleMouseMove(event, { hour, steps })}
         onMouseOut={hideTooltip}
-      />
+      />,
     );
 
     if (hour === startHour || hour === endHour - 1) {
@@ -256,7 +256,7 @@ function HourlyDots({
           fill="currentColor"
         >
           {formatHour(hour)}
-        </Text>
+        </Text>,
       );
     }
   }

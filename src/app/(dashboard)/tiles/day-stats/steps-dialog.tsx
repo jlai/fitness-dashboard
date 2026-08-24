@@ -115,15 +115,15 @@ function StepsIntraday() {
   const endTime = day.endOf("day");
   const [interval, setInterval] = useTileSetting<StepsTileSettings, "interval">(
     "interval",
-    "hour"
+    "hour",
   );
   const [trim, setTrim] = useTileSetting<StepsTileSettings, "trim">(
     "trim",
-    false
+    false,
   );
 
   const { data } = useQuery(
-    buildActivityIntradayQuery("steps", "15min", startTime, endTime)
+    buildActivityIntradayQuery("steps", "15min", startTime, endTime),
   );
 
   const processedData = useMemo(() => {

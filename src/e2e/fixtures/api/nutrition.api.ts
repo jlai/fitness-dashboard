@@ -21,7 +21,7 @@ export class NutritionApi {
       "**/1/user/-/foods/log/{frequent,recent}.json",
       async (route) => {
         await route.fulfill({ json: [] });
-      }
+      },
     );
     // custom foods
     await page.route("**/1/user/-/foods.json", async (route) => {
@@ -58,7 +58,7 @@ export class NutritionApi {
         } else {
           await route.fallback();
         }
-      }
+      },
     );
 
     // Create food log
@@ -82,13 +82,13 @@ export class NutritionApi {
 
   async setFoodLogsResponse(
     response: Readonly<GetFoodLogResponse>,
-    date = "*"
+    date = "*",
   ) {
     await this.page.route(
       `**/1/user/-/foods/log/date/${date}.json`,
       async (route) => {
         await route.fulfill({ json: response });
-      }
+      },
     );
   }
 
@@ -96,7 +96,7 @@ export class NutritionApi {
     return this.page.waitForRequest(
       (request) =>
         request.method() === "POST" &&
-        request.url().endsWith(`/1/user/-/foods/log/favorite/${foodId}.json`)
+        request.url().endsWith(`/1/user/-/foods/log/favorite/${foodId}.json`),
     );
   }
 
@@ -104,7 +104,7 @@ export class NutritionApi {
     return this.page.waitForRequest(
       (request) =>
         request.method() === "DELETE" &&
-        request.url().endsWith(`/1/user/-/foods/log/favorite/${foodId}.json`)
+        request.url().endsWith(`/1/user/-/foods/log/favorite/${foodId}.json`),
     );
   }
 }

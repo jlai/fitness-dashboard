@@ -48,7 +48,7 @@ async function handleRequest(request: NextRequest, method: string) {
     if (!path) {
       return NextResponse.json(
         { error: "Missing path parameter" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -59,7 +59,7 @@ async function handleRequest(request: NextRequest, method: string) {
     if (!validatePath(path)) {
       return NextResponse.json(
         { error: "Invalid path: must be a valid Fitbit API path" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -77,7 +77,7 @@ async function handleRequest(request: NextRequest, method: string) {
     if (!authHeader) {
       return NextResponse.json(
         { error: "Missing authorization header" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -101,7 +101,7 @@ async function handleRequest(request: NextRequest, method: string) {
       } catch (error) {
         return NextResponse.json(
           { error: "Failed to read request body" },
-          { status: 400 }
+          { status: 400 },
         );
       }
     }
@@ -185,7 +185,7 @@ async function handleRequest(request: NextRequest, method: string) {
     console.error("Fitbit API proxy error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

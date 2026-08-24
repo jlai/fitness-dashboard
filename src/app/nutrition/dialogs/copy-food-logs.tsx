@@ -35,7 +35,7 @@ export function CopyFoodLogsDialog() {
   const [selectedFoodLogs, setSelectedFoodLogs] = useAtom(selectedFoodLogsAtom);
 
   const { mutateAsync: createFoodLogs, isPending: isSubmitting } = useMutation(
-    buildCreateMultipleFoodLogsMutation(queryClient)
+    buildCreateMultipleFoodLogsMutation(queryClient),
   );
 
   const onSubmit = withErrorToaster(async (values: CopyFoodLogsFormData) => {
@@ -50,7 +50,7 @@ export function CopyFoodLogsDialog() {
         unitId: foodLog.loggedFood.unit!.id,
         amount: foodLog.loggedFood.amount,
         day: values.day,
-      }))
+      })),
     );
 
     showSuccessToast("Copied food logs", {

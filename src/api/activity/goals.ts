@@ -13,7 +13,7 @@ export function buildActivityGoalsQuery(period: "daily" | "weekly") {
     queryKey: ["activity-goals", period],
     queryFn: async () => {
       const response = await makeRequest(
-        `/1/user/-/activities/goals/${period}.json`
+        `/1/user/-/activities/goals/${period}.json`,
       );
 
       return ((await response.json()) as GetActivityGoalsResponse).goals;
@@ -43,7 +43,7 @@ export function buildUpdateActivityGoalMutation(queryClient: QueryClient) {
         `/1/user/-/activities/goals/${period}.json?${params.toString()}`,
         {
           method: "POST",
-        }
+        },
       );
 
       return ((await response.json()) as GetActivityGoalsResponse).goals;

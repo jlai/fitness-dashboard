@@ -113,10 +113,10 @@ export function ActivityTcxCharts({
         ? augmentWithDistances(
             caloriesIntradayRaw,
             distanceScale,
-            localizedKilometers
+            localizedKilometers,
           )
         : undefined,
-    [caloriesIntradayRaw, distanceScale, localizedKilometers]
+    [caloriesIntradayRaw, distanceScale, localizedKilometers],
   );
 
   const heartIntraday = useMemo(() => {
@@ -134,7 +134,7 @@ export function ActivityTcxCharts({
       ? augmentWithDistances(
           heartRateIntradayResponse.intradayData,
           distanceScale,
-          localizedKilometers
+          localizedKilometers,
         )
       : undefined;
   }, [
@@ -157,7 +157,7 @@ export function ActivityTcxCharts({
             {elevationGain > 0 && (
               <Typography variant="h6">
                 {NumberFormats.FRACTION_DIGITS_0.format(
-                  localizedMeters(elevationGain)
+                  localizedMeters(elevationGain),
                 )}{" "}
                 {localizedMetersName}
               </Typography>
@@ -424,7 +424,7 @@ export function ElevationChart({
   const valueFormatter = (value: number | null) =>
     value
       ? `${NumberFormats.FRACTION_DIGITS_0.format(
-          value
+          value,
         )} ${localizedMetersName}`
       : "";
 

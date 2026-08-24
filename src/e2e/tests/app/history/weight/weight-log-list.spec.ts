@@ -26,7 +26,7 @@ async function setupTimeSeriesData(
   weightTimeSeries: TimeSeriesEntry<string>[],
   fatTimeSeries: TimeSeriesEntry<string>[],
   bmiTimeSeries: TimeSeriesEntry<string>[],
-  dateRange: { start: string; end: string }
+  dateRange: { start: string; end: string },
 ) {
   await timeSeriesApi.setWeightTimeSeriesResponse(weightTimeSeries, dateRange);
   await timeSeriesApi.setFatTimeSeriesResponse(fatTimeSeries, dateRange);
@@ -54,7 +54,7 @@ test("can log a new weight entry", async ({
     WEIGHT_TIME_SERIES,
     FAT_TIME_SERIES,
     BMI_TIME_SERIES,
-    createMonthDateRange(TODAY)
+    createMonthDateRange(TODAY),
   );
 
   await page.goto("/history/weight");
@@ -113,7 +113,7 @@ test("can log a new weight entry", async ({
     updatedWeightTimeSeries,
     updatedFatTimeSeries,
     updatedBmiTimeSeries,
-    createMonthDateRange(TODAY)
+    createMonthDateRange(TODAY),
   );
 
   // Click save button
@@ -153,7 +153,7 @@ test("handles weight log save failure", async ({
     WEIGHT_TIME_SERIES,
     FAT_TIME_SERIES,
     BMI_TIME_SERIES,
-    dateRange
+    dateRange,
   );
 
   await page.goto("/history/weight");

@@ -19,19 +19,19 @@ export class IntradayApi {
         await route.fulfill({
           json: HEART_INTRADAY_EMPTY_RESPONSE,
         });
-      }
+      },
     );
   }
 
   async setHeartIntradayResponse(
     response: Readonly<GetHeartIntradayResponse>,
-    date = "*"
+    date = "*",
   ) {
     await this.page.route(
       `**/1/user/-/activities/heart/date/${date}/${date}/*/time/00:00/23:59.json`,
       async (route) => {
         await route.fulfill({ json: response });
-      }
+      },
     );
   }
 }

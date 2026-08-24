@@ -35,7 +35,7 @@ export interface ActiveMinutesTileSettings {
 }
 
 export default function ActiveMinutesDialogContent(
-  props: RenderDialogContentProps
+  props: RenderDialogContentProps,
 ) {
   const [currentTab, setCurrentTab] = useTileSetting<
     ActiveMinutesTileSettings,
@@ -82,7 +82,7 @@ export function useActiveMinutes(source: ActiveMinutesSource) {
     ...buildTimeSeriesQuery<TimeSeriesEntry<HeartTimeSeriesValue>>(
       "heart",
       selectedDay,
-      selectedDay
+      selectedDay,
     ),
     enabled: source === "heart-rate-zones",
   });
@@ -111,7 +111,7 @@ export function useActiveMinutes(source: ActiveMinutesSource) {
 function Overview() {
   const [source] = useTileSetting<ActiveMinutesTileSettings, "source">(
     "source",
-    "mets"
+    "mets",
   );
 
   const { activeMinutes, activeMinutesGoal } = useActiveMinutes(source);

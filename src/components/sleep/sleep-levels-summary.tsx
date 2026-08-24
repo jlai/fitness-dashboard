@@ -108,9 +108,9 @@ export function SleepLevelSummaryChart({
                 {canFitPercent
                   ? formatMinutes(datum.value)
                   : `${formatMinutes(
-                      datum.value
+                      datum.value,
                     )} (${NumberFormats.PERCENT_FRACTION_DIGITS_0.format(
-                      datum.ratio
+                      datum.ratio,
                     )})`}
               </Text>
               <rect
@@ -135,7 +135,8 @@ export function SleepLevelSummaryChart({
               <span>
                 {tooltipData.count > 0 ? (
                   <>
-                    {LEVEL_NAMES[tooltipData.level]} ({tooltipData.count}x):{" "}
+                    {LEVEL_NAMES[tooltipData.level]} ({tooltipData.count}
+                    x):{" "}
                   </>
                 ) : (
                   <>{LEVEL_NAMES[tooltipData.level]}: </>

@@ -29,10 +29,10 @@ import ActiveZoneMinutesDialogContent from "./active-zone-minutes-dialog";
 
 const StepsDialogContent = lazy(async () => await import("./steps-dialog"));
 const DistanceDialogContent = lazy(
-  async () => await import("./distance-dialog")
+  async () => await import("./distance-dialog"),
 );
 const CaloriesDialogContent = lazy(
-  async () => await import("./calories-dialog")
+  async () => await import("./calories-dialog"),
 );
 const FloorsDialogContent = lazy(async () => await import("./floors-dialog"));
 
@@ -62,7 +62,7 @@ export function GaugeDistanceTileContent() {
 
   const totalDistance =
     (dailySummary.summary.distances ?? []).find(
-      (entry) => entry.activity === "total"
+      (entry) => entry.activity === "total",
     )?.distance ?? 0;
 
   const localizedTotalDistance = units.localizedKilometers(totalDistance);
@@ -76,7 +76,7 @@ export function GaugeDistanceTileContent() {
         iconSrc={distanceIconUrl}
         value={localizedTotalDistance}
         valueMax={units.localizedKilometers(
-          millimetersToKilometers(dailySummary.goals?.distance ?? 0)
+          millimetersToKilometers(dailySummary.goals?.distance ?? 0),
         )}
         valueUnits={units.localizedKilometersName}
       />
@@ -129,7 +129,7 @@ export function GaugeFloorsTileContent() {
 export function GaugeActiveMinutesTileContent() {
   const [source] = useTileSetting<ActiveMinutesTileSettings, "source">(
     "source",
-    "mets"
+    "mets",
   );
 
   const { activeMinutes, activeMinutesGoal } = useActiveMinutes(source);
@@ -158,8 +158,8 @@ export function GaugeActiveZoneMinutesTileContent() {
     buildTimeSeriesQuery<TimeSeriesEntry<ActiveZoneMinutesTimeSeriesValue>>(
       "active-zone-minutes",
       selectedDay,
-      selectedDay
-    )
+      selectedDay,
+    ),
   );
 
   if (!azmSeries) {
@@ -167,7 +167,7 @@ export function GaugeActiveZoneMinutesTileContent() {
   }
 
   const dayAzm = azmSeries.find((entry) =>
-    selectedDay.isSame(entry.dateTime, "day")
+    selectedDay.isSame(entry.dateTime, "day"),
   );
   const dayAzmValue = dayAzm?.value.activeZoneMinutes ?? 0;
 

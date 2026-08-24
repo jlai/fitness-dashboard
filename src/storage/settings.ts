@@ -21,7 +21,7 @@ export const waterUnitAtom = atomWithStorage<"en_US" | "METRIC" | undefined>(
   undefined,
   {
     getOnInit: true,
-  }
+  },
 );
 
 export const distanceUnitAtom = atomWithStorage<"en_US" | "METRIC" | undefined>(
@@ -30,7 +30,7 @@ export const distanceUnitAtom = atomWithStorage<"en_US" | "METRIC" | undefined>(
   undefined,
   {
     getOnInit: true,
-  }
+  },
 );
 
 export const swimUnitAtom = atomWithStorage<"en_US" | "METRIC" | undefined>(
@@ -39,7 +39,7 @@ export const swimUnitAtom = atomWithStorage<"en_US" | "METRIC" | undefined>(
   undefined,
   {
     getOnInit: true,
-  }
+  },
 );
 
 export const temperatureUnitAtom = atomWithStorage<
@@ -49,7 +49,7 @@ export const temperatureUnitAtom = atomWithStorage<
 });
 
 export const allUnitsConfiguredAtom = atom(
-  (get) => get(weightUnitAtom) && get(waterUnitAtom) && get(distanceUnitAtom)
+  (get) => get(weightUnitAtom) && get(waterUnitAtom) && get(distanceUnitAtom),
 );
 
 export const foodLogTotalsPositionAtom = atomWithStorage<
@@ -77,7 +77,7 @@ export const macroGoalsAtom = atomWithStorage<NutritionMacroGoals>(
   "nutrition-goals:macros",
   DEFAULT_FDA_MACRO_GOALS,
   undefined,
-  { getOnInit: true }
+  { getOnInit: true },
 );
 
 export const showNutritionLabelAtom = atomWithStorage<boolean>(
@@ -86,7 +86,7 @@ export const showNutritionLabelAtom = atomWithStorage<boolean>(
   undefined,
   {
     getOnInit: true,
-  }
+  },
 );
 
 export const useNutritionGoalsForLabelAtom = atomWithStorage<boolean>(
@@ -95,7 +95,7 @@ export const useNutritionGoalsForLabelAtom = atomWithStorage<boolean>(
   undefined,
   {
     getOnInit: true,
-  }
+  },
 );
 
 export const foodLogShowCopyIndividualButtonAtom = atomWithStorage<boolean>(
@@ -104,7 +104,7 @@ export const foodLogShowCopyIndividualButtonAtom = atomWithStorage<boolean>(
   undefined,
   {
     getOnInit: true,
-  }
+  },
 );
 
 export const mapStyleAtom = atomWithStorage<string>(
@@ -113,7 +113,7 @@ export const mapStyleAtom = atomWithStorage<string>(
   undefined,
   {
     getOnInit: true,
-  }
+  },
 );
 
 export const enableAdvancedScopesAtom = atomWithStorage<boolean>(
@@ -122,7 +122,7 @@ export const enableAdvancedScopesAtom = atomWithStorage<boolean>(
   undefined,
   {
     getOnInit: true,
-  }
+  },
 );
 
 export const increasedTileLimitsAtom = atomWithStorage<boolean>(
@@ -131,7 +131,7 @@ export const increasedTileLimitsAtom = atomWithStorage<boolean>(
   undefined,
   {
     getOnInit: true,
-  }
+  },
 );
 
 export const clockHourCycleAtom = atomWithStorage<
@@ -146,7 +146,7 @@ export const dateFormatPatternAtom = atomWithStorage<string | undefined>(
   undefined,
   {
     getOnInit: true,
-  }
+  },
 );
 
 export const dateFormatAtomEffect = atomEffect((get) => {
@@ -161,7 +161,7 @@ export const numberFormatPatternAtom = atomWithStorage<string | undefined>(
   undefined,
   {
     getOnInit: true,
-  }
+  },
 );
 
 export const numberFormatAtomEffect = atomEffect((get) => {
@@ -179,7 +179,7 @@ export const allowAPIProxyAtom = atomWithStorage<boolean>(
   undefined,
   {
     getOnInit: true,
-  }
+  },
 );
 
 export function isAPIProxyAllowed() {

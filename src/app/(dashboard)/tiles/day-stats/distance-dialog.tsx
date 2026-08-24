@@ -97,11 +97,11 @@ function Overview() {
 
   const dailyDistance = localizedKilometers(dailyDistanceKilometers);
   const dailyGoal = localizedKilometers(
-    millimetersToKilometers(goals?.distance ?? 0)
+    millimetersToKilometers(goals?.distance ?? 0),
   );
 
   const weeklyDistance = localizedKilometers(
-    sumBy(weekData, (entry) => Number(entry.value))
+    sumBy(weekData, (entry) => Number(entry.value)),
   );
 
   return (
@@ -128,7 +128,7 @@ function DistanceIntraday() {
   const { localizedKilometers, localizedKilometersName } = useUnits();
 
   const { data } = useQuery(
-    buildActivityIntradayQuery("distance", "15min", startTime, endTime)
+    buildActivityIntradayQuery("distance", "15min", startTime, endTime),
   );
 
   const processedData = useMemo(
@@ -139,7 +139,7 @@ function DistanceIntraday() {
             localizedValue: localizedKilometers(entry.value),
           }))
         : data,
-    [data, localizedKilometers]
+    [data, localizedKilometers],
   );
 
   return (
@@ -168,7 +168,7 @@ function DistanceIntraday() {
             valueFormatter: (value) =>
               value || value === 0
                 ? `${FRACTION_DIGITS_2.format(
-                    value
+                    value,
                   )} ${localizedKilometersName}`
                 : "",
           },

@@ -84,13 +84,13 @@ export default function FoodLog({ day }: { day: Dayjs }) {
   const confirm = useConfirm();
   const queryClient = useQueryClient();
   const { mutateAsync: deleteFoodLogs } = useMutation(
-    buildDeleteFoodLogsMutation(queryClient)
+    buildDeleteFoodLogsMutation(queryClient),
   );
   const { mutateAsync: addFavoriteFoods } = useMutation(
-    buildAddFavoriteFoodsMutation(queryClient)
+    buildAddFavoriteFoodsMutation(queryClient),
   );
   const { mutateAsync: removeFavoriteFoods } = useMutation(
-    buildDeleteFavoritesFoodMutation(queryClient)
+    buildDeleteFavoritesFoodMutation(queryClient),
   );
 
   const [{ data: foodLogsResponse }, { data: favoriteFoods }] =
@@ -99,7 +99,7 @@ export default function FoodLog({ day }: { day: Dayjs }) {
     });
   const groupedMealTypes = useMemo(
     () => groupByMealType(foodLogsResponse.foods),
-    [foodLogsResponse]
+    [foodLogsResponse],
   );
 
   useEffect(() => {
@@ -128,7 +128,7 @@ export default function FoodLog({ day }: { day: Dayjs }) {
     menuPopupState.close();
 
     const foodIds = selectedFoodLogs.map(
-      (foodLog) => foodLog.loggedFood.foodId
+      (foodLog) => foodLog.loggedFood.foodId,
     );
 
     await addFavoriteFoods([...foodIds]);
@@ -139,7 +139,7 @@ export default function FoodLog({ day }: { day: Dayjs }) {
     menuPopupState.close();
 
     const foodIds = selectedFoodLogs.map(
-      (foodLog) => foodLog.loggedFood.foodId
+      (foodLog) => foodLog.loggedFood.foodId,
     );
     await removeFavoriteFoods([...foodIds]);
     showSuccessToast("Removed from favorites");
@@ -147,7 +147,7 @@ export default function FoodLog({ day }: { day: Dayjs }) {
 
   const favoriteFoodIds = new Set(favoriteFoods.map(({ foodId }) => foodId));
   const areSelectedAllFavorites = selectedFoodLogs.every((foodLog) =>
-    favoriteFoodIds.has(foodLog.loggedFood.foodId)
+    favoriteFoodIds.has(foodLog.loggedFood.foodId),
   );
 
   return (
@@ -167,7 +167,7 @@ export default function FoodLog({ day }: { day: Dayjs }) {
             )}
             {[...groupedMealTypes.values()]
               .filter(
-                (summary) => summary.foods.length > 0 || summary.id === -1
+                (summary) => summary.foods.length > 0 || summary.id === -1,
               )
               .map((summary) => (
                 <MealTypeRows key={summary.id} summary={summary} />

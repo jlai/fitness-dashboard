@@ -24,7 +24,7 @@ export function usePortalTooltip<TDatum = {}>() {
         tooltipData: datum,
       });
     },
-    [showTooltip]
+    [showTooltip],
   );
 
   return {

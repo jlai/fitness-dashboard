@@ -19,7 +19,7 @@ export default function NutritionLogger() {
     (event: SyntheticEvent, newIndex: "food" | "meal") => {
       setCurrentTab(newIndex);
     },
-    []
+    [],
   );
 
   return (

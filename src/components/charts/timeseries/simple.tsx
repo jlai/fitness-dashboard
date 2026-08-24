@@ -70,7 +70,7 @@ export function WaterChart() {
         numberFormat: NumberFormats.FRACTION_DIGITS_0.format,
         unit: localizedWaterVolumeName,
       }),
-    [localizedWaterVolume, localizedWaterVolumeName]
+    [localizedWaterVolume, localizedWaterVolumeName],
   );
 
   const props = useAggregation(data, seriesConfigs);
@@ -84,7 +84,7 @@ export function WaterChart() {
         waterGoal
           ? {
               label: `Goal: ${NumberFormats.FRACTION_DIGITS_0.format(
-                waterGoal
+                waterGoal,
               )} ${localizedWaterVolumeName}`,
               value: waterGoal,
             }
@@ -107,7 +107,7 @@ export function WeightChart() {
         unit: localizedKilogramsName,
         showMark: false,
       }),
-    [localizedKilograms, localizedKilogramsName]
+    [localizedKilograms, localizedKilogramsName],
   );
 
   const props = useAggregation(data, seriesConfigs);

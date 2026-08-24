@@ -126,7 +126,7 @@ export const userTilesAtom = atomWithStorage(
   undefined,
   {
     getOnInit: true,
-  }
+  },
 );
 
 export const updateTileSettingsAtom = atom(null, (get, set, id, settings) => {

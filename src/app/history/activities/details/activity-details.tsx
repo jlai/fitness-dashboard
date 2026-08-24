@@ -76,7 +76,7 @@ function ActivityOverview({
         {distance && (
           <Typography variant="h6">
             {NumberFormats.FRACTION_DIGITS_1.format(
-              localizedKilometers(distance)
+              localizedKilometers(distance),
             )}{" "}
             {localizedKilometersName}
           </Typography>
@@ -118,7 +118,7 @@ function MapWithPosition({
       index = trackpointBisector.center(parsedTcx.trackpoints, x.value);
     } else {
       const trackpointBisector = bisector<Trackpoint, number | undefined>(
-        (d) => d.distanceMeters
+        (d) => d.distanceMeters,
       );
 
       const cursorMeters = (1000 * x.value) / localizedKilometers(1);
@@ -157,12 +157,12 @@ export function ActivityDetails({ activityLog }: { activityLog: ActivityLog }) {
 
   const distanceScale = useMemo(
     () => parsedTcx && createDistanceScale(parsedTcx.trackpoints),
-    [parsedTcx]
+    [parsedTcx],
   );
 
   const splits = useMemo(
     () => distanceScale && getDistanceSplits(distanceScale, distanceUnit),
-    [distanceScale, distanceUnit]
+    [distanceScale, distanceUnit],
   );
 
   const theme = useTheme();

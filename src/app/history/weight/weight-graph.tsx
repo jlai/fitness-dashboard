@@ -67,7 +67,7 @@ export function LeanFatMassGraph() {
     const valueFormatter = (value: number | null) =>
       value
         ? `${NumberFormats.FRACTION_DIGITS_1.format(
-            value
+            value,
           )} ${localizedKilogramsName}`
         : "";
 

@@ -57,7 +57,7 @@ export default function ClientSideSetup({
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
   const theme = useMemo(
     () => buildTheme(prefersDarkMode ? "dark" : "light"),
-    [prefersDarkMode]
+    [prefersDarkMode],
   );
 
   return (

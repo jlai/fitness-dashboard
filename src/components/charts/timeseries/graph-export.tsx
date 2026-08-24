@@ -55,7 +55,7 @@ const CSV_NUMBER_FORMAT = new Intl.NumberFormat("en-US", {
 export function createCSV(
   data: Array<TimeSeriesDatum>,
   seriesConfigs: Array<ChartSeriesConfig<any>>,
-  range: DayjsRange
+  range: DayjsRange,
 ) {
   const isIntraday = range.startDay.isSame(range.endDay, "day");
 
@@ -64,7 +64,7 @@ export function createCSV(
     .map((datum) => {
       const fields: Record<string, string> = {};
       fields.Timestamp = dayjs(datum.dateTime).format(
-        isIntraday ? "YYYY-MM-DD HH:mm:ss" : "YYYY-MM-DD"
+        isIntraday ? "YYYY-MM-DD HH:mm:ss" : "YYYY-MM-DD",
       );
 
       for (const config of seriesConfigs) {
@@ -100,7 +100,7 @@ export function useSaveAsCSV(resource: ChartResource, range: DayjsRange) {
 
     const actualStartDay = dayjs(head(data)?.dateTime ?? range.startDay);
     const actualEndDay = todayOrEarlier(
-      dayjs(last(data)?.dateTime ?? range.endDay)
+      dayjs(last(data)?.dateTime ?? range.endDay),
     );
 
     const csvString = createCSV(data, seriesConfigs, range);
@@ -108,7 +108,7 @@ export function useSaveAsCSV(resource: ChartResource, range: DayjsRange) {
 
     const label = CHART_RESOURCE_CONFIGS[resource].label;
     const filename = `${label} ${actualStartDay.format(
-      "YYYY-MM-DD"
+      "YYYY-MM-DD",
     )} to ${actualEndDay.format("YYYY-MM-DD")}.csv`;
 
     const blob = new File([csvBytes], filename, {

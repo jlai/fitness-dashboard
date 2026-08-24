@@ -36,7 +36,7 @@ export function EditServingSize({
 
   const queryClient = useQueryClient();
   const { mutateAsync: updateFoodLogs } = useMutation(
-    buildUpdateFoodLogsMutation(queryClient)
+    buildUpdateFoodLogsMutation(queryClient),
   );
 
   const onSubmit = withErrorToaster(async (values: EditServingSizeFormData) => {
@@ -74,7 +74,7 @@ export function EditServingSize({
             ...servingSize,
             amount: newAmount,
           },
-          { shouldValidate: true }
+          { shouldValidate: true },
         );
       }
     }

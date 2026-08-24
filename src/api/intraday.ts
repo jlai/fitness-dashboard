@@ -42,7 +42,7 @@ type GetIntradayMinutesResponse<ValueType = number> = {
 export function parseIntradayDataset(
   startTime: Dayjs,
   endTime: Dayjs,
-  dataset: Array<IntradayTimeEntry>
+  dataset: Array<IntradayTimeEntry>,
 ): Array<IntradayEntry> {
   const startDateStr = formatAsDate(startTime);
   const endDateStr = formatAsDate(endTime);
@@ -54,7 +54,7 @@ export function parseIntradayDataset(
     dateTime: new Date(
       `${
         time < earliestStartTimeStr ? endDateStr : startDateStr
-      }T${time}${timeZoneStr}`
+      }T${time}${timeZoneStr}`,
     ),
     ...rest,
   }));
@@ -63,13 +63,13 @@ export function parseIntradayDataset(
 /** Convert an intraday dataset ("minutes" array) to one that has a dateTime */
 export function parseIntradayMinutesDataset<ValueType = number>(
   response: GetIntradayMinutesResponse<ValueType>,
-  key: string
+  key: string,
 ): Array<IntradayEntry<ValueType>> {
   return response[key].flatMap(({ minutes }) =>
     minutes.map((entry) => ({
       dateTime: new Date(entry.minute),
       value: entry.value,
-    }))
+    })),
   );
 }
 
@@ -77,7 +77,7 @@ export function buildActivityIntradayQuery(
   resource: "calories" | "distance" | "elevation" | "floors" | "steps",
   detailLevel: "1min" | "5min" | "15min",
   startTime: Dayjs,
-  endTime: Dayjs
+  endTime: Dayjs,
 ) {
   return queryOptions({
     queryKey: [
@@ -89,10 +89,10 @@ export function buildActivityIntradayQuery(
     queryFn: async () => {
       const response = await makeRequest(
         `/1/user/-/activities/${resource}/date/${formatAsDate(
-          startTime
+          startTime,
         )}/${formatAsDate(endTime)}/${detailLevel}/time/${formatHoursMinutes(
-          startTime
-        )}/${formatHoursMinutes(endTime)}.json`
+          startTime,
+        )}/${formatHoursMinutes(endTime)}.json`,
       );
 
       const intradayData = ((await response.json()) as GetIntradayResponse)[
@@ -108,7 +108,7 @@ export function buildActivityIntradayQuery(
 export function buildActiveZoneMinutesIntradayQuery(
   detailLevel: "1min" | "5min" | "15min",
   startTime: Dayjs,
-  endTime: Dayjs
+  endTime: Dayjs,
 ) {
   return queryOptions({
     queryKey: [
@@ -119,10 +119,10 @@ export function buildActiveZoneMinutesIntradayQuery(
     queryFn: async () => {
       const response = await makeRequest(
         `/1/user/-/activities/active-zone-minutes/date/${formatAsDate(
-          startTime
+          startTime,
         )}/${formatAsDate(endTime)}/${detailLevel}/time/${formatHoursMinutes(
-          startTime
-        )}/${formatHoursMinutes(endTime)}.json`
+          startTime,
+        )}/${formatHoursMinutes(endTime)}.json`,
       );
 
       const intradayData =
@@ -130,7 +130,7 @@ export function buildActiveZoneMinutesIntradayQuery(
 
       return parseIntradayMinutesDataset<ActiveZoneMinutesTimeSeriesValue>(
         intradayData,
-        "activities-active-zone-minutes-intraday"
+        "activities-active-zone-minutes-intraday",
       );
     },
     staleTime: ONE_MINUTE_IN_MILLIS,
@@ -154,7 +154,7 @@ export type GetHeartIntradayResponse = {
 export function buildHeartRateIntradayQuery(
   detailLevel: "1min" | "5min" | "15min",
   startTime: Dayjs,
-  endTime: Dayjs
+  endTime: Dayjs,
 ) {
   return queryOptions({
     queryKey: [
@@ -165,27 +165,27 @@ export function buildHeartRateIntradayQuery(
     queryFn: async () => {
       const response = await makeRequest(
         `/1/user/-/activities/heart/date/${formatAsDate(
-          startTime
+          startTime,
         )}/${formatAsDate(endTime)}/${detailLevel}/time/${formatHoursMinutes(
-          startTime
+          startTime,
         )}/${formatHoursMinutes(endTime)}.json`,
         {
           headers: {
             "Accept-Language": "fr-FR",
           },
-        }
+        },
       );
 
       const responseData = (await response.json()) as GetHeartIntradayResponse;
 
       return {
         heartRateZones: parseHeartRateZones(
-          responseData["activities-heart"][0].heartRateZones
+          responseData["activities-heart"][0].heartRateZones,
         ),
         intradayData: parseIntradayDataset(
           startTime,
           endTime,
-          responseData["activities-heart-intraday"].dataset
+          responseData["activities-heart-intraday"].dataset,
         ),
       };
     },

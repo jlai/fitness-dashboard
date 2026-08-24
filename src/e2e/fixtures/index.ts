@@ -19,6 +19,6 @@ export const test = mergeTests(
   dashboardTest,
   weightApiTest,
   userApiTest,
-  timeSeriesApiTest
+  timeSeriesApiTest,
 );
 export { expect } from "@playwright/test";

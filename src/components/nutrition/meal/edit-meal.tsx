@@ -60,13 +60,13 @@ export function CreateOrEditMeal({
 }) {
   const queryClient = useQueryClient();
   const { mutateAsync: mutateCreateMeal } = useMutation(
-    buildCreateMealMutation(queryClient)
+    buildCreateMealMutation(queryClient),
   );
   const { mutateAsync: mutateUpdateMeal } = useMutation(
-    buildUpdateMealMutation(queryClient)
+    buildUpdateMealMutation(queryClient),
   );
   const { mutateAsync: mutateDeleteMeal } = useMutation(
-    buildDeleteMealMutation(queryClient)
+    buildDeleteMealMutation(queryClient),
   );
 
   const saveMeal = withErrorToaster(async (meal: Meal) => {
@@ -145,7 +145,7 @@ export function EditMeal({
 
       onSaveMeal(meal);
     },
-    [onSaveMeal]
+    [onSaveMeal],
   );
 
   const isNewMeal = !form.getValues().id;

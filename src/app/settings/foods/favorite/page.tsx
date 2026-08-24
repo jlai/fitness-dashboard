@@ -30,11 +30,11 @@ export default function ManageFavoriteFoods() {
   const { data: favoriteFoods } = useQuery(buildFavoriteFoodsQuery());
 
   const { mutateAsync: addFavoriteFoodIds } = useMutation(
-    buildAddFavoriteFoodsMutation(queryClient)
+    buildAddFavoriteFoodsMutation(queryClient),
   );
 
   const { mutateAsync: deleteFavoriteFoodIds } = useMutation(
-    buildDeleteFavoritesFoodMutation(queryClient)
+    buildDeleteFavoritesFoodMutation(queryClient),
   );
 
   const popupState = usePopupState({

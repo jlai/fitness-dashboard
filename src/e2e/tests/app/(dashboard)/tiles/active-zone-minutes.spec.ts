@@ -52,7 +52,7 @@ test.describe("with active zone minutes data", () => {
     ]);
 
     await timeSeriesApi.setActiveZoneMinutesTimeSeriesResponse(
-      ACTIVE_ZONE_MINUTES_TIME_SERIES
+      ACTIVE_ZONE_MINUTES_TIME_SERIES,
     );
     await timeSeriesApi.setActivityGoalsResponse({ activeZoneMinutes: 25 });
 

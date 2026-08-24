@@ -27,7 +27,7 @@ export function SkinTemperatureChart() {
         yAccessor: (entry) =>
           localizedDegreesCelsius(entry.value.nightlyRelative) ?? null,
       }),
-    [localizedDegreesCelsius, localizedDegreesName]
+    [localizedDegreesCelsius, localizedDegreesName],
   );
 
   return (

@@ -126,7 +126,7 @@ function ActivityLogSummary({
                     {" "}
                     &bull;{" "}
                     {NumberFormats.FRACTION_DIGITS_1.format(
-                      localizedKilometers(distance)
+                      localizedKilometers(distance),
                     )}{" "}
                     {localizedKilometersName}
                   </>

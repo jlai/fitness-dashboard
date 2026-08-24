@@ -40,7 +40,7 @@ interface SleepLevelPlotProps {
   height: number;
   onMouseOver: (
     event: React.MouseEvent<SVGElement>,
-    datum: SleepLogLevelData
+    datum: SleepLogLevelData,
   ) => void;
   onMouseOut: () => void;
 }
@@ -103,7 +103,7 @@ function SleepLevelPlot({
         bottomRight={!endIsDeeper}
         onMouseMove={(event) => onMouseOver(event, datum)}
         onMouseOut={onMouseOut}
-      />
+      />,
     );
 
     // Add a transparent rect to catch mouse events
@@ -117,7 +117,7 @@ function SleepLevelPlot({
         fill="transparent"
         onMouseMove={(event) => onMouseOver(event, datum)}
         onMouseOut={onMouseOut}
-      />
+      />,
     );
 
     // Add a line between the last end and the start of the current segment
@@ -129,7 +129,7 @@ function SleepLevelPlot({
           to={{ x: startX, y }}
           stroke="rgb(195, 206, 224, 0.3)"
           strokeWidth={1}
-        />
+        />,
       );
     }
 
@@ -155,7 +155,7 @@ function SleepLevelPlot({
         to={{ x: endX, y }}
         onMouseMove={(event) => onMouseOver(event, datum)}
         onMouseOut={onMouseOut}
-      />
+      />,
     );
   }
 
@@ -267,7 +267,7 @@ export function Hypnogram({
 
   const handleMouseOver = (
     event: React.MouseEvent<SVGElement>,
-    datum: SleepLogLevelData
+    datum: SleepLogLevelData,
   ) => {
     const coords = localPoint((event.target as any).ownerSVGElement, event);
     if (!coords) {

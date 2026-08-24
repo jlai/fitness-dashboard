@@ -34,7 +34,7 @@ export interface SleepSummaryDatum {
 }
 
 export function getLevelSummary(
-  levels: NonNullable<SleepLog["levels"]>
+  levels: NonNullable<SleepLog["levels"]>,
 ): Array<SleepSummaryDatum> {
   const summary = levels.summary;
   const hasSleepStages = !!levels.summary.rem;

@@ -47,7 +47,7 @@ const AZM_SERIES_CONFIGS: Array<ChartSeriesConfig<ActiveZoneMinutesDatum>> = [
 export function ActiveZoneMinutesChart() {
   const { showGoals } = useTimeSeriesChartConfig();
   const query = useTimeSeriesQuery<ActiveZoneMinutesDatum>(
-    "active-zone-minutes"
+    "active-zone-minutes",
   );
   const [{ data }, { data: goals }] = useQueries({
     queries: [
@@ -67,7 +67,7 @@ export function ActiveZoneMinutesChart() {
         azmGoal
           ? {
               label: `Goal: ${NumberFormats.FRACTION_DIGITS_0.format(
-                azmGoal
+                azmGoal,
               )} zone mins`,
               value: azmGoal,
             }

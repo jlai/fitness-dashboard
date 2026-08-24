@@ -61,7 +61,7 @@ export default function HistoryList<Response, Log extends LogEntryWithId>({
 
       setPageNumber(newPageNumber);
     },
-    [setPageNumber, fetchNextPage, numLoadedPages]
+    [setPageNumber, fetchNextPage, numLoadedPages],
   );
 
   const changeInitialDay = useCallback(
@@ -69,7 +69,7 @@ export default function HistoryList<Response, Log extends LogEntryWithId>({
       setInitialDay(value ?? dayjs());
       setPageNumber(0);
     },
-    [setPageNumber, setInitialDay]
+    [setPageNumber, setInitialDay],
   );
 
   const updatePageSize = (size: number) => {
@@ -111,11 +111,11 @@ export default function HistoryList<Response, Log extends LogEntryWithId>({
               count={
                 hasNextPage
                   ? -1
-                  : data?.pages.reduce(
+                  : (data?.pages.reduce(
                       (acc: number, page) =>
                         acc + getLogs(page as Response).length,
-                      0
-                    ) ?? -1
+                      0,
+                    ) ?? -1)
               }
               rowsPerPageOptions={ALLOWED_PAGE_SIZES}
               rowsPerPage={pageSize}

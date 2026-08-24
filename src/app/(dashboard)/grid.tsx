@@ -20,14 +20,16 @@ import { createPortal } from "react-dom";
 import "gridstack/dist/gridstack.min.css";
 import "gridstack/dist/gridstack-extra.min.css";
 
-export interface GridStackReactWidget<TUserData>
-  extends Omit<GridStackWidget, "id" | "data"> {
+export interface GridStackReactWidget<TUserData> extends Omit<
+  GridStackWidget,
+  "id" | "data"
+> {
   id: string;
   data: TUserData;
 }
 
 export type GridRenderFunc<TUserData> = (
-  w: GridStackReactWidget<TUserData>
+  w: GridStackReactWidget<TUserData>,
 ) => React.ReactNode;
 
 type ElementChangedListener = (element: HTMLElement | null) => void;
@@ -53,7 +55,7 @@ export function GridNodePortal<TUserData>({
 }) {
   const context = useContext(GridContext);
   const [element, setElement] = useState(
-    context.elementsById.get(widget.id) ?? null
+    context.elementsById.get(widget.id) ?? null,
   );
 
   useEffect(() => {
@@ -64,7 +66,7 @@ export function GridNodePortal<TUserData>({
     element &&
     createPortal(
       <div className="grid-stack-item-content">{render(widget)}</div>,
-      element
+      element,
     )
   );
 }
@@ -101,28 +103,28 @@ export function Grid<TUserData = any>({
         elementsById: elementsById.current,
         listenersById: listenersById.current,
       },
-    [grid]
+    [grid],
   );
 
   const handleAdded = useCallback(
     (event, nodes) => {
       onAdded?.(event, nodes);
     },
-    [onAdded]
+    [onAdded],
   ) as GridStackNodesHandler;
 
   const handleChange = useCallback(
     (event, nodes) => {
       onChange?.(event, nodes);
     },
-    [onChange]
+    [onChange],
   ) as GridStackNodesHandler;
 
   const handleRemoved = useCallback(
     (event, nodes) => {
       onRemoved?.(event, nodes);
     },
-    [onRemoved]
+    [onRemoved],
   ) as GridStackNodesHandler;
 
   useEffect(() => {
@@ -141,7 +143,7 @@ export function Grid<TUserData = any>({
       parent: HTMLElement,
       w: GridStackWidget,
       add: boolean,
-      grid: boolean
+      grid: boolean,
     ) => {
       const id = w.id!;
 

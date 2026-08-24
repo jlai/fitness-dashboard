@@ -244,7 +244,7 @@ export default function CreateCustomFoodDialog() {
 
   const queryClient = useQueryClient();
   const { mutateAsync: saveCustomFood } = useMutation(
-    buildCreateCustomFoodMutation(queryClient)
+    buildCreateCustomFoodMutation(queryClient),
   );
 
   const save = withErrorToaster(async (values: CustomFoodFormData) => {

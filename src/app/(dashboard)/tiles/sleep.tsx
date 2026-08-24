@@ -16,7 +16,7 @@ import { TileWithDialog } from "./tile-with-dialog";
 export function SleepTileContent() {
   const selectedDay = useSelectedDay();
   const { data: sleepLogs = [] } = useSuspenseQuery(
-    buildGetSleepLogByDateQuery(selectedDay)
+    buildGetSleepLogByDateQuery(selectedDay),
   );
 
   const totalMinutes = sumBy(sleepLogs, ({ minutesAsleep }) => minutesAsleep);

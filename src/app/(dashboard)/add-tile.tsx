@@ -56,7 +56,7 @@ export default function AddTileButton() {
       setUserTiles([...userTiles, newTile]);
       popupState.close();
     },
-    [setUserTiles, userTiles, popupState]
+    [setUserTiles, userTiles, popupState],
   );
 
   return (

@@ -18,7 +18,7 @@ import Wave from "./assets/wave.svg";
 import { RenderDialogContentProps, TileWithDialog } from "./tile-with-dialog";
 
 const WaterEntryPanel = React.lazy(
-  () => import("@/components/nutrition/water-entry-panel")
+  () => import("@/components/nutrition/water-entry-panel"),
 );
 
 export default function WaterTileContent() {

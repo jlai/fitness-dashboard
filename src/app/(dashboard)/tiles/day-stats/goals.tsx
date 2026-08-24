@@ -53,7 +53,7 @@ export function DailyGoalSummary({
               {currentTotal < dailyGoal && (
                 <Typography>
                   {NumberFormats.FRACTION_DIGITS_1.format(
-                    dailyGoal - currentTotal
+                    dailyGoal - currentTotal,
                   )}{" "}
                   {unit} to go
                 </Typography>
@@ -95,7 +95,7 @@ export function WeeklyGoalSummary({
               {currentTotal < weeklyGoal && (
                 <Typography>
                   {NumberFormats.FRACTION_DIGITS_1.format(
-                    weeklyGoal - currentTotal
+                    weeklyGoal - currentTotal,
                   )}{" "}
                   {unit} to go
                 </Typography>
@@ -142,7 +142,7 @@ export function GoalSettings({
 }) {
   const queryClient = useQueryClient();
   const { mutateAsync: updateGoal } = useMutation(
-    buildUpdateActivityGoalMutation(queryClient)
+    buildUpdateActivityGoalMutation(queryClient),
   );
 
   const fetchDefaultValues = async () => ({

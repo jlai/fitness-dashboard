@@ -27,7 +27,7 @@ export function trackpointsHasDistances(trackpoints: Array<Trackpoint>) {
 
 /** Create a scale that maps time to distance */
 export function createDistanceScale<TTrackpoint extends Trackpoint>(
-  trackpoints: Array<TTrackpoint>
+  trackpoints: Array<TTrackpoint>,
 ): DistanceScale {
   const domain = [];
   const range = [];
@@ -52,7 +52,7 @@ export function createDistanceScale<TTrackpoint extends Trackpoint>(
 export function augmentWithDistances(
   data: Array<IntradayEntry>,
   distanceScale: DistanceScale,
-  localizedKilometers: (kilometers: number) => number
+  localizedKilometers: (kilometers: number) => number,
 ) {
   return data.map((datum) => {
     const meters = distanceScale(datum.dateTime) as number;
@@ -67,7 +67,7 @@ export function augmentWithDistances(
 /** Get time splits by distance */
 export function getDistanceSplits(
   distanceScale: DistanceScale,
-  unitSystem: DistanceUnitSystem
+  unitSystem: DistanceUnitSystem,
 ) {
   const metersPerUnit =
     unitSystem === "en_US" ? (1 / MILES_PER_KM) * 1000 : 1000;

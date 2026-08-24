@@ -47,7 +47,7 @@ interface CommonChartProps<TDatum extends TimeSeriesDatum> {
 type EitherAxisConfig = Partial<Omit<AxisConfig, "position">>;
 
 function useXAxisConfig<TDatum extends TimeSeriesDatum>(
-  data?: Array<TDatum>
+  data?: Array<TDatum>,
 ): Array<EitherAxisConfig> {
   const {
     range,
@@ -188,7 +188,7 @@ function useAxes<TDatum extends TimeSeriesDatum>({
 }
 
 export function SimpleBarChart<
-  TDatum extends TimeSeriesDatum = TimeSeriesDatum
+  TDatum extends TimeSeriesDatum = TimeSeriesDatum,
 >({
   data,
   seriesConfigs,
@@ -222,7 +222,7 @@ export function SimpleBarChart<
 }
 
 export function StackedBarChart<
-  TDatum extends TimeSeriesDatum = TimeSeriesDatum
+  TDatum extends TimeSeriesDatum = TimeSeriesDatum,
 >({
   data,
   seriesConfigs,
@@ -257,7 +257,7 @@ export function StackedBarChart<
 }
 
 export function SimpleLineChart<
-  TDatum extends TimeSeriesDatum = TimeSeriesDatum
+  TDatum extends TimeSeriesDatum = TimeSeriesDatum,
 >({
   data,
   seriesConfigs,

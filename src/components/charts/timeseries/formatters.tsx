@@ -71,7 +71,7 @@ export function durationTooltipFormat(value: number) {
 
 type AxisValueFormatter = (
   value: number | undefined,
-  context: AxisValueFormatterContext
+  context: AxisValueFormatterContext,
 ) => string;
 
 export function makeAxisValueFormatter({

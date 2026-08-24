@@ -30,7 +30,7 @@ interface CreateSleepLogFormData {
 
 function validateTimes(
   value: any,
-  { startTime, endTime }: CreateSleepLogFormData
+  { startTime, endTime }: CreateSleepLogFormData,
 ) {
   if (startTime.isAfter(endTime)) {
     return "Start time is after end time";
@@ -57,7 +57,7 @@ function CreateSleepLog({ onSaveSuccess }: { onSaveSuccess?: () => void }) {
   const queryClient = useQueryClient();
 
   const { mutateAsync: createSleepLog } = useMutation(
-    buildCreateSleepLogMutation(queryClient)
+    buildCreateSleepLogMutation(queryClient),
   );
 
   const onSubmit = withErrorToaster(async (values: CreateSleepLogFormData) => {

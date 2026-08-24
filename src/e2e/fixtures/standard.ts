@@ -9,7 +9,7 @@ function encodeBase64URL(data: Record<string, string>) {
 /** Create a fake JWT token with no signature */
 function encodeFakeToken(data: Record<string, string>) {
   return `${encodeBase64URL({ alg: "none", typ: "JWT" })}.${encodeBase64URL(
-    data
+    data,
   )}.`;
 }
 

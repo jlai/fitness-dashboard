@@ -32,7 +32,7 @@ function useObjectUrl(object: File | Blob | null) {
 /** Turn a TCX string into a url that can be downloaded */
 export function useTcxDownloadUrl(
   tcxString: string | undefined,
-  tcxFilename: string
+  tcxFilename: string,
 ) {
   const tcxFile = useMemo(() => {
     return tcxString
@@ -55,7 +55,7 @@ export function useFetchTcxAsString(activityLogId: number) {
 export function useParsedTcx(tcxString?: string) {
   return useMemo(
     () => (tcxString ? parseTcx(tcxString) : undefined),
-    [tcxString]
+    [tcxString],
   );
 }
 

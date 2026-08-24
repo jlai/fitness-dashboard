@@ -31,7 +31,7 @@ export function ActivityTypeInput({
   error?: FieldError;
 }) {
   const { data: categorizedActivityTypes } = useQuery(
-    buildActivityTypesQuery()
+    buildActivityTypesQuery(),
   );
 
   const options = useMemo(() => {

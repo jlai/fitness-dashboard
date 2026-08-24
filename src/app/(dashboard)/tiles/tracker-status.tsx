@@ -43,7 +43,7 @@ interface ResolveDeviceOptions {
 
 export function resolveDevice(
   devices: Device[],
-  { deviceId }: ResolveDeviceOptions = {}
+  { deviceId }: ResolveDeviceOptions = {},
 ) {
   const sortedDevices = sortBy(devices, ["lastSyncTime"]).toReversed();
 
@@ -56,12 +56,12 @@ export function resolveDevice(
 
   tracker = sortedDevices.find(
     (device) =>
-      device.type === "TRACKER" && device.deviceVersion !== "MobileTrack"
+      device.type === "TRACKER" && device.deviceVersion !== "MobileTrack",
   );
 
   if (!tracker || !tracker.lastSyncTime) {
     tracker = sortedDevices.find(
-      (device) => device.deviceVersion === "MobileTrack"
+      (device) => device.deviceVersion === "MobileTrack",
     );
   }
 

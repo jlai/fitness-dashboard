@@ -39,7 +39,7 @@ export function CalorieBalanceChart() {
     const burnedByDate = keyBy(caloriesBurnedData, ({ dateTime }) => dateTime);
 
     const dates = uniq(
-      [...Object.keys(inByDate), ...Object.keys(burnedByDate)].toSorted()
+      [...Object.keys(inByDate), ...Object.keys(burnedByDate)].toSorted(),
     );
 
     for (const date of dates) {
@@ -70,7 +70,7 @@ export function CalorieBalanceChart() {
         color: "#ff9e22",
       },
     ],
-    []
+    [],
   );
 
   const props = useAggregation(data, seriesConfigs);

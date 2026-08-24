@@ -28,7 +28,7 @@ export function buildCreateSleepLogMutation(queryClient: QueryClient) {
         `/1.1/user/-/sleep.json?${params.toString()}`,
         {
           method: "POST",
-        }
+        },
       );
 
       return response;
@@ -57,7 +57,7 @@ export function buildGetSleepLogByDateQuery(day: Dayjs) {
 
 export function buildGetSleepLogListInfiniteQuery(
   initialDay: Dayjs,
-  pageSize: number
+  pageSize: number,
 ) {
   return infiniteQueryOptions({
     queryKey: ["sleep-log-list", formatAsDate(initialDay), pageSize],
@@ -65,11 +65,11 @@ export function buildGetSleepLogListInfiniteQuery(
       const queryString =
         pageParam ||
         `limit=${pageSize}&offset=0&sort=desc&beforeDate=${encodeURIComponent(
-          initialDay.toISOString().replace("Z", "")
+          initialDay.toISOString().replace("Z", ""),
         )}`;
 
       const response = await makeRequest(
-        `/1.2/user/-/sleep/list.json?${queryString}`
+        `/1.2/user/-/sleep/list.json?${queryString}`,
       );
       return (await response.json()) as GetSleepLogListResponse;
     },

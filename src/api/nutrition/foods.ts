@@ -104,16 +104,16 @@ export function buildCreateCustomFoodMutation(queryClient: QueryClient) {
       queryParams.set("brand", customFood.brand ?? "");
       queryParams.set(
         "defaultFoodMeasurementUnitId",
-        `${customFood.defaultFoodMeasurementUnitId}`
+        `${customFood.defaultFoodMeasurementUnitId}`,
       );
       queryParams.set(
         "defaultServingSize",
-        `${customFood.defaultServingSize ?? 1}`
+        `${customFood.defaultServingSize ?? 1}`,
       );
       queryParams.set("calories", `${customFood.calories}`);
 
       for (const [key, value] of Object.entries(
-        customFood.nutritionalValues ?? {}
+        customFood.nutritionalValues ?? {},
       )) {
         if (value !== undefined) {
           queryParams.set(key, `${value}`);

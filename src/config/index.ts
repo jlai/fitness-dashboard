@@ -21,23 +21,23 @@ function sanitizeHtml(htmlString: string | undefined) {
 }
 
 export const FITBIT_API_URL = requiredVar(
-  process.env.NEXT_PUBLIC_FITBIT_API_URL
+  process.env.NEXT_PUBLIC_FITBIT_API_URL,
 );
 
 export const OAUTH_CALLBACK_URI = requiredVar(
-  process.env.NEXT_PUBLIC_FITBIT_OAUTH_REDIRECT_URI
+  process.env.NEXT_PUBLIC_FITBIT_OAUTH_REDIRECT_URI,
 );
 
 export const FITBIT_OAUTH_SERVER = requiredVar(
-  process.env.NEXT_PUBLIC_FITBIT_OAUTH_SERVER
+  process.env.NEXT_PUBLIC_FITBIT_OAUTH_SERVER,
 );
 
 export const FITBIT_OAUTH_CLIENT_ID = requiredVar(
-  process.env.NEXT_PUBLIC_FITBIT_OAUTH_CLIENT_ID
+  process.env.NEXT_PUBLIC_FITBIT_OAUTH_CLIENT_ID,
 );
 
 export const FITBIT_OAUTH_AUTHORIZATION_ENDPOINT = requiredVar(
-  process.env.NEXT_PUBLIC_FITBIT_OAUTH_AUTHORIZATION_ENDPOINT
+  process.env.NEXT_PUBLIC_FITBIT_OAUTH_AUTHORIZATION_ENDPOINT,
 );
 
 /** Proxy to work around CORS issues. Should be an API that fowards requests to api.fitbit.com */

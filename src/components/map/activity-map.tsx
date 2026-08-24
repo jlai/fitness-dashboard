@@ -44,7 +44,7 @@ interface SplitInfo {
 
 function getSplitMarkers(
   splits: Array<SplitDatum>,
-  trackpoints: Array<Trackpoint>
+  trackpoints: Array<Trackpoint>,
 ) {
   const markers: Array<SplitInfo> = [];
 
@@ -93,7 +93,7 @@ export default function ActivityMap({
 
   const splitMarkers = useMemo(
     () => (splits ? getSplitMarkers(splits, trackpoints) : []),
-    [splits, trackpoints]
+    [splits, trackpoints],
   );
 
   const [mapStyleId, setMapStyleId] = useAtom(mapStyleAtom);

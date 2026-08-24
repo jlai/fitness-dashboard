@@ -185,16 +185,16 @@ function LoginSettings() {
 
 function FoodSettings() {
   const [useNutritionGoalsForLabel, setUseNutritionGoalsForLabel] = useAtom(
-    useNutritionGoalsForLabelAtom
+    useNutritionGoalsForLabelAtom,
   );
   const [showNutritionLabel, setShowNutritionLabelAtom] = useAtom(
-    showNutritionLabelAtom
+    showNutritionLabelAtom,
   );
   const [totalsPosition, setTotalsPosition] = useAtom(
-    foodLogTotalsPositionAtom
+    foodLogTotalsPositionAtom,
   );
   const [showCopyIndividualButton, setShowCopyIndividualButton] = useAtom(
-    foodLogShowCopyIndividualButtonAtom
+    foodLogShowCopyIndividualButtonAtom,
   );
   const [goalsPosition, setGoalsPosition] = useAtom(foodLogGoalsPositionAtom);
 
@@ -477,10 +477,10 @@ function UnitSettings() {
 
 function LanguageSettings() {
   const [dateFormatPattern, setDateFormatPattern] = useAtom(
-    dateFormatPatternAtom
+    dateFormatPatternAtom,
   );
   const [numberFormatPattern, setNumberFormatPattern] = useAtom(
-    numberFormatPatternAtom
+    numberFormatPatternAtom,
   );
   const [clockHourCycle, setClockHourCycle] = useAtom(clockHourCycleAtom);
 
@@ -629,10 +629,10 @@ function AdvancedSettings() {
   const confirm = useConfirm();
   const setUserTiles = useSetAtom(userTilesAtom);
   const [enableAdvancedScopes, setEnableAdvancedScopes] = useAtom(
-    enableAdvancedScopesAtom
+    enableAdvancedScopesAtom,
   );
   const [increasedTileLimits, setIncreasedTileLimits] = useAtom(
-    increasedTileLimitsAtom
+    increasedTileLimitsAtom,
   );
 
   const resetDashboard = useCallback(() => {

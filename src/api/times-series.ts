@@ -145,7 +145,7 @@ export const TIME_SERIES_CONFIGS: Record<
     maxDays: 100,
     extractData: (data: GetSleepLogTimeSeriesResponse) => {
       const sleepsByDate = groupBy(data.sleep, (sleepLog) =>
-        formatAsDate(dayjs(sleepLog.endTime))
+        formatAsDate(dayjs(sleepLog.endTime)),
       );
 
       return Object.entries(sleepsByDate)
@@ -195,7 +195,7 @@ export type TimeSeriesResponse<ResourceName extends string, TEntry> = {
 export function buildTimeSeriesQuery<TEntry = TimeSeriesEntry<string>>(
   resource: TimeSeriesResource,
   startDay: Dayjs,
-  endDay: Dayjs
+  endDay: Dayjs,
 ) {
   const config = TIME_SERIES_CONFIGS[resource];
 
@@ -216,7 +216,7 @@ export function buildTimeSeriesQuery<TEntry = TimeSeriesEntry<string>>(
             // For heart rate zones where we need to match the name
             "Accept-Locale": "en-US",
           },
-        }
+        },
       );
 
       const defaultExtractData = (responseBody: any) => {
@@ -227,7 +227,7 @@ export function buildTimeSeriesQuery<TEntry = TimeSeriesEntry<string>>(
 
         if (!data) {
           throw new Error(
-            "key missing from response: ${config.responseKey}; keys: ${Object.keys(data)}"
+            "key missing from response: ${config.responseKey}; keys: ${Object.keys(data)}",
           );
         }
 

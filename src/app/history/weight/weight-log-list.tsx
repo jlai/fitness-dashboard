@@ -80,7 +80,7 @@ export default function WeightLogList() {
   const { weightUnit } = useUnits();
 
   const setShowingCreateWeightDialog = useSetAtom(
-    createWeightLogDialogOpenAtom
+    createWeightLogDialogOpenAtom,
   );
 
   const [range, setRange] = useState<DayjsRange>({
@@ -89,12 +89,12 @@ export default function WeightLogList() {
   });
 
   const { data } = useQuery(
-    buildGetWeightLogsQuery(range.startDay, range.endDay, weightUnit)
+    buildGetWeightLogsQuery(range.startDay, range.endDay, weightUnit),
   );
 
   const queryClient = useQueryClient();
   const { mutateAsync: deleteWeightLogId } = useMutation(
-    buildDeleteWeightLogMutation(queryClient)
+    buildDeleteWeightLogMutation(queryClient),
   );
 
   const confirm = useConfirm();
@@ -102,7 +102,7 @@ export default function WeightLogList() {
     const { confirmed } = await confirm({
       title: "Delete weight log",
       description: `Delete weight log on ${DateFormats.formatShortDate(
-        dayjs(weightLog.date)
+        dayjs(weightLog.date),
       )}?`,
     });
 

@@ -68,7 +68,7 @@ const FlatChip = styled(Chip)(() => ({
 
 function formatNutrientPropValue(
   nutritionalValues: FoodLogEntry["nutritionalValues"],
-  prop: string
+  prop: string,
 ) {
   const value = ((nutritionalValues ?? {}) as Record<string, number>)[prop];
 
@@ -130,7 +130,7 @@ function FoodLogRow({ foodLog }: { foodLog: FoodLogEntry }) {
     (event: ChangeEvent<HTMLInputElement>) => {
       updateSelectedFoodLog(foodLog, event.target.checked);
     },
-    [foodLog, updateSelectedFoodLog]
+    [foodLog, updateSelectedFoodLog],
   );
   return (
     <TableRow key={logId}>
@@ -234,7 +234,7 @@ export function MealTypeRows({ summary }: { summary: MealTypeSummary }) {
   const checked =
     selectedFoodLogs.filter(
       (foodLog) =>
-        foodLog.loggedFood.mealTypeId == summary.id || summary.id == -1
+        foodLog.loggedFood.mealTypeId == summary.id || summary.id == -1,
     ).size > 0;
   const indeterminate =
     checked && !summary.foods.every((foodLog) => selectedFoodLogs.has(foodLog));

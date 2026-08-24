@@ -18,7 +18,7 @@ export function IntradayStepsChart() {
   const { startDay, endDay } = useRangeInfo();
 
   const { data: detailedData } = useQuery(
-    buildActivityIntradayQuery("steps", "15min", startDay, endDay)
+    buildActivityIntradayQuery("steps", "15min", startDay, endDay),
   );
   const data = detailedData && aggregateByHour(detailedData);
 

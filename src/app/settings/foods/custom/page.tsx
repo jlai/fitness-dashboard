@@ -49,7 +49,7 @@ export default function ManageCustomFoods() {
 
   const { data: customFoods } = useQuery(buildCustomFoodsQuery());
   const { mutateAsync: deleteFoodIds } = useMutation(
-    buildDeleteCustomFoodsMutation(queryClient)
+    buildDeleteCustomFoodsMutation(queryClient),
   );
 
   const popupState = usePopupState({
