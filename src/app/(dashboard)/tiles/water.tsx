@@ -8,7 +8,7 @@ import {
 import { useSuspenseQueries } from "@tanstack/react-query";
 import React, { Suspense } from "react";
 
-import { buildFoodLogQuery, buildWaterGoalQuery } from "@/api/nutrition";
+import { buildFoodLogQuery, buildHydrationLogQuery, buildWaterGoalQuery } from "@/api/nutrition";
 import { useUnits } from "@/config/units";
 import NumericStat from "@/components/numeric-stat";
 
@@ -16,6 +16,7 @@ import { useSelectedDay } from "../state";
 
 import Wave from "./assets/wave.svg";
 import { RenderDialogContentProps, TileWithDialog } from "./tile-with-dialog";
+import { sumBy } from "es-toolkit";
 
 const WaterEntryPanel = React.lazy(
   () => import("@/components/nutrition/water-entry-panel"),
@@ -25,13 +26,15 @@ export default function WaterTileContent() {
   const day = useSelectedDay();
   const units = useUnits();
 
-  const [{ data: foodLog }, { data: waterGoalMl }] = useSuspenseQueries({
-    queries: [buildFoodLogQuery(day), buildWaterGoalQuery()],
+  const [{ data: hydrationLog }] = useSuspenseQueries({
+    queries: [buildHydrationLogQuery(day)],
   });
+
+  const waterGoalMl = 500;
+  const waterConsumedMl = sumBy(hydrationLog.dataPoints ?? [], dataPoint => dataPoint.hydrationLog?.amountConsumed?.milliliters ?? 0);
 
   const { localizedWaterVolumeName, localizedWaterVolume } = units;
 
-  const waterConsumedMl = foodLog.summary.water;
   const waterRemaining = localizedWaterVolume(waterGoalMl - waterConsumedMl);
 
   const ratio = Math.min(waterConsumedMl / waterGoalMl, 1.0);

@@ -4,7 +4,7 @@ import { head, last } from "es-toolkit";
 import { IntradayEntry } from "@/api/intraday";
 import { Trackpoint } from "@/api/activity/tcx";
 import { MILES_PER_KM } from "@/config/units";
-import { DistanceUnitSystem } from "@/api/user";
+import { DistanceUnitSystem, SettingsDistanceUnit } from "@/api/user";
 
 export type DistanceScale = ScaleLinear<number, number, unknown>;
 
@@ -70,7 +70,9 @@ export function getDistanceSplits(
   unitSystem: DistanceUnitSystem,
 ) {
   const metersPerUnit =
-    unitSystem === "en_US" ? (1 / MILES_PER_KM) * 1000 : 1000;
+    unitSystem === SettingsDistanceUnit.DISTANCE_UNIT_MILES
+      ? (1 / MILES_PER_KM) * 1000
+      : 1000;
 
   const startTime = head(distanceScale.domain());
   const maxDistance = last(distanceScale.range());

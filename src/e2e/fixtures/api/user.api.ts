@@ -1,24 +1,25 @@
 import { test as base, Page } from "@playwright/test";
 
 import {
-  DistanceUnitSystem,
-  SwimUnitSystem,
-  TemperatureUnitSystem,
-  WaterUnitSystem,
-  WeightUnitSystem,
+  SettingsDistanceUnit,
+  SettingsSwimUnit,
+  SettingsTemperatureUnit,
+  SettingsWaterUnit,
+  SettingsWeightUnit,
 } from "@/api/user";
+import { Settings } from "@generated/orval/fetch/google-health-api/models";
 
 interface UserProfile {
   fullName: string;
   avatar: string;
   avatar150: string;
   avatar650: string;
-  distanceUnit: DistanceUnitSystem;
-  swimUnit: SwimUnitSystem;
-  temperatureUnit: TemperatureUnitSystem;
-  waterUnit: WaterUnitSystem;
+  distanceUnit: "en_US" | "METRIC";
+  swimUnit: "en_US" | "METRIC";
+  temperatureUnit: "en_US" | "METRIC";
+  waterUnit: "en_US" | "METRIC";
   waterUnitName: string;
-  weightUnit: WeightUnitSystem;
+  weightUnit: "en_US" | "en_GB" | "METRIC";
 }
 
 const DEFAULT_USER_PROFILE: UserProfile = {
@@ -34,6 +35,14 @@ const DEFAULT_USER_PROFILE: UserProfile = {
   weightUnit: "METRIC",
 };
 
+const DEFAULT_USER_SETTINGS: Settings = {
+  distanceUnit: SettingsDistanceUnit.DISTANCE_UNIT_KILOMETERS,
+  swimUnit: SettingsSwimUnit.SWIM_UNIT_METERS,
+  temperatureUnit: SettingsTemperatureUnit.TEMPERATURE_UNIT_CELSIUS,
+  waterUnit: SettingsWaterUnit.WATER_UNIT_ML,
+  weightUnit: SettingsWeightUnit.WEIGHT_UNIT_KILOGRAMS,
+};
+
 export class UserApi {
   constructor(private readonly page: Page) {}
 
@@ -41,6 +50,7 @@ export class UserApi {
     await this.page.route("**/1/user/-/profile.json", async (route) => {
       await route.fulfill({ json: { user: DEFAULT_USER_PROFILE } });
     });
+    await this.setUserSettings();
   }
 
   async setUserProfile(profile: Partial<UserProfile> = {}) {
@@ -48,6 +58,14 @@ export class UserApi {
 
     await this.page.route("**/1/user/-/profile.json", async (route) => {
       await route.fulfill({ json: { user: userProfile } });
+    });
+  }
+
+  async setUserSettings(settings: Partial<Settings> = {}) {
+    const userSettings = { ...DEFAULT_USER_SETTINGS, ...settings };
+
+    await this.page.route("**/v4/users/*/settings**", async (route) => {
+      await route.fulfill({ json: userSettings });
     });
   }
 }

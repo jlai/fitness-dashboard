@@ -1,58 +1,72 @@
 import { QueryClient } from "@tanstack/query-core";
 import { Dayjs } from "dayjs";
 
+import { VolumeQuantityUserProvidedUnit } from "@generated/orval/fetch/google-health-api/models";
+import { healthUsersDataTypesDataPointsCreate } from "@generated/orval/fetch/google-health-api/users/users";
+
+import { buildOneDayDatapointsQuery } from "../datapoints";
 import { formatAsDate } from "../datetime";
 import mutationOptions from "../mutation-options";
-import { makeRequest } from "../request";
-import { healthUsersDataTypesDataPointsList } from "@generated/orval/fetch/google-health-api/users/users";
-import { queryOptions } from "@tanstack/react-query";
-import { graduallyStale } from "../cache-settings";
 
-const AMOUNT_FORMAT = new Intl.NumberFormat("en-US", {
-  maximumFractionDigits: 2,
-  useGrouping: false,
-});
+const FLUID_OZ_PER_ML = 0.033814;
+const CUP_PER_ML = FLUID_OZ_PER_ML / 8;
 
 export interface CreateWaterLogOptions {
   amount: number;
-  unit: "ml" | "fl oz" | "cup";
+  unit: VolumeQuantityUserProvidedUnit;
   day: Dayjs;
 }
 
-export function buildHydrationLogQuery(day: Dayjs) {
-  const date = formatAsDate(day);
+function toMilliliters(amount: number, unit: VolumeQuantityUserProvidedUnit) {
+  switch (unit) {
+    case VolumeQuantityUserProvidedUnit.FLUID_OUNCE_US:
+      return amount / FLUID_OZ_PER_ML;
+    case VolumeQuantityUserProvidedUnit.CUP_US:
+      return amount / CUP_PER_ML;
+    default:
+      return amount;
+  }
+}
 
-  return queryOptions({
-    queryKey: ["food-log", date],
-    queryFn: async () => {
-      const response = await healthUsersDataTypesDataPointsList("users/me/dataTypes/hydrationLog", {});
-      return response.data;
-    },
-    staleTime: graduallyStale(day),
-  });
+function utcOffsetDuration(day: Dayjs) {
+  return `${day.utcOffset() * 60}s`;
+}
+
+export function buildHydrationLogQuery(day: Dayjs) {
+  return buildOneDayDatapointsQuery("hydration-log", day);
 }
 
 export function buildCreateWaterLogMutation(queryClient: QueryClient) {
   return mutationOptions({
     mutationFn: async (newWaterLog: CreateWaterLogOptions) => {
-      const params = new URLSearchParams();
-      params.set("amount", AMOUNT_FORMAT.format(newWaterLog.amount));
-      params.set("unit", `${newWaterLog.unit}`);
-      params.set("date", formatAsDate(newWaterLog.day));
+      const startTime = newWaterLog.day;
+      const endTime = startTime.add(1, "second");
+      const utcOffset = utcOffsetDuration(startTime);
 
-      const response = await makeRequest(
-        `/1/user/-/foods/log/water.json?${params.toString()}`,
+      const response = await healthUsersDataTypesDataPointsCreate(
+        "me",
+        "hydration-log",
         {
-          method: "POST",
-          ignore502: true,
-        },
+          hydrationLog: {
+            interval: {
+              startTime: startTime.toISOString(),
+              endTime: endTime.toISOString(),
+              startUtcOffset: utcOffset,
+              endUtcOffset: utcOffset,
+            },
+            amountConsumed: {
+              milliliters: toMilliliters(newWaterLog.amount, newWaterLog.unit),
+              userProvidedUnit: newWaterLog.unit,
+            },
+          },
+        }
       );
 
-      return response;
+      return response.data;
     },
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({
-        queryKey: ["food-log", formatAsDate(variables.day)],
+        queryKey: ["datapoints", "hydration-log", formatAsDate(variables.day)],
       });
       queryClient.invalidateQueries({
         queryKey: ["timeseries", "water"],

@@ -9,8 +9,18 @@ import {
   weightUnitAtom,
 } from "@/storage/settings";
 import {
-  buildUserProfileQuery,
+  buildUserSettingsQuery,
   DistanceUnitSystem,
+  parseDistanceUnit,
+  parseSwimUnit,
+  parseTemperatureUnit,
+  parseWaterUnit,
+  parseWeightUnit,
+  SettingsDistanceUnit,
+  SettingsSwimUnit,
+  SettingsTemperatureUnit,
+  SettingsWaterUnit,
+  SettingsWeightUnit,
   SwimUnitSystem,
   TemperatureUnitSystem,
   WaterUnitSystem,
@@ -22,7 +32,7 @@ export const MILES_PER_KM = 0.621371;
 const FEET_PER_METER = 3.28084;
 const YARDS_PER_METER = 1.09361;
 const FLUID_OZ_PER_ML = 0.033814;
-// const CUP_PER_ML = FLUID_OZ_PER_ML / 8;
+const CUP_PER_ML = FLUID_OZ_PER_ML / 8;
 const POUNDS_PER_KG = 2.20462;
 const STONES_PER_KG = 0.157473;
 const DEGREES_F_PER_C = 1.8;
@@ -61,7 +71,7 @@ interface WaterUnitConfig {
 }
 
 const US_DISTANCE_UNIT_CONFIG: DistanceUnitConfig = {
-  distanceUnit: "en_US",
+  distanceUnit: SettingsDistanceUnit.DISTANCE_UNIT_MILES,
   localizedMeters: (value: number) => value * FEET_PER_METER,
   localizedKilometers: (value: number) => value * MILES_PER_KM,
   localizedMetersName: "ft",
@@ -70,7 +80,7 @@ const US_DISTANCE_UNIT_CONFIG: DistanceUnitConfig = {
 };
 
 const METRIC_DISTANCE_UNIT_CONFIG: DistanceUnitConfig = {
-  distanceUnit: "METRIC",
+  distanceUnit: SettingsDistanceUnit.DISTANCE_UNIT_KILOMETERS,
   localizedMeters: (value: number) => value,
   localizedKilometers: (value: number) => value,
   localizedMetersName: "m",
@@ -79,58 +89,72 @@ const METRIC_DISTANCE_UNIT_CONFIG: DistanceUnitConfig = {
 };
 
 const US_SWIM_UNIT_CONFIG: SwimUnitConfig = {
-  swimUnit: "en_US",
+  swimUnit: SettingsSwimUnit.SWIM_UNIT_YARDS,
   localizedSwimMeters: (value: number) => value * YARDS_PER_METER,
   localizedSwimMetersName: "yds",
 };
 
 const METRIC_SWIM_UNIT_CONFIG: SwimUnitConfig = {
-  swimUnit: "METRIC",
+  swimUnit: SettingsSwimUnit.SWIM_UNIT_METERS,
   localizedSwimMeters: (value: number) => value,
   localizedSwimMetersName: "m",
 };
 
 const US_TEMPERATURE_UNIT_CONFIG: TemperatureUnitConfig = {
-  temperatureUnit: "en_US",
+  temperatureUnit: SettingsTemperatureUnit.TEMPERATURE_UNIT_FAHRENHEIT,
   localizedDegreesCelsius: (value: number) => value * DEGREES_F_PER_C,
   localizedDegreesName: "\u00B0F",
 };
 
 const METRIC_TEMPERATURE_UNIT_CONFIG: TemperatureUnitConfig = {
-  temperatureUnit: "METRIC",
+  temperatureUnit: SettingsTemperatureUnit.TEMPERATURE_UNIT_CELSIUS,
   localizedDegreesCelsius: (value: number) => value,
   localizedDegreesName: "\u00B0C",
 };
 
 const US_WEIGHT_UNIT_CONFIG: WeightUnitConfig = {
-  weightUnit: "en_US",
+  weightUnit: SettingsWeightUnit.WEIGHT_UNIT_POUNDS,
   localizedKilograms: (value: number) => value * POUNDS_PER_KG,
   localizedKilogramsName: "lbs",
 };
 
 const GB_WEIGHT_UNIT_CONFIG: WeightUnitConfig = {
-  weightUnit: "en_GB",
+  weightUnit: SettingsWeightUnit.WEIGHT_UNIT_STONE,
   localizedKilograms: (value: number) => value * STONES_PER_KG,
   localizedKilogramsName: "st",
 };
 
 const METRIC_WEIGHT_UNIT_CONFIG: WeightUnitConfig = {
-  weightUnit: "METRIC",
+  weightUnit: SettingsWeightUnit.WEIGHT_UNIT_KILOGRAMS,
   localizedKilograms: (value: number) => value,
   localizedKilogramsName: "kg",
 };
 
 const US_WATER_UNIT_CONFIG: WaterUnitConfig = {
-  waterUnit: "en_US",
+  waterUnit: SettingsWaterUnit.WATER_UNIT_FL_OZ,
   localizedWaterVolumeName: "fl oz",
   localizedWaterVolume: (value: number) => value * FLUID_OZ_PER_ML,
 };
 
+const CUP_WATER_UNIT_CONFIG: WaterUnitConfig = {
+  waterUnit: SettingsWaterUnit.WATER_UNIT_CUP,
+  localizedWaterVolumeName: "cup",
+  localizedWaterVolume: (value: number) => value * CUP_PER_ML,
+};
+
 const METRIC_WATER_UNIT_CONFIG: WaterUnitConfig = {
-  waterUnit: "METRIC",
+  waterUnit: SettingsWaterUnit.WATER_UNIT_ML,
   localizedWaterVolumeName: "ml",
   localizedWaterVolume: (value: number) => value,
 };
+
+const DEFAULT_UNITS = {
+  distanceUnitSystem: SettingsDistanceUnit.DISTANCE_UNIT_KILOMETERS,
+  swimUnitSystem: SettingsSwimUnit.SWIM_UNIT_METERS,
+  temperatureUnitSystem: SettingsTemperatureUnit.TEMPERATURE_UNIT_CELSIUS,
+  weightUnitSystem: SettingsWeightUnit.WEIGHT_UNIT_KILOGRAMS,
+  waterUnitSystem: SettingsWaterUnit.WATER_UNIT_ML,
+} as const;
 
 export function useUnits() {
   const [storedDistanceUnitSystem, setDistanceUnitSystem] =
@@ -144,7 +168,7 @@ export function useUnits() {
   const queryClient = useQueryClient();
 
   // NOTE: this will only run once due to caching
-  const { data: profileUnits } = useSuspenseQuery({
+  const { data: settingsUnits } = useSuspenseQuery({
     queryKey: ["units"],
     queryFn: async () => {
       let distanceUnitSystem = storedDistanceUnitSystem;
@@ -161,40 +185,56 @@ export function useUnits() {
         !waterUnitSystem ||
         !temperatureUnitSystem
       ) {
-        if (!hasTokenScope("pro")) {
+        if (!hasTokenScope("set")) {
           return {
-            distanceUnitSystem: "METRIC",
-            weightUnitSystem: "METRIC",
-            waterUnitSystem: "METRIC",
-            temperatureUnitSystem: "METRIC",
+            distanceUnitSystem:
+              distanceUnitSystem ?? DEFAULT_UNITS.distanceUnitSystem,
+            swimUnitSystem: swimUnitSystem ?? DEFAULT_UNITS.swimUnitSystem,
+            temperatureUnitSystem:
+              temperatureUnitSystem ?? DEFAULT_UNITS.temperatureUnitSystem,
+            weightUnitSystem:
+              weightUnitSystem ?? DEFAULT_UNITS.weightUnitSystem,
+            waterUnitSystem: waterUnitSystem ?? DEFAULT_UNITS.waterUnitSystem,
           };
         }
 
-        const profile = await queryClient.fetchQuery(buildUserProfileQuery());
+        const settings = await queryClient.fetchQuery(buildUserSettingsQuery());
 
         if (!distanceUnitSystem) {
-          distanceUnitSystem = profile.distanceUnit;
-          setDistanceUnitSystem(profile.distanceUnit);
+          distanceUnitSystem = parseDistanceUnit(settings.distanceUnit);
+          if (distanceUnitSystem) {
+            setDistanceUnitSystem(distanceUnitSystem);
+          }
         }
 
         if (!swimUnitSystem) {
-          swimUnitSystem = profile.swimUnit;
-          setSwimUnitSystem(swimUnitSystem);
+          swimUnitSystem = parseSwimUnit(settings.swimUnit);
+          if (swimUnitSystem) {
+            setSwimUnitSystem(swimUnitSystem);
+          }
         }
 
         if (!temperatureUnitSystem) {
-          temperatureUnitSystem = profile.temperatureUnit;
-          setTemperatureUnitSystem(temperatureUnitSystem);
+          temperatureUnitSystem = parseTemperatureUnit(
+            settings.temperatureUnit,
+          );
+          if (temperatureUnitSystem) {
+            setTemperatureUnitSystem(temperatureUnitSystem);
+          }
         }
 
         if (!weightUnitSystem) {
-          weightUnitSystem = profile.weightUnit;
-          setWeightUnitSystem(weightUnitSystem);
+          weightUnitSystem = parseWeightUnit(settings.weightUnit);
+          if (weightUnitSystem) {
+            setWeightUnitSystem(weightUnitSystem);
+          }
         }
 
         if (!waterUnitSystem) {
-          waterUnitSystem = profile.waterUnit;
-          setWaterUnitSystem(waterUnitSystem);
+          waterUnitSystem = parseWaterUnit(settings.waterUnit);
+          if (waterUnitSystem) {
+            setWaterUnitSystem(waterUnitSystem);
+          }
         }
       }
 
@@ -209,28 +249,30 @@ export function useUnits() {
   });
 
   const distanceUnitConfig =
-    (storedDistanceUnitSystem ?? profileUnits.distanceUnitSystem) === "en_US"
+    (storedDistanceUnitSystem ?? settingsUnits.distanceUnitSystem) ===
+    SettingsDistanceUnit.DISTANCE_UNIT_MILES
       ? US_DISTANCE_UNIT_CONFIG
       : METRIC_DISTANCE_UNIT_CONFIG;
 
   const swimUnitConfig =
-    (storedSwimUnitSystem ?? profileUnits.swimUnitSystem) === "en_US"
+    (storedSwimUnitSystem ?? settingsUnits.swimUnitSystem) ===
+    SettingsSwimUnit.SWIM_UNIT_YARDS
       ? US_SWIM_UNIT_CONFIG
       : METRIC_SWIM_UNIT_CONFIG;
 
   const temperatureUnitConfig =
-    (storedTemperatureUnitSystem ?? profileUnits.temperatureUnitSystem) ===
-    "en_US"
+    (storedTemperatureUnitSystem ?? settingsUnits.temperatureUnitSystem) ===
+    SettingsTemperatureUnit.TEMPERATURE_UNIT_FAHRENHEIT
       ? US_TEMPERATURE_UNIT_CONFIG
       : METRIC_TEMPERATURE_UNIT_CONFIG;
 
   let weightUnitConfig: WeightUnitConfig;
 
-  switch (storedWeightUnitSystem ?? profileUnits.weightUnitSystem) {
-    case "en_US":
+  switch (storedWeightUnitSystem ?? settingsUnits.weightUnitSystem) {
+    case SettingsWeightUnit.WEIGHT_UNIT_POUNDS:
       weightUnitConfig = US_WEIGHT_UNIT_CONFIG;
       break;
-    case "en_GB":
+    case SettingsWeightUnit.WEIGHT_UNIT_STONE:
       weightUnitConfig = GB_WEIGHT_UNIT_CONFIG;
       break;
     default:
@@ -238,10 +280,19 @@ export function useUnits() {
       break;
   }
 
-  const waterUnitConfig =
-    (storedWaterUnitSystem ?? profileUnits.waterUnitSystem) === "en_US"
-      ? US_WATER_UNIT_CONFIG
-      : METRIC_WATER_UNIT_CONFIG;
+  let waterUnitConfig: WaterUnitConfig;
+
+  switch (storedWaterUnitSystem ?? settingsUnits.waterUnitSystem) {
+    case SettingsWaterUnit.WATER_UNIT_FL_OZ:
+      waterUnitConfig = US_WATER_UNIT_CONFIG;
+      break;
+    case SettingsWaterUnit.WATER_UNIT_CUP:
+      waterUnitConfig = CUP_WATER_UNIT_CONFIG;
+      break;
+    default:
+      waterUnitConfig = METRIC_WATER_UNIT_CONFIG;
+      break;
+  }
 
   return {
     ...distanceUnitConfig,

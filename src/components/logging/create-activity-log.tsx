@@ -25,6 +25,7 @@ import {
   buildCreateActivityLogMutation,
   CreateActivityLogDistanceUnit,
 } from "@/api/activity/activities";
+import { SettingsDistanceUnit, SettingsSwimUnit } from "@/api/user";
 import { useUnits } from "@/config/units";
 import {
   ACTIVITY_TYPES_WITH_STEPS,
@@ -92,12 +93,15 @@ function CreateActivityLog({ onSaveSuccess }: { onSaveSuccess?: () => void }) {
 
   const onSubmit = withErrorToaster(async (values: CreateActivityFormData) => {
     let unit: CreateActivityLogDistanceUnit =
-      distanceUnitSystem === "en_US" ? "mile" : "kilometer";
+      distanceUnitSystem === SettingsDistanceUnit.DISTANCE_UNIT_MILES
+        ? "mile"
+        : "kilometer";
 
     if (supportsSteps && values.useSteps) {
       unit = "steps";
     } else if (isSwimming) {
-      unit = swimUnitSystem === "en_US" ? "yards" : "meter";
+      unit =
+        swimUnitSystem === SettingsSwimUnit.SWIM_UNIT_YARDS ? "yards" : "meter";
     }
 
     await createActivityLog({

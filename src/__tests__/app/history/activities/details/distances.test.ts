@@ -66,7 +66,7 @@ describe("getDistanceSplits", () => {
     ];
 
     const scale = createDistanceScale(trackpoints);
-    const splits = getDistanceSplits(scale, "METRIC");
+    const splits = getDistanceSplits(scale, "DISTANCE_UNIT_KILOMETERS");
 
     expect(splits.length).toEqual(3);
 

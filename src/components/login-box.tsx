@@ -59,15 +59,15 @@ function PermissionsTable() {
           Display and log food and water consumption and goals.
         </PermissionInfo>
         <PermissionInfo title="Profile">
+          Display your account name.
+        </PermissionInfo>
+        <PermissionInfo title="Settings">
           Get distance/weight/water unit settings. If you turn off this
           permission, go to the{" "}
           <Link href="/settings" className="underline">
             Settings
           </Link>{" "}
           page to manually set your units.
-        </PermissionInfo>
-        <PermissionInfo title="Settings">
-          Display last sync time and battery status.
         </PermissionInfo>
         <PermissionInfo title="Sleep">
           Display sleep logs and manually log sleep.
@@ -91,7 +91,7 @@ export default function LoginBox() {
           setFirstLoginDate(formatAsDate(dayjs()));
         }
 
-        if (!hasTokenScope("pro") && !allUnitsConfigured) {
+        if (!hasTokenScope("set") && !allUnitsConfigured) {
           router.replace("/settings");
         }
       })

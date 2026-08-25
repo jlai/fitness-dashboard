@@ -31,9 +31,14 @@ export const test = base.extend({
           origin: "http://127.0.0.1:3100",
           localStorage: [
             { name: "auth:google-token", value: TOKEN_STRING },
-            { name: "unit:distance", value: "en_US" },
-            { name: "unit:water", value: "en_US" },
-            { name: "unit:weight", value: "en_US" },
+            { name: "units:distance", value: '"DISTANCE_UNIT_MILES"' },
+            { name: "units:swim", value: '"SWIM_UNIT_YARDS"' },
+            {
+              name: "units:temperature",
+              value: '"TEMPERATURE_UNIT_FAHRENHEIT"',
+            },
+            { name: "units:water", value: '"WATER_UNIT_FL_OZ"' },
+            { name: "units:weight", value: '"WEIGHT_UNIT_POUNDS"' },
           ],
         },
       ],

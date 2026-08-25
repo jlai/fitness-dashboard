@@ -34,6 +34,11 @@ import {
 import {
   buildUserProfileQuery,
   DistanceUnitSystem,
+  SettingsDistanceUnit,
+  SettingsSwimUnit,
+  SettingsTemperatureUnit,
+  SettingsWaterUnit,
+  SettingsWeightUnit,
   SwimUnitSystem,
   TemperatureUnitSystem,
   WaterUnitSystem,
@@ -414,8 +419,12 @@ function UnitSettings() {
             value={distanceUnit}
             onChange={(event) => setDistanceUnit(event.target.value as any)}
           >
-            <MenuItem value="en_US">Miles</MenuItem>
-            <MenuItem value="METRIC">Kilometers</MenuItem>
+            <MenuItem value={SettingsDistanceUnit.DISTANCE_UNIT_MILES}>
+              Miles
+            </MenuItem>
+            <MenuItem value={SettingsDistanceUnit.DISTANCE_UNIT_KILOMETERS}>
+              Kilometers
+            </MenuItem>
           </Select>
         }
       />
@@ -426,8 +435,10 @@ function UnitSettings() {
             value={swimUnit}
             onChange={(event) => setSwimUnit(event.target.value as any)}
           >
-            <MenuItem value="en_US">Yards</MenuItem>
-            <MenuItem value="METRIC">Meters</MenuItem>
+            <MenuItem value={SettingsSwimUnit.SWIM_UNIT_YARDS}>Yards</MenuItem>
+            <MenuItem value={SettingsSwimUnit.SWIM_UNIT_METERS}>
+              Meters
+            </MenuItem>
           </Select>
         }
       />
@@ -438,8 +449,14 @@ function UnitSettings() {
             value={temperatureUnit}
             onChange={(event) => setTemperatureUnit(event.target.value as any)}
           >
-            <MenuItem value="en_US">Fahrenheit</MenuItem>
-            <MenuItem value="METRIC">Celsius</MenuItem>
+            <MenuItem
+              value={SettingsTemperatureUnit.TEMPERATURE_UNIT_FAHRENHEIT}
+            >
+              Fahrenheit
+            </MenuItem>
+            <MenuItem value={SettingsTemperatureUnit.TEMPERATURE_UNIT_CELSIUS}>
+              Celsius
+            </MenuItem>
           </Select>
         }
       />
@@ -450,9 +467,15 @@ function UnitSettings() {
             value={weightUnit}
             onChange={(event) => setWeightUnit(event.target.value as any)}
           >
-            <MenuItem value="en_US">Pounds</MenuItem>
-            <MenuItem value="en_GB">Stones</MenuItem>
-            <MenuItem value="METRIC">Kilograms</MenuItem>
+            <MenuItem value={SettingsWeightUnit.WEIGHT_UNIT_POUNDS}>
+              Pounds
+            </MenuItem>
+            <MenuItem value={SettingsWeightUnit.WEIGHT_UNIT_STONE}>
+              Stones
+            </MenuItem>
+            <MenuItem value={SettingsWeightUnit.WEIGHT_UNIT_KILOGRAMS}>
+              Kilograms
+            </MenuItem>
           </Select>
         }
       />
@@ -463,8 +486,13 @@ function UnitSettings() {
             value={waterUnit}
             onChange={(event) => setWaterUnit(event.target.value as any)}
           >
-            <MenuItem value="en_US">Fluid ounces</MenuItem>
-            <MenuItem value="METRIC">Milliliters</MenuItem>
+            <MenuItem value={SettingsWaterUnit.WATER_UNIT_FL_OZ}>
+              Fluid ounces
+            </MenuItem>
+            <MenuItem value={SettingsWaterUnit.WATER_UNIT_CUP}>Cups</MenuItem>
+            <MenuItem value={SettingsWaterUnit.WATER_UNIT_ML}>
+              Milliliters
+            </MenuItem>
           </Select>
         }
       />

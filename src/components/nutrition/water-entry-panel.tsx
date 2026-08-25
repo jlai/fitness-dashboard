@@ -16,6 +16,9 @@ import {
 import dayjs from "dayjs";
 import { toast } from "mui-sonner";
 
+import { VolumeQuantityUserProvidedUnit } from "@generated/orval/fetch/google-health-api/models";
+
+import { SettingsWaterUnit } from "@/api/user";
 import { useUnits } from "@/config/units";
 import {
   buildCreateWaterLogMutation,
@@ -101,23 +104,48 @@ function MetricWaterButtons({
   );
 }
 
+function CupWaterButtons({
+  onAddQuantity,
+}: {
+  onAddQuantity: (quantity: number) => void;
+}) {
+  return (
+    <>
+      <QuickWaterButton
+        onClick={() => onAddQuantity(1)}
+        description="1 cup"
+        icon={<Image width={64} height={64} src={glassCupUrl} alt="" />}
+      />
+      <QuickWaterButton
+        onClick={() => onAddQuantity(2)}
+        description="2 cups"
+        icon={<Image width={64} height={64} src={smallBottleUrl} alt="" />}
+      />
+      <QuickWaterButton
+        onClick={() => onAddQuantity(3)}
+        description="3 cups"
+        icon={<Image width={64} height={64} src={largeBottleUrl} alt="" />}
+      />
+    </>
+  );
+}
+
 interface WaterLoggingInput {
   quantity: number;
 }
 
 export default function WaterEntryPanel() {
   const day = dayjs(); // FIXME allow selecting date
-  const { waterUnit } = useUnits();
+  const { waterUnit, localizedWaterVolumeName } = useUnits();
   const { register, handleSubmit, formState, getValues, setValue } =
     useForm<WaterLoggingInput>();
 
-  const isImperial = waterUnit === "en_US";
-
-  // Internal water unit
-  const machineWaterUnit = isImperial ? "fl oz" : "ml";
-
-  // TODO translate
-  const localizedWaterUnit = machineWaterUnit === "fl oz" ? "fl oz" : "ml";
+  const userProvidedUnit =
+    waterUnit === SettingsWaterUnit.WATER_UNIT_FL_OZ
+      ? VolumeQuantityUserProvidedUnit.FLUID_OUNCE_US
+      : waterUnit === SettingsWaterUnit.WATER_UNIT_CUP
+        ? VolumeQuantityUserProvidedUnit.CUP_US
+        : VolumeQuantityUserProvidedUnit.MILLILITER;
 
   const queryClient = useQueryClient();
   const { mutateAsync: createWaterLog } = useMutation(
@@ -138,18 +166,18 @@ export default function WaterEntryPanel() {
     (data: WaterLoggingInput) => {
       createWaterLog({
         amount: data.quantity,
-        unit: machineWaterUnit,
+        unit: userProvidedUnit,
         day,
       }).then(
         () => {
-          toast(`Logged ${data.quantity} ${localizedWaterUnit} water`);
+          toast(`Logged ${data.quantity} ${localizedWaterVolumeName} water`);
         },
         () => {
           toast.error("Error logging water");
         },
       );
     },
-    [createWaterLog, day, localizedWaterUnit, machineWaterUnit],
+    [createWaterLog, day, localizedWaterVolumeName, userProvidedUnit],
   );
 
   return (
@@ -162,7 +190,7 @@ export default function WaterEntryPanel() {
                 type="number"
                 endAdornment={
                   <InputAdornment position="end">
-                    {localizedWaterUnit}
+                    {localizedWaterVolumeName}
                   </InputAdornment>
                 }
                 {...register("quantity", {
@@ -177,8 +205,10 @@ export default function WaterEntryPanel() {
             </Button>
           </div>
           <div className="flex flex-row gap-x-8">
-            {isImperial ? (
+            {waterUnit === SettingsWaterUnit.WATER_UNIT_FL_OZ ? (
               <ImperialWaterButtons onAddQuantity={addQuantity} />
+            ) : waterUnit === SettingsWaterUnit.WATER_UNIT_CUP ? (
+              <CupWaterButtons onAddQuantity={addQuantity} />
             ) : (
               <MetricWaterButtons onAddQuantity={addQuantity} />
             )}

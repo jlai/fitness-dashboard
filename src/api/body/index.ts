@@ -5,12 +5,23 @@ import { formatAsDate } from "../datetime";
 import { makeRequest } from "../request";
 import { ONE_DAY_IN_MILLIS } from "../cache-settings";
 import mutationOptions from "../mutation-options";
-import { WeightUnitSystem } from "../user";
+import { SettingsWeightUnit, WeightUnitSystem } from "../user";
 
 import {
   GetBodyWeightGoalResponse,
   GetWeightTimeSeriesResponse,
 } from "./types";
+
+function fitbitWeightAcceptLanguage(unit: WeightUnitSystem) {
+  switch (unit) {
+    case SettingsWeightUnit.WEIGHT_UNIT_POUNDS:
+      return "en_US";
+    case SettingsWeightUnit.WEIGHT_UNIT_STONE:
+      return "en_GB";
+    default:
+      return "METRIC";
+  }
+}
 
 interface CreateWeightLogOptions {
   weight: number;
@@ -54,7 +65,7 @@ export function buildCreateWeightLogMutation(queryClient: QueryClient) {
       await makeRequest(`/1/user/-/body/log/weight.json?${params.toString()}`, {
         method: "POST",
         headers: {
-          "Accept-Language": weightUnitSystem,
+          "Accept-Language": fitbitWeightAcceptLanguage(weightUnitSystem),
         },
       });
 
@@ -117,7 +128,7 @@ export function buildGetWeightLogsQuery(
         )}/${formatAsDate(endDay)}.json`,
         {
           headers: {
-            "Accept-Language": weightUnitSystem,
+            "Accept-Language": fitbitWeightAcceptLanguage(weightUnitSystem),
           },
         },
       );
