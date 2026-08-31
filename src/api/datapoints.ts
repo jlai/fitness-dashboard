@@ -5,11 +5,13 @@ import type {
   CivilDateTime,
   DailyRollupDataPoint,
   DataPoint,
+  RollupDataPoint,
 } from "@generated/orval/fetch/google-health-api/models";
 import {
   healthUsersDataTypesDataPointsDailyRollUp,
   healthUsersDataTypesDataPointsGet,
   healthUsersDataTypesDataPointsList,
+  healthUsersDataTypesDataPointsRollUp,
 } from "@generated/orval/fetch/google-health-api/users/users";
 
 import { graduallyStale } from "./cache-settings";
@@ -134,6 +136,53 @@ export type DailyRollupResult<T extends DailyRollupDataType> = {
   rollupDataPoints: Array<DailyRollupDataPointFor<T>>;
 };
 
+/** Union fields on RollupDataPoint that correspond to a rollup value. */
+type RollupValueKey = Exclude<keyof RollupDataPoint, "startTime" | "endTime">;
+
+/**
+ * Maps data type IDs supported by rollUp to the RollupDataPoint union field
+ * they populate.
+ *
+ * @see https://developers.google.com/health/reference/rest/v4/users.dataTypes.dataPoints/rollUp
+ */
+export const ROLLUP_PROPERTIES = {
+  "active-energy-burned": "activeEnergyBurned",
+  "active-minutes": "activeMinutes",
+  "active-zone-minutes": "activeZoneMinutes",
+  "activity-level": "activityLevel",
+  altitude: "altitude",
+  "blood-glucose": "bloodGlucose",
+  "body-fat": "bodyFat",
+  "calories-in-heart-rate-zone": "caloriesInHeartRateZone",
+  "core-body-temperature": "coreBodyTemperature",
+  distance: "distance",
+  floors: "floors",
+  "heart-rate": "heartRate",
+  "hydration-log": "hydrationLog",
+  "nutrition-log": "nutritionLog",
+  "run-vo2-max": "runVo2Max",
+  "sedentary-period": "sedentaryPeriod",
+  steps: "steps",
+  "swim-lengths-data": "swimLengthsData",
+  "time-in-heart-rate-zone": "timeInHeartRateZone",
+  "total-calories": "totalCalories",
+  weight: "weight",
+} as const satisfies Record<string, RollupValueKey>;
+
+export type RollupDataType = keyof typeof ROLLUP_PROPERTIES;
+
+export type RollupProperty<T extends RollupDataType> =
+  (typeof ROLLUP_PROPERTIES)[T];
+
+/** A RollupDataPoint known to contain the union field for data type `T`. */
+export type RollupDataPointFor<T extends RollupDataType> = RollupDataPoint & {
+  [K in RollupProperty<T>]-?: NonNullable<RollupDataPoint[K]>;
+};
+
+export type RollupResult<T extends RollupDataType> = {
+  rollupDataPoints: Array<RollupDataPointFor<T>>;
+};
+
 const FOURTEEN_DAY_ROLLUP_TYPES = new Set<DailyRollupDataType>([
   "active-minutes",
   "calories-in-heart-rate-zone",
@@ -223,7 +272,7 @@ function timeRangeFilter(
   dataType: DataType,
   start: string,
   end: string,
-  timeField: "civil" | "physical"
+  timeField: "civil" | "physical",
 ) {
   const field = filterField(dataType, timeField);
   return `${field} >= "${start}" AND ${field} < "${end}"`;
@@ -235,12 +284,12 @@ function pageSizeFor(dataType: DataType) {
 
 export async function getDataPoint<T extends DataType>(
   dataType: T,
-  dataPointId: string
+  dataPointId: string,
 ): Promise<DataPointFor<T>> {
   const response = await healthUsersDataTypesDataPointsGet(
     "me",
     dataType,
-    dataPointId
+    dataPointId,
   );
 
   return response.data as DataPointFor<T>;
@@ -250,14 +299,17 @@ export async function listDataPointsPage<T extends DataType>(
   dataType: T,
   filter: string,
   pageToken?: string,
-  pageSize?: number
+  pageSize?: number,
 ): Promise<{
   dataPoints: Array<DataPointFor<T>>;
   nextPageToken?: string;
 }> {
   const response = await healthUsersDataTypesDataPointsList("me", dataType, {
     filter,
-    pageSize: Math.min(pageSize ?? pageSizeFor(dataType), pageSizeFor(dataType)),
+    pageSize: Math.min(
+      pageSize ?? pageSizeFor(dataType),
+      pageSizeFor(dataType),
+    ),
     pageToken,
   });
 
@@ -269,7 +321,7 @@ export async function listDataPointsPage<T extends DataType>(
 
 async function listDataPoints<T extends DataType>(
   dataType: T,
-  filter: string
+  filter: string,
 ): Promise<ListDatapointsResult<T>> {
   const dataPoints: Array<DataPointFor<T>> = [];
   let pageToken: string | undefined;
@@ -286,14 +338,14 @@ async function listDataPoints<T extends DataType>(
 /** The DataPoint union value for a given data type. */
 export function getDataPointValue<T extends DataType>(
   dataType: T,
-  dataPoint: DataPointFor<T>
+  dataPoint: DataPointFor<T>,
 ) {
   return dataPoint[DATA_TYPE_PROPERTIES[dataType]];
 }
 
 export function buildOneDayDatapointsQuery<T extends DataType>(
   dataType: T,
-  day: Dayjs
+  day: Dayjs,
 ) {
   const date = formatAsDate(day);
   const nextDate = formatAsDate(day.add(1, "day"));
@@ -303,7 +355,7 @@ export function buildOneDayDatapointsQuery<T extends DataType>(
     queryFn: () =>
       listDataPoints(
         dataType,
-        timeRangeFilter(dataType, date, nextDate, "civil")
+        timeRangeFilter(dataType, date, nextDate, "civil"),
       ),
     staleTime: graduallyStale(day),
   });
@@ -312,7 +364,7 @@ export function buildOneDayDatapointsQuery<T extends DataType>(
 export function buildDatapointsQuery<T extends DataType>(
   dataType: T,
   start: Dayjs,
-  end: Dayjs
+  end: Dayjs,
 ) {
   const kind = DATA_TYPE_FILTER_KIND[dataType];
   const usesCivilDate = kind === "daily" || kind === "exercise";
@@ -321,16 +373,11 @@ export function buildDatapointsQuery<T extends DataType>(
   const timeField = usesCivilDate ? "civil" : "physical";
 
   return queryOptions({
-    queryKey: [
-      "datapoints",
-      dataType,
-      start.toISOString(),
-      end.toISOString(),
-    ],
+    queryKey: ["datapoints", dataType, start.toISOString(), end.toISOString()],
     queryFn: () =>
       listDataPoints(
         dataType,
-        timeRangeFilter(dataType, startValue, endValue, timeField)
+        timeRangeFilter(dataType, startValue, endValue, timeField),
       ),
     staleTime: graduallyStale(end),
   });
@@ -353,7 +400,7 @@ function maxDailyRollupRangeDays(dataType: DailyRollupDataType) {
 async function listDailyRollups<T extends DailyRollupDataType>(
   dataType: T,
   start: Dayjs,
-  end: Dayjs
+  end: Dayjs,
 ): Promise<DailyRollupResult<T>> {
   const rollupDataPoints: Array<DailyRollupDataPointFor<T>> = [];
   const maxDays = maxDailyRollupRangeDays(dataType);
@@ -377,13 +424,13 @@ async function listDailyRollups<T extends DailyRollupDataType>(
         },
         // windowSizeDays (default 1) * pageSize cannot exceed maxDays.
         pageSize: Math.min(Math.max(windowDays, 1), maxDays),
-      }
+      },
     );
 
     rollupDataPoints.push(
       ...((response.data.rollupDataPoints ?? []) as Array<
         DailyRollupDataPointFor<T>
-      >)
+      >),
     );
     windowStart = windowEnd;
   }
@@ -394,7 +441,7 @@ async function listDailyRollups<T extends DailyRollupDataType>(
 /** The DailyRollupDataPoint union value for a given data type. */
 export function getDailyRollupValue<T extends DailyRollupDataType>(
   dataType: T,
-  dataPoint: DailyRollupDataPointFor<T>
+  dataPoint: DailyRollupDataPointFor<T>,
 ) {
   return dataPoint[DAILY_ROLLUP_PROPERTIES[dataType]];
 }
@@ -402,7 +449,7 @@ export function getDailyRollupValue<T extends DailyRollupDataType>(
 export function buildDailyRollupQuery<T extends DailyRollupDataType>(
   dataType: T,
   start: Dayjs,
-  end: Dayjs
+  end: Dayjs,
 ) {
   const startDate = formatAsDate(start);
   const endDate = formatAsDate(end);
@@ -410,6 +457,88 @@ export function buildDailyRollupQuery<T extends DailyRollupDataType>(
   return queryOptions({
     queryKey: ["datapoints", "daily-rollup", dataType, startDate, endDate],
     queryFn: () => listDailyRollups(dataType, start, end),
+    staleTime: graduallyStale(end),
+  });
+}
+
+function maxRollupRangeDays(dataType: RollupDataType) {
+  return FOURTEEN_DAY_ROLLUP_TYPES.has(dataType as DailyRollupDataType)
+    ? 14
+    : 90;
+}
+
+async function listRollups<T extends RollupDataType>(
+  dataType: T,
+  start: Dayjs,
+  end: Dayjs,
+  windowSize: string,
+): Promise<RollupResult<T>> {
+  const rollupDataPoints: Array<RollupDataPointFor<T>> = [];
+  const maxDays = maxRollupRangeDays(dataType);
+  let windowStart = start;
+  const rangeEnd = end;
+
+  while (windowStart.isBefore(rangeEnd)) {
+    const windowEndCandidate = windowStart.add(maxDays, "day");
+    const windowEnd = windowEndCandidate.isAfter(rangeEnd)
+      ? rangeEnd
+      : windowEndCandidate;
+
+    let pageToken: string | undefined;
+
+    do {
+      const response = await healthUsersDataTypesDataPointsRollUp(
+        "me",
+        dataType,
+        {
+          range: {
+            startTime: windowStart.toISOString(),
+            endTime: windowEnd.toISOString(),
+          },
+          windowSize,
+          pageSize: 10000,
+          pageToken,
+        },
+      );
+
+      rollupDataPoints.push(
+        ...((response.data.rollupDataPoints ?? []) as Array<
+          RollupDataPointFor<T>
+        >),
+      );
+      pageToken = response.data.nextPageToken;
+    } while (pageToken);
+
+    windowStart = windowEnd;
+  }
+
+  return { rollupDataPoints };
+}
+
+/** The RollupDataPoint union value for a given data type. */
+export function getRollupValue<T extends RollupDataType>(
+  dataType: T,
+  dataPoint: RollupDataPointFor<T>,
+) {
+  return dataPoint[ROLLUP_PROPERTIES[dataType]];
+}
+
+export function buildRollupQuery<T extends RollupDataType>(
+  dataType: T,
+  start: Dayjs,
+  end: Dayjs,
+  windowSize: string,
+) {
+  return queryOptions({
+    queryKey: [
+      "datapoints",
+      "rollup",
+      dataType,
+      windowSize,
+      start.toISOString(),
+      end.toISOString(),
+    ],
+    queryFn: () => listRollups(dataType, start, end, windowSize),
     staleTime: graduallyStale(end),
   });
 }

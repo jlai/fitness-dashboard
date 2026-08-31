@@ -1,10 +1,13 @@
 import { test as base, Page } from "@playwright/test";
 
-import { GetHeartIntradayResponse } from "@/api/intraday";
-import { HEART_INTRADAY_EMPTY_RESPONSE } from "@/e2e/data/heart-intraday";
+import type { DataPoint } from "@generated/orval/fetch/google-health-api/models";
 
-const HEART_INTRADAY_URL =
-  "**/1/user/-/activities/heart/date/*/*/*/time/00:00/23:59.json";
+import { HEART_INTRADAY_EMPTY_DATAPOINTS } from "@/e2e/data/heart-intraday";
+
+const HEART_RATE_DATAPOINTS_URL =
+  "**/v4/users/*/dataTypes/heart-rate/dataPoints**";
+const HEART_RATE_ZONES_DATAPOINTS_URL =
+  "**/v4/users/*/dataTypes/daily-heart-rate-zones/dataPoints**";
 
 export class IntradayApi {
   constructor(private readonly page: Page) {}
@@ -12,27 +15,23 @@ export class IntradayApi {
   async setupDefaults() {
     const page = this.page;
 
-    // Heart
-    await page.route(
-      "**/1/user/-/activities/heart/date/*/*/*/time/00:00/23:59.json",
-      async (route) => {
-        await route.fulfill({
-          json: HEART_INTRADAY_EMPTY_RESPONSE,
-        });
-      },
-    );
+    await page.route(HEART_RATE_DATAPOINTS_URL, async (route) => {
+      await route.fulfill({
+        json: { dataPoints: HEART_INTRADAY_EMPTY_DATAPOINTS },
+      });
+    });
+
+    await page.route(HEART_RATE_ZONES_DATAPOINTS_URL, async (route) => {
+      await route.fulfill({
+        json: { dataPoints: [] },
+      });
+    });
   }
 
-  async setHeartIntradayResponse(
-    response: Readonly<GetHeartIntradayResponse>,
-    date = "*",
-  ) {
-    await this.page.route(
-      `**/1/user/-/activities/heart/date/${date}/${date}/*/time/00:00/23:59.json`,
-      async (route) => {
-        await route.fulfill({ json: response });
-      },
-    );
+  async setHeartIntradayResponse(dataPoints: ReadonlyArray<DataPoint>) {
+    await this.page.route(HEART_RATE_DATAPOINTS_URL, async (route) => {
+      await route.fulfill({ json: { dataPoints } });
+    });
   }
 }
 

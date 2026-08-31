@@ -1,4 +1,4 @@
-import { HEART_INTRADAY_RESPONSE } from "@/e2e/data/heart-intraday";
+import { HEART_INTRADAY_DATAPOINTS } from "@/e2e/data/heart-intraday";
 import { test, expect } from "@/e2e/fixtures";
 
 test.describe("with no heart rate data", () => {
@@ -27,7 +27,7 @@ test.describe("with heart rate data", () => {
       { id: "test-tile", type: "heartRate", w: 1, h: 1 },
     ]);
 
-    await intradayApi.setHeartIntradayResponse(HEART_INTRADAY_RESPONSE);
+    await intradayApi.setHeartIntradayResponse(HEART_INTRADAY_DATAPOINTS);
 
     await page.goto("/");
 
