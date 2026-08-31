@@ -22,7 +22,6 @@ import { useAtomValue } from "jotai";
 import { sumBy } from "es-toolkit";
 
 import { buildActivityIntradayQuery } from "@/api/intraday";
-import { ENABLE_INTRADAY } from "@/config";
 import { DateFormats } from "@/utils/date-formats";
 import { FRACTION_DIGITS_2 } from "@/utils/number-formats";
 import { aggregateByHour } from "@/components/charts/timeseries/aggregation";
@@ -61,7 +60,7 @@ export default function DistanceDialogContent(props: RenderDialogContentProps) {
         <TabContext value={currentTab}>
           <TabList onChange={(event, value) => setCurrentTab(value)}>
             <Tab label="Overview" value="overview" />
-            {ENABLE_INTRADAY && <Tab label="Detailed" value="intraday" />}
+            <Tab label="Detailed" value="intraday" />
             <Tab label="Settings" value="settings" />
           </TabList>
           <TabPanel value="overview">
@@ -69,13 +68,11 @@ export default function DistanceDialogContent(props: RenderDialogContentProps) {
               <Overview />
             </Suspense>
           </TabPanel>
-          {ENABLE_INTRADAY && (
-            <TabPanel value="intraday">
-              <Suspense>
-                <DistanceIntraday />
-              </Suspense>
-            </TabPanel>
-          )}
+          <TabPanel value="intraday">
+            <Suspense>
+              <DistanceIntraday />
+            </Suspense>
+          </TabPanel>
           <TabPanel value="settings">
             <Suspense>
               <Settings />

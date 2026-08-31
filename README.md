@@ -36,13 +36,6 @@ NEXT_PUBLIC_GOOGLE_OAUTH_CLIENT_ID=idgoeshere
 GOOGLE_OAUTH_CLIENT_SECRET=secretgoeshere
 ```
 
-You can enable intraday data requests
-(e.g. calories/minute) with:
-
-```
-NEXT_PUBLIC_ENABLE_INTRADAY=true
-```
-
 ### Docker Compose
 
 If you prefer Docker Compose, you can start a development server with `compose up`.

@@ -20,7 +20,6 @@ import { buildTimeSeriesQuery } from "@/api/times-series";
 import { TimeSeriesEntry } from "@/api/times-series";
 import { ActiveZoneMinutesTimeSeriesValue } from "@/api/times-series";
 import { buildActiveZoneMinutesIntradayQuery } from "@/api/intraday";
-import { ENABLE_INTRADAY } from "@/config";
 import { HeaderBar } from "@/components/layout/rows";
 import { activeZoneMinutesGoalAtom } from "@/storage/settings";
 
@@ -50,7 +49,7 @@ export default function ActiveZoneMinutesDialogContent(
         <TabContext value={currentTab}>
           <TabList onChange={(event, value) => setCurrentTab(value)}>
             <Tab label="Overview" value="overview" />
-            {ENABLE_INTRADAY && <Tab label="Details" value="intraday" />}
+            <Tab label="Details" value="intraday" />
             <Tab label="Settings" value="settings" />
           </TabList>
           <TabPanel value="overview">
@@ -58,13 +57,11 @@ export default function ActiveZoneMinutesDialogContent(
               <Overview />
             </Suspense>
           </TabPanel>
-          {ENABLE_INTRADAY && (
-            <TabPanel value="intraday">
-              <Suspense>
-                <ActiveZoneMinutesIntraday />
-              </Suspense>
-            </TabPanel>
-          )}
+          <TabPanel value="intraday">
+            <Suspense>
+              <ActiveZoneMinutesIntraday />
+            </Suspense>
+          </TabPanel>
           <TabPanel value="settings">
             <Suspense>
               <Settings />

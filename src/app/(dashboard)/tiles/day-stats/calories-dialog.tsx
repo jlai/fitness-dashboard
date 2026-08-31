@@ -13,7 +13,6 @@ import { useAtomValue } from "jotai";
 
 import { NumberFormats } from "@/utils/number-formats";
 import { buildActivityIntradayQuery } from "@/api/intraday";
-import { ENABLE_INTRADAY } from "@/config";
 import { FormRows } from "@/components/forms/form-row";
 import { caloriesOutGoalAtom } from "@/storage/settings";
 import { buildGetExerciseByDateQuery } from "@/api/exercise/exercise";
@@ -56,7 +55,7 @@ export default function CaloriesDialogContent(props: RenderDialogContentProps) {
             <Tab label="Overview" value="overview" />
 
             <Tab label="By activity" value="pie" />
-            {ENABLE_INTRADAY && <Tab label="Burn rate" value="intraday" />}
+            <Tab label="Burn rate" value="intraday" />
             <Tab label="Settings" value="settings" />
           </TabList>
           <TabPanel value="overview">
@@ -69,13 +68,11 @@ export default function CaloriesDialogContent(props: RenderDialogContentProps) {
               <CaloriesPieChart />
             </Suspense>
           </TabPanel>
-          {ENABLE_INTRADAY && (
-            <TabPanel value="intraday">
-              <Suspense>
-                <CaloriesIntraday />
-              </Suspense>
-            </TabPanel>
-          )}
+          <TabPanel value="intraday">
+            <Suspense>
+              <CaloriesIntraday />
+            </Suspense>
+          </TabPanel>
           <TabPanel value="settings">
             <Suspense>
               <Settings />

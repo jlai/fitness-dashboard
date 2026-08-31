@@ -44,7 +44,6 @@ import {
   buildActivityIntradayQuery,
   buildHeartRateIntradayQuery,
 } from "@/api/intraday";
-import { ENABLE_INTRADAY } from "@/config";
 import {
   augmentWithDistances,
   DistanceScale,
@@ -104,14 +103,13 @@ export function ActivityTcxCharts({
     .startOf("minute")
     .add(1, "minute");
 
-  const { data: caloriesIntradayRaw } = useQuery({
-    ...buildActivityIntradayQuery("calories", "1min", startTime, endTime),
-    enabled: ENABLE_INTRADAY,
-  });
+  const { data: caloriesIntradayRaw } = useQuery(
+    buildActivityIntradayQuery("calories", "1min", startTime, endTime)
+  );
 
   const { data: heartRateIntradayResponse } = useQuery({
     ...buildHeartRateIntradayQuery("1min", startTime, endTime),
-    enabled: ENABLE_INTRADAY && !hasTrackedHeartRate,
+    enabled: !hasTrackedHeartRate,
   });
 
   const caloriesIntraday = useMemo(
@@ -184,12 +182,10 @@ export function ActivityTcxCharts({
           <HeartRateChart data={heartIntraday} dateDomain={dateDomain} />
         </section>
       )}
-      {ENABLE_INTRADAY && (
-        <section>
-          <ChartSectionHeader title="Calories burned" />
-          <CaloriesChart data={caloriesIntraday} dateDomain={dateDomain} />
-        </section>
-      )}
+      <section>
+        <ChartSectionHeader title="Calories burned" />
+        <CaloriesChart data={caloriesIntraday} dateDomain={dateDomain} />
+      </section>
       {splits && splits.length > 0 && (
         <section>
           <Typography variant="h5">Splits</Typography>

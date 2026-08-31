@@ -32,13 +32,6 @@ export const GOOGLE_OAUTH_CLIENT_ID = requiredVar(
 export const GOOGLE_OAUTH_CLIENT_SECRET =
   process.env.GOOGLE_OAUTH_CLIENT_SECRET ?? "";
 
-/**
- * Whether to enable intraday timeseries requests
- * (see https://dev.fitbit.com/build/reference/web-api/intraday/)
- */
-export const ENABLE_INTRADAY =
-  process.env.NEXT_PUBLIC_ENABLE_INTRADAY === "true";
-
 /** URL for MapLibre style JSON (usually contains API key) */
 export const MAPLIBRE_STYLE_URL = process.env.NEXT_PUBLIC_MAPLIBRE_STYLE_URL;
 
