@@ -397,13 +397,15 @@ function maxDailyRollupRangeDays(dataType: DailyRollupDataType) {
   return FOURTEEN_DAY_ROLLUP_TYPES.has(dataType) ? 14 : 90;
 }
 
-async function listDailyRollups<T extends DailyRollupDataType>(
+export async function listDailyRollups<T extends DailyRollupDataType>(
   dataType: T,
   start: Dayjs,
   end: Dayjs,
+  options?: { aggregate?: boolean },
 ): Promise<DailyRollupResult<T>> {
   const rollupDataPoints: Array<DailyRollupDataPointFor<T>> = [];
   const maxDays = maxDailyRollupRangeDays(dataType);
+  const aggregate = options?.aggregate ?? false;
   let windowStart = start.startOf("day");
   const rangeEnd = end.startOf("day");
 
@@ -423,7 +425,8 @@ async function listDailyRollups<T extends DailyRollupDataType>(
           end: toCivilDate(windowEnd),
         },
         // windowSizeDays (default 1) * pageSize cannot exceed maxDays.
-        pageSize: Math.min(Math.max(windowDays, 1), maxDays),
+        ...(aggregate && { windowSizeDays: Math.max(windowDays, 1) }),
+        pageSize: aggregate ? 1 : Math.min(Math.max(windowDays, 1), maxDays),
       },
     );
 

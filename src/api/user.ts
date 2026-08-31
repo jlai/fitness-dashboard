@@ -7,7 +7,10 @@ import {
   SettingsWaterUnit,
   SettingsWeightUnit,
 } from "@generated/orval/fetch/google-health-api/models";
-import { healthUsersGetSettings } from "@generated/orval/fetch/google-health-api/users/users";
+import {
+  healthUsersGetProfile,
+  healthUsersGetSettings,
+} from "@generated/orval/fetch/google-health-api/users/users";
 
 import { makeRequest } from "./request";
 import { ONE_DAY_IN_MILLIS } from "./cache-settings";
@@ -154,6 +157,17 @@ export function buildUserSettingsQuery() {
     queryKey: ["user-settings"],
     queryFn: async () => {
       const response = await healthUsersGetSettings("me");
+      return response.data;
+    },
+    staleTime: ONE_DAY_IN_MILLIS,
+  });
+}
+
+export function buildHealthProfileQuery() {
+  return queryOptions({
+    queryKey: ["health-profile"],
+    queryFn: async () => {
+      const response = await healthUsersGetProfile("me");
       return response.data;
     },
     staleTime: ONE_DAY_IN_MILLIS,

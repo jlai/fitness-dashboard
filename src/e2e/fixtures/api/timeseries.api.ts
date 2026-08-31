@@ -57,6 +57,40 @@ export class TimeSeriesApi {
 
     await this.setActiveMinutesTimeSeriesResponse([]);
     await this.setActiveZoneMinutesTimeSeriesResponse([]);
+    await this.page.route(dailyRollUpUrl("steps"), async (route) => {
+      await route.fulfill({ json: { rollupDataPoints: [] } });
+    });
+    await this.page.route(dailyRollUpUrl("distance"), async (route) => {
+      await route.fulfill({ json: { rollupDataPoints: [] } });
+    });
+    await this.page.route(dailyRollUpUrl("floors"), async (route) => {
+      await route.fulfill({ json: { rollupDataPoints: [] } });
+    });
+  }
+
+  async setLifetimeRollup(
+    dataType: "steps" | "distance" | "floors",
+    sum: string,
+  ) {
+    await this.page.route(dailyRollUpUrl(dataType), async (route) => {
+      const value =
+        dataType === "distance"
+          ? { distance: { millimetersSum: sum } }
+          : dataType === "floors"
+            ? { floors: { countSum: sum } }
+            : { steps: { countSum: sum } };
+
+      await route.fulfill({
+        json: {
+          rollupDataPoints: [
+            {
+              civilStartTime: civilStartTimeFromDateTime("2021-01-01"),
+              ...value,
+            },
+          ],
+        },
+      });
+    });
   }
 
   async setActiveMinutesTimeSeriesResponse(

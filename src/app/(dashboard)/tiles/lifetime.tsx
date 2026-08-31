@@ -1,34 +1,63 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Stack, Typography } from "@mui/material";
 
-import { buildLifetimeStatsQuery } from "@/api/exercise";
+import { buildLifetimeStatsQuery, type LifetimeStat } from "@/api/exercise";
 import { NumberFormats } from "@/utils/number-formats";
 import { useUnits } from "@/config/units";
 
 import { useTileData } from "./tile";
 
+const ENABLE_LIFETIME_STATS = false as boolean;
+
+function lifetimeStatForTile(type: string): LifetimeStat {
+  switch (type) {
+    case "lifetimeDistance":
+      return "distance";
+    case "lifetimeFloors":
+      return "floors";
+    default:
+      return "steps";
+  }
+}
+
 export function LifetimeTileContent() {
+  if (!ENABLE_LIFETIME_STATS) {
+    return (
+      <Stack
+        direction="column"
+        alignItems="center"
+        justifyContent="center"
+        className="h-full p-2"
+      >
+        <Typography variant="body2" className="text-center">
+          Lifetime stats not implemented yet.
+        </Typography>
+      </Stack>
+    );
+  }
+
+  return <LifetimeStatsTileContent />;
+}
+
+function LifetimeStatsTileContent() {
   const { type, w = 1 } = useTileData();
   const { localizedKilometers, localizedKilometersNameLong } = useUnits();
+  const dataType = lifetimeStatForTile(type);
 
-  const {
-    data: { lifetime },
-  } = useSuspenseQuery(buildLifetimeStatsQuery());
+  const { data: total } = useSuspenseQuery(buildLifetimeStatsQuery(dataType));
 
-  let value = -1;
+  let value = total;
   let label = "";
 
   switch (type) {
     case "lifetimeSteps":
-      value = lifetime.tracker.steps;
       label = "lifetime steps";
       break;
     case "lifetimeDistance":
-      value = localizedKilometers(lifetime.tracker.distance);
+      value = localizedKilometers(total);
       label = `lifetime ${localizedKilometersNameLong}`;
       break;
     case "lifetimeFloors":
-      value = localizedKilometers(lifetime.tracker.floors);
       label = "lifetime floors";
       break;
   }

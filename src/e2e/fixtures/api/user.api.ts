@@ -7,7 +7,10 @@ import {
   SettingsWaterUnit,
   SettingsWeightUnit,
 } from "@/api/user";
-import { Settings } from "@generated/orval/fetch/google-health-api/models";
+import {
+  type Profile,
+  Settings,
+} from "@generated/orval/fetch/google-health-api/models";
 
 interface UserProfile {
   fullName: string;
@@ -43,6 +46,10 @@ const DEFAULT_USER_SETTINGS: Settings = {
   weightUnit: SettingsWeightUnit.WEIGHT_UNIT_KILOGRAMS,
 };
 
+const DEFAULT_HEALTH_PROFILE: Profile = {
+  membershipStartDate: { year: 2021, month: 1, day: 1 },
+};
+
 export class UserApi {
   constructor(private readonly page: Page) {}
 
@@ -51,6 +58,7 @@ export class UserApi {
       await route.fulfill({ json: { user: DEFAULT_USER_PROFILE } });
     });
     await this.setUserSettings();
+    await this.setHealthProfile();
   }
 
   async setUserProfile(profile: Partial<UserProfile> = {}) {
@@ -66,6 +74,14 @@ export class UserApi {
 
     await this.page.route("**/v4/users/*/settings**", async (route) => {
       await route.fulfill({ json: userSettings });
+    });
+  }
+
+  async setHealthProfile(profile: Partial<Profile> = {}) {
+    const healthProfile = { ...DEFAULT_HEALTH_PROFILE, ...profile };
+
+    await this.page.route("**/v4/users/*/profile**", async (route) => {
+      await route.fulfill({ json: healthProfile });
     });
   }
 }
