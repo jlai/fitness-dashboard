@@ -41,6 +41,7 @@ interface DistanceUnitConfig {
   distanceUnit: DistanceUnitSystem;
   localizedMeters: (value: number) => number;
   localizedKilometers: (value: number) => number;
+  canonicalKilometers: (localizedValue: number) => number;
   localizedMetersName: string;
   localizedKilometersName: string;
   localizedKilometersNameLong: string;
@@ -68,12 +69,14 @@ interface WaterUnitConfig {
   waterUnit: WaterUnitSystem;
   localizedWaterVolumeName: string;
   localizedWaterVolume: (value: number) => number;
+  canonicalWaterVolume: (localizedValue: number) => number;
 }
 
 const US_DISTANCE_UNIT_CONFIG: DistanceUnitConfig = {
   distanceUnit: SettingsDistanceUnit.DISTANCE_UNIT_MILES,
   localizedMeters: (value: number) => value * FEET_PER_METER,
   localizedKilometers: (value: number) => value * MILES_PER_KM,
+  canonicalKilometers: (value: number) => value / MILES_PER_KM,
   localizedMetersName: "ft",
   localizedKilometersName: "mi",
   localizedKilometersNameLong: "miles",
@@ -83,6 +86,7 @@ const METRIC_DISTANCE_UNIT_CONFIG: DistanceUnitConfig = {
   distanceUnit: SettingsDistanceUnit.DISTANCE_UNIT_KILOMETERS,
   localizedMeters: (value: number) => value,
   localizedKilometers: (value: number) => value,
+  canonicalKilometers: (value: number) => value,
   localizedMetersName: "m",
   localizedKilometersName: "km",
   localizedKilometersNameLong: "kilometers",
@@ -134,18 +138,21 @@ const US_WATER_UNIT_CONFIG: WaterUnitConfig = {
   waterUnit: SettingsWaterUnit.WATER_UNIT_FL_OZ,
   localizedWaterVolumeName: "fl oz",
   localizedWaterVolume: (value: number) => value * FLUID_OZ_PER_ML,
+  canonicalWaterVolume: (value: number) => value / FLUID_OZ_PER_ML,
 };
 
 const CUP_WATER_UNIT_CONFIG: WaterUnitConfig = {
   waterUnit: SettingsWaterUnit.WATER_UNIT_CUP,
   localizedWaterVolumeName: "cup",
   localizedWaterVolume: (value: number) => value * CUP_PER_ML,
+  canonicalWaterVolume: (value: number) => value / CUP_PER_ML,
 };
 
 const METRIC_WATER_UNIT_CONFIG: WaterUnitConfig = {
   waterUnit: SettingsWaterUnit.WATER_UNIT_ML,
   localizedWaterVolumeName: "ml",
   localizedWaterVolume: (value: number) => value,
+  canonicalWaterVolume: (value: number) => value,
 };
 
 const DEFAULT_UNITS = {
@@ -305,4 +312,24 @@ export function useUnits() {
 
 export function millimetersToKilometers(millimeters: number) {
   return millimeters / 1_000_000;
+}
+
+export function kilometersFromDistanceGoal(
+  value: number,
+  unit: DistanceUnitSystem,
+) {
+  return unit === SettingsDistanceUnit.DISTANCE_UNIT_MILES
+    ? value / MILES_PER_KM
+    : value;
+}
+
+export function millilitersFromWaterGoal(value: number, unit: WaterUnitSystem) {
+  switch (unit) {
+    case SettingsWaterUnit.WATER_UNIT_FL_OZ:
+      return value / FLUID_OZ_PER_ML;
+    case SettingsWaterUnit.WATER_UNIT_CUP:
+      return value / CUP_PER_ML;
+    default:
+      return value;
+  }
 }

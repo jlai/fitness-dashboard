@@ -10,6 +10,7 @@ import { BarChart } from "@mui/x-charts";
 import { TabContext, TabList, TabPanel } from "@mui/lab";
 import { Suspense, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useAtomValue } from "jotai";
 import { sumBy } from "es-toolkit";
 
 import { buildActivityIntradayQuery } from "@/api/intraday";
@@ -18,6 +19,7 @@ import { DateFormats } from "@/utils/date-formats";
 import { NumberFormats } from "@/utils/number-formats";
 import { aggregateByHour } from "@/components/charts/timeseries/aggregation";
 import { FormRows } from "@/components/forms/form-row";
+import { floorsGoalAtom, weeklyFloorsGoalAtom } from "@/storage/settings";
 
 import { RenderDialogContentProps } from "../tile-with-dialog";
 import { useSelectedDay } from "../../state";
@@ -76,16 +78,15 @@ export default function FloorsDialogContent(props: RenderDialogContentProps) {
 
 function Overview() {
   const {
-    daySummary: { summary, goals },
-    weeklyGoals,
+    daySummary: { summary },
     weekData,
   } = useDayAndWeekSummary("floors");
+  const dailyGoal = useAtomValue(floorsGoalAtom);
+  const weeklyGoal = useAtomValue(weeklyFloorsGoalAtom);
 
   const currentTotal = summary.floors;
-  const dailyGoal = goals?.floors ?? 0;
 
   const weeklyTotal = sumBy(weekData, (entry) => Number(entry.value));
-  const weeklyGoal = weeklyGoals.floors;
 
   return (
     <Stack direction="row" justifyContent="center">

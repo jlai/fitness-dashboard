@@ -61,10 +61,25 @@ import {
   clockHourCycleAtom,
   numberFormatPatternAtom,
   dateFormatPatternAtom,
+  stepsGoalAtom,
+  weeklyStepsGoalAtom,
+  floorsGoalAtom,
+  weeklyFloorsGoalAtom,
+  distanceGoalAtom,
+  weeklyDistanceGoalAtom,
+  caloriesOutGoalAtom,
+  weeklyCaloriesOutGoalAtom,
+  activeMinutesGoalAtom,
+  weeklyActiveMinutesGoalAtom,
+  activeZoneMinutesGoalAtom,
+  weeklyActiveZoneMinutesGoalAtom,
+  waterGoalAtom,
+  weeklyWaterGoalAtom,
 } from "@/storage/settings";
 import { NutritionalValues } from "@/api/nutrition/types";
 import { PATTERN_TO_LOCALE } from "@/utils/number-formats";
 import { getScopeNameList } from "@/config/scopes";
+import { kilometersFromDistanceGoal, millilitersFromWaterGoal, useUnits } from "@/config/units";
 
 function SettingsRow({
   title,
@@ -398,6 +413,349 @@ function MacroGoals() {
   );
 }
 
+function ActivityGoalsSettings() {
+  const [stepsGoal, setStepsGoal] = useAtom(stepsGoalAtom);
+  const [weeklyStepsGoal, setWeeklyStepsGoal] = useAtom(weeklyStepsGoalAtom);
+  const [floorsGoal, setFloorsGoal] = useAtom(floorsGoalAtom);
+  const [weeklyFloorsGoal, setWeeklyFloorsGoal] = useAtom(weeklyFloorsGoalAtom);
+  const [distanceGoal, setDistanceGoal] = useAtom(distanceGoalAtom);
+  const [weeklyDistanceGoal, setWeeklyDistanceGoal] = useAtom(
+    weeklyDistanceGoalAtom,
+  );
+  const [caloriesOutGoal, setCaloriesOutGoal] = useAtom(caloriesOutGoalAtom);
+  const [weeklyCaloriesOutGoal, setWeeklyCaloriesOutGoal] = useAtom(
+    weeklyCaloriesOutGoalAtom,
+  );
+  const [activeMinutesGoal, setActiveMinutesGoal] = useAtom(
+    activeMinutesGoalAtom,
+  );
+  const [weeklyActiveMinutesGoal, setWeeklyActiveMinutesGoal] = useAtom(
+    weeklyActiveMinutesGoalAtom,
+  );
+  const [activeZoneMinutesGoal, setActiveZoneMinutesGoal] = useAtom(
+    activeZoneMinutesGoalAtom,
+  );
+  const [weeklyActiveZoneMinutesGoal, setWeeklyActiveZoneMinutesGoal] =
+    useAtom(weeklyActiveZoneMinutesGoalAtom);
+  const [waterGoal, setWaterGoal] = useAtom(waterGoalAtom);
+  const [weeklyWaterGoal, setWeeklyWaterGoal] = useAtom(weeklyWaterGoalAtom);
+
+  const {
+    distanceUnit,
+    waterUnit,
+    localizedKilometers,
+    localizedKilometersName,
+    localizedWaterVolume,
+    localizedWaterVolumeName,
+  } = useUnits();
+
+  const setNumericGoal = (
+    setter: (value: number) => void,
+    rawValue: string,
+  ) => {
+    const value = parseFloat(rawValue);
+    if (Number.isFinite(value)) {
+      setter(value);
+    }
+  };
+
+  return (
+    <>
+      <SettingsRow title="Goals">
+        Set goals displayed on the dashboard. This does NOT affect your Fitbit account or app.
+        The Google Health API currently does not allow us to get goals from your account, so you have to set them here.
+      </SettingsRow>
+      <SettingsRow
+        title="Daily steps"
+        action={
+          <TextField
+            value={stepsGoal}
+            type="number"
+            onChange={(event) =>
+              setNumericGoal(setStepsGoal, event.target.value)
+            }
+            slotProps={{
+              input: {
+                endAdornment: <InputAdornment position="end">steps</InputAdornment>,
+              },
+            }}
+          />
+        }
+      />
+      <SettingsRow
+        title="Weekly steps"
+        action={
+          <TextField
+            value={weeklyStepsGoal}
+            type="number"
+            onChange={(event) =>
+              setNumericGoal(setWeeklyStepsGoal, event.target.value)
+            }
+            slotProps={{
+              input: {
+                endAdornment: <InputAdornment position="end">steps</InputAdornment>,
+              },
+            }}
+          />
+        }
+      />
+      <SettingsRow
+        title="Daily floors"
+        action={
+          <TextField
+            value={floorsGoal}
+            type="number"
+            onChange={(event) =>
+              setNumericGoal(setFloorsGoal, event.target.value)
+            }
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <InputAdornment position="end">floors</InputAdornment>
+                ),
+              },
+            }}
+          />
+        }
+      />
+      <SettingsRow
+        title="Weekly floors"
+        action={
+          <TextField
+            value={weeklyFloorsGoal}
+            type="number"
+            onChange={(event) =>
+              setNumericGoal(setWeeklyFloorsGoal, event.target.value)
+            }
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <InputAdornment position="end">floors</InputAdornment>
+                ),
+              },
+            }}
+          />
+        }
+      />
+      <SettingsRow
+        title="Daily distance"
+        action={
+          <TextField
+            value={localizedKilometers(
+              kilometersFromDistanceGoal(
+                distanceGoal.value,
+                distanceGoal.unit,
+              ),
+            )}
+            type="number"
+            onChange={(event) => {
+              const value = parseFloat(event.target.value);
+              if (Number.isFinite(value)) {
+                setDistanceGoal({ value, unit: distanceUnit });
+              }
+            }}
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <InputAdornment position="end">
+                    {localizedKilometersName}
+                  </InputAdornment>
+                ),
+              },
+            }}
+          />
+        }
+      />
+      <SettingsRow
+        title="Weekly distance"
+        action={
+          <TextField
+            value={localizedKilometers(
+              kilometersFromDistanceGoal(
+                weeklyDistanceGoal.value,
+                weeklyDistanceGoal.unit,
+              ),
+            )}
+            type="number"
+            onChange={(event) => {
+              const value = parseFloat(event.target.value);
+              if (Number.isFinite(value)) {
+                setWeeklyDistanceGoal({ value, unit: distanceUnit });
+              }
+            }}
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <InputAdornment position="end">
+                    {localizedKilometersName}
+                  </InputAdornment>
+                ),
+              },
+            }}
+          />
+        }
+      />
+      <SettingsRow
+        title="Daily calories burned"
+        action={
+          <TextField
+            value={caloriesOutGoal}
+            type="number"
+            onChange={(event) =>
+              setNumericGoal(setCaloriesOutGoal, event.target.value)
+            }
+            slotProps={{
+              input: {
+                endAdornment: <InputAdornment position="end">Cal</InputAdornment>,
+              },
+            }}
+          />
+        }
+      />
+      <SettingsRow
+        title="Weekly calories burned"
+        action={
+          <TextField
+            value={weeklyCaloriesOutGoal}
+            type="number"
+            onChange={(event) =>
+              setNumericGoal(setWeeklyCaloriesOutGoal, event.target.value)
+            }
+            slotProps={{
+              input: {
+                endAdornment: <InputAdornment position="end">Cal</InputAdornment>,
+              },
+            }}
+          />
+        }
+      />
+      <SettingsRow
+        title="Daily active minutes"
+        action={
+          <TextField
+            value={activeMinutesGoal}
+            type="number"
+            onChange={(event) =>
+              setNumericGoal(setActiveMinutesGoal, event.target.value)
+            }
+            slotProps={{
+              input: {
+                endAdornment: <InputAdornment position="end">mins</InputAdornment>,
+              },
+            }}
+          />
+        }
+      />
+      <SettingsRow
+        title="Weekly active minutes"
+        action={
+          <TextField
+            value={weeklyActiveMinutesGoal}
+            type="number"
+            onChange={(event) =>
+              setNumericGoal(setWeeklyActiveMinutesGoal, event.target.value)
+            }
+            slotProps={{
+              input: {
+                endAdornment: <InputAdornment position="end">mins</InputAdornment>,
+              },
+            }}
+          />
+        }
+      />
+      <SettingsRow
+        title="Daily active zone minutes"
+        action={
+          <TextField
+            value={activeZoneMinutesGoal}
+            type="number"
+            onChange={(event) =>
+              setNumericGoal(setActiveZoneMinutesGoal, event.target.value)
+            }
+            slotProps={{
+              input: {
+                endAdornment: <InputAdornment position="end">mins</InputAdornment>,
+              },
+            }}
+          />
+        }
+      />
+      <SettingsRow
+        title="Weekly active zone minutes"
+        action={
+          <TextField
+            value={weeklyActiveZoneMinutesGoal}
+            type="number"
+            onChange={(event) =>
+              setNumericGoal(setWeeklyActiveZoneMinutesGoal, event.target.value)
+            }
+            slotProps={{
+              input: {
+                endAdornment: <InputAdornment position="end">mins</InputAdornment>,
+              },
+            }}
+          />
+        }
+      />
+      <SettingsRow
+        title="Daily water"
+        action={
+          <TextField
+            value={localizedWaterVolume(
+              millilitersFromWaterGoal(waterGoal.value, waterGoal.unit),
+            )}
+            type="number"
+            onChange={(event) => {
+              const value = parseFloat(event.target.value);
+              if (Number.isFinite(value)) {
+                setWaterGoal({ value, unit: waterUnit });
+              }
+            }}
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <InputAdornment position="end">
+                    {localizedWaterVolumeName}
+                  </InputAdornment>
+                ),
+              },
+            }}
+          />
+        }
+      />
+      <SettingsRow
+        title="Weekly water"
+        action={
+          <TextField
+            value={localizedWaterVolume(
+              millilitersFromWaterGoal(
+                weeklyWaterGoal.value,
+                weeklyWaterGoal.unit,
+              ),
+            )}
+            type="number"
+            onChange={(event) => {
+              const value = parseFloat(event.target.value);
+              if (Number.isFinite(value)) {
+                setWeeklyWaterGoal({ value, unit: waterUnit });
+              }
+            }}
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <InputAdornment position="end">
+                    {localizedWaterVolumeName}
+                  </InputAdornment>
+                ),
+              },
+            }}
+          />
+        }
+      />
+    </>
+  );
+}
+
 function UnitSettings() {
   const [distanceUnit, setDistanceUnit] = useAtom(distanceUnitAtom);
   const [swimUnit, setSwimUnit] = useAtom(swimUnitAtom);
@@ -711,6 +1069,9 @@ export default function SettingsPage() {
       </SettingsTable>
       <SettingsTable>
         <MacroGoals />
+      </SettingsTable>
+      <SettingsTable>
+        <ActivityGoalsSettings />
       </SettingsTable>
       <SettingsTable>
         <AdvancedSettings />

@@ -10,6 +10,8 @@ import {
   parseTemperatureUnit,
   parseWaterUnit,
   parseWeightUnit,
+  SettingsDistanceUnit,
+  SettingsWaterUnit,
   SwimUnitSystem,
   TemperatureUnitSystem,
   WaterUnitSystem,
@@ -143,6 +145,168 @@ export const DEFAULT_FDA_MACRO_GOALS: NutritionMacroGoals = {
   fiber: 28,
   fat: 78,
 };
+
+export type GoalPeriod = "daily" | "weekly";
+
+export interface UnitGoal<TUnit> {
+  value: number;
+  unit: TUnit;
+}
+
+export type DistanceGoal = UnitGoal<DistanceUnitSystem>;
+export type WaterGoal = UnitGoal<WaterUnitSystem>;
+
+export type NumericGoalResource =
+  | "steps"
+  | "floors"
+  | "caloriesOut"
+  | "activeMinutes"
+  | "activeZoneMinutes";
+
+export type UserGoalResource = NumericGoalResource | "distance" | "water";
+
+const goalAtomOptions = { getOnInit: true } as const;
+
+export const DEFAULT_DISTANCE_GOAL: DistanceGoal = {
+  value: 8,
+  unit: SettingsDistanceUnit.DISTANCE_UNIT_KILOMETERS,
+};
+
+export const DEFAULT_WATER_GOAL: WaterGoal = {
+  value: 2000,
+  unit: SettingsWaterUnit.WATER_UNIT_ML,
+};
+
+export const stepsGoalAtom = atomWithStorage(
+  "goals:steps",
+  10_000,
+  undefined,
+  goalAtomOptions,
+);
+
+export const floorsGoalAtom = atomWithStorage(
+  "goals:floors",
+  10,
+  undefined,
+  goalAtomOptions,
+);
+
+export const caloriesOutGoalAtom = atomWithStorage(
+  "goals:caloriesOut",
+  2200,
+  undefined,
+  goalAtomOptions,
+);
+
+export const activeMinutesGoalAtom = atomWithStorage(
+  "goals:activeMinutes",
+  30,
+  undefined,
+  goalAtomOptions,
+);
+
+export const activeZoneMinutesGoalAtom = atomWithStorage(
+  "goals:activeZoneMinutes",
+  22,
+  undefined,
+  goalAtomOptions,
+);
+
+export const distanceGoalAtom = atomWithStorage<DistanceGoal>(
+  "goals:distance",
+  DEFAULT_DISTANCE_GOAL,
+  undefined,
+  goalAtomOptions,
+);
+
+export const waterGoalAtom = atomWithStorage<WaterGoal>(
+  "goals:water",
+  DEFAULT_WATER_GOAL,
+  undefined,
+  goalAtomOptions,
+);
+
+export const weeklyStepsGoalAtom = atomWithStorage(
+  "goals:weekly:steps",
+  70_000,
+  undefined,
+  goalAtomOptions,
+);
+
+export const weeklyFloorsGoalAtom = atomWithStorage(
+  "goals:weekly:floors",
+  70,
+  undefined,
+  goalAtomOptions,
+);
+
+export const weeklyCaloriesOutGoalAtom = atomWithStorage(
+  "goals:weekly:caloriesOut",
+  15_400,
+  undefined,
+  goalAtomOptions,
+);
+
+export const weeklyActiveMinutesGoalAtom = atomWithStorage(
+  "goals:weekly:activeMinutes",
+  210,
+  undefined,
+  goalAtomOptions,
+);
+
+export const weeklyActiveZoneMinutesGoalAtom = atomWithStorage(
+  "goals:weekly:activeZoneMinutes",
+  150,
+  undefined,
+  goalAtomOptions,
+);
+
+export const weeklyDistanceGoalAtom = atomWithStorage<DistanceGoal>(
+  "goals:weekly:distance",
+  { value: 56, unit: SettingsDistanceUnit.DISTANCE_UNIT_KILOMETERS },
+  undefined,
+  goalAtomOptions,
+);
+
+export const weeklyWaterGoalAtom = atomWithStorage<WaterGoal>(
+  "goals:weekly:water",
+  { value: 14_000, unit: SettingsWaterUnit.WATER_UNIT_ML },
+  undefined,
+  goalAtomOptions,
+);
+
+const DAILY_NUMERIC_GOAL_ATOMS = {
+  steps: stepsGoalAtom,
+  floors: floorsGoalAtom,
+  caloriesOut: caloriesOutGoalAtom,
+  activeMinutes: activeMinutesGoalAtom,
+  activeZoneMinutes: activeZoneMinutesGoalAtom,
+} as const;
+
+const WEEKLY_NUMERIC_GOAL_ATOMS = {
+  steps: weeklyStepsGoalAtom,
+  floors: weeklyFloorsGoalAtom,
+  caloriesOut: weeklyCaloriesOutGoalAtom,
+  activeMinutes: weeklyActiveMinutesGoalAtom,
+  activeZoneMinutes: weeklyActiveZoneMinutesGoalAtom,
+} as const;
+
+export function getNumericGoalAtom(
+  period: GoalPeriod,
+  resource: NumericGoalResource,
+) {
+  return period === "daily"
+    ? DAILY_NUMERIC_GOAL_ATOMS[resource]
+    : WEEKLY_NUMERIC_GOAL_ATOMS[resource];
+}
+
+export function getDistanceGoalAtom(period: GoalPeriod) {
+  return period === "daily" ? distanceGoalAtom : weeklyDistanceGoalAtom;
+}
+
+export function getWaterGoalAtom(period: GoalPeriod) {
+  return period === "daily" ? waterGoalAtom : weeklyWaterGoalAtom;
+}
 
 export const macroGoalsAtom = atomWithStorage<NutritionMacroGoals>(
   "nutrition-goals:macros",

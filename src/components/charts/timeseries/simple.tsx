@@ -1,11 +1,12 @@
 import { useMemo } from "react";
 import dayjs from "dayjs";
 import durationPlugin from "dayjs/plugin/duration";
-import { useQueries } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
+import { useAtomValue } from "jotai";
 
-import { useUnits } from "@/config/units";
+import { millilitersFromWaterGoal, useUnits } from "@/config/units";
 import { NumberFormats } from "@/utils/number-formats";
-import { buildWaterGoalQuery } from "@/api/nutrition";
+import { waterGoalAtom } from "@/storage/settings";
 
 import { SimpleBarChart, SimpleLineChart } from "./mui-renderer";
 import {
@@ -55,12 +56,10 @@ export function CaloriesConsumedChart() {
 
 export function WaterChart() {
   const { localizedWaterVolume, localizedWaterVolumeName } = useUnits();
+  const waterGoal = useAtomValue(waterGoalAtom);
 
   const { showGoals } = useTimeSeriesChartConfig();
-  const query = useTimeSeriesQuery("water");
-  const [{ data }, { data: waterGoalRaw }] = useQueries({
-    queries: [query, { ...buildWaterGoalQuery(), enabled: !!showGoals }],
-  });
+  const { data } = useQuery(useTimeSeriesQuery("water"));
 
   const seriesConfigs = useMemo(
     () =>
@@ -70,23 +69,26 @@ export function WaterChart() {
         numberFormat: NumberFormats.FRACTION_DIGITS_0.format,
         unit: localizedWaterVolumeName,
       }),
-    [localizedWaterVolume, localizedWaterVolumeName],
+    [localizedWaterVolume, localizedWaterVolumeName]
   );
 
   const props = useAggregation(data, seriesConfigs);
-  const waterGoal =
-    showGoals && waterGoalRaw && localizedWaterVolume(waterGoalRaw);
+  const waterGoalLine =
+    showGoals &&
+    localizedWaterVolume(
+      millilitersFromWaterGoal(waterGoal.value, waterGoal.unit),
+    );
 
   return (
     <SimpleBarChart
       {...props}
       referenceLine={
-        waterGoal
+        waterGoalLine
           ? {
               label: `Goal: ${NumberFormats.FRACTION_DIGITS_0.format(
-                waterGoal,
+                waterGoalLine
               )} ${localizedWaterVolumeName}`,
-              value: waterGoal,
+              value: waterGoalLine,
             }
           : undefined
       }
@@ -107,7 +109,7 @@ export function WeightChart() {
         unit: localizedKilogramsName,
         showMark: false,
       }),
-    [localizedKilograms, localizedKilogramsName],
+    [localizedKilograms, localizedKilogramsName]
   );
 
   const props = useAggregation(data, seriesConfigs);

@@ -15,6 +15,7 @@ import {
 } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { toast } from "mui-sonner";
+import { useAtomValue } from "jotai";
 
 import { VolumeQuantityUserProvidedUnit } from "@generated/orval/fetch/google-health-api/models";
 
@@ -23,8 +24,9 @@ import { useUnits } from "@/config/units";
 import {
   buildCreateWaterLogMutation,
   buildFoodLogQuery,
-  buildWaterGoalQuery,
 } from "@/api/nutrition";
+import { millilitersFromWaterGoal } from "@/config/units";
+import { waterGoalAtom } from "@/storage/settings";
 
 import NumericStat from "../numeric-stat";
 import { DividedStack } from "../layout/flex";
@@ -227,15 +229,20 @@ export default function WaterEntryPanel() {
 function WaterToday() {
   const day = dayjs();
   const units = useUnits();
+  const waterGoal = useAtomValue(waterGoalAtom);
 
-  const [{ data: foodLog }, { data: waterGoalMl }] = useSuspenseQueries({
-    queries: [buildFoodLogQuery(day), buildWaterGoalQuery()],
+  const [{ data: foodLog }] = useSuspenseQueries({
+    queries: [buildFoodLogQuery(day)],
   });
 
   const { localizedWaterVolumeName, localizedWaterVolume } = units;
 
   const waterConsumed = localizedWaterVolume(foodLog.summary.water);
-  const waterGoal = localizedWaterVolume(waterGoalMl);
+  const waterGoalMl = millilitersFromWaterGoal(
+    waterGoal.value,
+    waterGoal.unit,
+  );
+  const waterGoalNumber = localizedWaterVolume(waterGoalMl);
 
   return (
     <div className="flex flex-col items-center">
@@ -245,7 +252,7 @@ function WaterToday() {
         <Typography variant="body1" className="text-2xl">
           /
         </Typography>
-        <NumericStat value={waterGoal} unit={localizedWaterVolumeName} />
+        <NumericStat value={waterGoalNumber} unit={localizedWaterVolumeName} />
       </div>
     </div>
   );

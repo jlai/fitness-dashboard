@@ -7,10 +7,13 @@ import {
 } from "@mui/material";
 import { useSuspenseQueries } from "@tanstack/react-query";
 import React, { Suspense } from "react";
+import { useAtomValue } from "jotai";
 
-import { buildFoodLogQuery, buildHydrationLogQuery, buildWaterGoalQuery } from "@/api/nutrition";
+import { buildHydrationLogQuery } from "@/api/nutrition";
 import { useUnits } from "@/config/units";
+import { millilitersFromWaterGoal } from "@/config/units";
 import NumericStat from "@/components/numeric-stat";
+import { waterGoalAtom } from "@/storage/settings";
 
 import { useSelectedDay } from "../state";
 
@@ -25,12 +28,16 @@ const WaterEntryPanel = React.lazy(
 export default function WaterTileContent() {
   const day = useSelectedDay();
   const units = useUnits();
+  const waterGoal = useAtomValue(waterGoalAtom);
 
   const [{ data: hydrationLog }] = useSuspenseQueries({
     queries: [buildHydrationLogQuery(day)],
   });
 
-  const waterGoalMl = 500;
+  const waterGoalMl = millilitersFromWaterGoal(
+    waterGoal.value,
+    waterGoal.unit,
+  );
   const waterConsumedMl = sumBy(hydrationLog.dataPoints ?? [], dataPoint => dataPoint.hydrationLog?.amountConsumed?.milliliters ?? 0);
 
   const { localizedWaterVolumeName, localizedWaterVolume } = units;

@@ -12,6 +12,7 @@ import {
 import { TabContext, TabList, TabPanel } from "@mui/lab";
 import { Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useAtomValue } from "jotai";
 
 import { FormRows } from "@/components/forms/form-row";
 import {
@@ -19,6 +20,7 @@ import {
   TimeSeriesEntry,
   HeartTimeSeriesValue,
 } from "@/api/times-series";
+import { activeMinutesGoalAtom } from "@/storage/settings";
 
 import { RenderDialogContentProps } from "../tile-with-dialog";
 import { useTileSetting } from "../tile";
@@ -72,10 +74,10 @@ const ACTIVE_MINUTES_HEART_RATE_ZONES = new Set(["Fat Burn", "Cardio", "Peak"]);
 
 export function useActiveMinutes(source: ActiveMinutesSource) {
   const selectedDay = useSelectedDay();
+  const activeMinutesGoal = useAtomValue(activeMinutesGoalAtom);
 
   const {
     summary: { fairlyActiveMinutes, veryActiveMinutes },
-    goals: { activeMinutes: activeMinutesGoal } = {},
   } = useDailySummary();
 
   const { data: heartSeries } = useQuery({
@@ -215,13 +217,19 @@ function Settings() {
       </section>
       <section>
         <Typography variant="h6">Goals</Typography>
-        <Typography variant="body1">Set daily active minute goal.</Typography>
+        <Typography variant="body1">Set daily and weekly active minute goals.</Typography>
 
         <FormRows mt={4}>
           <GoalSettings
             resource="activeMinutes"
             period="daily"
             label="Daily active minutes goal"
+            unit="mins"
+          />
+          <GoalSettings
+            resource="activeMinutes"
+            period="weekly"
+            label="Weekly active minutes goal"
             unit="mins"
           />
         </FormRows>

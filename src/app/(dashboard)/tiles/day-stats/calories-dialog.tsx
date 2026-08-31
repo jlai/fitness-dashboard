@@ -9,11 +9,13 @@ import { LineChart, PieChart, PieValueType } from "@mui/x-charts";
 import { TabContext, TabList, TabPanel } from "@mui/lab";
 import { useQuery } from "@tanstack/react-query";
 import { Suspense } from "react";
+import { useAtomValue } from "jotai";
 
 import { NumberFormats } from "@/utils/number-formats";
 import { buildActivityIntradayQuery } from "@/api/intraday";
 import { ENABLE_INTRADAY } from "@/config";
 import { FormRows } from "@/components/forms/form-row";
+import { caloriesOutGoalAtom } from "@/storage/settings";
 
 import { RenderDialogContentProps } from "../tile-with-dialog";
 import { useDailySummary } from "../common";
@@ -79,9 +81,9 @@ export default function CaloriesDialogContent(props: RenderDialogContentProps) {
 }
 
 function Overview() {
-  const { summary, goals } = useDailySummary();
+  const { summary } = useDailySummary();
+  const dailyGoal = useAtomValue(caloriesOutGoalAtom);
   const currentTotal = summary.caloriesOut;
-  const dailyGoal = goals?.caloriesOut ?? 0;
 
   return (
     <DailyGoalSummary
@@ -174,13 +176,19 @@ function Settings() {
   return (
     <>
       <Typography variant="h6">Goals</Typography>
-      <Typography variant="body1">Set daily calories burn goal.</Typography>
+      <Typography variant="body1">Set daily and weekly calories burned goals.</Typography>
 
       <FormRows mt={4}>
         <GoalSettings
           resource="caloriesOut"
           period="daily"
           label="Daily calories burned goal"
+          unit="Cal"
+        />
+        <GoalSettings
+          resource="caloriesOut"
+          period="weekly"
+          label="Weekly calories burned goal"
           unit="Cal"
         />
       </FormRows>

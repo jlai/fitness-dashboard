@@ -17,9 +17,16 @@ import dayjs from "dayjs";
 import { CasinoOutlined } from "@mui/icons-material";
 import { Chance } from "chance";
 import { find } from "es-toolkit/compat";
+import { useAtomValue } from "jotai";
 
 import { formatAsDate } from "@/api/datetime";
-import { millimetersToKilometers } from "@/config/units";
+import {
+  activeMinutesGoalAtom,
+  caloriesOutGoalAtom,
+  distanceGoalAtom,
+  stepsGoalAtom,
+} from "@/storage/settings";
+import { kilometersFromDistanceGoal } from "@/config/units";
 import { FormRow, FormRows } from "@/components/forms/form-row";
 
 import { useSelectedDay } from "../state";
@@ -77,6 +84,10 @@ const DEFAULT_SETTINGS: PlantSettings = { goal: "steps", genus: "BushyPlant" };
 export default function PlantTileContent() {
   const day = useSelectedDay();
   const dailySummary = useDailySummary();
+  const stepsGoal = useAtomValue(stepsGoalAtom);
+  const caloriesOutGoal = useAtomValue(caloriesOutGoalAtom);
+  const activeMinutesGoal = useAtomValue(activeMinutesGoalAtom);
+  const distanceGoal = useAtomValue(distanceGoalAtom);
   const [settings] = useTileSettings<PlantSettings>(DEFAULT_SETTINGS);
 
   let progress: number;
@@ -86,7 +97,7 @@ export default function PlantTileContent() {
     case "steps":
       {
         const totalSteps = dailySummary.summary.steps;
-        const goalSteps = dailySummary.goals?.steps ?? 10000;
+        const goalSteps = stepsGoal;
         progress = Math.min(1.0, totalSteps / goalSteps);
         text = "Meet your step goal to grow";
       }
@@ -94,7 +105,7 @@ export default function PlantTileContent() {
     case "calories-out":
       {
         const total = dailySummary.summary.caloriesOut;
-        const goal = dailySummary.goals?.caloriesOut ?? 0;
+        const goal = caloriesOutGoal;
         progress = Math.min(1.0, total / goal);
         text = "Burn calories to grow";
       }
@@ -103,7 +114,7 @@ export default function PlantTileContent() {
       {
         const { fairlyActiveMinutes, veryActiveMinutes } = dailySummary.summary;
         const total = fairlyActiveMinutes + veryActiveMinutes;
-        const goal = dailySummary.goals?.activeMinutes ?? 0;
+        const goal = activeMinutesGoal;
         progress = Math.min(1.0, total / goal);
         text = "Be active to grow";
       }
@@ -113,7 +124,10 @@ export default function PlantTileContent() {
         const total =
           find(dailySummary.summary.distances, { activity: "total" })
             ?.distance ?? 0;
-        const goal = millimetersToKilometers(dailySummary.goals?.distance ?? 0);
+        const goal = kilometersFromDistanceGoal(
+          distanceGoal.value,
+          distanceGoal.unit,
+        );
         progress = Math.min(1.0, total / goal);
         text = "Go the distance to grow";
       }

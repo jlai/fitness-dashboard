@@ -1,23 +1,28 @@
 import { Box, Button, InputAdornment, Stack, Typography } from "@mui/material";
-import {
-  useMutation,
-  useQueryClient,
-  useSuspenseQueries,
-} from "@tanstack/react-query";
+import { useSuspenseQueries } from "@tanstack/react-query";
+import { useAtom } from "jotai";
+import { useEffect, useMemo } from "react";
 import { FormContainer, TextFieldElement, useForm } from "react-hook-form-mui";
 
-import { NumberFormats } from "@/utils/number-formats";
 import {
   buildDailySummaryQuery,
   buildTimeSeriesQuery,
-  GoalResource,
   TimeSeriesResource,
 } from "@/api/activity";
 import {
-  buildActivityGoalsQuery,
-  buildUpdateActivityGoalMutation,
-} from "@/api/activity/goals";
+  kilometersFromDistanceGoal,
+  millilitersFromWaterGoal,
+  useUnits,
+} from "@/config/units";
 import { FormRow } from "@/components/forms/form-row";
+import {
+  getDistanceGoalAtom,
+  getNumericGoalAtom,
+  getWaterGoalAtom,
+  GoalPeriod,
+  NumericGoalResource,
+} from "@/storage/settings";
+import { NumberFormats } from "@/utils/number-formats";
 import { showSuccessToast, withErrorToaster } from "@/components/toast";
 
 import { useSelectedDay } from "../../state";
@@ -113,16 +118,14 @@ export function useDayAndWeekSummary(resource: TimeSeriesResource) {
   const startDay = day.startOf("week");
   const endDay = day.endOf("week");
 
-  const [{ data: daySummary }, { data: weeklyGoals }, { data: weekData }] =
-    useSuspenseQueries({
-      queries: [
-        buildDailySummaryQuery(day),
-        buildActivityGoalsQuery("weekly"),
-        buildTimeSeriesQuery(resource, startDay, endDay),
-      ],
-    });
+  const [{ data: daySummary }, { data: weekData }] = useSuspenseQueries({
+    queries: [
+      buildDailySummaryQuery(day),
+      buildTimeSeriesQuery(resource, startDay, endDay),
+    ],
+  });
 
-  return { daySummary, weeklyGoals, weekData };
+  return { daySummary, weekData };
 }
 
 interface GoalSettingsFormData {
@@ -135,34 +138,28 @@ export function GoalSettings({
   label,
   unit,
 }: {
-  resource: GoalResource;
-  period: "daily" | "weekly";
+  resource: NumericGoalResource;
+  period: GoalPeriod;
   label: string;
   unit: string;
 }) {
-  const queryClient = useQueryClient();
-  const { mutateAsync: updateGoal } = useMutation(
-    buildUpdateActivityGoalMutation(queryClient),
-  );
+  const goalAtom = getNumericGoalAtom(period, resource);
+  const [goal, setGoal] = useAtom(goalAtom);
 
-  const fetchDefaultValues = async () => ({
-    goal: (await queryClient.fetchQuery(buildActivityGoalsQuery(period)))[
-      resource
-    ]!,
-  });
+  const defaultValues = useMemo(() => ({ goal }), [goal]);
 
   const form = useForm<GoalSettingsFormData>({
-    defaultValues: fetchDefaultValues,
+    defaultValues,
   });
+
+  useEffect(() => {
+    form.reset(defaultValues);
+  }, [defaultValues, form]);
 
   const { formState } = form;
 
   const submit = withErrorToaster(async (values: GoalSettingsFormData) => {
-    await updateGoal({
-      resource,
-      period,
-      goal: values.goal,
-    });
+    setGoal(Number(values.goal));
 
     form.reset({
       goal: values.goal,
@@ -175,14 +172,14 @@ export function GoalSettings({
     <FormContainer
       formContext={form}
       onSuccess={submit}
-      disabled={formState.isLoading}
+      disabled={formState.isSubmitting}
     >
       <FormRow>
         <TextFieldElement
           type="number"
           name="goal"
           label={label}
-          rules={{ required: true }}
+          rules={{ required: true, min: 0 }}
           slotProps={{
             input: {
               endAdornment: (
@@ -192,10 +189,149 @@ export function GoalSettings({
             inputLabel: { shrink: true },
           }}
         />
-        <Button
-          type="submit"
-          disabled={formState.isLoading || !formState.isDirty}
-        >
+        <Button type="submit" disabled={formState.isSubmitting || !formState.isDirty}>
+          Update goal
+        </Button>
+      </FormRow>
+    </FormContainer>
+  );
+}
+
+export function DistanceGoalSettings({
+  period,
+  label,
+  unit,
+}: {
+  period: GoalPeriod;
+  label: string;
+  unit: string;
+}) {
+  const goalAtom = getDistanceGoalAtom(period);
+  const [goal, setGoal] = useAtom(goalAtom);
+  const { distanceUnit, localizedKilometers } = useUnits();
+
+  const displayGoal = localizedKilometers(
+    kilometersFromDistanceGoal(goal.value, goal.unit),
+  );
+
+  const defaultValues = useMemo(
+    () => ({ goal: displayGoal }),
+    [displayGoal],
+  );
+
+  const form = useForm<GoalSettingsFormData>({
+    defaultValues,
+  });
+
+  useEffect(() => {
+    form.reset(defaultValues);
+  }, [defaultValues, form]);
+
+  const { formState } = form;
+
+  const submit = withErrorToaster(async (values: GoalSettingsFormData) => {
+    setGoal({ value: Number(values.goal), unit: distanceUnit });
+
+    form.reset({
+      goal: values.goal,
+    });
+
+    showSuccessToast("Updated goal");
+  }, "Error updating goal");
+
+  return (
+    <FormContainer
+      formContext={form}
+      onSuccess={submit}
+      disabled={formState.isSubmitting}
+    >
+      <FormRow>
+        <TextFieldElement
+          type="number"
+          name="goal"
+          label={label}
+          rules={{ required: true, min: 0 }}
+          slotProps={{
+            input: {
+              endAdornment: (
+                <InputAdornment position="end">{unit}</InputAdornment>
+              ),
+            },
+            inputLabel: { shrink: true },
+          }}
+        />
+        <Button type="submit" disabled={formState.isSubmitting || !formState.isDirty}>
+          Update goal
+        </Button>
+      </FormRow>
+    </FormContainer>
+  );
+}
+
+export function WaterGoalSettings({
+  period,
+  label,
+  unit,
+}: {
+  period: GoalPeriod;
+  label: string;
+  unit: string;
+}) {
+  const goalAtom = getWaterGoalAtom(period);
+  const [goal, setGoal] = useAtom(goalAtom);
+  const { waterUnit, localizedWaterVolume } = useUnits();
+
+  const displayGoal = localizedWaterVolume(
+    millilitersFromWaterGoal(goal.value, goal.unit),
+  );
+
+  const defaultValues = useMemo(
+    () => ({ goal: displayGoal }),
+    [displayGoal],
+  );
+
+  const form = useForm<GoalSettingsFormData>({
+    defaultValues,
+  });
+
+  useEffect(() => {
+    form.reset(defaultValues);
+  }, [defaultValues, form]);
+
+  const { formState } = form;
+
+  const submit = withErrorToaster(async (values: GoalSettingsFormData) => {
+    setGoal({ value: Number(values.goal), unit: waterUnit });
+
+    form.reset({
+      goal: values.goal,
+    });
+
+    showSuccessToast("Updated goal");
+  }, "Error updating goal");
+
+  return (
+    <FormContainer
+      formContext={form}
+      onSuccess={submit}
+      disabled={formState.isSubmitting}
+    >
+      <FormRow>
+        <TextFieldElement
+          type="number"
+          name="goal"
+          label={label}
+          rules={{ required: true, min: 0 }}
+          slotProps={{
+            input: {
+              endAdornment: (
+                <InputAdornment position="end">{unit}</InputAdornment>
+              ),
+            },
+            inputLabel: { shrink: true },
+          }}
+        />
+        <Button type="submit" disabled={formState.isSubmitting || !formState.isDirty}>
           Update goal
         </Button>
       </FormRow>

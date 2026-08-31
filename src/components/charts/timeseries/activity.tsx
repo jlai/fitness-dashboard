@@ -1,9 +1,14 @@
 import { useMemo } from "react";
-import { useQueries } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
+import { useAtomValue } from "jotai";
 
-import { useUnits } from "@/config/units";
+import { kilometersFromDistanceGoal, useUnits } from "@/config/units";
 import { NumberFormats } from "@/utils/number-formats";
-import { buildActivityGoalsQuery } from "@/api/activity/goals";
+import {
+  distanceGoalAtom,
+  floorsGoalAtom,
+  stepsGoalAtom,
+} from "@/storage/settings";
 
 import { useAggregation } from "./aggregation";
 import { useRangeInfo, useTimeSeriesData, useTimeSeriesQuery } from "./data";
@@ -39,18 +44,12 @@ export function StepsChart() {
 
 export function DailyStepsChart() {
   const { showGoals } = useTimeSeriesChartConfig();
-  const query = useTimeSeriesQuery("steps");
-
-  const [{ data }, { data: goals }] = useQueries({
-    queries: [
-      query,
-      { ...buildActivityGoalsQuery("daily"), enabled: !!showGoals },
-    ],
-  });
+  const stepsGoal = useAtomValue(stepsGoalAtom);
+  const { data } = useQuery(useTimeSeriesQuery("steps"));
 
   const props = useAggregation(data, STEPS_SERIES_CONFIGS);
 
-  const stepGoal = showGoals && goals?.steps;
+  const stepGoal = showGoals && stepsGoal;
 
   return (
     <>
@@ -80,14 +79,8 @@ export function DailyStepsChart() {
 export function DistanceChart() {
   const { localizedKilometers, localizedKilometersName } = useUnits();
   const { showGoals } = useTimeSeriesChartConfig();
-  const query = useTimeSeriesQuery("distance");
-
-  const [{ data }, { data: goals }] = useQueries({
-    queries: [
-      query,
-      { ...buildActivityGoalsQuery("daily"), enabled: !!showGoals },
-    ],
-  });
+  const distanceGoalValue = useAtomValue(distanceGoalAtom);
+  const { data } = useQuery(useTimeSeriesQuery("distance"));
 
   const seriesConfigs = useMemo(
     () =>
@@ -102,7 +95,14 @@ export function DistanceChart() {
 
   const props = useAggregation(data, seriesConfigs);
 
-  const distanceGoal = showGoals && goals?.distance;
+  const distanceGoal =
+    showGoals &&
+    localizedKilometers(
+      kilometersFromDistanceGoal(
+        distanceGoalValue.value,
+        distanceGoalValue.unit,
+      ),
+    );
 
   return (
     <>
@@ -136,17 +136,12 @@ export function DistanceChart() {
 
 export function FloorsChart() {
   const { showGoals } = useTimeSeriesChartConfig();
-  const query = useTimeSeriesQuery("floors");
-  const [{ data }, { data: goals }] = useQueries({
-    queries: [
-      query,
-      { ...buildActivityGoalsQuery("daily"), enabled: !!showGoals },
-    ],
-  });
+  const floorsGoalValue = useAtomValue(floorsGoalAtom);
+  const { data } = useQuery(useTimeSeriesQuery("floors"));
 
   const props = useAggregation(data, FLOORS_SERIES_CONFIGS);
 
-  const floorsGoal = showGoals && goals?.floors;
+  const floorsGoal = showGoals && floorsGoalValue;
 
   return (
     <>

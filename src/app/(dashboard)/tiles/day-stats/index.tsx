@@ -1,13 +1,20 @@
 import { lazy } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useAtomValue } from "jotai";
 
-import { millimetersToKilometers, useUnits } from "@/config/units";
+import { useUnits, kilometersFromDistanceGoal } from "@/config/units";
 import {
   ActiveZoneMinutesTimeSeriesValue,
   buildTimeSeriesQuery,
   TimeSeriesEntry,
 } from "@/api/times-series";
-import { buildActivityGoalsQuery } from "@/api/activity/goals";
+import {
+  activeZoneMinutesGoalAtom,
+  caloriesOutGoalAtom,
+  distanceGoalAtom,
+  floorsGoalAtom,
+  stepsGoalAtom,
+} from "@/storage/settings";
 
 import { useDailySummary } from "../common";
 import stepsIconUrl from "../assets/steps_24dp_FILL0_wght400_GRAD0_opsz24.svg";
@@ -29,15 +36,16 @@ import ActiveZoneMinutesDialogContent from "./active-zone-minutes-dialog";
 
 const StepsDialogContent = lazy(async () => await import("./steps-dialog"));
 const DistanceDialogContent = lazy(
-  async () => await import("./distance-dialog"),
+  async () => await import("./distance-dialog")
 );
 const CaloriesDialogContent = lazy(
-  async () => await import("./calories-dialog"),
+  async () => await import("./calories-dialog")
 );
 const FloorsDialogContent = lazy(async () => await import("./floors-dialog"));
 
 export function GaugeStepsTileContent() {
   const dailySummary = useDailySummary();
+  const stepsGoal = useAtomValue(stepsGoalAtom);
 
   const totalSteps = dailySummary.summary.steps;
 
@@ -49,7 +57,7 @@ export function GaugeStepsTileContent() {
       <StatGauge
         iconSrc={stepsIconUrl}
         value={totalSteps}
-        valueMax={dailySummary.goals?.steps ?? 0}
+        valueMax={stepsGoal}
         valueUnits="steps"
       />
     </TileWithDialog>
@@ -58,11 +66,12 @@ export function GaugeStepsTileContent() {
 
 export function GaugeDistanceTileContent() {
   const dailySummary = useDailySummary();
+  const distanceGoal = useAtomValue(distanceGoalAtom);
   const units = useUnits();
 
   const totalDistance =
     (dailySummary.summary.distances ?? []).find(
-      (entry) => entry.activity === "total",
+      (entry) => entry.activity === "total"
     )?.distance ?? 0;
 
   const localizedTotalDistance = units.localizedKilometers(totalDistance);
@@ -76,7 +85,7 @@ export function GaugeDistanceTileContent() {
         iconSrc={distanceIconUrl}
         value={localizedTotalDistance}
         valueMax={units.localizedKilometers(
-          millimetersToKilometers(dailySummary.goals?.distance ?? 0),
+          kilometersFromDistanceGoal(distanceGoal.value, distanceGoal.unit),
         )}
         valueUnits={units.localizedKilometersName}
       />
@@ -86,9 +95,9 @@ export function GaugeDistanceTileContent() {
 
 export function GaugeCaloriesBurnedTileContent() {
   const dailySummary = useDailySummary();
+  const goal = useAtomValue(caloriesOutGoalAtom);
 
   const burned = dailySummary.summary.caloriesOut;
-  const goal = dailySummary.goals?.caloriesOut ?? 0;
 
   return (
     <TileWithDialog
@@ -107,9 +116,9 @@ export function GaugeCaloriesBurnedTileContent() {
 
 export function GaugeFloorsTileContent() {
   const dailySummary = useDailySummary();
+  const goal = useAtomValue(floorsGoalAtom);
 
   const floors = dailySummary.summary.floors;
-  const goal = dailySummary.goals?.floors ?? 0;
 
   return (
     <TileWithDialog
@@ -129,7 +138,7 @@ export function GaugeFloorsTileContent() {
 export function GaugeActiveMinutesTileContent() {
   const [source] = useTileSetting<ActiveMinutesTileSettings, "source">(
     "source",
-    "mets",
+    "mets"
   );
 
   const { activeMinutes, activeMinutesGoal } = useActiveMinutes(source);
@@ -151,15 +160,14 @@ export function GaugeActiveMinutesTileContent() {
 
 export function GaugeActiveZoneMinutesTileContent() {
   const selectedDay = useSelectedDay();
-
-  const { data: goals } = useQuery(buildActivityGoalsQuery("daily"));
+  const activeZoneMinutesGoal = useAtomValue(activeZoneMinutesGoalAtom);
 
   const { data: azmSeries } = useQuery(
     buildTimeSeriesQuery<TimeSeriesEntry<ActiveZoneMinutesTimeSeriesValue>>(
       "active-zone-minutes",
       selectedDay,
-      selectedDay,
-    ),
+      selectedDay
+    )
   );
 
   if (!azmSeries) {
@@ -167,7 +175,7 @@ export function GaugeActiveZoneMinutesTileContent() {
   }
 
   const dayAzm = azmSeries.find((entry) =>
-    selectedDay.isSame(entry.dateTime, "day"),
+    selectedDay.isSame(entry.dateTime, "day")
   );
   const dayAzmValue = dayAzm?.value.activeZoneMinutes ?? 0;
 
@@ -179,7 +187,7 @@ export function GaugeActiveZoneMinutesTileContent() {
       <StatGauge
         iconSrc={activeZoneMinutesIconUrl}
         value={dayAzmValue}
-        valueMax={goals?.activeZoneMinutes ?? 0}
+        valueMax={activeZoneMinutesGoal}
         valueUnits="zone mins"
       />
     </TileWithDialog>

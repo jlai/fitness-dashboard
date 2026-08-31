@@ -12,6 +12,7 @@ import { BarChart } from "@mui/x-charts";
 import { TabContext, TabList, TabPanel } from "@mui/lab";
 import { Suspense, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useAtomValue } from "jotai";
 import { dropWhile, sumBy } from "es-toolkit";
 
 import { buildActivityIntradayQuery } from "@/api/intraday";
@@ -21,6 +22,7 @@ import { NumberFormats } from "@/utils/number-formats";
 import { aggregateByHour } from "@/components/charts/timeseries/aggregation";
 import { HeaderBar } from "@/components/layout/rows";
 import { FormRows } from "@/components/forms/form-row";
+import { stepsGoalAtom, weeklyStepsGoalAtom } from "@/storage/settings";
 
 import { RenderDialogContentProps } from "../tile-with-dialog";
 import { useSelectedDay } from "../../state";
@@ -82,16 +84,15 @@ export default function StepsDialogContent(props: RenderDialogContentProps) {
 
 function Overview() {
   const {
-    daySummary: { summary, goals },
-    weeklyGoals,
+    daySummary: { summary },
     weekData,
   } = useDayAndWeekSummary("steps");
+  const dailyGoal = useAtomValue(stepsGoalAtom);
+  const weeklyGoal = useAtomValue(weeklyStepsGoalAtom);
 
   const currentTotal = summary.steps;
-  const dailyGoal = goals?.steps ?? 0;
 
   const weeklySteps = sumBy(weekData, (entry) => Number(entry.value));
-  const weeklyGoal = weeklyGoals.steps;
 
   return (
     <Stack direction="row" justifyContent="center">

@@ -11,17 +11,18 @@ import {
 import { TabContext, TabList, TabPanel } from "@mui/lab";
 import { Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useAtomValue } from "jotai";
 import { LineChart } from "@mui/x-charts";
 import { dropWhile } from "es-toolkit";
 
 import { FormRows } from "@/components/forms/form-row";
 import { buildTimeSeriesQuery } from "@/api/times-series";
-import { buildActivityGoalsQuery } from "@/api/activity/goals";
 import { TimeSeriesEntry } from "@/api/times-series";
 import { ActiveZoneMinutesTimeSeriesValue } from "@/api/times-series";
 import { buildActiveZoneMinutesIntradayQuery } from "@/api/intraday";
 import { ENABLE_INTRADAY } from "@/config";
 import { HeaderBar } from "@/components/layout/rows";
+import { activeZoneMinutesGoalAtom } from "@/storage/settings";
 
 import { RenderDialogContentProps } from "../tile-with-dialog";
 import { useTileSetting } from "../tile";
@@ -78,8 +79,7 @@ export default function ActiveZoneMinutesDialogContent(
 
 function Overview() {
   const selectedDay = useSelectedDay();
-
-  const { data: goals } = useQuery(buildActivityGoalsQuery("daily"));
+  const activeZoneMinutesGoal = useAtomValue(activeZoneMinutesGoalAtom);
 
   const { data: azmSeries } = useQuery(
     buildTimeSeriesQuery<TimeSeriesEntry<ActiveZoneMinutesTimeSeriesValue>>(
@@ -105,7 +105,7 @@ function Overview() {
       <Stack direction="row" justifyContent="center">
         <DailyGoalSummary
           currentTotal={dayAzmValue}
-          dailyGoal={goals?.activeZoneMinutes ?? 0}
+          dailyGoal={activeZoneMinutesGoal}
           unit="mins"
         />
       </Stack>
@@ -169,15 +169,19 @@ function Settings() {
   return (
     <>
       <Typography variant="h6">Goals</Typography>
-      <Typography variant="body1">
-        Set daily active zone minutes goal.
-      </Typography>
+      <Typography variant="body1">Set daily and weekly active zone minutes goals.</Typography>
 
       <FormRows mt={4}>
         <GoalSettings
           resource="activeZoneMinutes"
           period="daily"
           label="Daily active zone minutes goal"
+          unit="mins"
+        />
+        <GoalSettings
+          resource="activeZoneMinutes"
+          period="weekly"
+          label="Weekly active zone minutes goal"
           unit="mins"
         />
       </FormRows>

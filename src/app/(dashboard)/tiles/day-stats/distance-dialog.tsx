@@ -18,6 +18,7 @@ import {
 import { TabContext, TabList, TabPanel } from "@mui/lab";
 import { Suspense, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useAtomValue } from "jotai";
 import { sumBy } from "es-toolkit";
 
 import { buildActivityIntradayQuery } from "@/api/intraday";
@@ -25,8 +26,12 @@ import { ENABLE_INTRADAY } from "@/config";
 import { DateFormats } from "@/utils/date-formats";
 import { FRACTION_DIGITS_2 } from "@/utils/number-formats";
 import { aggregateByHour } from "@/components/charts/timeseries/aggregation";
-import { millimetersToKilometers, useUnits } from "@/config/units";
+import { kilometersFromDistanceGoal, useUnits } from "@/config/units";
 import { FormRows } from "@/components/forms/form-row";
+import {
+  distanceGoalAtom,
+  weeklyDistanceGoalAtom,
+} from "@/storage/settings";
 
 import { RenderDialogContentProps } from "../tile-with-dialog";
 import { useSelectedDay } from "../../state";
@@ -34,7 +39,7 @@ import { useTileSetting } from "../tile";
 
 import {
   DailyGoalSummary,
-  GoalSettings,
+  DistanceGoalSettings,
   useDayAndWeekSummary,
   WeeklyGoalSummary,
 } from "./goals";
@@ -85,10 +90,11 @@ export default function DistanceDialogContent(props: RenderDialogContentProps) {
 
 function Overview() {
   const {
-    daySummary: { summary, goals },
-    weeklyGoals: { distance: weeklyGoalLocalized },
+    daySummary: { summary },
     weekData,
   } = useDayAndWeekSummary("distance");
+  const dailyDistanceGoal = useAtomValue(distanceGoalAtom);
+  const weeklyDistanceGoal = useAtomValue(weeklyDistanceGoalAtom);
   const { localizedKilometers, localizedKilometersNameLong } = useUnits();
 
   const dailyDistanceKilometers =
@@ -97,7 +103,10 @@ function Overview() {
 
   const dailyDistance = localizedKilometers(dailyDistanceKilometers);
   const dailyGoal = localizedKilometers(
-    millimetersToKilometers(goals?.distance ?? 0),
+    kilometersFromDistanceGoal(
+      dailyDistanceGoal.value,
+      dailyDistanceGoal.unit,
+    ),
   );
 
   const weeklyDistance = localizedKilometers(
@@ -113,7 +122,12 @@ function Overview() {
       />
       <WeeklyGoalSummary
         currentTotal={weeklyDistance}
-        weeklyGoal={weeklyGoalLocalized}
+        weeklyGoal={localizedKilometers(
+          kilometersFromDistanceGoal(
+            weeklyDistanceGoal.value,
+            weeklyDistanceGoal.unit,
+          ),
+        )}
         unit={localizedKilometersNameLong}
       />
     </Stack>
@@ -128,7 +142,7 @@ function DistanceIntraday() {
   const { localizedKilometers, localizedKilometersName } = useUnits();
 
   const { data } = useQuery(
-    buildActivityIntradayQuery("distance", "15min", startTime, endTime),
+    buildActivityIntradayQuery("distance", "15min", startTime, endTime)
   );
 
   const processedData = useMemo(
@@ -139,7 +153,7 @@ function DistanceIntraday() {
             localizedValue: localizedKilometers(entry.value),
           }))
         : data,
-    [data, localizedKilometers],
+    [data, localizedKilometers]
   );
 
   return (
@@ -168,7 +182,7 @@ function DistanceIntraday() {
             valueFormatter: (value) =>
               value || value === 0
                 ? `${FRACTION_DIGITS_2.format(
-                    value,
+                    value
                   )} ${localizedKilometersName}`
                 : "",
           },
@@ -197,14 +211,12 @@ function Settings() {
       </Typography>
 
       <FormRows mt={4}>
-        <GoalSettings
-          resource="distance"
+        <DistanceGoalSettings
           period="daily"
           label="Daily distance goal"
           unit={localizedKilometersName}
         />
-        <GoalSettings
-          resource="distance"
+        <DistanceGoalSettings
           period="weekly"
           label="Weekly distance goal"
           unit={localizedKilometersName}
