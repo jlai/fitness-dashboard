@@ -1,15 +1,33 @@
 import dayjs, { Dayjs } from "dayjs";
-import { queryOptions } from "@tanstack/react-query";
+import { queryOptions, type QueryClient } from "@tanstack/react-query";
 import { groupBy, sumBy } from "es-toolkit";
 
 import { isAfterToday } from "@/utils/date-utils";
 
+import type {
+  DailyRollupDataPointFor,
+  DailyRollupDataType,
+  DataPointFor,
+  DataType,
+} from "./datapoints";
+import {
+  DAILY_ROLLUP_PROPERTIES,
+  buildDailyRollupQuery,
+  buildDatapointsQuery,
+  getDailyRollupValue,
+  getDataPointValue,
+} from "./datapoints";
 import { formatAsDate } from "./datetime";
-import { makeRequest } from "./request";
 import { ONE_MINUTE_IN_MILLIS } from "./cache-settings";
-import { GetSleepLogTimeSeriesResponse } from "./sleep";
 
-// https://dev.fitbit.com/build/reference/web-api/activity-timeseries/get-activity-timeseries-by-date-range/#Resource-Options
+const MILLIMETERS_PER_KILOMETER = 1_000_000;
+const GRAMS_PER_KILOGRAM = 1000;
+
+const PERSONAL_RANGE_ROLLUP_TYPES = new Set<DailyRollupDataType>([
+  "daily-heart-rate-variability",
+  "daily-resting-heart-rate",
+]);
+
 export type TimeSeriesResource =
   | "calories"
   | "distance"
@@ -50,136 +68,206 @@ export interface HeartTimeSeriesValue {
 }
 
 interface TimeSeriesResourceConfig {
-  urlPrefix: string;
-  responseKey: string;
+  dataType: DataType | DailyRollupDataType;
   requiredScopes: Array<string>;
   maxDays: number;
-  extractData?: (responseBody: any) => Array<TimeSeriesEntry<any>>;
   noFuture?: boolean;
+  mergeByDate?: "sum";
+  mapValue: (dataPoint: never) => unknown;
 }
 
 export const TIME_SERIES_CONFIGS: Record<
   TimeSeriesResource,
   TimeSeriesResourceConfig
 > = {
-  // activities
   calories: {
-    urlPrefix: "/1/user/-/activities/calories/date/",
-    responseKey: "activities-calories",
+    dataType: "total-calories",
     requiredScopes: ["act"],
     maxDays: 1095,
+    mapValue: (dataPoint: DailyRollupDataPointFor<"total-calories">) =>
+      String(getDailyRollupValue("total-calories", dataPoint).kcalSum ?? 0),
   },
   distance: {
-    urlPrefix: "/1/user/-/activities/distance/date/",
-    responseKey: "activities-distance",
+    dataType: "distance",
     requiredScopes: ["act"],
     maxDays: 1095,
+    mapValue: (dataPoint: DailyRollupDataPointFor<"distance">) =>
+      String(
+        Number(getDailyRollupValue("distance", dataPoint).millimetersSum ?? 0) /
+          MILLIMETERS_PER_KILOMETER,
+      ),
   },
   steps: {
-    urlPrefix: "/1/user/-/activities/steps/date/",
-    responseKey: "activities-steps",
+    dataType: "steps",
     requiredScopes: ["act"],
     maxDays: 1095,
+    mapValue: (dataPoint: DailyRollupDataPointFor<"steps">) =>
+      getDailyRollupValue("steps", dataPoint).countSum ?? "0",
   },
   floors: {
-    urlPrefix: "/1/user/-/activities/floors/date/",
-    responseKey: "activities-floors",
+    dataType: "floors",
     requiredScopes: ["act"],
     maxDays: 1095,
+    mapValue: (dataPoint: DailyRollupDataPointFor<"floors">) =>
+      getDailyRollupValue("floors", dataPoint).countSum ?? "0",
   },
-  // body
   weight: {
-    urlPrefix: "/1/user/-/body/weight/date/",
-    responseKey: "body-weight",
+    dataType: "weight",
     requiredScopes: ["wei"],
     maxDays: 1095,
-  },
-  fat: {
-    urlPrefix: "/1/user/-/body/fat/date/",
-    responseKey: "body-fat",
-    requiredScopes: ["wei"],
-    maxDays: 1095,
-  },
-  bmi: {
-    urlPrefix: "/1/user/-/body/bmi/date/",
-    responseKey: "body-bmi",
-    requiredScopes: ["wei"],
-    maxDays: 1095,
-  },
-  // nutrition
-  ["calories-in"]: {
-    urlPrefix: "/1/user/-/foods/log/caloriesIn/date/",
-    responseKey: "foods-log-caloriesIn",
-    requiredScopes: ["nut"],
-    maxDays: 1095,
-  },
-  water: {
-    urlPrefix: "/1/user/-/foods/log/water/date/",
-    responseKey: "foods-log-water",
-    requiredScopes: ["nut"],
-    maxDays: 1095,
-  },
-  // other
-  ["heart"]: {
-    urlPrefix: "/1/user/-/activities/heart/date/",
-    responseKey: "activities-heart",
-    requiredScopes: ["hr"],
-    maxDays: 366,
-  },
-  ["hrv"]: {
-    urlPrefix: "/1/user/-/hrv/date/",
-    responseKey: "hrv",
-    requiredScopes: ["hr"],
-    maxDays: 31,
-  },
-  ["active-zone-minutes"]: {
-    urlPrefix: "/1/user/-/activities/active-zone-minutes/date/",
-    responseKey: "activities-active-zone-minutes",
-    requiredScopes: ["act"],
-    maxDays: Infinity,
-  },
-  sleep: {
-    urlPrefix: "/1.2/user/-/sleep/date/",
-    responseKey: "sleep",
-    requiredScopes: ["sle"],
-    maxDays: 100,
-    extractData: (data: GetSleepLogTimeSeriesResponse) => {
-      const sleepsByDate = groupBy(data.sleep, (sleepLog) =>
-        formatAsDate(dayjs(sleepLog.endTime)),
-      );
-
-      return Object.entries(sleepsByDate)
-        .map(([dateString, sleepLogs]) => ({
-          dateTime: dateString,
-          value: sumBy(sleepLogs, ({ minutesAsleep }) => minutesAsleep),
-        }))
-        .toReversed();
+    mapValue: (dataPoint: DailyRollupDataPointFor<"weight">) => {
+      const grams = getDailyRollupValue("weight", dataPoint).weightGramsAvg;
+      return String((grams ?? 0) / GRAMS_PER_KILOGRAM);
     },
   },
+  fat: {
+    dataType: "body-fat",
+    requiredScopes: ["wei"],
+    maxDays: 1095,
+    mapValue: (dataPoint: DailyRollupDataPointFor<"body-fat">) =>
+      String(
+        getDailyRollupValue("body-fat", dataPoint).bodyFatPercentageAvg ?? 0,
+      ),
+  },
+  bmi: {
+    dataType: "weight",
+    requiredScopes: ["wei"],
+    maxDays: 1095,
+    mapValue: (dataPoint: DailyRollupDataPointFor<"weight">) =>
+      getDailyRollupValue("weight", dataPoint).weightGramsAvg ?? 0,
+  },
+  ["calories-in"]: {
+    dataType: "nutrition-log",
+    requiredScopes: ["nut"],
+    maxDays: 1095,
+    mapValue: (dataPoint: DailyRollupDataPointFor<"nutrition-log">) =>
+      String(
+        getDailyRollupValue("nutrition-log", dataPoint).energy?.kcalSum ?? 0,
+      ),
+  },
+  water: {
+    dataType: "hydration-log",
+    requiredScopes: ["nut"],
+    maxDays: 1095,
+    mapValue: (dataPoint: DailyRollupDataPointFor<"hydration-log">) =>
+      String(
+        getDailyRollupValue("hydration-log", dataPoint).amountConsumed
+          ?.millilitersSum ?? 0,
+      ),
+  },
+  heart: {
+    dataType: "daily-resting-heart-rate",
+    requiredScopes: ["hr"],
+    maxDays: 366,
+    mapValue: (
+      dataPoint: DataPointFor<"daily-resting-heart-rate">,
+    ): HeartTimeSeriesValue => {
+      const beatsPerMinute = Number(
+        getDataPointValue("daily-resting-heart-rate", dataPoint).beatsPerMinute,
+      );
+      return {
+        restingHeartRate: Number.isFinite(beatsPerMinute)
+          ? beatsPerMinute
+          : undefined,
+        heartRateZones: [],
+      };
+    },
+  },
+  hrv: {
+    dataType: "daily-heart-rate-variability",
+    requiredScopes: ["hr"],
+    maxDays: 31,
+    mapValue: (dataPoint: DataPointFor<"daily-heart-rate-variability">) => {
+      const value = getDataPointValue(
+        "daily-heart-rate-variability",
+        dataPoint,
+      );
+      return {
+        dailyRmssd: value.averageHeartRateVariabilityMilliseconds ?? 0,
+        deepRmssd:
+          value.deepSleepRootMeanSquareOfSuccessiveDifferencesMilliseconds ?? 0,
+      };
+    },
+  },
+  ["active-zone-minutes"]: {
+    dataType: "active-zone-minutes",
+    requiredScopes: ["act"],
+    maxDays: Infinity,
+    mapValue: (
+      dataPoint: DailyRollupDataPointFor<"active-zone-minutes">,
+    ): ActiveZoneMinutesTimeSeriesValue => {
+      const value = getDailyRollupValue("active-zone-minutes", dataPoint);
+      const fatBurnActiveZoneMinutes = Number(value.sumInFatBurnHeartZone ?? 0);
+      const cardioActiveZoneMinutes = Number(value.sumInCardioHeartZone ?? 0);
+      const peakActiveZoneMinutes = Number(value.sumInPeakHeartZone ?? 0);
+      return {
+        fatBurnActiveZoneMinutes,
+        cardioActiveZoneMinutes,
+        peakActiveZoneMinutes,
+        activeZoneMinutes:
+          fatBurnActiveZoneMinutes +
+          cardioActiveZoneMinutes +
+          peakActiveZoneMinutes,
+      };
+    },
+  },
+  sleep: {
+    dataType: "sleep",
+    requiredScopes: ["sle"],
+    maxDays: 100,
+    mergeByDate: "sum",
+    mapValue: (dataPoint: DataPointFor<"sleep">) =>
+      Number(getDataPointValue("sleep", dataPoint).summary?.minutesAsleep ?? 0),
+  },
   ["breathing-rate"]: {
-    urlPrefix: "/1/user/-/br/date/",
-    responseKey: "br",
+    dataType: "daily-respiratory-rate",
     requiredScopes: ["res"],
     maxDays: 31,
+    mapValue: (dataPoint: DataPointFor<"daily-respiratory-rate">) => ({
+      breathingRate:
+        getDataPointValue("daily-respiratory-rate", dataPoint)
+          .breathsPerMinute ?? 0,
+    }),
   },
   ["spo2"]: {
-    urlPrefix: "/1/user/-/spo2/date/",
-    responseKey: "",
+    dataType: "daily-oxygen-saturation",
     requiredScopes: ["oxy"],
     maxDays: Infinity,
+    mapValue: (dataPoint: DataPointFor<"daily-oxygen-saturation">) => {
+      const value = getDataPointValue("daily-oxygen-saturation", dataPoint);
+      return {
+        avg: value.averagePercentage ?? 0,
+        min: value.lowerBoundPercentage ?? 0,
+        max: value.upperBoundPercentage ?? 0,
+      };
+    },
   },
   ["cardio-score"]: {
-    urlPrefix: "/1/user/-/cardioscore/date/",
-    responseKey: "cardioScore",
+    dataType: "daily-vo2-max",
     requiredScopes: ["cf"],
     maxDays: 31,
     noFuture: true,
+    mapValue: (dataPoint: DataPointFor<"daily-vo2-max">) => ({
+      vo2Max: String(getDataPointValue("daily-vo2-max", dataPoint).vo2Max ?? 0),
+    }),
   },
   ["skin-temperature"]: {
-    urlPrefix: "/1/user/-/temp/skin/date/",
-    responseKey: "tempSkin",
+    dataType: "daily-sleep-temperature-derivations",
     requiredScopes: ["tem"],
     maxDays: 31,
+    mapValue: (
+      dataPoint: DataPointFor<"daily-sleep-temperature-derivations">,
+    ) => {
+      const value = getDataPointValue(
+        "daily-sleep-temperature-derivations",
+        dataPoint,
+      );
+      const nightly = value.nightlyTemperatureCelsius ?? 0;
+      const baseline = value.baselineTemperatureCelsius ?? nightly;
+      return {
+        nightlyRelative: nightly - baseline,
+      };
+    },
   },
 };
 
@@ -188,9 +276,189 @@ export type TimeSeriesEntry<ValueType> = {
   value: ValueType;
 };
 
-export type TimeSeriesResponse<ResourceName extends string, TEntry> = {
-  [key in ResourceName]: Array<TEntry>;
-};
+function usesDailyRollup(
+  dataType: DataType | DailyRollupDataType,
+): dataType is DailyRollupDataType {
+  return (
+    dataType in DAILY_ROLLUP_PROPERTIES &&
+    !PERSONAL_RANGE_ROLLUP_TYPES.has(dataType as DailyRollupDataType)
+  );
+}
+
+function formatCivilDate(date?: {
+  year?: number;
+  month?: number;
+  day?: number;
+}): string {
+  if (date?.year == null || date?.month == null || date?.day == null) {
+    return "";
+  }
+
+  return `${date.year}-${String(date.month).padStart(2, "0")}-${String(
+    date.day,
+  ).padStart(2, "0")}`;
+}
+
+function dateTimeFromDataPoint<T extends DataType>(
+  dataType: T,
+  dataPoint: DataPointFor<T>,
+): string {
+  const value = getDataPointValue(dataType, dataPoint) as {
+    date?: { year?: number; month?: number; day?: number };
+    sampleTime?: {
+      civilTime?: { date?: { year?: number; month?: number; day?: number } };
+      physicalTime?: string;
+    };
+    interval?: {
+      civilStartTime?: {
+        date?: { year?: number; month?: number; day?: number };
+      };
+      civilEndTime?: {
+        date?: { year?: number; month?: number; day?: number };
+      };
+      startTime?: string;
+      endTime?: string;
+    };
+  };
+
+  if (value.date) {
+    return formatCivilDate(value.date);
+  }
+
+  if (value.sampleTime) {
+    return (
+      formatCivilDate(value.sampleTime.civilTime?.date) ||
+      (value.sampleTime.physicalTime
+        ? formatAsDate(dayjs(value.sampleTime.physicalTime))
+        : "")
+    );
+  }
+
+  if (value.interval) {
+    const civil =
+      dataType === "sleep"
+        ? value.interval.civilEndTime
+        : value.interval.civilStartTime;
+    const timestamp =
+      dataType === "sleep" ? value.interval.endTime : value.interval.startTime;
+
+    return (
+      formatCivilDate(civil?.date) ||
+      (timestamp ? formatAsDate(dayjs(timestamp)) : "")
+    );
+  }
+
+  return "";
+}
+
+function mergeEntriesByDate(
+  entries: Array<TimeSeriesEntry<unknown>>,
+): Array<TimeSeriesEntry<number>> {
+  const grouped = groupBy(entries, (entry) => entry.dateTime);
+
+  return Object.entries(grouped)
+    .map(([dateTime, group]) => ({
+      dateTime,
+      value: sumBy(group, (entry) => Number(entry.value)),
+    }))
+    .toSorted((a, b) => a.dateTime.localeCompare(b.dateTime));
+}
+
+function heightMillimetersOnDate(
+  heights: Array<{ dateTime: string; millimeters: number }>,
+  dateTime: string,
+) {
+  let latest: number | undefined;
+
+  for (const height of heights) {
+    if (height.dateTime <= dateTime) {
+      latest = height.millimeters;
+    } else {
+      break;
+    }
+  }
+
+  return latest ?? heights.at(-1)?.millimeters;
+}
+
+async function toBmiEntries(
+  weightEntries: Array<TimeSeriesEntry<unknown>>,
+  startDay: Dayjs,
+  endDayExclusive: Dayjs,
+  queryClient: QueryClient,
+): Promise<Array<TimeSeriesEntry<string>>> {
+  const { dataPoints } = await queryClient.fetchQuery(
+    buildDatapointsQuery(
+      "height",
+      startDay.subtract(10, "year"),
+      endDayExclusive,
+    ),
+  );
+
+  const heights = dataPoints
+    .map((dataPoint) => ({
+      dateTime: dateTimeFromDataPoint("height", dataPoint),
+      millimeters: Number(
+        getDataPointValue("height", dataPoint).heightMillimeters,
+      ),
+    }))
+    .filter((entry) => entry.dateTime && Number.isFinite(entry.millimeters))
+    .toSorted((a, b) => a.dateTime.localeCompare(b.dateTime));
+
+  return weightEntries.flatMap((entry) => {
+    const heightMm = heightMillimetersOnDate(heights, entry.dateTime);
+    if (!heightMm) {
+      return [];
+    }
+
+    const heightM = heightMm / 1000;
+    const kg = Number(entry.value) / GRAMS_PER_KILOGRAM;
+    return [
+      {
+        dateTime: entry.dateTime,
+        value: String(kg / (heightM * heightM)),
+      },
+    ];
+  });
+}
+
+async function fetchTimeSeriesEntries(
+  resource: TimeSeriesResource,
+  config: TimeSeriesResourceConfig,
+  startDay: Dayjs,
+  endDayExclusive: Dayjs,
+  queryClient: QueryClient,
+): Promise<Array<TimeSeriesEntry<unknown>>> {
+  if (usesDailyRollup(config.dataType)) {
+    const { rollupDataPoints } = await queryClient.fetchQuery(
+      buildDailyRollupQuery(config.dataType, startDay, endDayExclusive),
+    );
+
+    const entries = rollupDataPoints.map((dataPoint) => ({
+      dateTime: formatCivilDate(dataPoint.civilStartTime?.date),
+      value: config.mapValue(dataPoint as never),
+    }));
+
+    if (resource === "bmi") {
+      return toBmiEntries(entries, startDay, endDayExclusive, queryClient);
+    }
+
+    return entries;
+  }
+
+  const { dataPoints } = await queryClient.fetchQuery(
+    buildDatapointsQuery(
+      config.dataType as DataType,
+      startDay,
+      endDayExclusive,
+    ),
+  );
+
+  return dataPoints.map((dataPoint) => ({
+    dateTime: dateTimeFromDataPoint(config.dataType as DataType, dataPoint),
+    value: config.mapValue(dataPoint as never),
+  }));
+}
 
 export function buildTimeSeriesQuery<TEntry = TimeSeriesEntry<string>>(
   resource: TimeSeriesResource,
@@ -205,37 +473,29 @@ export function buildTimeSeriesQuery<TEntry = TimeSeriesEntry<string>>(
 
   const startDate = formatAsDate(startDay);
   const endDate = formatAsDate(endDay);
+  const rangeStart = startDay.startOf("day");
+  const rangeEndExclusive = endDay.startOf("day").add(1, "day");
 
   return queryOptions({
     queryKey: ["timeseries", resource, startDate, endDate],
-    queryFn: async () => {
-      const response = await makeRequest(
-        `${config.urlPrefix}${startDate}/${endDate}.json`,
-        {
-          headers: {
-            // For heart rate zones where we need to match the name
-            "Accept-Locale": "en-US",
-          },
-        },
+    queryFn: async ({ client }) => {
+      let entries = await fetchTimeSeriesEntries(
+        resource,
+        config,
+        rangeStart,
+        rangeEndExclusive,
+        client,
       );
 
-      const defaultExtractData = (responseBody: any) => {
-        const responseData = responseBody as TimeSeriesResponse<string, TEntry>;
-        const data = config.responseKey
-          ? responseData[config.responseKey]
-          : responseData;
+      entries = entries.filter((entry) => entry.dateTime);
 
-        if (!data) {
-          throw new Error(
-            "key missing from response: ${config.responseKey}; keys: ${Object.keys(data)}",
-          );
-        }
+      if (config.mergeByDate === "sum") {
+        return mergeEntriesByDate(entries) as Array<TEntry>;
+      }
 
-        return data;
-      };
-
-      const extractData = config.extractData ?? defaultExtractData;
-      return extractData(await response.json()) as Array<TEntry>;
+      return entries.toSorted((a, b) =>
+        a.dateTime.localeCompare(b.dateTime),
+      ) as Array<TEntry>;
     },
     staleTime: ONE_MINUTE_IN_MILLIS,
   });
