@@ -10,7 +10,8 @@ import {
 } from "material-ui-popup-state/hooks";
 import { sum } from "es-toolkit";
 
-import { SleepLog } from "@/api/sleep";
+import type { Sleep } from "@generated/orval/fetch/google-health-api/models";
+
 import { formatMinutes } from "@/utils/duration-formats";
 import { NumberFormats } from "@/utils/number-formats";
 
@@ -18,22 +19,18 @@ import { FlexSpacer } from "../layout/flex";
 
 import { getLevelSummary, LEVEL_NAMES, SleepSummaryDatum } from "./levels";
 
-export function SleepLevelMiniSummary({
-  levels,
-}: {
-  levels: NonNullable<SleepLog["levels"]>;
-}) {
+export function SleepLevelMiniSummary({ sleep }: { sleep: Sleep }) {
   const { parentRef, width, height } = useParentSize();
   const popupState = usePopupState({
     variant: "popper",
     popupId: "sleep-mini-summary",
   });
 
-  const data = getLevelSummary(levels).toReversed();
+  const data = getLevelSummary(sleep).toReversed();
   const totalMins = sum(data.map((datum) => datum.value));
 
   const xScale = scaleLinear<number>({
-    domain: [0, Math.max(totalMins, 10 * 60)], // 10 hours or total
+    domain: [0, Math.max(totalMins, 10 * 60)],
     range: [0, width],
   });
 
@@ -41,21 +38,21 @@ export function SleepLevelMiniSummary({
 
   let xOffset = 0;
   for (const datum of data) {
-    const width = xScale(datum.value)!;
+    const barWidth = xScale(datum.value)!;
     bars.push(
       <BarRounded
         key={datum.level}
         x={xOffset}
         y={0}
-        width={width}
+        width={barWidth}
         height={height}
         radius={4}
         fill={datum.color}
         left={xOffset === 0}
-        right={xScale(totalMins) - xOffset - width < 2}
-      />,
+        right={xScale(totalMins) - xOffset - barWidth < 2}
+      />
     );
-    xOffset += width;
+    xOffset += barWidth;
   }
 
   return (

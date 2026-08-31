@@ -8,15 +8,23 @@ import {
 import { lazy, Suspense } from "react";
 
 import { DateFormats } from "@/utils/date-formats";
-import { SleepLog } from "@/api/sleep/types";
 import NumericStat from "@/components/numeric-stat";
 import HistoryList from "@/components/history-list/history-list";
 import { buildGetSleepLogListInfiniteQuery } from "@/api/sleep";
+import type { SleepDataPoint, SleepListResponse } from "@/api/sleep/types";
+import {
+  getSleepDataPointId,
+  getSleepEndTime,
+  getSleepFromDataPoint,
+  getSleepMinutesAsleep,
+  getSleepStartTime,
+  hasStageData,
+} from "@/api/sleep/helpers";
 import { SleepLevelMiniSummary } from "@/components/sleep/sleep-levels-mini";
 import { ResponsiveDialog } from "@/components/dialogs/responsive-dialog";
 
 const SleepDetailsDialogContent = lazy(
-  () => import("@/components/sleep/sleep-details-dialog"),
+  () => import("@/components/sleep/sleep-details-dialog")
 );
 
 function SleepDuration({ minutesAsleep }: { minutesAsleep: number }) {
@@ -44,9 +52,10 @@ function SleepLogListHeaderCells() {
   );
 }
 
-function SleepLogRow({ logEntry: sleep }: { logEntry: SleepLog }) {
-  const startTime = new Date(sleep.startTime);
-  const endTime = new Date(sleep.endTime);
+function SleepLogRow({ logEntry: dataPoint }: { logEntry: SleepDataPoint }) {
+  const sleep = getSleepFromDataPoint(dataPoint);
+  const startTime = new Date(getSleepStartTime(sleep));
+  const endTime = new Date(getSleepEndTime(sleep));
 
   const popupState = usePopupState({
     popupId: "sleep-log-details",
@@ -68,16 +77,16 @@ function SleepLogRow({ logEntry: sleep }: { logEntry: SleepLog }) {
         {DateFormats.TIME.format(endTime)}
       </TableCell>
       <TableCell className="hidden md:table-cell md:w-[200px]">
-        {sleep.levels && (
+        {hasStageData(sleep) && (
           <button className="block size-full" {...bindTrigger(popupState)}>
             <div className="w-full h-[20px]">
-              <SleepLevelMiniSummary levels={sleep.levels} />
+              <SleepLevelMiniSummary sleep={sleep} />
             </div>
           </button>
         )}
       </TableCell>
       <TableCell className="flex flex-row justify-end max-w-full">
-        <SleepDuration minutesAsleep={sleep.minutesAsleep} />
+        <SleepDuration minutesAsleep={getSleepMinutesAsleep(sleep)} />
       </TableCell>
 
       {popupState.isOpen && (
@@ -85,12 +94,12 @@ function SleepLogRow({ logEntry: sleep }: { logEntry: SleepLog }) {
           <ResponsiveDialog
             {...bindDialog(popupState)}
             title={`Sleep ending ${DateFormats.formatShortDateTime(
-              dayjs(endTime),
+              dayjs(endTime)
             )}`}
             fullWidth
             fullScreenPreferenceId="sleep"
           >
-            <SleepDetailsDialogContent sleepLog={sleep} />
+            <SleepDetailsDialogContent sleep={sleep} />
           </ResponsiveDialog>
         </Suspense>
       )}
@@ -102,7 +111,8 @@ export default function SleepLogList() {
   return (
     <HistoryList
       buildQuery={buildGetSleepLogListInfiniteQuery}
-      getLogs={(page: any) => page.sleep ?? []}
+      getLogs={(page: SleepListResponse) => page.sleep ?? []}
+      getRowKey={getSleepDataPointId}
       slots={{ row: SleepLogRow, headerCells: SleepLogListHeaderCells }}
     />
   );

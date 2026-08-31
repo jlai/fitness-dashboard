@@ -1,4 +1,11 @@
-import { SleepLog } from "@/api/sleep";
+import type { Sleep } from "@generated/orval/fetch/google-health-api/models";
+import { StageSummaryType } from "@generated/orval/fetch/google-health-api/models";
+
+import {
+  getSleepMinutesAsleep,
+  stageLevelKey,
+  usesStagesLayout,
+} from "@/api/sleep/helpers";
 
 export const LEVEL_COLORS: Record<string, string> = {
   wake: "#fcba03",
@@ -12,13 +19,11 @@ export const LEVEL_COLORS: Record<string, string> = {
 };
 
 export const LEVEL_NAMES: Record<string, string> = {
-  // Stages
   wake: "Awake",
   rem: "REM",
   light: "Light",
   deep: "Deep",
 
-  // Classic
   awake: "Awake",
   asleep: "Asleep",
   restless: "Restless",
@@ -29,89 +34,107 @@ export interface SleepSummaryDatum {
   value: number;
   color: string;
   ratio: number;
-  thirtyDayAvgMinutes: number;
   count: number;
 }
 
-export function getLevelSummary(
-  levels: NonNullable<SleepLog["levels"]>,
-): Array<SleepSummaryDatum> {
-  const summary = levels.summary;
-  const hasSleepStages = !!levels.summary.rem;
+function summaryDatum(
+  level: string,
+  minutes: number,
+  count: number,
+  totalMins: number,
+  color: string
+): SleepSummaryDatum {
+  return {
+    level,
+    value: minutes,
+    color,
+    ratio: totalMins > 0 ? minutes / totalMins : 0,
+    count,
+  };
+}
 
-  if (hasSleepStages) {
-    const wakeMins = summary.wake?.minutes ?? 0;
-    const remMins = summary.rem?.minutes ?? 0;
-    const lightMins = summary.light?.minutes ?? 0;
-    const deepMins = summary.deep?.minutes ?? 0;
+function findStageSummary(sleep: Sleep, type: StageSummaryType) {
+  return sleep.summary?.stagesSummary?.find((summary) => summary.type === type);
+}
+
+export function getLevelSummary(sleep: Sleep): Array<SleepSummaryDatum> {
+  const stagesSummary = sleep.summary?.stagesSummary ?? [];
+
+  if (usesStagesLayout(sleep)) {
+    const wake = findStageSummary(sleep, StageSummaryType.AWAKE);
+    const rem = findStageSummary(sleep, StageSummaryType.REM);
+    const light = findStageSummary(sleep, StageSummaryType.LIGHT);
+    const deep = findStageSummary(sleep, StageSummaryType.DEEP);
+
+    const wakeMins = Number(wake?.minutes ?? 0);
+    const remMins = Number(rem?.minutes ?? 0);
+    const lightMins = Number(light?.minutes ?? 0);
+    const deepMins = Number(deep?.minutes ?? 0);
     const totalMins = wakeMins + remMins + lightMins + deepMins;
 
     return [
-      {
-        level: "wake",
-        value: wakeMins,
-        color: "#fcba03",
-        ratio: wakeMins / totalMins,
-        thirtyDayAvgMinutes: summary.wake?.thirtyDayAvgMinutes ?? 0,
-        count: summary.wake?.count ?? 0,
-      },
-      {
-        level: "rem",
-        value: remMins,
-        color: "#9ccef0",
-        ratio: remMins / totalMins,
-        thirtyDayAvgMinutes: summary.rem?.thirtyDayAvgMinutes ?? 0,
-        count: summary.rem?.count ?? 0,
-      },
-      {
-        level: "light",
-        value: lightMins,
-        color: "#0398fc",
-        ratio: lightMins / totalMins,
-        thirtyDayAvgMinutes: summary.light?.thirtyDayAvgMinutes ?? 0,
-        count: summary.light?.count ?? 0,
-      },
-      {
-        level: "deep",
-        value: deepMins,
-        color: "#5d47ff80",
-        ratio: deepMins / totalMins,
-        thirtyDayAvgMinutes: summary.deep?.thirtyDayAvgMinutes ?? 0,
-        count: summary.deep?.count ?? 0,
-      },
-    ];
-  } else {
-    const awakeMins = summary.awake?.minutes ?? 0;
-    const restlessMins = summary.restless?.minutes ?? 0;
-    const asleepMins = summary.asleep?.minutes ?? 0;
-
-    const totalMins = awakeMins + restlessMins + asleepMins;
-
-    return [
-      {
-        level: "awake",
-        value: awakeMins,
-        color: "#fcba03",
-        ratio: awakeMins / totalMins,
-        thirtyDayAvgMinutes: summary.awake?.thirtyDayAvgMinutes ?? 0,
-        count: summary.awake?.count ?? 0,
-      },
-      {
-        level: "restless",
-        value: restlessMins,
-        color: "#61dde8",
-        ratio: restlessMins / totalMins,
-        thirtyDayAvgMinutes: summary.light?.thirtyDayAvgMinutes ?? 0,
-        count: summary.restless?.count ?? 0,
-      },
-      {
-        level: "asleep",
-        value: asleepMins,
-        color: "#2850a1",
-        ratio: asleepMins / totalMins,
-        thirtyDayAvgMinutes: summary.asleep?.thirtyDayAvgMinutes ?? 0,
-        count: summary.asleep?.count ?? 0,
-      },
+      summaryDatum(
+        "wake",
+        wakeMins,
+        Number(wake?.count ?? 0),
+        totalMins,
+        LEVEL_COLORS.wake
+      ),
+      summaryDatum(
+        "rem",
+        remMins,
+        Number(rem?.count ?? 0),
+        totalMins,
+        LEVEL_COLORS.rem
+      ),
+      summaryDatum(
+        "light",
+        lightMins,
+        Number(light?.count ?? 0),
+        totalMins,
+        LEVEL_COLORS.light
+      ),
+      summaryDatum(
+        "deep",
+        deepMins,
+        Number(deep?.count ?? 0),
+        totalMins,
+        "#5d47ff80"
+      ),
     ];
   }
+
+  const awake = findStageSummary(sleep, StageSummaryType.AWAKE);
+  const restless = findStageSummary(sleep, StageSummaryType.RESTLESS);
+  const asleep = findStageSummary(sleep, StageSummaryType.ASLEEP);
+
+  const awakeMins = Number(awake?.minutes ?? 0);
+  const restlessMins = Number(restless?.minutes ?? 0);
+  const asleepMins =
+    Number(asleep?.minutes ?? 0) || getSleepMinutesAsleep(sleep);
+  const totalMins = awakeMins + restlessMins + asleepMins;
+
+  return [
+    summaryDatum(
+      stageLevelKey(StageSummaryType.AWAKE, sleep),
+      awakeMins,
+      Number(awake?.count ?? 0),
+      totalMins,
+      LEVEL_COLORS.awake
+    ),
+    summaryDatum(
+      "restless",
+      restlessMins,
+      Number(restless?.count ?? 0),
+      totalMins,
+      LEVEL_COLORS.restless
+    ),
+    summaryDatum(
+      "asleep",
+      asleepMins,
+      Number(asleep?.count ?? 0),
+      totalMins,
+      LEVEL_COLORS.asleep
+    ),
+  ];
 }

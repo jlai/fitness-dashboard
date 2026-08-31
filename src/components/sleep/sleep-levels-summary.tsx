@@ -6,18 +6,15 @@ import { Group } from "@visx/group";
 import { Text } from "@visx/text";
 import { Typography } from "@mui/material";
 
-import { SleepLog } from "@/api/sleep";
+import type { Sleep } from "@generated/orval/fetch/google-health-api/models";
+
 import { formatMinutes } from "@/utils/duration-formats";
 import { NumberFormats } from "@/utils/number-formats";
 import { usePortalTooltip } from "@/components/charts/visx/tooltip";
 
 import { getLevelSummary, SleepSummaryDatum, LEVEL_NAMES } from "./levels";
 
-export function SleepLevelSummaryChart({
-  levels,
-}: {
-  levels: NonNullable<SleepLog["levels"]>;
-}) {
+export function SleepLevelSummaryChart({ sleep }: { sleep: Sleep }) {
   const { parentRef, width, height } = useParentSize();
   const {
     containerRef,
@@ -30,7 +27,7 @@ export function SleepLevelSummaryChart({
     tooltipData,
   } = usePortalTooltip<SleepSummaryDatum>();
 
-  const data: Array<SleepSummaryDatum> = getLevelSummary(levels);
+  const data: Array<SleepSummaryDatum> = getLevelSummary(sleep);
   const maxMins = Math.max(...data.map((datum) => datum.value));
   const levelIds = data.map((datum) => datum.level);
 
@@ -108,9 +105,9 @@ export function SleepLevelSummaryChart({
                 {canFitPercent
                   ? formatMinutes(datum.value)
                   : `${formatMinutes(
-                      datum.value,
+                      datum.value
                     )} (${NumberFormats.PERCENT_FRACTION_DIGITS_0.format(
-                      datum.ratio,
+                      datum.ratio
                     )})`}
               </Text>
               <rect
@@ -144,12 +141,6 @@ export function SleepLevelSummaryChart({
               </span>
               <b>{formatMinutes(tooltipData.value)}</b>
             </Typography>
-            {tooltipData?.thirtyDayAvgMinutes ? (
-              <Typography className="m-2">
-                30 day average:{" "}
-                <b>{formatMinutes(tooltipData.thirtyDayAvgMinutes)}</b>
-              </Typography>
-            ) : undefined}
           </div>
         </TooltipInPortal>
       )}

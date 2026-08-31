@@ -1,7 +1,14 @@
 import { DialogContent, Stack, Typography } from "@mui/material";
 import dayjs from "dayjs";
 
-import { SleepLog } from "@/api/sleep";
+import type { Sleep } from "@generated/orval/fetch/google-health-api/models";
+
+import {
+  getSleepEndTime,
+  getSleepMinutesAsleep,
+  getSleepStartTime,
+  hasStageData,
+} from "@/api/sleep/helpers";
 import { formatMinutes } from "@/utils/duration-formats";
 import { DateFormats } from "@/utils/date-formats";
 
@@ -9,18 +16,15 @@ import { Hypnogram } from "./hypnogram";
 import { SleepLevelSummaryChart } from "./sleep-levels-summary";
 
 interface SleepDetailsDialogContentProps {
-  sleepLog: SleepLog;
+  sleep: Sleep;
 }
 
 export default function SleepDetailsDialogContent({
-  sleepLog,
+  sleep,
 }: SleepDetailsDialogContentProps) {
-  const { levels } = sleepLog;
-
-  const startDay = dayjs(sleepLog.startTime);
-  const endDay = dayjs(sleepLog.endTime);
-
-  const hasLevels = !!levels;
+  const startDay = dayjs(getSleepStartTime(sleep));
+  const endDay = dayjs(getSleepEndTime(sleep));
+  const hasLevels = hasStageData(sleep);
 
   return (
     <>
@@ -31,17 +35,19 @@ export default function SleepDetailsDialogContent({
               <Stack direction="row" columnGap={4} justifyContent="center">
                 <span>Sleep: {DateFormats.TIME.format(startDay.toDate())}</span>
                 <span>Wake: {DateFormats.TIME.format(endDay.toDate())}</span>
-                <span>Duration: {formatMinutes(sleepLog.minutesAsleep)}</span>
+                <span>
+                  Duration: {formatMinutes(getSleepMinutesAsleep(sleep))}
+                </span>
               </Stack>
             </Typography>
           </div>
           {hasLevels && (
             <>
               <div className="w-full mb-8 h-[300px]">
-                <Hypnogram height={300} sleepLog={sleepLog} />
+                <Hypnogram height={300} sleep={sleep} />
               </div>
               <div className="max-w-[400px] h-[200px]">
-                <SleepLevelSummaryChart levels={levels} />
+                <SleepLevelSummaryChart sleep={sleep} />
               </div>
             </>
           )}

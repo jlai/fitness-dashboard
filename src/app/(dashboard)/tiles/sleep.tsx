@@ -5,7 +5,14 @@ import Image from "next/image";
 
 import NumericStat from "@/components/numeric-stat";
 import { DateFormats } from "@/utils/date-formats";
-import { buildGetSleepLogByDateQuery, SleepLog } from "@/api/sleep";
+import { buildGetSleepLogByDateQuery } from "@/api/sleep";
+import {
+  getSleepEndTime,
+  getSleepFromDataPoint,
+  getSleepMinutesAsleep,
+  getSleepStartTime,
+  isMainSleep,
+} from "@/api/sleep/helpers";
 import SleepDetailsDialogContent from "@/components/sleep/sleep-details-dialog";
 
 import { useSelectedDay } from "../state";
@@ -15,23 +22,30 @@ import { TileWithDialog } from "./tile-with-dialog";
 
 export function SleepTileContent() {
   const selectedDay = useSelectedDay();
-  const { data: sleepLogs = [] } = useSuspenseQuery(
-    buildGetSleepLogByDateQuery(selectedDay),
+  const { data: sleepDataPoints = [] } = useSuspenseQuery(
+    buildGetSleepLogByDateQuery(selectedDay)
   );
 
-  const totalMinutes = sumBy(sleepLogs, ({ minutesAsleep }) => minutesAsleep);
+  const totalMinutes = sumBy(sleepDataPoints, (dataPoint) =>
+    getSleepMinutesAsleep(getSleepFromDataPoint(dataPoint))
+  );
 
-  if (sleepLogs.length === 0) {
+  if (sleepDataPoints.length === 0) {
     return <NoSleep />;
   }
 
-  const mainSleep = sleepLogs.find((sleep) => sleep.isMainSleep);
+  const mainSleepDataPoint = sleepDataPoints.find((dataPoint) =>
+    isMainSleep(getSleepFromDataPoint(dataPoint))
+  );
+  const mainSleep = mainSleepDataPoint
+    ? getSleepFromDataPoint(mainSleepDataPoint)
+    : undefined;
 
   return (
     <TileWithDialog
       disableDialog={!mainSleep}
       dialogComponent={() =>
-        mainSleep && <SleepTileDialogContent sleepLog={mainSleep} />
+        mainSleep && <SleepTileDialogContent sleep={mainSleep} />
       }
       dialogProps={{ fullWidth: true, maxWidth: "lg" }}
     >
@@ -49,11 +63,13 @@ export function SleepTileContent() {
               className="text-center text-balance"
             >
               <span className="wrap">
-                {DateFormats.TIME.format(new Date(mainSleep.startTime))}
+                {DateFormats.TIME.format(
+                  new Date(getSleepStartTime(mainSleep))
+                )}
               </span>
               <span> &ndash; </span>
               <span>
-                {DateFormats.TIME.format(new Date(mainSleep.endTime))}
+                {DateFormats.TIME.format(new Date(getSleepEndTime(mainSleep)))}
               </span>
             </Typography>
           )}
@@ -100,6 +116,10 @@ function SleepDuration({ minutesAsleep }: { minutesAsleep: number }) {
   );
 }
 
-function SleepTileDialogContent({ sleepLog }: { sleepLog: SleepLog }) {
-  return <SleepDetailsDialogContent sleepLog={sleepLog} />;
+function SleepTileDialogContent({
+  sleep,
+}: {
+  sleep: ReturnType<typeof getSleepFromDataPoint>;
+}) {
+  return <SleepDetailsDialogContent sleep={sleep} />;
 }

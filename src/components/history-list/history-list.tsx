@@ -20,7 +20,8 @@ import { useState, useCallback } from "react";
 import JumpTo from "../jump-to";
 
 interface LogEntryWithId {
-  logId: number;
+  logId?: number | string;
+  name?: string;
 }
 
 interface RowElementProps<Log> {
@@ -30,6 +31,7 @@ interface RowElementProps<Log> {
 interface HistoryListProps<Response, Log extends LogEntryWithId> {
   buildQuery: any;
   getLogs: (response: Response) => Array<Log>;
+  getRowKey?: (log: Log) => string | number;
   slots: {
     row: React.JSXElementConstructor<RowElementProps<Log>>;
     headerCells: React.JSXElementConstructor<object>;
@@ -39,9 +41,14 @@ interface HistoryListProps<Response, Log extends LogEntryWithId> {
 const DEFAULT_PAGE_SIZE = 10;
 const ALLOWED_PAGE_SIZES = [10, 25, 50, 100];
 
+function defaultRowKey<Log extends LogEntryWithId>(log: Log) {
+  return log.name ?? log.logId ?? "";
+}
+
 export default function HistoryList<Response, Log extends LogEntryWithId>({
   buildQuery,
   getLogs,
+  getRowKey = defaultRowKey,
   slots: { row: Row, headerCells: HeaderCells },
 }: HistoryListProps<Response, Log>) {
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
@@ -80,6 +87,7 @@ export default function HistoryList<Response, Log extends LogEntryWithId>({
 
   const page = data?.pages[pageNumber];
   const logEntries: Array<Log> = page ? getLogs(page as any) : [];
+  const fillerCount = Math.max(0, pageSize - logEntries.length);
 
   return (
     <TableContainer>
@@ -91,9 +99,9 @@ export default function HistoryList<Response, Log extends LogEntryWithId>({
         </TableHead>
         <TableBody>
           {logEntries.map((log) => (
-            <Row key={log.logId} logEntry={log} />
+            <Row key={getRowKey(log)} logEntry={log} />
           ))}
-          {[...Array(pageSize - logEntries.length).fill(0)].map((_, i) => (
+          {[...Array(fillerCount).fill(0)].map((_, i) => (
             <TableRow key={`filler-${i}`}>
               <TableCell colSpan={1000}>
                 {isFetching ? <Skeleton variant="text" /> : " "}

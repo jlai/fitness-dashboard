@@ -2,81 +2,130 @@ import { QueryClient } from "@tanstack/query-core";
 import { Dayjs } from "dayjs";
 import { infiniteQueryOptions, queryOptions } from "@tanstack/react-query";
 
+import { SleepType } from "@generated/orval/fetch/google-health-api/models";
+import { healthUsersDataTypesDataPointsCreate } from "@generated/orval/fetch/google-health-api/users/users";
+
+import {
+  buildOneDayDatapointsQuery,
+  listDataPointsPage,
+} from "../datapoints";
 import { formatAsDate } from "../datetime";
 import mutationOptions from "../mutation-options";
-import { makeRequest } from "../request";
-import { graduallyStale } from "../cache-settings";
 
-import { GetSleepLogListResponse } from "./types";
+import type { SleepDataPoint, SleepListResponse } from "./types";
 
 interface CreateSleepLogOptions {
   startTime: Dayjs;
   endTime: Dayjs;
 }
 
+const MAX_SLEEP_PAGE_SIZE = 25;
+
+function utcOffsetDuration(day: Dayjs) {
+  return `${day.utcOffset() * 60}s`;
+}
+
+function sleepLogsEndingBeforeFilter(before: Dayjs) {
+  return `sleep.interval.end_time < "${before.toISOString()}"`;
+}
+
 export function buildCreateSleepLogMutation(queryClient: QueryClient) {
   return mutationOptions({
     mutationFn: async (newSleepLog: CreateSleepLogOptions) => {
       const { startTime, endTime } = newSleepLog;
+      const startUtcOffset = utcOffsetDuration(startTime);
+      const endUtcOffset = utcOffsetDuration(endTime);
 
-      const params = new URLSearchParams();
-      params.set("date", formatAsDate(startTime));
-      params.set("startTime", startTime.format("HH:mm"));
-      params.set("duration", `${endTime.diff(startTime)}`);
-
-      const response = await makeRequest(
-        `/1.1/user/-/sleep.json?${params.toString()}`,
+      const response = await healthUsersDataTypesDataPointsCreate(
+        "me",
+        "sleep",
         {
-          method: "POST",
-        },
+          sleep: {
+            interval: {
+              startTime: startTime.toISOString(),
+              endTime: endTime.toISOString(),
+              startUtcOffset,
+              endUtcOffset,
+            },
+            type: SleepType.CLASSIC,
+          },
+        }
       );
 
-      return response;
+      return response.data;
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [
+          "datapoints",
+          "sleep",
+          formatAsDate(variables.startTime),
+        ],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [
+          "datapoints",
+          "sleep",
+          formatAsDate(variables.endTime),
+        ],
+      });
       queryClient.resetQueries({
         queryKey: ["sleep-log-list"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["timeseries", "sleep"],
       });
     },
   });
 }
 
 export function buildGetSleepLogByDateQuery(day: Dayjs) {
-  const date = formatAsDate(day);
-
   return queryOptions({
-    queryKey: ["sleep-log", date],
-    queryFn: async () => {
-      const response = await makeRequest(`/1.2/user/-/sleep/date/${date}.json`);
-
-      return ((await response.json()) as GetSleepLogListResponse).sleep;
-    },
-    staleTime: graduallyStale(day),
+    ...buildOneDayDatapointsQuery("sleep", day),
+    select: ({ dataPoints }) => dataPoints,
   });
 }
 
 export function buildGetSleepLogListInfiniteQuery(
   initialDay: Dayjs,
-  pageSize: number,
+  pageSize: number
 ) {
   return infiniteQueryOptions({
     queryKey: ["sleep-log-list", formatAsDate(initialDay), pageSize],
-    queryFn: async ({ pageParam }) => {
-      const queryString =
-        pageParam ||
-        `limit=${pageSize}&offset=0&sort=desc&beforeDate=${encodeURIComponent(
-          initialDay.toISOString().replace("Z", ""),
-        )}`;
+    queryFn: async ({ pageParam }: { pageParam: string }) => {
+      const dataPoints: Array<SleepDataPoint> = [];
+      let pageToken: string | undefined = pageParam || undefined;
 
-      const response = await makeRequest(
-        `/1.2/user/-/sleep/list.json?${queryString}`,
-      );
-      return (await response.json()) as GetSleepLogListResponse;
+      while (dataPoints.length < pageSize) {
+        const page = await listDataPointsPage(
+          "sleep",
+          sleepLogsEndingBeforeFilter(initialDay.endOf("day")),
+          pageToken,
+          Math.min(pageSize - dataPoints.length, MAX_SLEEP_PAGE_SIZE)
+        );
+
+        dataPoints.push(...page.dataPoints);
+        pageToken = page.nextPageToken;
+
+        if (!pageToken || page.dataPoints.length === 0) {
+          break;
+        }
+      }
+
+      const response: SleepListResponse = {
+        sleep: dataPoints,
+        pagination: {
+          afterDate: "",
+          limit: pageSize,
+          next: pageToken ?? "",
+          previous: "",
+          sort: "desc",
+        },
+      };
+
+      return response;
     },
-    getNextPageParam: (lastPage) =>
-      lastPage.pagination.next
-        ? new URL(lastPage.pagination.next).search.replace(/^\?/, "")
-        : null,
+    getNextPageParam: (lastPage) => lastPage.pagination.next || null,
     initialPageParam: "",
   });
 }

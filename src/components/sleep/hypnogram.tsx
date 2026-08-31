@@ -10,7 +10,15 @@ import { ScaleTime } from "d3-scale";
 import dayjs from "dayjs";
 import { Box, Stack, Typography } from "@mui/material";
 
-import { SleepLog, SleepLogLevelData } from "@/api/sleep";
+import type { Sleep, SleepStage } from "@generated/orval/fetch/google-health-api/models";
+
+import {
+  getSleepEndTime,
+  getSleepStartTime,
+  stageDurationSeconds,
+  stageLevelKey,
+  usesStagesLayout,
+} from "@/api/sleep/helpers";
 import { formatSeconds } from "@/utils/duration-formats";
 import { DateFormats } from "@/utils/date-formats";
 
@@ -28,19 +36,20 @@ const levelIndex: Record<string, number> = {
 };
 
 interface HypnogramProps {
-  sleepLog: SleepLog;
+  sleep: Sleep;
   height: number | string;
 }
 
 interface SleepLevelPlotProps {
-  data: SleepLogLevelData[];
-  shortData: SleepLogLevelData[];
+  data: SleepStage[];
+  shortData: readonly SleepStage[];
+  sleep: Sleep;
   xScale: ScaleTime<number, number>;
   yScale: ReturnType<typeof scaleBand<string>>;
   height: number;
   onMouseOver: (
     event: React.MouseEvent<SVGElement>,
-    datum: SleepLogLevelData,
+    datum: SleepStage
   ) => void;
   onMouseOut: () => void;
 }
@@ -55,12 +64,14 @@ interface HypnogramAxesProps {
 }
 
 interface SleepSegmentTooltipContentProps {
-  tooltipData: SleepLogLevelData;
+  sleep: Sleep;
+  tooltipData: SleepStage;
 }
 
 function SleepLevelPlot({
   data,
   shortData,
+  sleep,
   xScale,
   yScale,
   height,
@@ -74,24 +85,27 @@ function SleepLevelPlot({
   let lastY: number | undefined;
 
   for (let i = 0; i < data.length; i++) {
-    const datum = data[i];
-    const startTime = dayjs(datum.dateTime);
-    const endTime = startTime.add(datum.seconds, "seconds");
+    const stage = data[i];
+    const level = stageLevelKey(stage.type, sleep);
+    const startTime = dayjs(stage.startTime);
+    const endTime = startTime.add(stageDurationSeconds(stage), "seconds");
     const startX = xScale(startTime.toDate().getTime());
     const endX = xScale(endTime.toDate().getTime());
-    const y = yScale(datum.level)!;
+    const y = yScale(level)!;
 
-    const currentLevelIndex = levelIndex[datum.level];
-    const prevLevelIndex = levelIndex[data[i - 1]?.level] ?? 0;
-    const nextLevelIndex = levelIndex[data[i + 1]?.level] ?? 0;
+    const currentLevelIndex = levelIndex[level];
+    const prevLevel = stageLevelKey(data[i - 1]?.type, sleep);
+    const nextLevel = stageLevelKey(data[i + 1]?.type, sleep);
+    const prevLevelIndex = levelIndex[prevLevel] ?? 0;
+    const nextLevelIndex = levelIndex[nextLevel] ?? 0;
 
     const startIsDeeper = currentLevelIndex > prevLevelIndex;
     const endIsDeeper = nextLevelIndex > currentLevelIndex;
 
     lines.push(
       <BarRounded
-        key={datum.dateTime}
-        fill={LEVEL_COLORS[datum.level]}
+        key={stage.startTime}
+        fill={LEVEL_COLORS[level]}
         radius={6}
         x={startX}
         y={y - 4}
@@ -101,35 +115,33 @@ function SleepLevelPlot({
         topRight={endIsDeeper}
         bottomLeft={startIsDeeper}
         bottomRight={!endIsDeeper}
-        onMouseMove={(event) => onMouseOver(event, datum)}
+        onMouseMove={(event) => onMouseOver(event, stage)}
         onMouseOut={onMouseOut}
-      />,
+      />
     );
 
-    // Add a transparent rect to catch mouse events
     rects.push(
       <rect
-        key={`rect-${datum.dateTime}`}
+        key={`rect-${stage.startTime}`}
         x={startX}
         width={endX - startX}
         y={0}
         height={height}
         fill="transparent"
-        onMouseMove={(event) => onMouseOver(event, datum)}
+        onMouseMove={(event) => onMouseOver(event, stage)}
         onMouseOut={onMouseOut}
-      />,
+      />
     );
 
-    // Add a line between the last end and the start of the current segment
     if (lastEndX !== undefined && lastY !== undefined) {
       lines.push(
         <Line
-          key={`${datum.dateTime}-join`}
+          key={`${stage.startTime}-join`}
           from={{ x: lastEndX, y: lastY }}
           to={{ x: startX, y }}
           stroke="rgb(195, 206, 224, 0.3)"
           strokeWidth={1}
-        />,
+        />
       );
     }
 
@@ -137,25 +149,25 @@ function SleepLevelPlot({
     lastY = y;
   }
 
-  // Add lines for short data
   for (let i = 0; i < shortData.length; i++) {
-    const datum = shortData[i];
-    const startTime = dayjs(datum.dateTime);
-    const endTime = startTime.add(datum.seconds, "seconds");
+    const stage = shortData[i];
+    const level = stageLevelKey(stage.type, sleep);
+    const startTime = dayjs(stage.startTime);
+    const endTime = startTime.add(stageDurationSeconds(stage), "seconds");
     const startX = xScale(startTime.toDate());
     const endX = xScale(endTime.toDate());
-    const y = yScale(datum.level);
+    const y = yScale(level);
 
     lines.push(
       <Line
-        key={`${datum.dateTime}-short`}
-        stroke={LEVEL_COLORS[datum.level]}
+        key={`${stage.startTime}-short`}
+        stroke={LEVEL_COLORS[level]}
         strokeWidth={8}
         from={{ x: startX, y }}
         to={{ x: endX, y }}
-        onMouseMove={(event) => onMouseOver(event, datum)}
+        onMouseMove={(event) => onMouseOver(event, stage)}
         onMouseOut={onMouseOut}
-      />,
+      />
     );
   }
 
@@ -202,9 +214,12 @@ function HypnogramAxes({
 }
 
 function SleepSegmentTooltipContent({
-  tooltipData: { level, seconds, dateTime },
+  sleep,
+  tooltipData: stage,
 }: SleepSegmentTooltipContentProps) {
-  const startTime = new Date(dateTime);
+  const level = stageLevelKey(stage.type, sleep);
+  const seconds = stageDurationSeconds(stage);
+  const startTime = new Date(stage.startTime ?? "");
   const endTime = new Date(startTime.getTime() + seconds * 1000);
 
   return (
@@ -223,10 +238,7 @@ function SleepSegmentTooltipContent({
   );
 }
 
-export function Hypnogram({
-  sleepLog,
-  height: containerHeight,
-}: HypnogramProps) {
+export function Hypnogram({ sleep, height: containerHeight }: HypnogramProps) {
   const { parentRef, width, height } = useParentSize();
   const {
     showTooltip,
@@ -235,7 +247,7 @@ export function Hypnogram({
     tooltipLeft,
     tooltipTop,
     tooltipData,
-  } = useTooltip<SleepLogLevelData>();
+  } = useTooltip<SleepStage>();
   const { containerRef, TooltipInPortal } = useTooltipInPortal({
     detectBounds: true,
     scroll: true,
@@ -246,19 +258,16 @@ export function Hypnogram({
 
   const xScale = scaleTime<number>({
     domain: [
-      new Date(sleepLog.startTime).getTime(),
-      new Date(sleepLog.endTime).getTime(),
+      new Date(getSleepStartTime(sleep)).getTime(),
+      new Date(getSleepEndTime(sleep)).getTime(),
     ],
-    // Width may be 0 during initial render
     range: [yAxisWidth, Math.max(yAxisWidth, width - yAxisWidth)],
     round: true,
     nice: true,
   });
 
-  const hasStages = !!sleepLog.levels?.summary.rem;
-
   const yScale = scaleBand({
-    domain: hasStages
+    domain: usesStagesLayout(sleep)
       ? ["wake", "rem", "light", "deep"]
       : ["awake", "restless", "asleep"],
     range: [0, height - xAxisHeight],
@@ -267,7 +276,7 @@ export function Hypnogram({
 
   const handleMouseOver = (
     event: React.MouseEvent<SVGElement>,
-    datum: SleepLogLevelData,
+    datum: SleepStage
   ) => {
     const coords = localPoint((event.target as any).ownerSVGElement, event);
     if (!coords) {
@@ -281,8 +290,8 @@ export function Hypnogram({
     });
   };
 
-  const data = sleepLog.levels?.data ?? [];
-  const shortData = sleepLog.levels?.shortData ?? [];
+  const data = sleep.stages ?? [];
+  const shortData = sleep.shortAwakenings ?? [];
 
   return (
     <div
@@ -307,6 +316,7 @@ export function Hypnogram({
         <SleepLevelPlot
           data={data}
           shortData={shortData}
+          sleep={sleep}
           xScale={xScale}
           yScale={yScale}
           height={height}
@@ -328,7 +338,7 @@ export function Hypnogram({
           left={tooltipLeft}
           className="min-w-max z-[1500]"
         >
-          <SleepSegmentTooltipContent tooltipData={tooltipData} />
+          <SleepSegmentTooltipContent sleep={sleep} tooltipData={tooltipData} />
         </TooltipInPortal>
       )}
     </div>

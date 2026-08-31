@@ -229,6 +229,27 @@ function pageSizeFor(dataType: DataType) {
   return dataType === "exercise" || dataType === "sleep" ? 25 : 10000;
 }
 
+export async function listDataPointsPage<T extends DataType>(
+  dataType: T,
+  filter: string,
+  pageToken?: string,
+  pageSize?: number
+): Promise<{
+  dataPoints: Array<DataPointFor<T>>;
+  nextPageToken?: string;
+}> {
+  const response = await healthUsersDataTypesDataPointsList("me", dataType, {
+    filter,
+    pageSize: Math.min(pageSize ?? pageSizeFor(dataType), pageSizeFor(dataType)),
+    pageToken,
+  });
+
+  return {
+    dataPoints: (response.data.dataPoints ?? []) as Array<DataPointFor<T>>,
+    nextPageToken: response.data.nextPageToken,
+  };
+}
+
 async function listDataPoints<T extends DataType>(
   dataType: T,
   filter: string
@@ -237,16 +258,9 @@ async function listDataPoints<T extends DataType>(
   let pageToken: string | undefined;
 
   do {
-    const response = await healthUsersDataTypesDataPointsList("me", dataType, {
-      filter,
-      pageSize: pageSizeFor(dataType),
-      pageToken,
-    });
-
-    dataPoints.push(
-      ...((response.data.dataPoints ?? []) as Array<DataPointFor<T>>)
-    );
-    pageToken = response.data.nextPageToken;
+    const page = await listDataPointsPage(dataType, filter, pageToken);
+    dataPoints.push(...page.dataPoints);
+    pageToken = page.nextPageToken;
   } while (pageToken);
 
   return { dataPoints };
