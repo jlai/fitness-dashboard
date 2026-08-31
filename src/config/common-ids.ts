@@ -7,7 +7,9 @@ import {
   Sports,
 } from "@mui/icons-material";
 
-import { ActivityType } from "@/api/activity";
+import { ExerciseExerciseType } from "@generated/orval/fetch/google-health-api/models";
+
+import { ExerciseType } from "@/api/exercise";
 import { FoodUnit } from "@/api/nutrition";
 
 // Common food units
@@ -19,44 +21,60 @@ export const commonFoodUnits: Array<FoodUnit> = [
 ];
 
 // Common activities
-export const commonActivityTypes: Array<ActivityType> = [
+export const commonActivityTypes: Array<ExerciseType> = [
   {
-    id: 90013,
+    id: ExerciseExerciseType.WALKING,
     name: "Walk",
     hasSpeed: true,
   },
   {
-    id: 90009,
+    id: ExerciseExerciseType.RUNNING,
     name: "Run",
     hasSpeed: true,
   },
   {
-    id: 90001,
+    id: ExerciseExerciseType.BIKING,
     name: "Bike",
     hasSpeed: true,
   },
   {
-    id: 3000,
+    id: ExerciseExerciseType.WORKOUT,
     name: "Workout",
   },
   {
-    id: 15000,
+    id: ExerciseExerciseType.SPORT,
     name: "Sport",
   },
   {
-    id: 90024,
+    id: ExerciseExerciseType.SWIMMING,
     name: "Swim",
   },
 ];
 
-export const ACTIVITY_TYPES_WITH_STEPS = new Set([90013, 90009]);
-export const SWIMMING_ACTIVITY_TYPE = 90024;
-
 export const ACTIVITY_ICONS: Record<string, React.ComponentType> = {
-  90013: DirectionsWalk,
-  90009: DirectionsRun,
-  90001: DirectionsBike,
-  3000: FitnessCenter,
-  15000: Sports,
-  90024: Pool,
+  [ExerciseExerciseType.WALKING]: DirectionsWalk,
+  [ExerciseExerciseType.INCLINE_WALK]: DirectionsWalk,
+  [ExerciseExerciseType.NORDIC_WALKING]: DirectionsWalk,
+  [ExerciseExerciseType.POWER_WALKING]: DirectionsWalk,
+  [ExerciseExerciseType.STROLLER_WALK]: DirectionsWalk,
+  [ExerciseExerciseType.TREADMILL_WALK]: DirectionsWalk,
+  [ExerciseExerciseType.WALK_WITH_WEIGHTS]: DirectionsWalk,
+  [ExerciseExerciseType.RUNNING]: DirectionsRun,
+  [ExerciseExerciseType.INCLINE_RUN]: DirectionsRun,
+  [ExerciseExerciseType.TRAIL_RUN]: DirectionsRun,
+  [ExerciseExerciseType.TREADMILL]: DirectionsRun,
+  [ExerciseExerciseType.BIKING]: DirectionsBike,
+  [ExerciseExerciseType.ELECTRIC_BIKE]: DirectionsBike,
+  [ExerciseExerciseType.HAND_CYCLING]: DirectionsBike,
+  [ExerciseExerciseType.MOUNTAIN_BIKE]: DirectionsBike,
+  [ExerciseExerciseType.OUTDOOR_BIKE]: DirectionsBike,
+  [ExerciseExerciseType.STATIONARY_BIKE]: DirectionsBike,
+  [ExerciseExerciseType.WORKOUT]: FitnessCenter,
+  [ExerciseExerciseType.STRENGTH_TRAINING]: FitnessCenter,
+  [ExerciseExerciseType.WEIGHTLIFTING]: FitnessCenter,
+  [ExerciseExerciseType.WEIGHTS]: FitnessCenter,
+  [ExerciseExerciseType.SPORT]: Sports,
+  [ExerciseExerciseType.SWIMMING]: Pool,
+  [ExerciseExerciseType.SWIMMING_OPEN_WATER]: Pool,
+  [ExerciseExerciseType.SWIMMING_POOL]: Pool,
 };

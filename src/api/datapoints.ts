@@ -8,6 +8,7 @@ import type {
 } from "@generated/orval/fetch/google-health-api/models";
 import {
   healthUsersDataTypesDataPointsDailyRollUp,
+  healthUsersDataTypesDataPointsGet,
   healthUsersDataTypesDataPointsList,
 } from "@generated/orval/fetch/google-health-api/users/users";
 
@@ -140,7 +141,7 @@ const FOURTEEN_DAY_ROLLUP_TYPES = new Set<DailyRollupDataType>([
   "total-calories",
 ]);
 
-type FilterKind = "interval" | "sample" | "daily" | "sleep";
+type FilterKind = "interval" | "sample" | "daily" | "sleep" | "exercise";
 
 /**
  * How to filter each data type when listing.
@@ -165,7 +166,7 @@ const DATA_TYPE_FILTER_KIND = {
   "daily-vo2-max": "daily",
   distance: "interval",
   electrocardiogram: "interval",
-  exercise: "interval",
+  exercise: "exercise",
   floors: "interval",
   "heart-rate": "sample",
   "heart-rate-variability": "sample",
@@ -208,6 +209,9 @@ function filterField(dataType: DataType, timeField: "civil" | "physical") {
         : `${prefix}.sample_time.physical_time`;
     case "daily":
       return `${prefix}.date`;
+    case "exercise":
+      // Session types other than sleep/ECG only support civil start time.
+      return `${prefix}.interval.civil_start_time`;
     case "sleep":
       return timeField === "civil"
         ? `${prefix}.interval.civil_end_time`
@@ -227,6 +231,19 @@ function timeRangeFilter(
 
 function pageSizeFor(dataType: DataType) {
   return dataType === "exercise" || dataType === "sleep" ? 25 : 10000;
+}
+
+export async function getDataPoint<T extends DataType>(
+  dataType: T,
+  dataPointId: string
+): Promise<DataPointFor<T>> {
+  const response = await healthUsersDataTypesDataPointsGet(
+    "me",
+    dataType,
+    dataPointId
+  );
+
+  return response.data as DataPointFor<T>;
 }
 
 export async function listDataPointsPage<T extends DataType>(
@@ -298,10 +315,10 @@ export function buildDatapointsQuery<T extends DataType>(
   end: Dayjs
 ) {
   const kind = DATA_TYPE_FILTER_KIND[dataType];
-  const startValue =
-    kind === "daily" ? formatAsDate(start) : start.toISOString();
-  const endValue = kind === "daily" ? formatAsDate(end) : end.toISOString();
-  const timeField = kind === "daily" ? "civil" : "physical";
+  const usesCivilDate = kind === "daily" || kind === "exercise";
+  const startValue = usesCivilDate ? formatAsDate(start) : start.toISOString();
+  const endValue = usesCivilDate ? formatAsDate(end) : end.toISOString();
+  const timeField = usesCivilDate ? "civil" : "physical";
 
   return queryOptions({
     queryKey: [

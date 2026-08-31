@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 
-import { buildActivityTcxQuery } from "@/api/activity/activities";
-import { ParsedTcx, parseTcx, Trackpoint } from "@/api/activity/tcx";
+import { buildExerciseTcxQuery } from "@/api/exercise/exercise";
+import { ParsedTcx, parseTcx, Trackpoint } from "@/api/exercise/tcx";
 import { useUnits } from "@/config/units";
 
 export type LocalizedTrackpoint = Trackpoint & {
@@ -47,8 +47,8 @@ export function useTcxDownloadUrl(
   return tcxDownloadUrl;
 }
 
-export function useFetchTcxAsString(activityLogId: number) {
-  const { data: tcxString } = useQuery(buildActivityTcxQuery(activityLogId));
+export function useFetchTcxAsString(activityLogId: string) {
+  const { data: tcxString } = useQuery(buildExerciseTcxQuery(activityLogId));
   return tcxString;
 }
 

@@ -29,10 +29,17 @@ import { useAtom, useAtomValue } from "jotai";
 import { ScaleLinear } from "d3-scale";
 import { AxisValueFormatterContext } from "@mui/x-charts/internals";
 
-import { ParsedTcx, Trackpoint } from "@/api/activity/tcx";
+import { ParsedTcx, Trackpoint } from "@/api/exercise/tcx";
 import { NumberFormats } from "@/utils/number-formats";
 import { useUnits } from "@/config/units";
-import { ActivityLog } from "@/api/activity";
+import type { ExerciseDataPoint } from "@/api/exercise";
+import {
+  getExerciseAverageHeartRate,
+  getExerciseElevationMeters,
+  getExerciseEndTime,
+  getExerciseFromDataPoint,
+  getExerciseStartTime,
+} from "@/api/exercise/helpers";
 import {
   buildActivityIntradayQuery,
   buildHeartRateIntradayQuery,
@@ -45,7 +52,7 @@ import {
 } from "@/utils/distances";
 import { FlexSpacer } from "@/components/layout/flex";
 import { createHeartRateZoneColorMap } from "@/config/heart-rate";
-import { ParsedHeartRateZones, parseHeartRateZones } from "@/api/heart-rate";
+import { ParsedHeartRateZones } from "@/api/heart-rate";
 
 import { useTrackpoints } from "./load-tcx";
 import { highlightedXAtom, xScaleMeasureAtom } from "./atoms";
@@ -74,12 +81,12 @@ function formatTime(value: Date, context: AxisValueFormatterContext) {
 
 export function ActivityTcxCharts({
   parsedTcx,
-  activityLog,
+  dataPoint,
   distanceScale,
   splits,
 }: {
   parsedTcx: ParsedTcx;
-  activityLog: ActivityLog;
+  dataPoint: ExerciseDataPoint;
   distanceScale: DistanceScale;
   splits: Array<SplitDatum>;
 }) {
@@ -91,9 +98,9 @@ export function ActivityTcxCharts({
     localizedTrackpoints,
   } = useTrackpoints(parsedTcx);
 
-  const startTime = dayjs(activityLog.startTime).startOf("minute");
-  const endTime = startTime
-    .add(activityLog.duration)
+  const exercise = getExerciseFromDataPoint(dataPoint);
+  const startTime = dayjs(getExerciseStartTime(exercise)).startOf("minute");
+  const endTime = dayjs(getExerciseEndTime(exercise))
     .startOf("minute")
     .add(1, "minute");
 
@@ -147,7 +154,8 @@ export function ActivityTcxCharts({
 
   const dateDomain: [Date, Date] = [startTime.toDate(), endTime.toDate()];
 
-  const { averageHeartRate, heartRateZones, elevationGain } = activityLog;
+  const averageHeartRate = getExerciseAverageHeartRate(exercise);
+  const elevationGain = getExerciseElevationMeters(exercise);
 
   return (
     <div className="p-4 h-full">
@@ -173,11 +181,7 @@ export function ActivityTcxCharts({
       {(hasTrackedHeartRate || averageHeartRate) && (
         <section>
           <Typography variant="h5">Heart rate</Typography>
-          <HeartRateChart
-            data={heartIntraday}
-            dateDomain={dateDomain}
-            heartRateZones={parseHeartRateZones(heartRateZones)}
-          />
+          <HeartRateChart data={heartIntraday} dateDomain={dateDomain} />
         </section>
       )}
       {ENABLE_INTRADAY && (

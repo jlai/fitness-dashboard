@@ -19,10 +19,19 @@ import React from "react";
 
 import { useUnits } from "@/config/units";
 import { NumberFormats } from "@/utils/number-formats";
-import { ActivityLog } from "@/api/activity";
+import type { ExerciseDataPoint } from "@/api/exercise";
+import {
+  getExerciseAverageHeartRate,
+  getExerciseCalories,
+  getExerciseDataPointId,
+  getExerciseDisplayName,
+  getExerciseDistanceKilometers,
+  getExerciseDurationMillis,
+  getExerciseFromDataPoint,
+} from "@/api/exercise/helpers";
 import { MAPLIBRE_STYLE_URL } from "@/config";
 import { HeaderBar } from "@/components/layout/rows";
-import { ParsedTcx, Trackpoint } from "@/api/activity/tcx";
+import { ParsedTcx, Trackpoint } from "@/api/exercise/tcx";
 import { FlexSpacer } from "@/components/layout/flex";
 import {
   createDistanceScale,
@@ -44,27 +53,26 @@ import { highlightedXAtom, xScaleMeasureAtom } from "./atoms";
 const LazyActivityMap = dynamic(() => import("@/components/map/activity-map"));
 
 function ActivityOverview({
-  activityLog,
+  dataPoint,
   tcxString,
 }: {
-  activityLog: ActivityLog;
+  dataPoint: ExerciseDataPoint;
   tcxString?: string;
 }) {
   const { localizedKilometers, localizedKilometersName } = useUnits();
+  const exercise = getExerciseFromDataPoint(dataPoint);
 
-  const tcxFilename = `${activityLog.logId}.tcx`;
+  const tcxFilename = `${getExerciseDataPointId(dataPoint)}.tcx`;
   const tcxDownloadUrl = useTcxDownloadUrl(tcxString, tcxFilename);
 
-  const {
-    activityTypeId,
-    activityName,
-    duration,
-    distance,
-    averageHeartRate,
-    calories,
-  } = activityLog;
+  const activityTypeId = exercise.exerciseType;
+  const activityName = getExerciseDisplayName(exercise);
+  const duration = getExerciseDurationMillis(exercise);
+  const distance = getExerciseDistanceKilometers(exercise);
+  const averageHeartRate = getExerciseAverageHeartRate(exercise);
+  const calories = getExerciseCalories(exercise);
 
-  const activityIcon = ACTIVITY_ICONS[activityTypeId];
+  const activityIcon = activityTypeId && ACTIVITY_ICONS[activityTypeId];
 
   return (
     <div className="bg-slate-100 dark:bg-inherit border-b-2 border-b-slate-200 dark:border-b-slate-800">
@@ -142,10 +150,14 @@ function MapWithPosition({
   );
 }
 
-export function ActivityDetails({ activityLog }: { activityLog: ActivityLog }) {
+export function ActivityDetails({
+  dataPoint,
+}: {
+  dataPoint: ExerciseDataPoint;
+}) {
   const { distanceUnit } = useUnits();
   const [xScaleMeasure, setXScaleMeasure] = useAtom(xScaleMeasureAtom);
-  const tcxString = useFetchTcxAsString(activityLog.logId);
+  const tcxString = useFetchTcxAsString(getExerciseDataPointId(dataPoint));
   const parsedTcx = useParsedTcx(tcxString);
 
   const hasDistances =
@@ -173,7 +185,7 @@ export function ActivityDetails({ activityLog }: { activityLog: ActivityLog }) {
 
   return (
     <Stack direction="column" className="min-h-0 h-full flex-1">
-      <ActivityOverview activityLog={activityLog} tcxString={tcxString} />
+      <ActivityOverview dataPoint={dataPoint} tcxString={tcxString} />
 
       {parsedTcx && (
         <PanelGroup direction={panelDirection} className="h-full">
@@ -204,7 +216,7 @@ export function ActivityDetails({ activityLog }: { activityLog: ActivityLog }) {
                 {hasDistances && <MeasureToggle />}
               </HeaderBar>
               <ActivityTcxCharts
-                activityLog={activityLog}
+                dataPoint={dataPoint}
                 parsedTcx={parsedTcx}
                 distanceScale={distanceScale!}
                 splits={splits!}

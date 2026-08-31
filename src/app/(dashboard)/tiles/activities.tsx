@@ -15,23 +15,37 @@ import { atom, useAtom, useSetAtom } from "jotai";
 import React, { Suspense } from "react";
 import { Info, ViewTimeline } from "@mui/icons-material";
 import Link from "next/link";
+import { useSuspenseQuery } from "@tanstack/react-query";
 
-import { DailySummaryActivityLog } from "@/api/activity";
+import { buildGetExerciseByDateQuery } from "@/api/exercise/exercise";
+import {
+  getExerciseCalories,
+  getExerciseDataPointId,
+  getExerciseDisplayName,
+  getExerciseDistanceKilometers,
+  getExerciseFromDataPoint,
+  getExerciseStartTime,
+  getExerciseSteps,
+  type ExerciseDataPoint,
+} from "@/api/exercise/helpers";
 import { DateFormats } from "@/utils/date-formats";
 import { useUnits } from "@/config/units";
 import { NumberFormats } from "@/utils/number-formats";
 import { ACTIVITY_ICONS } from "@/config/common-ids";
 import { ActivityLogDetailsDialog } from "@/app/history/activities/details";
 
-import { useDailySummary } from "./common";
+import { useSelectedDay } from "../state";
 import { useTileScale } from "./tile";
 import { IconWithDialog, RenderDialogContentProps } from "./tile-with-dialog";
 
-const showingLogIdAtom = atom<number | null>(null);
+const showingLogIdAtom = atom<string | null>(null);
 
 export default function ActivitiesTileContent() {
   const { h } = useTileScale();
-  const { activities } = useDailySummary();
+  const selectedDay = useSelectedDay();
+  const { data: activities = [] } = useSuspenseQuery(
+    buildGetExerciseByDateQuery(selectedDay)
+  );
   const [showingLogId, setShowingLogId] = useAtom(showingLogIdAtom);
 
   return (
@@ -62,10 +76,10 @@ export default function ActivitiesTileContent() {
       {activities.length === 0 && <Typography>No activities</Typography>}
       {activities.length > 0 && (
         <List disablePadding className="w-full flex-1 overflow-y-auto">
-          {activities.map((activityLog) => (
+          {activities.map((dataPoint) => (
             <ActivityLogSummary
-              key={activityLog.logId}
-              activityLog={activityLog}
+              key={getExerciseDataPointId(dataPoint)}
+              dataPoint={dataPoint}
             />
           ))}
         </List>
@@ -83,28 +97,24 @@ export default function ActivitiesTileContent() {
   );
 }
 
-function ActivityLogSummary({
-  activityLog,
-}: {
-  activityLog: DailySummaryActivityLog;
-}) {
+function ActivityLogSummary({ dataPoint }: { dataPoint: ExerciseDataPoint }) {
   const { w, h } = useTileScale();
   const { localizedKilometers, localizedKilometersName } = useUnits();
-  const {
-    name,
-    startDate,
-    startTime,
-    calories,
-    steps,
-    distance,
-    activityId,
-    logId,
-  } = activityLog;
+  const exercise = getExerciseFromDataPoint(dataPoint);
+  const name = getExerciseDisplayName(exercise);
+  const startTime = getExerciseStartTime(exercise);
+  const calories = getExerciseCalories(exercise);
+  const steps = getExerciseSteps(exercise);
+  const distance = getExerciseDistanceKilometers(exercise);
+  const activityType = exercise.exerciseType;
+  const logId = getExerciseDataPointId(dataPoint);
   const setShowingLogId = useSetAtom(showingLogIdAtom);
 
-  const icon = ACTIVITY_ICONS[activityId];
+  const icon = activityType ? ACTIVITY_ICONS[activityType] : undefined;
   const avatar = icon ? React.createElement(icon) : <ViewTimeline />;
-  const time = DateFormats.TIME.format(new Date(`${startDate}T${startTime}`));
+  const time = startTime
+    ? DateFormats.TIME.format(new Date(startTime))
+    : "";
 
   return (
     <ListItem disablePadding className="w-full" dense={h < 2}>
@@ -126,7 +136,7 @@ function ActivityLogSummary({
                     {" "}
                     &bull;{" "}
                     {NumberFormats.FRACTION_DIGITS_1.format(
-                      localizedKilometers(distance),
+                      localizedKilometers(distance)
                     )}{" "}
                     {localizedKilometersName}
                   </>

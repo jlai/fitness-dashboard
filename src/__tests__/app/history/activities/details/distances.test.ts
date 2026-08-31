@@ -1,4 +1,4 @@
-import { Trackpoint } from "@/api/activity/tcx";
+import { Trackpoint } from "@/api/exercise/tcx";
 import { createDistanceScale, getDistanceSplits } from "@/utils/distances";
 
 describe("createDistanceScale", () => {

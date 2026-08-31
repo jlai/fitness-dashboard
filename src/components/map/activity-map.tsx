@@ -15,7 +15,7 @@ import type { Feature, LineString } from "geojson";
 import { bbox, getCoords } from "@turf/turf";
 import { Flag as EndIcon, PlayArrow as StartIcon } from "@mui/icons-material";
 
-import { ParsedTcx, Trackpoint } from "@/api/activity/tcx";
+import { ParsedTcx, Trackpoint } from "@/api/exercise/tcx";
 import { SplitDatum } from "@/utils/distances";
 import MapStyleControl from "@/components/map/style-control";
 import SafeAttributionControl from "@/components/map/attribution-control";

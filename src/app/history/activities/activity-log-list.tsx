@@ -4,14 +4,23 @@ import { Explore as LaunchIcon } from "@mui/icons-material";
 import { useSetAtom } from "jotai";
 import { useQueryClient } from "@tanstack/react-query";
 
-import { ActivityLog } from "@/api/activity/types";
+import type { ExerciseListResponse } from "@/api/exercise/types";
+import {
+  getExerciseCalories,
+  getExerciseDataPointId,
+  getExerciseDisplayName,
+  getExerciseDistanceKilometers,
+  getExerciseDurationMillis,
+  getExerciseFromDataPoint,
+  getExerciseStartTime,
+  getExerciseSteps,
+  isPossiblyTracked,
+  type ExerciseDataPoint,
+} from "@/api/exercise/helpers";
 import { formatDuration } from "@/utils/duration-formats";
 import { DateFormats } from "@/utils/date-formats";
 import { useUnits } from "@/config/units";
-import {
-  buildGetActivityListInfiniteQuery,
-  isPossiblyTracked,
-} from "@/api/activity/activities";
+import { buildGetExerciseListInfiniteQuery } from "@/api/exercise/exercise";
 import HistoryList from "@/components/history-list/history-list";
 
 import { activityLogIdHashAtom } from "./details";
@@ -24,24 +33,26 @@ const DISTANCE_FORMAT = new Intl.NumberFormat(undefined, {
   maximumFractionDigits: 2,
 });
 
-function ActivityLogRow({ logEntry: activityLog }: { logEntry: ActivityLog }) {
+function ActivityLogRow({
+  logEntry: dataPoint,
+}: {
+  logEntry: ExerciseDataPoint;
+}) {
   const units = useUnits();
   const setHashLogId = useSetAtom(activityLogIdHashAtom);
   const queryClient = useQueryClient();
 
-  const {
-    logId,
-    steps,
-    calories,
-    distance,
-    duration,
-    startTime,
-    activityName,
-  } = activityLog;
+  const exercise = getExerciseFromDataPoint(dataPoint);
+  const logId = getExerciseDataPointId(dataPoint);
+  const steps = getExerciseSteps(exercise);
+  const calories = getExerciseCalories(exercise);
+  const distance = getExerciseDistanceKilometers(exercise);
+  const duration = getExerciseDurationMillis(exercise);
+  const startTime = getExerciseStartTime(exercise);
+  const activityName = getExerciseDisplayName(exercise);
 
   const showActivityLogDetails = (event: React.MouseEvent) => {
-    // Prepopulate query cache
-    queryClient.setQueryData(["activity-log", logId], activityLog);
+    queryClient.setQueryData(["exercise", logId], dataPoint);
 
     setHashLogId(logId);
 
@@ -54,7 +65,7 @@ function ActivityLogRow({ logEntry: activityLog }: { logEntry: ActivityLog }) {
         <a onClick={showActivityLogDetails} href={`#activityLogId=${logId}`}>
           <div className="flex flex-row items-center gap-x-2">
             <div>{DateFormats.formatShortDateTime(dayjs(startTime))}</div>
-            {isPossiblyTracked(activityLog) && (
+            {isPossiblyTracked(dataPoint) && (
               <LaunchIcon className="text-slate-500" />
             )}
           </div>
@@ -96,8 +107,9 @@ function ActivityLogListHeaderCells() {
 export default function ActivityLogList() {
   return (
     <HistoryList
-      buildQuery={buildGetActivityListInfiniteQuery}
-      getLogs={(page: any) => page.activities ?? []}
+      buildQuery={buildGetExerciseListInfiniteQuery}
+      getLogs={(page: ExerciseListResponse) => page.activities ?? []}
+      getRowKey={getExerciseDataPointId}
       slots={{ row: ActivityLogRow, headerCells: ActivityLogListHeaderCells }}
     />
   );

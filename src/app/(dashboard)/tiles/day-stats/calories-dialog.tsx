@@ -7,7 +7,7 @@ import {
 } from "@mui/material";
 import { LineChart, PieChart, PieValueType } from "@mui/x-charts";
 import { TabContext, TabList, TabPanel } from "@mui/lab";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { Suspense } from "react";
 import { useAtomValue } from "jotai";
 
@@ -16,6 +16,14 @@ import { buildActivityIntradayQuery } from "@/api/intraday";
 import { ENABLE_INTRADAY } from "@/config";
 import { FormRows } from "@/components/forms/form-row";
 import { caloriesOutGoalAtom } from "@/storage/settings";
+import { buildGetExerciseByDateQuery } from "@/api/exercise/exercise";
+import {
+  getExerciseCalories,
+  getExerciseDataPointId,
+  getExerciseDisplayName,
+  getExerciseFromDataPoint,
+  getExerciseStartTime,
+} from "@/api/exercise/helpers";
 
 import { RenderDialogContentProps } from "../tile-with-dialog";
 import { useDailySummary } from "../common";
@@ -95,25 +103,33 @@ function Overview() {
 }
 
 function CaloriesPieChart() {
+  const day = useSelectedDay();
   const {
-    activities,
     summary: { caloriesOut },
   } = useDailySummary();
+  const { data: activities = [] } = useSuspenseQuery(
+    buildGetExerciseByDateQuery(day)
+  );
 
   let otherCalories = caloriesOut;
 
   const seriesData: Array<PieValueType> = [];
 
-  for (const activityLog of activities) {
-    const time = new Date(`${activityLog.startDate}T${activityLog.startTime}`);
+  for (const dataPoint of activities) {
+    const exercise = getExerciseFromDataPoint(dataPoint);
+    const calories = getExerciseCalories(exercise);
+    const startTime = getExerciseStartTime(exercise);
+    const time = startTime ? new Date(startTime) : undefined;
 
     seriesData.push({
-      id: `${activityLog.logId}`,
-      value: activityLog.calories,
-      label: `${activityLog.name} at ${timeFormat.format(time)}`,
+      id: getExerciseDataPointId(dataPoint),
+      value: calories,
+      label: `${getExerciseDisplayName(exercise)}${
+        time ? ` at ${timeFormat.format(time)}` : ""
+      }`,
     });
 
-    otherCalories -= activityLog.calories;
+    otherCalories -= calories;
   }
 
   if (otherCalories > 0) {

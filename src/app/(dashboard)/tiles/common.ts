@@ -1,6 +1,6 @@
 import { useSuspenseQueries, useSuspenseQuery } from "@tanstack/react-query";
 
-import { buildDailySummaryQuery } from "@/api/activity";
+import { buildDailySummaryQuery } from "@/api/exercise";
 
 import { useSelectedDay } from "../state";
 

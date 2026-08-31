@@ -12,9 +12,15 @@ import { RequireScopes } from "@/components/require-scopes";
 import { ResponsiveDialog } from "@/components/dialogs/responsive-dialog";
 import { DateFormats } from "@/utils/date-formats";
 import {
-  buildDeleteActivityLogMutation,
-  buildGetActivityLogQuery,
-} from "@/api/activity/activities";
+  buildDeleteExerciseMutation,
+  buildGetExerciseQuery,
+} from "@/api/exercise/exercise";
+import {
+  getExerciseDataPointName,
+  getExerciseDisplayName,
+  getExerciseFromDataPoint,
+  getExerciseStartTime,
+} from "@/api/exercise/helpers";
 import { showSuccessToast, withErrorToaster } from "@/components/toast";
 
 import { ActivityDetails } from "./activity-details";
@@ -24,35 +30,35 @@ export function ActivityLogDetailsDialog({
   open,
   onClose,
 }: {
-  logId: number;
+  logId: string;
   open: boolean;
   onClose: () => void;
 }) {
   const queryClient = useQueryClient();
 
-  const { data: activityLog } = useSuspenseQuery(
-    buildGetActivityLogQuery(logId),
-  );
+  const { data: dataPoint } = useSuspenseQuery(buildGetExerciseQuery(logId));
+  const exercise = getExerciseFromDataPoint(dataPoint);
 
   const { mutateAsync: deleteActivity } = useMutation(
-    buildDeleteActivityLogMutation(queryClient),
+    buildDeleteExerciseMutation(queryClient)
   );
   const confirm = useConfirm();
 
-  const { activityName, startTime } = activityLog;
+  const activityName = getExerciseDisplayName(exercise);
+  const startTime = getExerciseStartTime(exercise);
 
   const handleDeleteClick = withErrorToaster(async () => {
     const { confirmed } = await confirm({
       title: "Delete activity log?",
       description: `Delete ${activityName} activity log at ${DateFormats.formatShortDateTime(
-        dayjs(startTime),
+        dayjs(startTime)
       )}? This cannot be undone.`,
       confirmationText: "Delete",
       confirmationButtonProps: { color: "warning" },
     });
 
     if (confirmed) {
-      await deleteActivity(logId);
+      await deleteActivity(getExerciseDataPointName(dataPoint));
 
       showSuccessToast(`Deleted ${activityName} activity`);
       onClose();
@@ -71,9 +77,9 @@ export function ActivityLogDetailsDialog({
       fullWidth
       fullScreenPreferenceId="activity"
       title={
-        activityLog
+        dataPoint
           ? `${activityName} on ${DateFormats.formatShortDateTime(
-              dayjs(startTime),
+              dayjs(startTime)
             )}`
           : ""
       }
@@ -83,7 +89,7 @@ export function ActivityLogDetailsDialog({
     >
       <DialogContent className="p-0 flex-1 flex flex-col">
         <RequireScopes scopes={["loc"]}>
-          <ActivityDetails activityLog={activityLog} />
+          <ActivityDetails dataPoint={dataPoint} />
         </RequireScopes>
       </DialogContent>
     </ResponsiveDialog>

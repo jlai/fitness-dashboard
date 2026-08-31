@@ -8,7 +8,7 @@ import {
   buildDailySummaryQuery,
   buildTimeSeriesQuery,
   TimeSeriesResource,
-} from "@/api/activity";
+} from "@/api/exercise";
 import {
   kilometersFromDistanceGoal,
   millilitersFromWaterGoal,

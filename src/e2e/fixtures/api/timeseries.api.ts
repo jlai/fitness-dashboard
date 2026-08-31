@@ -2,7 +2,7 @@ import { test as base, Page } from "@playwright/test";
 
 import { HeartTimeSeriesValue, TimeSeriesEntry } from "@/api/times-series";
 import { ActiveZoneMinutesTimeSeriesValue } from "@/api/times-series";
-import { GetDailyActivitySummaryResponse } from "@/api/activity";
+import { GetDailyActivitySummaryResponse } from "@/api/exercise";
 
 export class TimeSeriesApi {
   constructor(private readonly page: Page) {}
@@ -34,13 +34,6 @@ export class TimeSeriesApi {
       "**/1/user/-/activities/active-zone-minutes/date/*/*.json",
       async (route) => {
         await route.fulfill({ json: { "activities-active-zone-minutes": [] } });
-      },
-    );
-
-    await this.page.route(
-      "**/1/user/-/activities/goals/daily.json",
-      async (route) => {
-        await route.fulfill({ json: {} });
       },
     );
   }
@@ -124,20 +117,6 @@ export class TimeSeriesApi {
       async (route) => {
         await route.fulfill({
           json: { "activities-active-zone-minutes": response },
-        });
-      },
-    );
-  }
-
-  async setActivityGoalsResponse(goals: {
-    activeMinutes?: number;
-    activeZoneMinutes?: number;
-  }) {
-    await this.page.route(
-      "**/1/user/-/activities/goals/daily.json",
-      async (route) => {
-        await route.fulfill({
-          json: goals,
         });
       },
     );

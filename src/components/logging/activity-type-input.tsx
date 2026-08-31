@@ -11,11 +11,13 @@ import { useMemo } from "react";
 import { FieldError, useController, UseControllerProps } from "react-hook-form";
 import React from "react";
 
-import { buildActivityTypesQuery } from "@/api/activity/activity-types";
+import { ExerciseExerciseType } from "@generated/orval/fetch/google-health-api/models";
+
+import { buildActivityTypesQuery } from "@/api/exercise/exercise-types";
 import { ACTIVITY_ICONS, commonActivityTypes } from "@/config/common-ids";
 
 export interface ActivityTypeOption {
-  id: number;
+  id: ExerciseExerciseType;
   name: string;
   group: string;
   requiresDistance?: boolean;
@@ -36,7 +38,7 @@ export function ActivityTypeInput({
 
   const options = useMemo(() => {
     const options: Array<ActivityTypeOption> = [];
-    const alreadyAddedTypes = new Set<number>();
+    const alreadyAddedTypes = new Set<ExerciseExerciseType>();
 
     // Add common activities at top
     for (const activityType of commonActivityTypes) {

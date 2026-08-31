@@ -1,7 +1,7 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Stack, Typography } from "@mui/material";
 
-import { buildLifetimeStatsQuery } from "@/api/activity";
+import { buildLifetimeStatsQuery } from "@/api/exercise";
 import { NumberFormats } from "@/utils/number-formats";
 import { useUnits } from "@/config/units";
 

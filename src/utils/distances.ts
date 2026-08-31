@@ -2,7 +2,7 @@ import { ScaleLinear, scaleLinear } from "d3-scale";
 import { head, last } from "es-toolkit";
 
 import { IntradayEntry } from "@/api/intraday";
-import { Trackpoint } from "@/api/activity/tcx";
+import { Trackpoint } from "@/api/exercise/tcx";
 import { MILES_PER_KM } from "@/config/units";
 import { DistanceUnitSystem, SettingsDistanceUnit } from "@/api/user";
 

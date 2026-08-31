@@ -22,15 +22,15 @@ import {
 } from "react-hook-form-mui/date-pickers";
 
 import {
-  buildCreateActivityLogMutation,
-  CreateActivityLogDistanceUnit,
-} from "@/api/activity/activities";
+  buildCreateExerciseMutation,
+  CreateExerciseDistanceUnit,
+} from "@/api/exercise/exercise";
+import {
+  STEPS_EXERCISE_TYPES,
+  SWIMMING_EXERCISE_TYPES,
+} from "@/api/exercise/helpers";
 import { SettingsDistanceUnit, SettingsSwimUnit } from "@/api/user";
 import { useUnits } from "@/config/units";
-import {
-  ACTIVITY_TYPES_WITH_STEPS,
-  SWIMMING_ACTIVITY_TYPE,
-} from "@/config/common-ids";
 import { isBeforeToday } from "@/utils/date-utils";
 
 import { DividedStack } from "../layout/flex";
@@ -81,18 +81,21 @@ function CreateActivityLog({ onSaveSuccess }: { onSaveSuccess?: () => void }) {
   const queryClient = useQueryClient();
 
   const { mutateAsync: createActivityLog } = useMutation(
-    buildCreateActivityLogMutation(queryClient),
+    buildCreateExerciseMutation(queryClient),
   );
 
   const distanceIsRequired = watch("activityType")?.requiresDistance;
-  const supportsSteps = ACTIVITY_TYPES_WITH_STEPS.has(
-    watch("activityType")?.id ?? -1,
-  );
-  const isSwimming = watch("activityType")?.id === SWIMMING_ACTIVITY_TYPE;
+  const selectedTypeId = watch("activityType")?.id;
+  const supportsSteps = selectedTypeId
+    ? STEPS_EXERCISE_TYPES.has(selectedTypeId)
+    : false;
+  const isSwimming = selectedTypeId
+    ? SWIMMING_EXERCISE_TYPES.has(selectedTypeId)
+    : false;
   const useSteps = supportsSteps && watch("useSteps");
 
   const onSubmit = withErrorToaster(async (values: CreateActivityFormData) => {
-    let unit: CreateActivityLogDistanceUnit =
+    let unit: CreateExerciseDistanceUnit =
       distanceUnitSystem === SettingsDistanceUnit.DISTANCE_UNIT_MILES
         ? "mile"
         : "kilometer";
@@ -105,7 +108,7 @@ function CreateActivityLog({ onSaveSuccess }: { onSaveSuccess?: () => void }) {
     }
 
     await createActivityLog({
-      activityId: values.activityType!.id,
+      exerciseType: values.activityType!.id,
       startTime: values.startTime,
       durationMinutes: values.durationMinutes,
       distance: values.distance,

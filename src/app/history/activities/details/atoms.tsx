@@ -3,14 +3,14 @@ import { atomWithHash } from "jotai-location";
 
 import { cleanHashReplaceState } from "@/utils/hash";
 
-export const activityLogIdHashAtom = atomWithHash<number | null>(
+export const activityLogIdHashAtom = atomWithHash<string | null>(
   "activityLogId",
   null,
   {
-    serialize: (value: number | null) => (value ? value.toString() : ""),
-    deserialize: (value: string) => Number.parseInt(value) || null,
+    serialize: (value: string | null) => value ?? "",
+    deserialize: (value: string) => value || null,
     setHash: cleanHashReplaceState,
-  },
+  }
 );
 
 export type XScaleMeasureType = "time" | "distance";
