@@ -1,12 +1,21 @@
-import { useSuspenseQueries, useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 
-import { buildDailySummaryQuery } from "@/api/exercise";
+import {
+  buildTimeSeriesQuery,
+  getTimeSeriesValueForDay,
+  TimeSeriesEntry,
+  TimeSeriesResource,
+} from "@/api/times-series";
 
 import { useSelectedDay } from "../state";
 
-export function useDailySummary() {
+export function useSelectedDayTimeSeries<TValue = string>(
+  resource: TimeSeriesResource,
+) {
   const day = useSelectedDay();
-  const { data: dailySummary } = useSuspenseQuery(buildDailySummaryQuery(day));
+  const { data } = useSuspenseQuery(
+    buildTimeSeriesQuery<TimeSeriesEntry<TValue>>(resource, day, day),
+  );
 
-  return dailySummary;
+  return getTimeSeriesValueForDay(data, day);
 }

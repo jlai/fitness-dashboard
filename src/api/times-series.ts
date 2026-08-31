@@ -2,6 +2,8 @@ import dayjs, { Dayjs } from "dayjs";
 import { queryOptions, type QueryClient } from "@tanstack/react-query";
 import { groupBy, sumBy } from "es-toolkit";
 
+import { ActiveMinutesRollupByActivityLevelActivityLevel } from "@generated/orval/fetch/google-health-api/models";
+
 import { isAfterToday } from "@/utils/date-utils";
 
 import type {
@@ -41,6 +43,7 @@ export type TimeSeriesResource =
   | "water"
   | "calories-in"
   | "sleep"
+  | "active-minutes"
   | "active-zone-minutes"
   | "breathing-rate"
   | "spo2"
@@ -53,6 +56,13 @@ export interface HeartRateZone {
   min: number;
   minutes: number;
   name: string;
+}
+
+export interface ActiveMinutesTimeSeriesValue {
+  lightlyActiveMinutes: number;
+  fairlyActiveMinutes: number;
+  veryActiveMinutes: number;
+  activeMinutes: number;
 }
 
 export interface ActiveZoneMinutesTimeSeriesValue {
@@ -189,6 +199,42 @@ export const TIME_SERIES_CONFIGS: Record<
       };
     },
   },
+  ["active-minutes"]: {
+    dataType: "active-minutes",
+    requiredScopes: ["act"],
+    maxDays: 1095,
+    mapValue: (
+      dataPoint: DailyRollupDataPointFor<"active-minutes">,
+    ): ActiveMinutesTimeSeriesValue => {
+      const value = getDailyRollupValue("active-minutes", dataPoint);
+      let lightlyActiveMinutes = 0;
+      let fairlyActiveMinutes = 0;
+      let veryActiveMinutes = 0;
+
+      for (const entry of value.activeMinutesRollupByActivityLevel ?? []) {
+        const minutes = Number(entry.activeMinutesSum ?? 0);
+
+        switch (entry.activityLevel) {
+          case ActiveMinutesRollupByActivityLevelActivityLevel.LIGHT:
+            lightlyActiveMinutes = minutes;
+            break;
+          case ActiveMinutesRollupByActivityLevelActivityLevel.MODERATE:
+            fairlyActiveMinutes = minutes;
+            break;
+          case ActiveMinutesRollupByActivityLevelActivityLevel.VIGOROUS:
+            veryActiveMinutes = minutes;
+            break;
+        }
+      }
+
+      return {
+        lightlyActiveMinutes,
+        fairlyActiveMinutes,
+        veryActiveMinutes,
+        activeMinutes: fairlyActiveMinutes + veryActiveMinutes,
+      };
+    },
+  },
   ["active-zone-minutes"]: {
     dataType: "active-zone-minutes",
     requiredScopes: ["act"],
@@ -275,6 +321,13 @@ export type TimeSeriesEntry<ValueType> = {
   dateTime: string;
   value: ValueType;
 };
+
+export function getTimeSeriesValueForDay<T>(
+  entries: Array<TimeSeriesEntry<T>> | undefined,
+  day: Dayjs,
+) {
+  return entries?.find((entry) => day.isSame(entry.dateTime, "day"))?.value;
+}
 
 function usesDailyRollup(
   dataType: DataType | DailyRollupDataType,

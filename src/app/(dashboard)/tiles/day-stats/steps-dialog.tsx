@@ -80,14 +80,9 @@ export default function StepsDialogContent(props: RenderDialogContentProps) {
 }
 
 function Overview() {
-  const {
-    daySummary: { summary },
-    weekData,
-  } = useDayAndWeekSummary("steps");
+  const { dayValue: currentTotal, weekData } = useDayAndWeekSummary("steps");
   const dailyGoal = useAtomValue(stepsGoalAtom);
   const weeklyGoal = useAtomValue(weeklyStepsGoalAtom);
-
-  const currentTotal = summary.steps;
 
   const weeklySteps = sumBy(weekData, (entry) => Number(entry.value));
 

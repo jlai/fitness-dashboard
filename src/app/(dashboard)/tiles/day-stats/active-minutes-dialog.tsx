@@ -19,12 +19,13 @@ import {
   buildTimeSeriesQuery,
   TimeSeriesEntry,
   HeartTimeSeriesValue,
+  ActiveMinutesTimeSeriesValue,
 } from "@/api/times-series";
 import { activeMinutesGoalAtom } from "@/storage/settings";
 
 import { RenderDialogContentProps } from "../tile-with-dialog";
 import { useTileSetting } from "../tile";
-import { useDailySummary } from "../common";
+import { useSelectedDayTimeSeries } from "../common";
 import { useSelectedDay } from "../../state";
 
 import { DailyGoalSummary, GoalSettings } from "./goals";
@@ -76,9 +77,8 @@ export function useActiveMinutes(source: ActiveMinutesSource) {
   const selectedDay = useSelectedDay();
   const activeMinutesGoal = useAtomValue(activeMinutesGoalAtom);
 
-  const {
-    summary: { fairlyActiveMinutes, veryActiveMinutes },
-  } = useDailySummary();
+  const activeMinutesValue =
+    useSelectedDayTimeSeries<ActiveMinutesTimeSeriesValue>("active-minutes");
 
   const { data: heartSeries } = useQuery({
     ...buildTimeSeriesQuery<TimeSeriesEntry<HeartTimeSeriesValue>>(
@@ -101,7 +101,7 @@ export function useActiveMinutes(source: ActiveMinutesSource) {
       }
       break;
     default:
-      activeMinutes = fairlyActiveMinutes + veryActiveMinutes;
+      activeMinutes = activeMinutesValue?.activeMinutes ?? 0;
   }
 
   return {
@@ -217,7 +217,9 @@ function Settings() {
       </section>
       <section>
         <Typography variant="h6">Goals</Typography>
-        <Typography variant="body1">Set daily and weekly active minute goals.</Typography>
+        <Typography variant="body1">
+          Set daily and weekly active minute goals.
+        </Typography>
 
         <FormRows mt={4}>
           <GoalSettings

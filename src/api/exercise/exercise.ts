@@ -40,7 +40,7 @@ function utcOffsetDuration(day: Dayjs) {
 
 function exercisesStartingBeforeFilter(before: Dayjs) {
   return `exercise.interval.civil_start_time < "${formatAsDate(
-    before.add(1, "day")
+    before.add(1, "day"),
   )}"`;
 }
 
@@ -60,7 +60,7 @@ export function buildExerciseTcxQuery(id: string) {
         "me",
         "exercise",
         id,
-        { partialData: true }
+        { partialData: true },
       );
       return decodeTcxData(response.data.tcxData);
     },
@@ -93,11 +93,7 @@ export function buildGetExerciseByDateQuery(day: Dayjs) {
 }
 
 export type CreateExerciseDistanceUnit =
-  | "mile"
-  | "steps"
-  | "yards"
-  | "meter"
-  | "kilometer";
+  "mile" | "steps" | "yards" | "meter" | "kilometer";
 
 export interface CreateExerciseOptions {
   exerciseType: ExerciseExerciseType;
@@ -168,7 +164,7 @@ export function buildCreateExerciseMutation(queryClient: QueryClient) {
                   : undefined,
             },
           },
-        }
+        },
       );
 
       return response.data;
@@ -180,13 +176,19 @@ export function buildCreateExerciseMutation(queryClient: QueryClient) {
       queryClient.invalidateQueries({
         queryKey: ["datapoints", "exercise", formatAsDate(variables.startTime)],
       });
+      queryClient.invalidateQueries({
+        queryKey: ["datapoints", "daily-rollup"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["timeseries"],
+      });
     },
   });
 }
 
 export function buildGetExerciseListInfiniteQuery(
   initialDay: Dayjs,
-  pageSize: number
+  pageSize: number,
 ) {
   return infiniteQueryOptions({
     queryKey: ["exercise-list", formatAsDate(initialDay), pageSize],
@@ -199,7 +201,7 @@ export function buildGetExerciseListInfiniteQuery(
           "exercise",
           exercisesStartingBeforeFilter(initialDay),
           pageToken,
-          Math.min(pageSize - dataPoints.length, MAX_EXERCISE_PAGE_SIZE)
+          Math.min(pageSize - dataPoints.length, MAX_EXERCISE_PAGE_SIZE),
         );
 
         dataPoints.push(...page.dataPoints);
@@ -241,6 +243,12 @@ export function buildDeleteExerciseMutation(queryClient: QueryClient) {
       });
       queryClient.invalidateQueries({
         queryKey: ["datapoints", "exercise"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["datapoints", "daily-rollup"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["timeseries"],
       });
     },
   });

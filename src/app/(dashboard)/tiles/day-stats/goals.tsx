@@ -1,14 +1,14 @@
 import { Box, Button, InputAdornment, Stack, Typography } from "@mui/material";
-import { useSuspenseQueries } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { useAtom } from "jotai";
 import { useEffect, useMemo } from "react";
 import { FormContainer, TextFieldElement, useForm } from "react-hook-form-mui";
 
 import {
-  buildDailySummaryQuery,
   buildTimeSeriesQuery,
+  getTimeSeriesValueForDay,
   TimeSeriesResource,
-} from "@/api/exercise";
+} from "@/api/times-series";
 import {
   kilometersFromDistanceGoal,
   millilitersFromWaterGoal,
@@ -118,14 +118,13 @@ export function useDayAndWeekSummary(resource: TimeSeriesResource) {
   const startDay = day.startOf("week");
   const endDay = day.endOf("week");
 
-  const [{ data: daySummary }, { data: weekData }] = useSuspenseQueries({
-    queries: [
-      buildDailySummaryQuery(day),
-      buildTimeSeriesQuery(resource, startDay, endDay),
-    ],
-  });
+  const { data: weekData } = useSuspenseQuery(
+    buildTimeSeriesQuery(resource, startDay, endDay),
+  );
 
-  return { daySummary, weekData };
+  const dayValue = Number(getTimeSeriesValueForDay(weekData, day) ?? 0);
+
+  return { dayValue, weekData };
 }
 
 interface GoalSettingsFormData {
@@ -189,7 +188,10 @@ export function GoalSettings({
             inputLabel: { shrink: true },
           }}
         />
-        <Button type="submit" disabled={formState.isSubmitting || !formState.isDirty}>
+        <Button
+          type="submit"
+          disabled={formState.isSubmitting || !formState.isDirty}
+        >
           Update goal
         </Button>
       </FormRow>
@@ -214,10 +216,7 @@ export function DistanceGoalSettings({
     kilometersFromDistanceGoal(goal.value, goal.unit),
   );
 
-  const defaultValues = useMemo(
-    () => ({ goal: displayGoal }),
-    [displayGoal],
-  );
+  const defaultValues = useMemo(() => ({ goal: displayGoal }), [displayGoal]);
 
   const form = useForm<GoalSettingsFormData>({
     defaultValues,
@@ -260,7 +259,10 @@ export function DistanceGoalSettings({
             inputLabel: { shrink: true },
           }}
         />
-        <Button type="submit" disabled={formState.isSubmitting || !formState.isDirty}>
+        <Button
+          type="submit"
+          disabled={formState.isSubmitting || !formState.isDirty}
+        >
           Update goal
         </Button>
       </FormRow>
@@ -285,10 +287,7 @@ export function WaterGoalSettings({
     millilitersFromWaterGoal(goal.value, goal.unit),
   );
 
-  const defaultValues = useMemo(
-    () => ({ goal: displayGoal }),
-    [displayGoal],
-  );
+  const defaultValues = useMemo(() => ({ goal: displayGoal }), [displayGoal]);
 
   const form = useForm<GoalSettingsFormData>({
     defaultValues,
@@ -331,7 +330,10 @@ export function WaterGoalSettings({
             inputLabel: { shrink: true },
           }}
         />
-        <Button type="submit" disabled={formState.isSubmitting || !formState.isDirty}>
+        <Button
+          type="submit"
+          disabled={formState.isSubmitting || !formState.isDirty}
+        >
           Update goal
         </Button>
       </FormRow>

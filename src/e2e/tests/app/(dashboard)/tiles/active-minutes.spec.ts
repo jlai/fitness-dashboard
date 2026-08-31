@@ -1,30 +1,23 @@
 import { test, expect } from "@/e2e/fixtures";
-import { HeartTimeSeriesValue, TimeSeriesEntry } from "@/api/times-series";
+import {
+  ActiveMinutesTimeSeriesValue,
+  HeartTimeSeriesValue,
+  TimeSeriesEntry,
+} from "@/api/times-series";
 import { MOCK_DATE } from "@/e2e/fixtures/standard";
-import { GetDailyActivitySummaryResponse } from "@/api/exercise";
 
-const DAILY_SUMMARY_RESPONSE: GetDailyActivitySummaryResponse = {
-  activities: [],
-  summary: {
-    lightlyActiveMinutes: 0,
-    veryActiveMinutes: 5,
-    fairlyActiveMinutes: 10,
-
-    // other stuff
-    caloriesBMR: 0,
-    caloriesOut: 0,
-    steps: 0,
-    floors: 0,
-    distances: [],
-  },
-  goals: {
-    activeMinutes: 5,
-    caloriesOut: 0,
-    distance: 0,
-    floors: 0,
-    steps: 0,
-  },
-};
+const ACTIVE_MINUTES_TIME_SERIES: TimeSeriesEntry<ActiveMinutesTimeSeriesValue>[] =
+  [
+    {
+      dateTime: MOCK_DATE,
+      value: {
+        lightlyActiveMinutes: 0,
+        fairlyActiveMinutes: 10,
+        veryActiveMinutes: 5,
+        activeMinutes: 15,
+      },
+    },
+  ];
 
 const HEART_TIME_SERIES: TimeSeriesEntry<HeartTimeSeriesValue>[] = [
   {
@@ -59,7 +52,9 @@ test.describe("with mets source", () => {
         },
       ]);
 
-      await timeSeriesApi.setDailySummaryResponse(DAILY_SUMMARY_RESPONSE);
+      await timeSeriesApi.setActiveMinutesTimeSeriesResponse(
+        ACTIVE_MINUTES_TIME_SERIES,
+      );
 
       await page.goto("/");
 
@@ -94,7 +89,6 @@ test.describe("with heart-rate-zone source", () => {
       ]);
 
       await timeSeriesApi.setHeartTimeSeriesResponse([]);
-      await timeSeriesApi.setDailySummaryResponse(DAILY_SUMMARY_RESPONSE);
 
       await page.goto("/");
 
@@ -127,7 +121,6 @@ test.describe("with heart-rate-zone source", () => {
       ]);
 
       await timeSeriesApi.setHeartTimeSeriesResponse(HEART_TIME_SERIES);
-      await timeSeriesApi.setDailySummaryResponse(DAILY_SUMMARY_RESPONSE);
 
       await page.goto("/");
 

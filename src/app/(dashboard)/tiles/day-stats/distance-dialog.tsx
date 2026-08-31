@@ -27,10 +27,7 @@ import { FRACTION_DIGITS_2 } from "@/utils/number-formats";
 import { aggregateByHour } from "@/components/charts/timeseries/aggregation";
 import { kilometersFromDistanceGoal, useUnits } from "@/config/units";
 import { FormRows } from "@/components/forms/form-row";
-import {
-  distanceGoalAtom,
-  weeklyDistanceGoalAtom,
-} from "@/storage/settings";
+import { distanceGoalAtom, weeklyDistanceGoalAtom } from "@/storage/settings";
 
 import { RenderDialogContentProps } from "../tile-with-dialog";
 import { useSelectedDay } from "../../state";
@@ -86,24 +83,15 @@ export default function DistanceDialogContent(props: RenderDialogContentProps) {
 }
 
 function Overview() {
-  const {
-    daySummary: { summary },
-    weekData,
-  } = useDayAndWeekSummary("distance");
+  const { dayValue: dailyDistanceKilometers, weekData } =
+    useDayAndWeekSummary("distance");
   const dailyDistanceGoal = useAtomValue(distanceGoalAtom);
   const weeklyDistanceGoal = useAtomValue(weeklyDistanceGoalAtom);
   const { localizedKilometers, localizedKilometersNameLong } = useUnits();
 
-  const dailyDistanceKilometers =
-    (summary.distances ?? []).find((entry) => entry.activity === "total")
-      ?.distance ?? 0;
-
   const dailyDistance = localizedKilometers(dailyDistanceKilometers);
   const dailyGoal = localizedKilometers(
-    kilometersFromDistanceGoal(
-      dailyDistanceGoal.value,
-      dailyDistanceGoal.unit,
-    ),
+    kilometersFromDistanceGoal(dailyDistanceGoal.value, dailyDistanceGoal.unit),
   );
 
   const weeklyDistance = localizedKilometers(
@@ -139,7 +127,7 @@ function DistanceIntraday() {
   const { localizedKilometers, localizedKilometersName } = useUnits();
 
   const { data } = useQuery(
-    buildActivityIntradayQuery("distance", "15min", startTime, endTime)
+    buildActivityIntradayQuery("distance", "15min", startTime, endTime),
   );
 
   const processedData = useMemo(
@@ -150,7 +138,7 @@ function DistanceIntraday() {
             localizedValue: localizedKilometers(entry.value),
           }))
         : data,
-    [data, localizedKilometers]
+    [data, localizedKilometers],
   );
 
   return (
@@ -179,7 +167,7 @@ function DistanceIntraday() {
             valueFormatter: (value) =>
               value || value === 0
                 ? `${FRACTION_DIGITS_2.format(
-                    value
+                    value,
                   )} ${localizedKilometersName}`
                 : "",
           },

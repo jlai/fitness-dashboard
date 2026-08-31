@@ -6,6 +6,7 @@ import { useUnits, kilometersFromDistanceGoal } from "@/config/units";
 import {
   ActiveZoneMinutesTimeSeriesValue,
   buildTimeSeriesQuery,
+  getTimeSeriesValueForDay,
   TimeSeriesEntry,
 } from "@/api/times-series";
 import {
@@ -16,7 +17,7 @@ import {
   stepsGoalAtom,
 } from "@/storage/settings";
 
-import { useDailySummary } from "../common";
+import { useSelectedDayTimeSeries } from "../common";
 import stepsIconUrl from "../assets/steps_24dp_FILL0_wght400_GRAD0_opsz24.svg";
 import distanceIconUrl from "../assets/distance_24dp_FILL0_wght400_GRAD0_opsz24.svg";
 import floorsIconUrl from "../assets/floor_24dp_FILL0_wght400_GRAD0_opsz24.svg";
@@ -36,18 +37,16 @@ import ActiveZoneMinutesDialogContent from "./active-zone-minutes-dialog";
 
 const StepsDialogContent = lazy(async () => await import("./steps-dialog"));
 const DistanceDialogContent = lazy(
-  async () => await import("./distance-dialog")
+  async () => await import("./distance-dialog"),
 );
 const CaloriesDialogContent = lazy(
-  async () => await import("./calories-dialog")
+  async () => await import("./calories-dialog"),
 );
 const FloorsDialogContent = lazy(async () => await import("./floors-dialog"));
 
 export function GaugeStepsTileContent() {
-  const dailySummary = useDailySummary();
+  const totalSteps = Number(useSelectedDayTimeSeries("steps") ?? 0);
   const stepsGoal = useAtomValue(stepsGoalAtom);
-
-  const totalSteps = dailySummary.summary.steps;
 
   return (
     <TileWithDialog
@@ -65,14 +64,9 @@ export function GaugeStepsTileContent() {
 }
 
 export function GaugeDistanceTileContent() {
-  const dailySummary = useDailySummary();
+  const totalDistance = Number(useSelectedDayTimeSeries("distance") ?? 0);
   const distanceGoal = useAtomValue(distanceGoalAtom);
   const units = useUnits();
-
-  const totalDistance =
-    (dailySummary.summary.distances ?? []).find(
-      (entry) => entry.activity === "total"
-    )?.distance ?? 0;
 
   const localizedTotalDistance = units.localizedKilometers(totalDistance);
 
@@ -94,10 +88,8 @@ export function GaugeDistanceTileContent() {
 }
 
 export function GaugeCaloriesBurnedTileContent() {
-  const dailySummary = useDailySummary();
+  const burned = Number(useSelectedDayTimeSeries("calories") ?? 0);
   const goal = useAtomValue(caloriesOutGoalAtom);
-
-  const burned = dailySummary.summary.caloriesOut;
 
   return (
     <TileWithDialog
@@ -115,10 +107,8 @@ export function GaugeCaloriesBurnedTileContent() {
 }
 
 export function GaugeFloorsTileContent() {
-  const dailySummary = useDailySummary();
+  const floors = Number(useSelectedDayTimeSeries("floors") ?? 0);
   const goal = useAtomValue(floorsGoalAtom);
-
-  const floors = dailySummary.summary.floors;
 
   return (
     <TileWithDialog
@@ -138,7 +128,7 @@ export function GaugeFloorsTileContent() {
 export function GaugeActiveMinutesTileContent() {
   const [source] = useTileSetting<ActiveMinutesTileSettings, "source">(
     "source",
-    "mets"
+    "mets",
   );
 
   const { activeMinutes, activeMinutesGoal } = useActiveMinutes(source);
@@ -166,18 +156,16 @@ export function GaugeActiveZoneMinutesTileContent() {
     buildTimeSeriesQuery<TimeSeriesEntry<ActiveZoneMinutesTimeSeriesValue>>(
       "active-zone-minutes",
       selectedDay,
-      selectedDay
-    )
+      selectedDay,
+    ),
   );
 
   if (!azmSeries) {
     return null;
   }
 
-  const dayAzm = azmSeries.find((entry) =>
-    selectedDay.isSame(entry.dateTime, "day")
-  );
-  const dayAzmValue = dayAzm?.value.activeZoneMinutes ?? 0;
+  const dayAzmValue =
+    getTimeSeriesValueForDay(azmSeries, selectedDay)?.activeZoneMinutes ?? 0;
 
   return (
     <TileWithDialog

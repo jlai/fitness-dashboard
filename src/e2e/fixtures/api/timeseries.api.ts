@@ -1,8 +1,33 @@
 import { test as base, Page } from "@playwright/test";
+import dayjs from "dayjs";
 
-import { HeartTimeSeriesValue, TimeSeriesEntry } from "@/api/times-series";
-import { ActiveZoneMinutesTimeSeriesValue } from "@/api/times-series";
-import { GetDailyActivitySummaryResponse } from "@/api/exercise";
+import {
+  ActiveMinutesRollupByActivityLevelActivityLevel,
+  type DailyRollupDataPoint,
+} from "@generated/orval/fetch/google-health-api/models";
+
+import {
+  ActiveMinutesTimeSeriesValue,
+  ActiveZoneMinutesTimeSeriesValue,
+  HeartTimeSeriesValue,
+  TimeSeriesEntry,
+} from "@/api/times-series";
+
+function civilStartTimeFromDateTime(dateTime: string) {
+  const day = dayjs(dateTime);
+
+  return {
+    date: {
+      year: day.year(),
+      month: day.month() + 1,
+      day: day.date(),
+    },
+  };
+}
+
+function dailyRollUpUrl(dataType: string) {
+  return `**/v4/users/*/dataTypes/${dataType}/dataPoints:dailyRollUp**`;
+}
 
 export class TimeSeriesApi {
   constructor(private readonly page: Page) {}
@@ -30,26 +55,41 @@ export class TimeSeriesApi {
       },
     );
 
-    await this.page.route(
-      "**/1/user/-/activities/active-zone-minutes/date/*/*.json",
-      async (route) => {
-        await route.fulfill({ json: { "activities-active-zone-minutes": [] } });
-      },
-    );
+    await this.setActiveMinutesTimeSeriesResponse([]);
+    await this.setActiveZoneMinutesTimeSeriesResponse([]);
   }
 
-  async setDailySummaryResponse(
-    response: Readonly<GetDailyActivitySummaryResponse>,
-    dateRange = { start: "*" },
+  async setActiveMinutesTimeSeriesResponse(
+    response: ReadonlyArray<TimeSeriesEntry<ActiveMinutesTimeSeriesValue>>,
   ) {
-    await this.page.route(
-      `**/1/user/-/activities/date/${dateRange.start}.json`,
-      async (route) => {
-        await route.fulfill({
-          json: response,
-        });
-      },
-    );
+    await this.page.route(dailyRollUpUrl("active-minutes"), async (route) => {
+      await route.fulfill({
+        json: {
+          rollupDataPoints: response.map((entry): DailyRollupDataPoint => ({
+            civilStartTime: civilStartTimeFromDateTime(entry.dateTime),
+            activeMinutes: {
+              activeMinutesRollupByActivityLevel: [
+                {
+                  activityLevel:
+                    ActiveMinutesRollupByActivityLevelActivityLevel.LIGHT,
+                  activeMinutesSum: String(entry.value.lightlyActiveMinutes),
+                },
+                {
+                  activityLevel:
+                    ActiveMinutesRollupByActivityLevelActivityLevel.MODERATE,
+                  activeMinutesSum: String(entry.value.fairlyActiveMinutes),
+                },
+                {
+                  activityLevel:
+                    ActiveMinutesRollupByActivityLevelActivityLevel.VIGOROUS,
+                  activeMinutesSum: String(entry.value.veryActiveMinutes),
+                },
+              ],
+            },
+          })),
+        },
+      });
+    });
   }
 
   async setWeightTimeSeriesResponse(
@@ -110,13 +150,25 @@ export class TimeSeriesApi {
 
   async setActiveZoneMinutesTimeSeriesResponse(
     response: Readonly<TimeSeriesEntry<ActiveZoneMinutesTimeSeriesValue>[]>,
-    dateRange = { start: "*", end: "*" },
   ) {
     await this.page.route(
-      `**/1/user/-/activities/active-zone-minutes/date/${dateRange.start}/${dateRange.end}.json`,
+      dailyRollUpUrl("active-zone-minutes"),
       async (route) => {
         await route.fulfill({
-          json: { "activities-active-zone-minutes": response },
+          json: {
+            rollupDataPoints: response.map((entry): DailyRollupDataPoint => ({
+              civilStartTime: civilStartTimeFromDateTime(entry.dateTime),
+              activeZoneMinutes: {
+                sumInFatBurnHeartZone: String(
+                  entry.value.fatBurnActiveZoneMinutes,
+                ),
+                sumInCardioHeartZone: String(
+                  entry.value.cardioActiveZoneMinutes,
+                ),
+                sumInPeakHeartZone: String(entry.value.peakActiveZoneMinutes),
+              },
+            })),
+          },
         });
       },
     );

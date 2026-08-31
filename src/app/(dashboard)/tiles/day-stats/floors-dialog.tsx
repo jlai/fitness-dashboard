@@ -74,14 +74,9 @@ export default function FloorsDialogContent(props: RenderDialogContentProps) {
 }
 
 function Overview() {
-  const {
-    daySummary: { summary },
-    weekData,
-  } = useDayAndWeekSummary("floors");
+  const { dayValue: currentTotal, weekData } = useDayAndWeekSummary("floors");
   const dailyGoal = useAtomValue(floorsGoalAtom);
   const weeklyGoal = useAtomValue(weeklyFloorsGoalAtom);
-
-  const currentTotal = summary.floors;
 
   const weeklyTotal = sumBy(weekData, (entry) => Number(entry.value));
 

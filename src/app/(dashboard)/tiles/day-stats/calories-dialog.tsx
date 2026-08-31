@@ -25,7 +25,7 @@ import {
 } from "@/api/exercise/helpers";
 
 import { RenderDialogContentProps } from "../tile-with-dialog";
-import { useDailySummary } from "../common";
+import { useSelectedDayTimeSeries } from "../common";
 import { useSelectedDay } from "../../state";
 import { useTileSetting } from "../tile";
 
@@ -86,9 +86,8 @@ export default function CaloriesDialogContent(props: RenderDialogContentProps) {
 }
 
 function Overview() {
-  const { summary } = useDailySummary();
+  const currentTotal = Number(useSelectedDayTimeSeries("calories") ?? 0);
   const dailyGoal = useAtomValue(caloriesOutGoalAtom);
-  const currentTotal = summary.caloriesOut;
 
   return (
     <DailyGoalSummary
@@ -101,11 +100,9 @@ function Overview() {
 
 function CaloriesPieChart() {
   const day = useSelectedDay();
-  const {
-    summary: { caloriesOut },
-  } = useDailySummary();
+  const caloriesOut = Number(useSelectedDayTimeSeries("calories") ?? 0);
   const { data: activities = [] } = useSuspenseQuery(
-    buildGetExerciseByDateQuery(day)
+    buildGetExerciseByDateQuery(day),
   );
 
   let otherCalories = caloriesOut;
@@ -189,7 +186,9 @@ function Settings() {
   return (
     <>
       <Typography variant="h6">Goals</Typography>
-      <Typography variant="body1">Set daily and weekly calories burned goals.</Typography>
+      <Typography variant="body1">
+        Set daily and weekly calories burned goals.
+      </Typography>
 
       <FormRows mt={4}>
         <GoalSettings
