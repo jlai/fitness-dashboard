@@ -1,9 +1,11 @@
 import Image from "next/image";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Typography } from "@mui/material";
+import { useAtomValue } from "jotai";
 
 import { buildFoodLogQuery } from "@/api/nutrition";
 import NumericStat from "@/components/numeric-stat";
+import { macroGoalsAtom } from "@/storage/settings";
 
 import { useSelectedDay } from "../state";
 
@@ -12,8 +14,9 @@ import foodIcon from "./assets/restaurant_24dp_FILL0_wght400_GRAD0_opsz24.svg";
 export function CalorieGoalTileContent() {
   const day = useSelectedDay();
   const { data: foodLog } = useSuspenseQuery(buildFoodLogQuery(day));
+  const macroGoals = useAtomValue(macroGoalsAtom);
 
-  const caloriesGoal = foodLog.goals?.calories;
+  const caloriesGoal = macroGoals.calories;
   const caloriesConsumed = foodLog.summary.calories;
   const caloriesRemaining = (caloriesGoal ?? 0) - caloriesConsumed;
 

@@ -1,34 +1,93 @@
 import { test as base, Page } from "@playwright/test";
 
-import { Food, GetFoodLogResponse } from "@/api/nutrition";
+import type { DataPoint } from "@generated/orval/fetch/google-health-api/models";
+
+import { Food } from "@/api/nutrition";
 import { SCRAMBLED_EGGS } from "@/e2e/data/nutrition/food-log-list";
 
+const FOOD_LIST_URL =
+  /\/v4\/users\/[^/]+\/dataTypes\/food\/dataPoints(?:\?|$)/;
+const FOOD_MEASUREMENT_UNIT_LIST_URL =
+  /\/v4\/users\/[^/]+\/dataTypes\/food-measurement-unit\/dataPoints(?:\?|$)/;
+const FOOD_MEASUREMENT_UNIT_GET_URL =
+  /\/v4\/users\/[^/]+\/dataTypes\/food-measurement-unit\/dataPoints\/[^/?]+(?:\?|$)/;
+const NUTRITION_LOG_LIST_URL =
+  /\/v4\/users\/[^/]+\/dataTypes\/nutrition-log\/dataPoints(?:\?|$)/;
+const NUTRITION_LOG_PATCH_URL =
+  /\/v4\/users\/[^/]+\/dataTypes\/nutrition-log\/dataPoints\/[^/?]+(?:\?|$)/;
+const NUTRITION_LOG_BATCH_DELETE_URL =
+  /\/v4\/users\/[^/]+\/dataTypes\/nutrition-log\/dataPoints:batchDelete(?:\?|$)/;
+
 export class NutritionApi {
-  private favorites = new Map<number, Food>();
+  private favorites = new Map<string, Food>();
 
   constructor(private readonly page: Page) {}
 
   async setupDefaults() {
     const page = this.page;
 
-    await page.route("**/1/foods/units.json", async (route) => {
-      await route.fulfill({ json: [] });
+    await page.route(FOOD_LIST_URL, async (route) => {
+      await route.fulfill({ json: { dataPoints: [] } });
     });
-    await page.route("**/1/user/-/foods/log/favorite.json", async (route) => {
-      await route.fulfill({ json: [...this.favorites.values()] });
+    await page.route(FOOD_MEASUREMENT_UNIT_LIST_URL, async (route) => {
+      await route.fulfill({ json: { dataPoints: [] } });
     });
-    await page.route(
-      "**/1/user/-/foods/log/{frequent,recent}.json",
-      async (route) => {
-        await route.fulfill({ json: [] });
-      },
-    );
-    // custom foods
-    await page.route("**/1/user/-/foods.json", async (route) => {
-      await route.fulfill({ json: { foods: [] } });
+    await page.route(FOOD_MEASUREMENT_UNIT_GET_URL, async (route) => {
+      if (route.request().method() !== "GET") {
+        await route.fallback();
+        return;
+      }
+
+      const id = decodeURIComponent(route.request().url()).match(
+        /dataPoints\/([^/?]+)/,
+      )?.[1];
+
+      await route.fulfill({
+        json: {
+          name: `users/me/dataTypes/food-measurement-unit/dataPoints/${id}`,
+          foodMeasurementUnit: {
+            displayName: "serving",
+            pluralDisplayName: "servings",
+          },
+        },
+      });
     });
-    await page.route("**/1/user/-/foods/log/date/*.json", async (route) => {
-      await route.fulfill({ json: { foods: [] } });
+    await page.route(NUTRITION_LOG_LIST_URL, async (route) => {
+      if (route.request().method() === "POST") {
+        await route.fulfill({
+          json: {
+            name: "users/me/dataTypes/nutrition-log/dataPoints/new",
+          },
+        });
+        return;
+      }
+
+      if (route.request().method() !== "GET") {
+        await route.fallback();
+        return;
+      }
+
+      await route.fulfill({ json: { dataPoints: [] } });
+    });
+    await page.route(NUTRITION_LOG_PATCH_URL, async (route) => {
+      if (route.request().method() === "PATCH") {
+        await route.fulfill({
+          json: {
+            name: "users/me/dataTypes/nutrition-log/dataPoints/updated",
+          },
+        });
+        return;
+      }
+
+      await route.fallback();
+    });
+    await page.route(NUTRITION_LOG_BATCH_DELETE_URL, async (route) => {
+      if (route.request().method() === "POST") {
+        await route.fulfill({ json: {} });
+        return;
+      }
+
+      await route.fallback();
     });
 
     // Update or delete favorite
@@ -36,12 +95,10 @@ export class NutritionApi {
       "**/1/user/-/foods/log/favorite/*.json**",
       async (route) => {
         const method = route.request().method();
-        const [_, foodIdStr] =
-          route
-            .request()
-            .url()
-            .match(/favorite\/(\d+).json/) ?? [];
-        const foodId = Number(foodIdStr);
+        const foodId = route
+          .request()
+          .url()
+          .match(/favorite\/([^/?]+)\.json/)?.[1];
 
         if (method === "POST") {
           if (foodId === SCRAMBLED_EGGS.foodId) {
@@ -52,7 +109,9 @@ export class NutritionApi {
 
           await route.fulfill({ status: 200 });
         } else if (method === "DELETE") {
-          this.favorites.delete(foodId);
+          if (foodId) {
+            this.favorites.delete(foodId);
+          }
 
           await route.fulfill({ status: 200 });
         } else {
@@ -60,39 +119,37 @@ export class NutritionApi {
         }
       },
     );
+  }
 
-    // Create food log
-    await page.route("**/1/user/-/foods/log.json**", async (route) => {
-      if (["POST"].includes(route.request().method())) {
-        await route.fulfill({ status: 200 });
-      } else {
-        await route.fallback();
+  async setFoodLogsResponse(dataPoints: ReadonlyArray<DataPoint>, date = "*") {
+    await this.page.route(NUTRITION_LOG_LIST_URL, async (route) => {
+      if (route.request().method() === "POST") {
+        await route.fulfill({
+          json: {
+            name: "users/me/dataTypes/nutrition-log/dataPoints/new",
+          },
+        });
+        return;
       }
-    });
 
-    // Update or delete food log
-    await page.route("**/1/user/-/foods/log/*.json**", async (route) => {
-      if (["POST", "DELETE"].includes(route.request().method())) {
-        await route.fulfill({ status: 200 });
-      } else {
+      if (route.request().method() !== "GET") {
         await route.fallback();
+        return;
       }
+
+      const url = decodeURIComponent(route.request().url());
+      if (date !== "*" && !url.includes(date)) {
+        await route.fulfill({ json: { dataPoints: [] } });
+        return;
+      }
+
+      await route.fulfill({
+        json: { dataPoints },
+      });
     });
   }
 
-  async setFoodLogsResponse(
-    response: Readonly<GetFoodLogResponse>,
-    date = "*",
-  ) {
-    await this.page.route(
-      `**/1/user/-/foods/log/date/${date}.json`,
-      async (route) => {
-        await route.fulfill({ json: response });
-      },
-    );
-  }
-
-  waitForAddToFavorites(foodId: number) {
+  waitForAddToFavorites(foodId: string) {
     return this.page.waitForRequest(
       (request) =>
         request.method() === "POST" &&
@@ -100,7 +157,7 @@ export class NutritionApi {
     );
   }
 
-  waitForRemoveFromFavorites(foodId: number) {
+  waitForRemoveFromFavorites(foodId: string) {
     return this.page.waitForRequest(
       (request) =>
         request.method() === "DELETE" &&

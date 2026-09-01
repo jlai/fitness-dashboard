@@ -1,83 +1,189 @@
 import { QueryClient } from "@tanstack/query-core";
 import { Dayjs } from "dayjs";
 
+import {
+  DataSourceRecordingMethod,
+  type NutritionLog,
+  type Serving,
+} from "@generated/orval/fetch/google-health-api/models";
+import {
+  healthUsersDataTypesDataPointsBatchDelete,
+  healthUsersDataTypesDataPointsCreate,
+  healthUsersDataTypesDataPointsPatch,
+} from "@generated/orval/fetch/google-health-api/users/users";
+
 import { formatAsDate } from "../datetime";
 import mutationOptions from "../mutation-options";
-import { makeRequest } from "../request";
 
-import { MealType } from "./types";
-
-const AMOUNT_FORMAT = new Intl.NumberFormat("en-US", {
-  maximumFractionDigits: 2,
-  useGrouping: false,
-});
+import { getDataPointIdFromName } from "./helpers";
 
 export interface CreateFoodLogOptions {
-  foodId: number;
-  mealTypeId: MealType;
-  unitId: number;
-  amount: number;
+  nutritionLog: NutritionLog;
   day: Dayjs;
 }
 
 export interface UpdateFoodLogOptions {
-  foodLogId: number;
-  mealTypeId: MealType;
-  unitId: number;
-  amount: number;
-
-  // Used for cache invalidation only
+  name: string;
+  nutritionLog: NutritionLog;
   day: Dayjs;
 }
 
 export interface DeleteFoodLogOptions {
-  foodLogId: number;
-
-  // Used for cache invalidation only
+  name: string;
   day: Dayjs;
 }
 
-async function logFood(newFood: CreateFoodLogOptions) {
-  const params = new URLSearchParams();
-  params.set("foodId", `${newFood.foodId}`);
-  params.set("mealTypeId", `${newFood.mealTypeId}`);
-  params.set("amount", AMOUNT_FORMAT.format(newFood.amount));
-  params.set("unitId", `${newFood.unitId}`);
-  params.set("date", formatAsDate(newFood.day));
+function utcOffsetDuration(day: Dayjs) {
+  return `${day.utcOffset() * 60}s`;
+}
 
-  const response = await makeRequest(
-    `/1/user/-/foods/log.json?${params.toString()}`,
+export function foodResourceName(foodId: string) {
+  return `users/me/dataTypes/food/dataPoints/${foodId}`;
+}
+
+export function foodMeasurementUnitResourceName(unitId: string) {
+  return `users/me/dataTypes/food-measurement-unit/dataPoints/${unitId}`;
+}
+
+function nutritionLogInterval(day: Dayjs) {
+  const endTime = day.add(1, "second");
+  const utcOffset = utcOffsetDuration(day);
+
+  return {
+    startTime: day.toISOString(),
+    endTime: endTime.toISOString(),
+    startUtcOffset: utcOffset,
+    endUtcOffset: utcOffsetDuration(endTime),
+  };
+}
+
+export function nutritionLogServing(amount: number, unitId: string): Serving {
+  return {
+    amount,
+    ...(unitId
+      ? { foodMeasurementUnit: foodMeasurementUnitResourceName(unitId) }
+      : {}),
+  };
+}
+
+export function servingFromSize(
+  amount: number,
+  unitId: string,
+  original?: Serving,
+): Serving {
+  const originalUnitId = getDataPointIdFromName(original?.foodMeasurementUnit);
+  const foodMeasurementUnit =
+    original?.foodMeasurementUnit && originalUnitId === unitId
+      ? original.foodMeasurementUnit
+      : unitId
+        ? foodMeasurementUnitResourceName(unitId)
+        : undefined;
+
+  return {
+    amount,
+    ...(foodMeasurementUnit ? { foodMeasurementUnit } : {}),
+  };
+}
+
+function writableServing(serving?: Serving): Serving | undefined {
+  if (!serving) {
+    return undefined;
+  }
+
+  return {
+    amount: serving.amount,
+    ...(serving.foodMeasurementUnit
+      ? { foodMeasurementUnit: serving.foodMeasurementUnit }
+      : {}),
+  };
+}
+
+/**
+ * Fields the API populates from an identified Food resource must not be sent
+ * on create/update. Anonymous logs still need display name and nutrients.
+ * @see https://developers.google.com/health/data-types/nutrition
+ */
+export function writableNutritionLog(
+  log: NutritionLog,
+  interval: NutritionLog["interval"],
+): NutritionLog {
+  const serving = writableServing(log.serving);
+
+  if (log.food) {
+    return {
+      interval,
+      food: log.food,
+      mealType: log.mealType,
+      serving,
+    };
+  }
+
+  return {
+    interval,
+    mealType: log.mealType,
+    serving,
+    foodDisplayName: log.foodDisplayName,
+    energy: log.energy,
+    energyFromFat: log.energyFromFat,
+    totalCarbohydrate: log.totalCarbohydrate,
+    totalFat: log.totalFat,
+    nutrients: log.nutrients,
+  };
+}
+
+async function logFood(newFood: CreateFoodLogOptions) {
+  const response = await healthUsersDataTypesDataPointsCreate(
+    "me",
+    "nutrition-log",
     {
-      method: "POST",
+      dataSource: {
+        recordingMethod: DataSourceRecordingMethod.MANUAL,
+      },
+      nutritionLog: writableNutritionLog(
+        newFood.nutritionLog,
+        nutritionLogInterval(newFood.day),
+      ),
     },
   );
 
-  return response;
+  return response.data;
 }
 
 async function updateFood(updatedFood: UpdateFoodLogOptions) {
-  const params = new URLSearchParams();
-  params.set("mealTypeId", `${updatedFood.mealTypeId}`);
-  params.set("amount", AMOUNT_FORMAT.format(updatedFood.amount));
-  params.set("unitId", `${updatedFood.unitId}`);
-
-  const response = await makeRequest(
-    `/1/user/-/foods/log/${updatedFood.foodLogId}.json?${params.toString()}`,
+  const response = await healthUsersDataTypesDataPointsPatch(
+    "me",
+    "nutrition-log",
+    getDataPointIdFromName(updatedFood.name),
     {
-      method: "POST",
+      nutritionLog: writableNutritionLog(
+        updatedFood.nutritionLog,
+        nutritionLogInterval(updatedFood.day),
+      ),
     },
   );
 
-  return response;
+  return response.data;
+}
+
+function invalidateNutritionLogQueries(
+  queryClient: QueryClient,
+  dates: Iterable<string>,
+) {
+  for (const date of dates) {
+    queryClient.invalidateQueries({
+      queryKey: ["datapoints", "nutrition-log", date],
+    });
+  }
+  queryClient.invalidateQueries({
+    queryKey: ["timeseries", "calories-in"],
+  });
 }
 
 export function buildCreateFoodLogMutation(queryClient: QueryClient) {
   return mutationOptions({
     mutationFn: logFood,
-    onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: ["food-log", formatAsDate(variables.day)],
-      });
+    onSuccess: (_data, variables) => {
+      invalidateNutritionLogQueries(queryClient, [formatAsDate(variables.day)]);
       queryClient.invalidateQueries({
         queryKey: ["recent-foods"],
       });
@@ -92,10 +198,11 @@ export function buildCreateMultipleFoodLogsMutation(queryClient: QueryClient) {
         await logFood(food);
       }
     },
-    onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: ["food-log", formatAsDate(variables[0]?.day)],
-      });
+    onSuccess: (_data, variables) => {
+      invalidateNutritionLogQueries(
+        queryClient,
+        variables.map((food) => formatAsDate(food.day)),
+      );
       queryClient.invalidateQueries({
         queryKey: ["recent-foods"],
       });
@@ -110,16 +217,11 @@ export function buildUpdateFoodLogsMutation(queryClient: QueryClient) {
         await updateFood(updatedFood);
       }
     },
-    onSuccess: (data, variables) => {
-      const days = new Set(
+    onSuccess: (_data, variables) => {
+      invalidateNutritionLogQueries(
+        queryClient,
         variables.map((foodLog) => formatAsDate(foodLog.day)),
       );
-
-      for (const date of days) {
-        queryClient.invalidateQueries({
-          queryKey: ["food-log", date],
-        });
-      }
     },
   });
 }
@@ -127,22 +229,19 @@ export function buildUpdateFoodLogsMutation(queryClient: QueryClient) {
 export function buildDeleteFoodLogsMutation(queryClient: QueryClient) {
   return mutationOptions({
     mutationFn: async (deletedFoods: Array<DeleteFoodLogOptions>) => {
-      for (const food of deletedFoods)
-        await makeRequest(`/1/user/-/foods/log/${food.foodLogId}.json`, {
-          method: "DELETE",
-          ignore502: true,
-        });
+      if (deletedFoods.length === 0) {
+        return;
+      }
+
+      await healthUsersDataTypesDataPointsBatchDelete("me", "nutrition-log", {
+        names: deletedFoods.map((food) => food.name),
+      });
     },
-    onSuccess: (data, variables) => {
-      const days = new Set(
+    onSuccess: (_data, variables) => {
+      invalidateNutritionLogQueries(
+        queryClient,
         variables.map((foodLog) => formatAsDate(foodLog.day)),
       );
-
-      for (const date of days) {
-        queryClient.invalidateQueries({
-          queryKey: ["food-log", date],
-        });
-      }
     },
   });
 }

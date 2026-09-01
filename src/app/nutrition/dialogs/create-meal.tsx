@@ -7,6 +7,7 @@ import {
 import { useAtom, useAtomValue } from "jotai";
 
 import { CreateOrEditMeal } from "@/components/nutrition/meal/edit-meal";
+import { foodFromNutritionLog } from "@/api/nutrition";
 
 import { selectedFoodLogsAtom } from "../atoms";
 
@@ -21,7 +22,8 @@ export function CreateMealFromFoodLogsDialog() {
     name: "",
     description: "",
     mealFoods: [...selectedFoodLogs].map((foodLog) => ({
-      ...foodLog.loggedFood,
+      ...foodFromNutritionLog(foodLog.nutritionLog),
+      amount: foodLog.nutritionLog.serving?.amount ?? 1,
     })),
   };
 

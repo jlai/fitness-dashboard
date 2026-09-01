@@ -20,10 +20,14 @@ import { ArticleOutlined, EditOutlined as EditIcon } from "@mui/icons-material";
 import { formatFoodName } from "@/utils/other-formats";
 import { NumberFormats } from "@/utils/number-formats";
 import {
-  FoodLogEntry,
   FoodLogSummary,
-  GetFoodLogResponse,
+  NutritionLogDataPoint,
+  NutritionLogsResult,
   NutritionMacroGoals,
+  mapNutritionLogMealType,
+  getDataPointIdFromName,
+  nutritionLogMacros,
+  nutritionLogServingUnit,
 } from "@/api/nutrition";
 import {
   foodLogShowCopyIndividualButtonAtom,
@@ -67,12 +71,12 @@ const FlatChip = styled(Chip)(() => ({
 }));
 
 function formatNutrientPropValue(
-  nutritionalValues: FoodLogEntry["nutritionalValues"],
+  nutritionalValues: object | undefined,
   prop: string,
 ) {
-  const value = ((nutritionalValues ?? {}) as Record<string, number>)[prop];
+  const value = ((nutritionalValues ?? {}) as Record<string, unknown>)[prop];
 
-  if (value !== undefined) {
+  if (typeof value === "number") {
     return NUTRIENT_FORMAT.format(value);
   }
 
@@ -106,12 +110,13 @@ export function FoodLogTableHeaderRows() {
   );
 }
 
-function FoodLogRow({ foodLog }: { foodLog: FoodLogEntry }) {
-  const {
-    logId,
-    loggedFood: { name, brand, amount, unit, calories },
-    nutritionalValues,
-  } = foodLog;
+function FoodLogRow({ foodLog }: { foodLog: NutritionLogDataPoint }) {
+  const { nutritionLog } = foodLog;
+  const name = nutritionLog.foodDisplayName ?? "";
+  const amount = nutritionLog.serving?.amount ?? 1;
+  const unit = nutritionLogServingUnit(nutritionLog);
+  const nutritionalValues = nutritionLogMacros(nutritionLog);
+  const calories = nutritionalValues.calories ?? 0;
 
   const selectedFoodLogs = useAtomValue(selectedFoodLogsAtom);
   const updateSelectedFoodLog = useSetAtom(updateSelectedFoodLogAtom);
@@ -133,7 +138,7 @@ function FoodLogRow({ foodLog }: { foodLog: FoodLogEntry }) {
     [foodLog, updateSelectedFoodLog],
   );
   return (
-    <TableRow key={logId}>
+    <TableRow key={foodLog.name}>
       <TableCell>
         <div className="flex flex-row items-center">
           <FormControlLabel
@@ -144,7 +149,7 @@ function FoodLogRow({ foodLog }: { foodLog: FoodLogEntry }) {
                 onChange={handleChange}
               />
             }
-            label={formatFoodName(name, brand)}
+            label={formatFoodName(name)}
           />
         </div>
       </TableCell>
@@ -176,8 +181,9 @@ function FoodLogRow({ foodLog }: { foodLog: FoodLogEntry }) {
               onClick={(event) => {
                 setFood({
                   // display the info for the default serving if CTRL or ALT is pressed
-                  foodLog: event.ctrlKey || event.altKey ? null : foodLog,
-                  foodId: foodLog.loggedFood.foodId,
+                  nutritionLog:
+                    event.ctrlKey || event.altKey ? null : nutritionLog,
+                  foodId: getDataPointIdFromName(nutritionLog.food),
                 });
                 if (!nutritionPopupState.isOpen) {
                   nutritionPopupState.open(event);
@@ -204,17 +210,21 @@ function FoodLogRow({ foodLog }: { foodLog: FoodLogEntry }) {
       <TableCell className="text-end">
         {NUTRIENT_FORMAT.format(calories)}
       </TableCell>
-      {nutritionalValues &&
-        NUTRIENT_PROPS.map((prop) => (
-          <TableCell key={prop} className="text-end">
-            {formatNutrientPropValue(nutritionalValues, prop)}
-          </TableCell>
-        ))}
-      {!nutritionalValues && (
-        <TableCell colSpan={NUTRIENT_PROPS.length} className="text-center">
-          Not available due to Fitbit API limitations
-        </TableCell>
-      )}
+      {NUTRIENT_PROPS.some(
+        (prop) =>
+          (nutritionalValues as Record<string, number | undefined>)[prop] !=
+          null,
+      )
+        ? NUTRIENT_PROPS.map((prop) => (
+            <TableCell key={prop} className="text-end">
+              {formatNutrientPropValue(nutritionalValues, prop)}
+            </TableCell>
+          ))
+        : (
+            <TableCell colSpan={NUTRIENT_PROPS.length} className="text-center">
+              Not available due to Fitbit API limitations
+            </TableCell>
+          )}
     </TableRow>
   );
 }
@@ -226,7 +236,10 @@ export function MealTypeRows({ summary }: { summary: MealTypeSummary }) {
   const updateSelectedFoodLog = useSetAtom(updateSelectedFoodLogAtom);
   const showCopyIndividual = useAtomValue(foodLogShowCopyIndividualButtonAtom);
 
-  const handleChange = function (foods: FoodLogEntry[], checked: boolean) {
+  const handleChange = function (
+    foods: NutritionLogDataPoint[],
+    checked: boolean,
+  ) {
     foods.map((foodLog) => updateSelectedFoodLog(foodLog, checked));
   };
   const selectedFoodLogs = useAtomValue(selectedFoodLogsAtom);
@@ -234,7 +247,8 @@ export function MealTypeRows({ summary }: { summary: MealTypeSummary }) {
   const checked =
     selectedFoodLogs.filter(
       (foodLog) =>
-        foodLog.loggedFood.mealTypeId == summary.id || summary.id == -1,
+        mapNutritionLogMealType(foodLog.nutritionLog.mealType) == summary.id ||
+        summary.id == -1,
     ).size > 0;
   const indeterminate =
     checked && !summary.foods.every((foodLog) => selectedFoodLogs.has(foodLog));
@@ -295,7 +309,7 @@ export function MealTypeRows({ summary }: { summary: MealTypeSummary }) {
         ))}
       </TableRow>
       {displayedFoods.map((foodLog) => (
-        <FoodLogRow key={foodLog.logId} foodLog={foodLog} />
+        <FoodLogRow key={foodLog.name} foodLog={foodLog} />
       ))}
     </>
   );
@@ -304,12 +318,12 @@ export function MealTypeRows({ summary }: { summary: MealTypeSummary }) {
 export function TotalsRow({
   foodLogsResponse,
 }: {
-  foodLogsResponse: GetFoodLogResponse;
+  foodLogsResponse: NutritionLogsResult;
 }) {
   const summary: MealTypeSummary = {
     id: -1,
     name: "Total",
-    foods: foodLogsResponse.foods,
+    foods: foodLogsResponse.dataPoints,
     ...foodLogsResponse.summary,
   };
 

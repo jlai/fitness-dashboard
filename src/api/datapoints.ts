@@ -47,6 +47,8 @@ export const DATA_TYPE_PROPERTIES = {
   electrocardiogram: "electrocardiogram",
   exercise: "exercise",
   floors: "floors",
+  food: "food",
+  "food-measurement-unit": "foodMeasurementUnit",
   "heart-rate": "heartRate",
   "heart-rate-variability": "heartRateVariability",
   height: "height",
@@ -190,7 +192,8 @@ const FOURTEEN_DAY_ROLLUP_TYPES = new Set<DailyRollupDataType>([
   "total-calories",
 ]);
 
-type FilterKind = "interval" | "sample" | "daily" | "sleep" | "exercise";
+type FilterKind =
+  "interval" | "sample" | "daily" | "sleep" | "exercise" | "catalog";
 
 /**
  * How to filter each data type when listing.
@@ -217,6 +220,8 @@ const DATA_TYPE_FILTER_KIND = {
   electrocardiogram: "interval",
   exercise: "exercise",
   floors: "interval",
+  food: "catalog",
+  "food-measurement-unit": "catalog",
   "heart-rate": "sample",
   "heart-rate-variability": "sample",
   height: "sample",
@@ -265,6 +270,10 @@ function filterField(dataType: DataType, timeField: "civil" | "physical") {
       return timeField === "civil"
         ? `${prefix}.interval.civil_end_time`
         : `${prefix}.interval.end_time`;
+    case "catalog":
+      throw new Error(
+        `Data type ${dataType} does not support time-range filters`,
+      );
   }
 }
 
@@ -297,7 +306,7 @@ export async function getDataPoint<T extends DataType>(
 
 export async function listDataPointsPage<T extends DataType>(
   dataType: T,
-  filter: string,
+  filter?: string,
   pageToken?: string,
   pageSize?: number,
 ): Promise<{
@@ -305,7 +314,7 @@ export async function listDataPointsPage<T extends DataType>(
   nextPageToken?: string;
 }> {
   const response = await healthUsersDataTypesDataPointsList("me", dataType, {
-    filter,
+    ...(filter ? { filter } : {}),
     pageSize: Math.min(
       pageSize ?? pageSizeFor(dataType),
       pageSizeFor(dataType),
@@ -319,9 +328,9 @@ export async function listDataPointsPage<T extends DataType>(
   };
 }
 
-async function listDataPoints<T extends DataType>(
+export async function listDataPoints<T extends DataType>(
   dataType: T,
-  filter: string,
+  filter?: string,
 ): Promise<ListDatapointsResult<T>> {
   const dataPoints: Array<DataPointFor<T>> = [];
   let pageToken: string | undefined;

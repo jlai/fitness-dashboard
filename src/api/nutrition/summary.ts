@@ -1,58 +1,46 @@
 import { Dayjs } from "dayjs";
 import { queryOptions } from "@tanstack/react-query";
-import camelcaseKeys from "camelcase-keys";
 
+import { buildOneDayDatapointsQuery } from "../datapoints";
+import { graduallyStale, ONE_DAY_IN_MILLIS } from "../cache-settings";
 import { formatAsDate } from "../datetime";
-import { getJSON, makeRequest } from "../request";
-import { ONE_DAY_IN_MILLIS, graduallyStale } from "../cache-settings";
+import { makeRequest } from "../request";
 
+import {
+  resolveNutritionLogServingUnits,
+  summarizeNutritionLogs,
+  type NutritionLogDataPoint,
+} from "./helpers";
 import type {
+  FoodLogSummary,
   GetFoodGoalResponse,
-  GetFoodLogResponse,
   GetWaterGoalResponse,
 } from "./types";
 
+export type NutritionLogsResult = {
+  dataPoints: NutritionLogDataPoint[];
+  summary: FoodLogSummary;
+};
+
 export function buildFoodLogQuery(day: Dayjs) {
-  const date = formatAsDate(day);
+  const datapointsQuery = buildOneDayDatapointsQuery("nutrition-log", day);
 
   return queryOptions({
-    queryKey: ["food-log", date],
-    queryFn: async () => {
-      const response = await makeRequest(
-        `/1/user/-/foods/log/date/${date}.json`,
-      );
-
-      // Workaround: https://community.fitbit.com/t5/Web-API-Development/Nutrition-log-loggedFood-changed-unexpectedly-to-logged-food/m-p/5772376
-      return camelcaseKeys(await getJSON<any>(response), {
-        deep: true,
-      }) as GetFoodLogResponse;
-    },
+    queryKey: ["datapoints", "nutrition-log", formatAsDate(day)],
     staleTime: graduallyStale(day),
-  });
-}
+    queryFn: async (context) => {
+      const queryFn = datapointsQuery.queryFn;
+      if (typeof queryFn !== "function") {
+        throw new Error("nutrition-log query is missing a queryFn");
+      }
 
-export function buildWaterGoalQuery() {
-  return queryOptions({
-    queryKey: ["water-goal"],
-    queryFn: async () => {
-      const response = await makeRequest(`/1/user/-/foods/log/water/goal.json`);
+      const { dataPoints } = await queryFn(context);
+      const resolved = await resolveNutritionLogServingUnits(dataPoints);
 
-      const waterGoalResponse = (await response.json()) as GetWaterGoalResponse;
-      return waterGoalResponse.goal.goal;
+      return {
+        dataPoints: resolved,
+        summary: summarizeNutritionLogs(resolved),
+      } satisfies NutritionLogsResult;
     },
-    staleTime: ONE_DAY_IN_MILLIS,
-  });
-}
-
-export function buildFoodGoalQuery() {
-  return queryOptions({
-    queryKey: ["food-goal"],
-    queryFn: async () => {
-      const response = await makeRequest(`/1/user/-/foods/log/goal.json`);
-
-      const foodGoalResponse = (await response.json()) as GetFoodGoalResponse;
-      return foodGoalResponse;
-    },
-    staleTime: ONE_DAY_IN_MILLIS,
   });
 }

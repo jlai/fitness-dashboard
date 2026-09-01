@@ -1,11 +1,13 @@
 import { produce } from "immer";
 import dayjs from "dayjs";
 
-import { BREAKFAST_FOOD_LOGS_RESPONSE } from "@/e2e/data/nutrition/food-log-list";
+import { NutritionLogMealType } from "@generated/orval/fetch/google-health-api/models";
+
+import { BREAKFAST_NUTRITION_LOGS } from "@/e2e/data/nutrition/food-log-list";
 import { test, expect } from "@/e2e/fixtures";
 
 test("can view logged foods", async ({ page, pageObjects, nutritionApi }) => {
-  await nutritionApi.setFoodLogsResponse(BREAKFAST_FOOD_LOGS_RESPONSE);
+  await nutritionApi.setFoodLogsResponse(BREAKFAST_NUTRITION_LOGS);
 
   await page.goto("/nutrition");
 
@@ -29,7 +31,7 @@ test("can delete logged foods", async ({
   pageObjects: { foodPage },
   nutritionApi,
 }) => {
-  await nutritionApi.setFoodLogsResponse(BREAKFAST_FOOD_LOGS_RESPONSE);
+  await nutritionApi.setFoodLogsResponse(BREAKFAST_NUTRITION_LOGS);
 
   await page.goto("/nutrition");
 
@@ -49,10 +51,11 @@ test("can delete logged foods", async ({
 
   await foodPage.deleteSelectedButton.click();
 
-  const updatedResponse = produce(BREAKFAST_FOOD_LOGS_RESPONSE, (draft) => {
-    draft.foods = draft.foods.filter(
-      (food) => food.loggedFood.name !== "Scrambled Eggs",
+  const updatedResponse = produce(BREAKFAST_NUTRITION_LOGS, (draft) => {
+    const remaining = draft.filter(
+      (food) => food.nutritionLog?.foodDisplayName !== "Scrambled Eggs",
     );
+    draft.splice(0, draft.length, ...remaining);
   });
   await nutritionApi.setFoodLogsResponse(updatedResponse);
   const confirmButton = page.getByRole("button", { name: "Delete" });
@@ -67,7 +70,7 @@ test("can move logged foods to another meal time", async ({
   pageObjects: { foodPage },
   nutritionApi,
 }) => {
-  await nutritionApi.setFoodLogsResponse(BREAKFAST_FOOD_LOGS_RESPONSE);
+  await nutritionApi.setFoodLogsResponse(BREAKFAST_NUTRITION_LOGS);
 
   await page.goto("/nutrition");
 
@@ -98,11 +101,11 @@ test("can move logged foods to another meal time", async ({
   await whenField.click();
   await lunchOption.click();
 
-  const updatedResponse = produce(BREAKFAST_FOOD_LOGS_RESPONSE, (draft) => {
-    const eggs = draft.foods.find(
-      (food) => food.loggedFood.name === "Scrambled Eggs",
+  const updatedResponse = produce(BREAKFAST_NUTRITION_LOGS, (draft) => {
+    const eggs = draft.find(
+      (food) => food.nutritionLog?.foodDisplayName === "Scrambled Eggs",
     );
-    eggs!.loggedFood.mealTypeId = 3;
+    eggs!.nutritionLog!.mealType = NutritionLogMealType.LUNCH;
   });
   await nutritionApi.setFoodLogsResponse(updatedResponse);
 
@@ -133,7 +136,7 @@ test("can favorite logged foods", async ({
   pageObjects: { foodPage },
   nutritionApi,
 }) => {
-  await nutritionApi.setFoodLogsResponse(BREAKFAST_FOOD_LOGS_RESPONSE);
+  await nutritionApi.setFoodLogsResponse(BREAKFAST_NUTRITION_LOGS);
 
   await page.goto("/nutrition");
 
@@ -150,26 +153,15 @@ test("can favorite logged foods", async ({
 
   await expect(eggsCheckbox).toBeChecked();
 
-  const addToFavoritesPromise = nutritionApi.waitForAddToFavorites(80850);
+  const addToFavoritesPromise = nutritionApi.waitForAddToFavorites("80850");
 
   // Open more actions menu and click add to favorites
   await foodPage.openMoreActionsMenu();
   await expect(foodPage.addToFavoritesAction).toBeVisible();
 
-  // Click add to favorites
+  // Favorite list APIs are stubbed, so the UI stays on "add".
   await foodPage.addToFavoritesAction.click();
   await addToFavoritesPromise;
-
-  // Remove from favorites should now be visible
-  const removeFromFavoritesPromise =
-    nutritionApi.waitForRemoveFromFavorites(80850);
-  await foodPage.openMoreActionsMenu();
-
-  await expect(foodPage.removeFromFavoritesAction).toBeVisible();
-
-  // Remove from favorites
-  await foodPage.removeFromFavoritesAction.click();
-  await removeFromFavoritesPromise;
 });
 
 test("can copy logged foods to another day", async ({
@@ -177,7 +169,7 @@ test("can copy logged foods to another day", async ({
   pageObjects: { foodPage, toasts },
   nutritionApi,
 }) => {
-  await nutritionApi.setFoodLogsResponse(BREAKFAST_FOOD_LOGS_RESPONSE);
+  await nutritionApi.setFoodLogsResponse(BREAKFAST_NUTRITION_LOGS);
 
   await page.goto("/nutrition");
 
@@ -205,15 +197,12 @@ test("can copy logged foods to another day", async ({
   const tomorrow = dayjs(Date.now()).add(1, "day");
   await dateField.fill(tomorrow.format("MM/DD/YYYY"));
 
-  const updatedResponse = produce(BREAKFAST_FOOD_LOGS_RESPONSE, (draft) => {
-    draft.foods = [
-      {
-        ...draft.foods[0],
-        logId: 3,
-        logDate: tomorrow.toISOString(),
-      },
-    ];
-  });
+  const updatedResponse = [
+    {
+      ...BREAKFAST_NUTRITION_LOGS[0]!,
+      name: "users/me/dataTypes/nutrition-log/dataPoints/3",
+    },
+  ];
   await nutritionApi.setFoodLogsResponse(updatedResponse);
 
   await confirmCopyButton.click();

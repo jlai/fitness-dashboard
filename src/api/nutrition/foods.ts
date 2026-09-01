@@ -1,59 +1,17 @@
-import { QueryClient, queryOptions } from "@tanstack/react-query";
+import { queryOptions } from "@tanstack/react-query";
 
-import { makeRequest } from "../request";
-import mutationOptions from "../mutation-options";
 import { ONE_DAY_IN_MILLIS } from "../cache-settings";
+import { getDataPoint } from "../datapoints";
 
-import { GetFoodResponse, NutritionalValues } from "./types";
+import { mapFoodDataPoints } from "./helpers";
 
-async function invalidateFavoriteFoodQueries(queryClient: QueryClient) {
-  await queryClient.invalidateQueries({
-    queryKey: ["favorite-foods"],
-    refetchType: "all",
-  });
-  await queryClient.invalidateQueries({
-    queryKey: ["saved-foods"],
-    refetchType: "all",
-  });
-}
-
-export function buildAddFavoriteFoodsMutation(queryClient: QueryClient) {
-  return mutationOptions({
-    mutationFn: async (foodIds: Array<number>) => {
-      for (const foodId of foodIds) {
-        await makeRequest(`/1/user/-/foods/log/favorite/${foodId}.json`, {
-          method: "POST",
-        });
-      }
-    },
-    onSuccess: async () => {
-      await invalidateFavoriteFoodQueries(queryClient);
-    },
-  });
-}
-
-export function buildDeleteFavoritesFoodMutation(queryClient: QueryClient) {
-  return mutationOptions({
-    mutationFn: async (foodIds: Array<number>) => {
-      for (const foodId of foodIds) {
-        await makeRequest(`/1/user/-/foods/log/favorite/${foodId}.json`, {
-          method: "DELETE",
-        });
-      }
-    },
-    onSuccess: async () => {
-      await invalidateFavoriteFoodQueries(queryClient);
-    },
-  });
-}
-
-export function buildGetFoodQuery(foodId: number) {
+export function buildGetFoodQuery(foodId: string) {
   return queryOptions({
     queryKey: ["food", foodId],
     queryFn: async () => {
-      const response = await makeRequest(`/1/foods/${foodId}.json`);
-
-      return ((await response.json()) as GetFoodResponse).food;
+      const dataPoint = await getDataPoint("food", foodId);
+      const [food] = await mapFoodDataPoints([dataPoint]);
+      return food;
     },
     staleTime: ONE_DAY_IN_MILLIS,
   });

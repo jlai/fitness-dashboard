@@ -13,7 +13,11 @@ import { FormContainer } from "react-hook-form-mui";
 import { DatePickerElement } from "react-hook-form-mui/date-pickers";
 
 import { MealTypeElement } from "@/components/nutrition/food/meal-type-element";
-import { MealType, buildCreateMultipleFoodLogsMutation } from "@/api/nutrition";
+import {
+  MealType,
+  buildCreateMultipleFoodLogsMutation,
+  toNutritionLogMealType,
+} from "@/api/nutrition";
 import { FormRows } from "@/components/forms/form-row";
 import { getLabel } from "@/components/day-navigator";
 import { selectedDayForPageAtom } from "@/state";
@@ -45,10 +49,10 @@ export function CopyFoodLogsDialog() {
 
     await createFoodLogs(
       [...selectedFoodLogs.values()].map((foodLog) => ({
-        foodId: foodLog.loggedFood.foodId,
-        mealTypeId: values.mealType,
-        unitId: foodLog.loggedFood.unit!.id,
-        amount: foodLog.loggedFood.amount,
+        nutritionLog: {
+          ...foodLog.nutritionLog,
+          mealType: toNutritionLogMealType(values.mealType),
+        },
         day: values.day,
       })),
     );

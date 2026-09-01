@@ -7,7 +7,14 @@ import { useAtomValue } from "jotai";
 import dayjs from "dayjs";
 import NextLink from "next/link";
 
-import { Food, MealType, buildCreateFoodLogMutation } from "@/api/nutrition";
+import {
+  Food,
+  MealType,
+  buildCreateFoodLogMutation,
+  foodResourceName,
+  nutritionLogServing,
+  toNutritionLogMealType,
+} from "@/api/nutrition";
 import LinkedDayElement, { DaySelectorSource } from "@/components/linked-day";
 import { selectedDayForPageAtom } from "@/state";
 import { FormRow, FormRows } from "@/components/forms/form-row";
@@ -58,11 +65,12 @@ export function CreateFoodLogForm() {
     }
 
     await createFood({
-      foodId: food.foodId,
-      mealTypeId: mealType,
+      nutritionLog: {
+        food: foodResourceName(food.foodId),
+        mealType: toNutritionLogMealType(mealType),
+        serving: nutritionLogServing(servingSize.amount, servingSize.unit.id),
+      },
       day: daySource === "today" ? dayjs() : linkedDay,
-      amount: servingSize.amount,
-      unitId: servingSize.unit.id,
     });
     showSuccessToast(`Logged food: ${food.name}`);
     reset({

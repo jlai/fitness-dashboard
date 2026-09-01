@@ -11,7 +11,7 @@ import { useForm } from "react-hook-form";
 import {
   useQueryClient,
   useMutation,
-  useSuspenseQueries,
+  useSuspenseQuery,
 } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { toast } from "mui-sonner";
@@ -23,7 +23,7 @@ import { SettingsWaterUnit } from "@/api/user";
 import { useUnits } from "@/config/units";
 import {
   buildCreateWaterLogMutation,
-  buildFoodLogQuery,
+  buildHydrationLogQuery,
 } from "@/api/nutrition";
 import { millilitersFromWaterGoal } from "@/config/units";
 import { waterGoalAtom } from "@/storage/settings";
@@ -231,17 +231,18 @@ function WaterToday() {
   const units = useUnits();
   const waterGoal = useAtomValue(waterGoalAtom);
 
-  const [{ data: foodLog }] = useSuspenseQueries({
-    queries: [buildFoodLogQuery(day)],
-  });
+  const { data: hydrationLog } = useSuspenseQuery(buildHydrationLogQuery(day));
+
+  const waterConsumedMl = (hydrationLog.dataPoints ?? []).reduce(
+    (sum, dataPoint) =>
+      sum + (dataPoint.hydrationLog?.amountConsumed?.milliliters ?? 0),
+    0,
+  );
 
   const { localizedWaterVolumeName, localizedWaterVolume } = units;
 
-  const waterConsumed = localizedWaterVolume(foodLog.summary.water);
-  const waterGoalMl = millilitersFromWaterGoal(
-    waterGoal.value,
-    waterGoal.unit,
-  );
+  const waterConsumed = localizedWaterVolume(waterConsumedMl);
+  const waterGoalMl = millilitersFromWaterGoal(waterGoal.value, waterGoal.unit);
   const waterGoalNumber = localizedWaterVolume(waterGoalMl);
 
   return (

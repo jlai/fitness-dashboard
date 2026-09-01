@@ -1,7 +1,6 @@
 import { Remove, Add } from "@mui/icons-material";
 import { Paper, ClickAwayListener, IconButton, Button } from "@mui/material";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
-import dayjs from "dayjs";
 import { useForm } from "react-hook-form";
 import { FormContainer } from "react-hook-form-mui";
 
@@ -10,8 +9,11 @@ import { FoodServingSizeElement } from "@/components/nutrition/food/serving-size
 import {
   buildUpdateFoodLogsMutation,
   Food,
-  FoodLogEntry,
+  NutritionLogDataPoint,
+  foodFromNutritionLog,
   getDefaultServingSize,
+  nutritionLogDay,
+  servingFromSize,
 } from "@/api/nutrition";
 import { showSuccessToast, withErrorToaster } from "@/components/toast";
 
@@ -24,13 +26,17 @@ export function EditServingSize({
   foodLog,
   closePopover,
 }: {
-  foodLog: FoodLogEntry;
+  foodLog: NutritionLogDataPoint;
   closePopover: () => void;
 }) {
+  const food = foodFromNutritionLog(foodLog.nutritionLog);
   const formContext = useForm<EditServingSizeFormData>({
     defaultValues: {
-      food: foodLog.loggedFood,
-      servingSize: getDefaultServingSize(foodLog.loggedFood),
+      food,
+      servingSize: getDefaultServingSize({
+        ...food,
+        amount: foodLog.nutritionLog.serving?.amount ?? 1,
+      }),
     },
   });
 
@@ -48,11 +54,16 @@ export function EditServingSize({
 
     await updateFoodLogs([
       {
-        foodLogId: foodLog.logId,
-        mealTypeId: foodLog.loggedFood.mealTypeId,
-        amount: servingSize.amount,
-        unitId: servingSize.unit.id,
-        day: dayjs(foodLog.logDate),
+        name: foodLog.name!,
+        nutritionLog: {
+          ...foodLog.nutritionLog,
+          serving: servingFromSize(
+            servingSize.amount,
+            servingSize.unit.id,
+            foodLog.nutritionLog.serving,
+          ),
+        },
+        day: nutritionLogDay(foodLog.nutritionLog),
       },
     ]);
 

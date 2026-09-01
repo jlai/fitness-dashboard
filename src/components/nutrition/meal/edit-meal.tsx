@@ -225,13 +225,17 @@ function FoodRow({
                   onClick={(event) => {
                     setFood({
                       // display the info for the default serving if CTRL or ALT is pressed
-                      foodLog:
+                      nutritionLog:
                         event.ctrlKey || event.altKey
                           ? null
                           : {
-                              loggedFood: food,
-                              logId: -1,
-                              logDate: "",
+                              foodDisplayName: food.name,
+                              energy: { kcal: food.calories },
+                              serving: {
+                                amount: food.amount,
+                                foodMeasurementUnitDisplayName:
+                                  food.unit?.name,
+                              },
                             },
                       foodId: food.foodId,
                     });

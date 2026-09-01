@@ -17,22 +17,11 @@ import {
   Person as CustomIcon,
 } from "@mui/icons-material";
 import { SyntheticEvent, useCallback, useMemo, useState } from "react";
-import {
-  QueryClient,
-  queryOptions,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { useController, UseControllerProps } from "react-hook-form";
 import { uniqBy } from "es-toolkit";
 
-import {
-  buildCustomFoodsQuery,
-  buildFavoriteFoodsQuery,
-  buildFrequentFoodsQuery,
-  buildRecentFoodsQuery,
-  buildSearchFoodsQuery,
-} from "@/api/nutrition/search";
+import { buildSearchFoodsQuery } from "@/api/nutrition/search";
 import { Food } from "@/api/nutrition";
 import { formatFoodName } from "@/utils/other-formats";
 
@@ -43,7 +32,7 @@ type FoodOption = Food & {
 };
 
 type SearchOption = {
-  foodId: number;
+  foodId: string;
   search: true;
   name: string;
 };
@@ -56,47 +45,13 @@ function isSearchOption(
 
 const filterOptions = createFilterOptions<FoodOption | SearchOption | null>();
 
-function buildSavedFoodsQuery(queryClient: QueryClient) {
+function buildSavedFoodsQuery() {
   return queryOptions({
     queryKey: ["saved-foods"],
-    queryFn: async () => {
-      const [favorites, frequents, recents, custom] = await Promise.all([
-        queryClient.fetchQuery(buildFavoriteFoodsQuery()),
-        queryClient.fetchQuery(buildFrequentFoodsQuery()),
-        queryClient.fetchQuery(buildRecentFoodsQuery()),
-        queryClient.fetchQuery(buildCustomFoodsQuery()),
-      ]);
-
-      const allFoods = new Map<number, FoodOption>();
-
-      const addFood = (food: Food) => {
-        let foodOption = allFoods.get(food.foodId);
-
-        if (!foodOption) {
-          foodOption = { ...food };
-          allFoods.set(food.foodId, foodOption);
-        }
-
-        return foodOption;
-      };
-
-      for (const food of favorites) {
-        addFood(food).favorite = true;
-      }
-
-      for (const food of frequents) {
-        addFood(food).frequent = true;
-      }
-
-      for (const food of recents) {
-        addFood(food).recent = true;
-      }
-
-      for (const food of custom) {
-        addFood(food);
-      }
-
-      return [...allFoods.values()];
+    queryFn: async (): Promise<FoodOption[]> => {
+      // Favorite, frequent, recent, and custom food lists are not available
+      // on the Google Health API yet. Restore these queries when they are.
+      return [];
     },
   });
 }
@@ -198,9 +153,7 @@ export default function SearchFoods({
   const [inputValue, setInputValue] = useState("");
   const [searchString, setSearchString] = useState<string | null>(null);
 
-  const queryClient = useQueryClient();
-
-  const { data: savedFoods } = useQuery(buildSavedFoodsQuery(queryClient));
+  const { data: savedFoods } = useQuery(buildSavedFoodsQuery());
 
   const {
     data: searchResults,
@@ -309,7 +262,7 @@ export default function SearchFoods({
           if (showSearchOption) {
             let searchOptions = [
               {
-                foodId: -1,
+                foodId: "-1",
                 search: true,
                 name: `Press enter to search for "${params.inputValue}" ...`,
               } as SearchOption,
@@ -318,7 +271,7 @@ export default function SearchFoods({
             if (isSuccess && searchResults.foods?.length === 0) {
               searchOptions = [
                 {
-                  foodId: -2,
+                  foodId: "-2",
                   search: true,
                   name: `No foods found. NOTE: This may be a Fitbit API bug.`,
                 } as SearchOption,

@@ -2,29 +2,59 @@ import { queryOptions } from "@tanstack/react-query";
 import { queryClientAtom } from "jotai-tanstack-query";
 import { atom } from "jotai";
 
-import { makeRequest, ServerError } from "../request";
 import { ONE_HOUR_IN_MILLIS } from "../cache-settings";
+import { listDataPoints, listDataPointsPage } from "../datapoints";
 
+import { mapFoodDataPoints, mapFoodMeasurementUnit } from "./helpers";
 import { Food, FoodUnit, SearchFoodsResponse } from "./types";
 
 type FoodList = Array<Food>;
 
+const ENABLE_FOOD_SEARCH = true;
+const ENABLE_LIST_AVAILABLE_FOODS = false;
+const FOOD_SEARCH_PAGE_SIZE = 50;
+
+async function listAvailableFoods() {
+  if (!ENABLE_LIST_AVAILABLE_FOODS) {
+    return [];
+  }
+
+  const { dataPoints } = await listDataPoints("food");
+  return mapFoodDataPoints(dataPoints);
+}
+
+function escapeFilterValue(value: string) {
+  return value.replaceAll("\\", "\\\\").replaceAll('"', '\\"');
+}
+
+function foodDisplayNameFilter(query: string) {
+  return `food.display_name = "${escapeFilterValue(query.trim())}"`;
+}
+
+async function searchAvailableFoods(
+  query: string,
+): Promise<SearchFoodsResponse> {
+  const needle = query.trim();
+  if (!ENABLE_FOOD_SEARCH || !needle) {
+    return { foods: [] };
+  }
+
+  const { dataPoints } = await listDataPointsPage(
+    "food",
+    foodDisplayNameFilter(needle),
+    undefined,
+    FOOD_SEARCH_PAGE_SIZE,
+  );
+
+  return {
+    foods: await mapFoodDataPoints(dataPoints),
+  };
+}
+
 export function buildSearchFoodsQuery(query: string) {
   return queryOptions({
     queryKey: ["search-foods", query],
-    queryFn: async () => {
-      const response = await makeRequest(
-        `/1/foods/search.json?query=${encodeURIComponent(query)}`,
-        {
-          headers: {
-            Accept: "application/json",
-            "Accept-Locale": "en_US",
-          },
-        },
-      );
-
-      return (await response.json()) as SearchFoodsResponse;
-    },
+    queryFn: () => searchAvailableFoods(query),
     staleTime: ONE_HOUR_IN_MILLIS,
   });
 }
@@ -33,19 +63,8 @@ export function buildCustomFoodsQuery() {
   return queryOptions({
     queryKey: ["custom-foods"],
     queryFn: async () => {
-      try {
-        const response = await makeRequest(`/1/user/-/foods.json`);
-
-        return ((await response.json()) as SearchFoodsResponse).foods;
-      } catch (err) {
-        // Currently not working
-        // https://community.fitbit.com/t5/Web-API-Development/Undocumented-endpoint-in-foods-API/td-p/4452603
-        if ((err as ServerError)?.status === 403) {
-          return [];
-        }
-
-        throw err;
-      }
+      const foods = await listAvailableFoods();
+      return foods.filter((food) => food.accessLevel === "PRIVATE");
     },
     staleTime: ONE_HOUR_IN_MILLIS,
   });
@@ -54,11 +73,7 @@ export function buildCustomFoodsQuery() {
 export function buildFavoriteFoodsQuery() {
   return queryOptions({
     queryKey: ["favorite-foods"],
-    queryFn: async () => {
-      const response = await makeRequest(`/1/user/-/foods/log/favorite.json`);
-
-      return (await response.json()) as FoodList;
-    },
+    queryFn: async (): Promise<FoodList> => [],
     staleTime: ONE_HOUR_IN_MILLIS,
   });
 }
@@ -66,11 +81,7 @@ export function buildFavoriteFoodsQuery() {
 export function buildRecentFoodsQuery() {
   return queryOptions({
     queryKey: ["recent-foods"],
-    queryFn: async () => {
-      const response = await makeRequest(`/1/user/-/foods/log/recent.json`);
-
-      return (await response.json()) as FoodList;
-    },
+    queryFn: async (): Promise<FoodList> => [],
     staleTime: ONE_HOUR_IN_MILLIS,
   });
 }
@@ -78,22 +89,27 @@ export function buildRecentFoodsQuery() {
 export function buildFrequentFoodsQuery() {
   return queryOptions({
     queryKey: ["frequent-foods"],
-    queryFn: async () => {
-      const response = await makeRequest(`/1/user/-/foods/log/frequent.json`);
-
-      return (await response.json()) as FoodList;
-    },
+    queryFn: async (): Promise<FoodList> => [],
     staleTime: ONE_HOUR_IN_MILLIS,
   });
+}
+
+const ENABLE_FOOD_UNITS = false;
+
+async function listFoodUnits() {
+  const { dataPoints } = await listDataPoints("food-measurement-unit");
+  return dataPoints.map(mapFoodMeasurementUnit);
 }
 
 export function buildFoodUnitsQuery() {
   return queryOptions({
     queryKey: ["food-units"],
     queryFn: async () => {
-      const response = await makeRequest(`/1/foods/units.json`);
+      if (!ENABLE_FOOD_UNITS) {
+        return [];
+      }
 
-      return (await response.json()) as Array<FoodUnit>;
+      return listFoodUnits();
     },
     staleTime: Infinity,
   });
@@ -103,7 +119,7 @@ export const foodUnitsByIdAtom = atom(async (get) => {
   const queryClient = get(queryClientAtom);
   const foodUnits = await queryClient.fetchQuery(buildFoodUnitsQuery());
 
-  const map = new Map<number, FoodUnit>();
+  const map = new Map<string, FoodUnit>();
   for (const foodUnit of foodUnits) {
     map.set(foodUnit.id, foodUnit);
   }

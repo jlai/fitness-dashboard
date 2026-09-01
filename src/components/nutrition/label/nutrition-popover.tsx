@@ -18,20 +18,22 @@ import { buildGetFoodQuery } from "@/api/nutrition/foods";
 import NutritionLabel from "@/components/nutrition/label/nutrition-label";
 import {
   Food,
-  FoodLogEntry,
+  NutritionLog,
   NutritionMacroGoals,
   NutritionalValues,
+  nutritionLogMacros,
+  nutritionLogServingUnit,
 } from "@/api/nutrition";
 import { formatServing } from "@/utils/food-amounts";
 
 export interface NutritionPopoverContext {
-  foodLog: FoodLogEntry | null;
-  foodId: number;
+  nutritionLog: NutritionLog | null;
+  foodId: string;
 }
 
 const EMPTY_CONTEXT: NutritionPopoverContext = {
-  foodLog: null,
-  foodId: 0,
+  nutritionLog: null,
+  foodId: "",
 };
 
 export const nutritionPopoverFoodAtom =
@@ -52,7 +54,7 @@ export function ShowLabelAction({
         if (!popupState.isOpen) {
           setFood({
             foodId: food.foodId,
-            foodLog: null,
+            nutritionLog: null,
           });
           popupState.open(event);
         }
@@ -79,31 +81,31 @@ const NutritionPopover = function ({
   const context = useAtomValue(nutritionPopoverFoodAtom);
   const { data: food } = useQuery({
     ...buildGetFoodQuery(context.foodId),
-    enabled: context.foodId > 0,
+    enabled: Boolean(context.foodId),
   });
 
   function getNutritionValues(
     food: Food,
-    foodLog: FoodLogEntry | null,
+    nutritionLog: NutritionLog | null,
   ): NutritionalValues {
+    const logMacros = nutritionLog ? nutritionLogMacros(nutritionLog) : undefined;
     const foodValues: { [index: string]: number } =
       food.nutritionalValues &&
-      (!foodLog || foodLog.loggedFood.accessLevel == "PRIVATE")
+      (!nutritionLog || food.accessLevel == "PRIVATE")
         ? { ...food.nutritionalValues }
-        : foodLog?.nutritionalValues
+        : logMacros
           ? {
-              // public food data
-              totalCarbohydrate: foodLog.nutritionalValues.carbs,
-              dietaryFiber: foodLog.nutritionalValues.fiber,
-              calories: foodLog.nutritionalValues.calories,
-              protein: foodLog.nutritionalValues.protein,
-              sodium: foodLog.nutritionalValues.sodium,
-              totalFat: foodLog.nutritionalValues.fat,
+              totalCarbohydrate: logMacros.carbs,
+              dietaryFiber: logMacros.fiber,
+              calories: logMacros.calories,
+              protein: logMacros.protein,
+              sodium: logMacros.sodium,
+              totalFat: logMacros.fat,
             }
           : {};
     const multiplier =
-      food.calories && foodLog?.loggedFood.accessLevel == "PRIVATE"
-        ? foodLog.loggedFood.calories / (food.calories || 1)
+      food.calories && food.accessLevel == "PRIVATE" && nutritionLog
+        ? (nutritionLog.energy?.kcal ?? 0) / (food.calories || 1)
         : 1;
     const result = Object.keys(foodValues).map((key: string) => {
       return [
@@ -145,7 +147,7 @@ const NutritionPopover = function ({
             mouseEvent="onMouseDown"
           >
             <Paper className="bg-slate-50 dark:bg-slate-900 p-2">
-              {context.foodLog?.loggedFood.accessLevel == "PUBLIC" && (
+              {food.accessLevel == "PUBLIC" && context.nutritionLog && (
                 <Tooltip title="Public food entry: limited nutrition data">
                   <WarningOutlined className="float-right p-1" />
                 </Tooltip>
@@ -158,7 +160,7 @@ const NutritionPopover = function ({
                   overflow: "hidden",
                   whiteSpace: "nowrap",
                   maxWidth:
-                    context.foodLog?.loggedFood.accessLevel == "PUBLIC"
+                    food.accessLevel == "PUBLIC" && context.nutritionLog
                       ? "17rem"
                       : "18.75rem",
                 }}
@@ -170,11 +172,14 @@ const NutritionPopover = function ({
                 width="18.75rem"
                 servingText={formatServing({
                   amount:
-                    context.foodLog?.loggedFood.amount ||
+                    context.nutritionLog?.serving?.amount ||
                     food.defaultServingSize,
-                  unit: context.foodLog?.loggedFood.unit || food.defaultUnit,
+                  unit:
+                    (context.nutritionLog &&
+                      nutritionLogServingUnit(context.nutritionLog)) ||
+                    food.defaultUnit,
                 })}
-                nutritionValues={getNutritionValues(food, context.foodLog)}
+                nutritionValues={getNutritionValues(food, context.nutritionLog)}
                 recommendedValues={macroGoals}
               />
             </Paper>

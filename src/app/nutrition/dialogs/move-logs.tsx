@@ -6,13 +6,17 @@ import {
   Button,
 } from "@mui/material";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
-import dayjs from "dayjs";
 import Immutable from "immutable";
 import { useAtom } from "jotai";
 import { FormContainer } from "react-hook-form-mui";
 
 import { MealTypeElement } from "@/components/nutrition/food/meal-type-element";
-import { MealType, buildUpdateFoodLogsMutation } from "@/api/nutrition";
+import {
+  MealType,
+  buildUpdateFoodLogsMutation,
+  nutritionLogDay,
+  toNutritionLogMealType,
+} from "@/api/nutrition";
 import { showSuccessToast, withErrorToaster } from "@/components/toast";
 
 import { selectedFoodLogsAtom } from "../atoms";
@@ -35,11 +39,12 @@ export function MoveFoodLogsDialog() {
   const onSubmit = withErrorToaster(async (values: MoveFoodLogsFormData) => {
     await updateFoodLogs(
       [...selectedFoodLogs.values()].map((foodLog) => ({
-        foodLogId: foodLog.logId,
-        mealTypeId: values.mealType,
-        unitId: foodLog.loggedFood.unit!.id,
-        amount: foodLog.loggedFood.amount,
-        day: dayjs(foodLog.logDate),
+        name: foodLog.name!,
+        nutritionLog: {
+          ...foodLog.nutritionLog,
+          mealType: toNutritionLogMealType(values.mealType),
+        },
+        day: nutritionLogDay(foodLog.nutritionLog),
       })),
     );
     showSuccessToast("Moved food logs");

@@ -1,9 +1,15 @@
-import { FoodLogEntry, MealType, MEAL_TYPE_NAMES } from "@/api/nutrition";
+import {
+  MealType,
+  MEAL_TYPE_NAMES,
+  mapNutritionLogMealType,
+  nutritionLogMacros,
+  NutritionLogDataPoint,
+} from "@/api/nutrition";
 
 export interface MealTypeSummary {
   id: number;
   name: string;
-  foods: FoodLogEntry[];
+  foods: NutritionLogDataPoint[];
   calories: number;
   carbs: number;
   fat: number;
@@ -12,7 +18,7 @@ export interface MealTypeSummary {
   sodium: number;
 }
 
-export function groupByMealType(foods: Array<FoodLogEntry>) {
+export function groupByMealType(dataPoints: Array<NutritionLogDataPoint>) {
   const mealTypeSummaries = new Map<number, MealTypeSummary>();
 
   const defaultNutrients = {
@@ -41,21 +47,25 @@ export function groupByMealType(foods: Array<FoodLogEntry>) {
     });
   }
 
-  for (const food of foods) {
-    const summary = mealTypeSummaries.get(food.loggedFood.mealTypeId);
+  for (const dataPoint of dataPoints) {
+    const log = dataPoint.nutritionLog;
+    if (!log) {
+      continue;
+    }
+
+    const mealType = mapNutritionLogMealType(log.mealType);
+    const summary = mealTypeSummaries.get(mealType);
     if (summary) {
-      summary.foods.push(food);
+      summary.foods.push(dataPoint);
 
       const {
-        loggedFood: { calories = 0 },
-        nutritionalValues: {
-          carbs = 0,
-          fat = 0,
-          fiber = 0,
-          protein = 0,
-          sodium = 0,
-        } = {},
-      } = food;
+        calories = 0,
+        carbs = 0,
+        fat = 0,
+        fiber = 0,
+        protein = 0,
+        sodium = 0,
+      } = nutritionLogMacros(log);
 
       summary.calories += calories;
       summary.carbs += carbs;
