@@ -2,7 +2,7 @@
 
 import { useLoggedIn } from "@/api/auth";
 
-import LoginBox from "./login-box";
+import LoginBox from "./login";
 
 export default function RequireLogin({
   children,

@@ -4,7 +4,6 @@ import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
-  Button,
   Container,
   Table,
   TableBody,
@@ -15,7 +14,7 @@ import {
 import { useCallback } from "react";
 import Link from "next/link";
 import { ArrowDropDown } from "@mui/icons-material";
-import { useAtom, useAtomValue, useSetAtom } from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 import { useRouter } from "next/navigation";
 import dayjs from "dayjs";
 
@@ -24,6 +23,8 @@ import { PRIVACY_POLICY_LINK, WEBSITE_NAME } from "@/config";
 import { allUnitsConfiguredAtom } from "@/storage/settings";
 import { firstLoginDateAtom } from "@/storage/analytics";
 import { formatAsDate } from "@/api/datetime";
+
+import { LoginButton } from "./login-button";
 
 function PermissionInfo({
   title,
@@ -187,9 +188,7 @@ export default function LoginBox() {
           </Accordion>
         </div>
         <div className="mt-8 flex flex-col items-center">
-          <Button variant="contained" onClick={login} disabled={!ready}>
-            Connect with Google
-          </Button>
+          <LoginButton onClick={login} disabled={!ready} />
         </div>
       </section>
     </Container>
