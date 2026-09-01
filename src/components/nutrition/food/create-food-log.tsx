@@ -6,7 +6,6 @@ import { FormContainer, useForm } from "react-hook-form-mui";
 import { useAtomValue } from "jotai";
 import dayjs from "dayjs";
 import NextLink from "next/link";
-import { WarningOutlined } from "@mui/icons-material";
 
 import { Food, MealType, buildCreateFoodLogMutation } from "@/api/nutrition";
 import LinkedDayElement, { DaySelectorSource } from "@/components/linked-day";
@@ -116,13 +115,6 @@ export default function CreateFoodLog() {
         <CreateFoodLogForm />
       </div>
       <Stack direction="column" rowGap={2}>
-        <Button
-          href="/settings/foods/custom"
-          LinkComponent={NextLink}
-          startIcon={<WarningOutlined />}
-        >
-          Custom foods
-        </Button>
         <Button href="/settings/foods/favorite" LinkComponent={NextLink}>
           Favorites
         </Button>
