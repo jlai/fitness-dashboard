@@ -12,7 +12,9 @@ import { Suspense } from "react";
 import { useAtomValue } from "jotai";
 
 import { NumberFormats } from "@/utils/number-formats";
+import { DateFormats } from "@/utils/date-formats";
 import { buildActivityIntradayQuery } from "@/api/intraday";
+import { physicalRangeForLocalDay } from "@/api/datetime";
 import { FormRows } from "@/components/forms/form-row";
 import { caloriesOutGoalAtom } from "@/storage/settings";
 import { buildGetExerciseByDateQuery } from "@/api/exercise/exercise";
@@ -157,8 +159,7 @@ function CaloriesPieChart() {
 
 function CaloriesIntraday() {
   const day = useSelectedDay();
-  const startTime = day.startOf("day");
-  const endTime = day.endOf("day");
+  const { start: startTime, end: endTime } = physicalRangeForLocalDay(day);
 
   const { data } = useQuery(
     buildActivityIntradayQuery("calories", "5min", startTime, endTime),
@@ -175,7 +176,13 @@ function CaloriesIntraday() {
       height={300}
       loading={!data}
       dataset={processedData ?? []}
-      xAxis={[{ dataKey: "dateTime", scaleType: "time" }]}
+      xAxis={[
+        {
+          dataKey: "dateTime",
+          scaleType: "time",
+          valueFormatter: DateFormats.formatTime,
+        },
+      ]}
       yAxis={[{ label: "Cal/min" }]}
       series={[{ dataKey: "value", showMark: false, label: "Calories/minute" }]}
     />

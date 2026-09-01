@@ -20,6 +20,8 @@ import { buildTimeSeriesQuery } from "@/api/times-series";
 import { TimeSeriesEntry } from "@/api/times-series";
 import { ActiveZoneMinutesTimeSeriesValue } from "@/api/times-series";
 import { buildActiveZoneMinutesIntradayQuery } from "@/api/intraday";
+import { physicalRangeForLocalDay } from "@/api/datetime";
+import { DateFormats } from "@/utils/date-formats";
 import { HeaderBar } from "@/components/layout/rows";
 import { activeZoneMinutesGoalAtom } from "@/storage/settings";
 
@@ -112,8 +114,7 @@ function Overview() {
 
 function ActiveZoneMinutesIntraday() {
   const day = useSelectedDay();
-  const startTime = day.startOf("day");
-  const endTime = day.endOf("day");
+  const { start: startTime, end: endTime } = physicalRangeForLocalDay(day);
 
   const [trim, setTrim] = useTileSetting<ActiveZoneMinutesTileSettings, "trim">(
     "trim",
@@ -152,7 +153,13 @@ function ActiveZoneMinutesIntraday() {
         height={300}
         loading={!data}
         dataset={processedData ?? []}
-        xAxis={[{ dataKey: "dateTime", scaleType: "time" }]}
+        xAxis={[
+          {
+            dataKey: "dateTime",
+            scaleType: "time",
+            valueFormatter: DateFormats.formatTime,
+          },
+        ]}
         yAxis={[{ label: "Zone Mins" }]}
         series={[
           { dataKey: "value", showMark: false, label: "Active Zone Minutes" },
@@ -166,7 +173,9 @@ function Settings() {
   return (
     <>
       <Typography variant="h6">Goals</Typography>
-      <Typography variant="body1">Set daily and weekly active zone minutes goals.</Typography>
+      <Typography variant="body1">
+        Set daily and weekly active zone minutes goals.
+      </Typography>
 
       <FormRows mt={4}>
         <GoalSettings

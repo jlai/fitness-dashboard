@@ -16,6 +16,7 @@ import { useAtomValue } from "jotai";
 import { dropWhile, sumBy } from "es-toolkit";
 
 import { buildActivityIntradayQuery } from "@/api/intraday";
+import { physicalRangeForLocalDay } from "@/api/datetime";
 import { DateFormats } from "@/utils/date-formats";
 import { NumberFormats } from "@/utils/number-formats";
 import { aggregateByHour } from "@/components/charts/timeseries/aggregation";
@@ -104,8 +105,7 @@ function Overview() {
 
 function StepsIntraday() {
   const day = useSelectedDay();
-  const startTime = day.startOf("day");
-  const endTime = day.endOf("day");
+  const { start: startTime, end: endTime } = physicalRangeForLocalDay(day);
   const [interval, setInterval] = useTileSetting<StepsTileSettings, "interval">(
     "interval",
     "hour",
@@ -160,7 +160,7 @@ function StepsIntraday() {
           {
             dataKey: "dateTime",
             scaleType: "band",
-            valueFormatter: DateFormats.TIME.format,
+            valueFormatter: DateFormats.formatTime,
           },
         ]}
         yAxis={[{ label: "Steps" }]}

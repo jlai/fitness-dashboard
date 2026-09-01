@@ -9,6 +9,32 @@ import {
   type ActiveMinutesTimeSeriesValue,
 } from "@/api/times-series";
 
+describe("TIME_SERIES_CONFIGS activity rollups", () => {
+  it("maps distance millimeters to kilometers", () => {
+    const mapValue = TIME_SERIES_CONFIGS.distance.mapValue as (
+      dataPoint: DailyRollupDataPointFor<"distance">,
+    ) => string;
+
+    expect(mapValue({ distance: { millimetersSum: "2500000" } })).toBe("2.5");
+  });
+
+  it("maps floors count", () => {
+    const mapValue = TIME_SERIES_CONFIGS.floors.mapValue as (
+      dataPoint: DailyRollupDataPointFor<"floors">,
+    ) => string;
+
+    expect(mapValue({ floors: { countSum: "12" } })).toBe("12");
+  });
+
+  it("maps total calories", () => {
+    const mapValue = TIME_SERIES_CONFIGS.calories.mapValue as (
+      dataPoint: DailyRollupDataPointFor<"total-calories">,
+    ) => string;
+
+    expect(mapValue({ totalCalories: { kcalSum: 850 } })).toBe("850");
+  });
+});
+
 describe("TIME_SERIES_CONFIGS active-minutes", () => {
   it("maps light/moderate/vigorous rollups to active minutes", () => {
     const mapValue = TIME_SERIES_CONFIGS["active-minutes"].mapValue as (

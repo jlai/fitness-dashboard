@@ -3,6 +3,7 @@ import { useContext } from "react";
 import dayjs from "dayjs";
 
 import { buildTimeSeriesQuery, TimeSeriesResource } from "@/api/times-series";
+import { physicalRangeForLocalDay } from "@/api/datetime";
 
 import { TimeSeriesChartContext } from "./context";
 
@@ -40,12 +41,15 @@ export function useRangeInfo() {
 
   const numDays = endDay.diff(startDay, "days");
   const isIntraday = numDays === 0;
+  const physicalDay = isIntraday
+    ? physicalRangeForLocalDay(startDay)
+    : undefined;
 
   return {
     numDays,
     isIntraday,
-    startDay: isIntraday ? startDay.startOf("day") : startDay,
-    endDay: isIntraday ? startDay.endOf("day") : startDay,
+    startDay: physicalDay?.start ?? startDay,
+    endDay: physicalDay?.end ?? startDay,
   };
 }
 

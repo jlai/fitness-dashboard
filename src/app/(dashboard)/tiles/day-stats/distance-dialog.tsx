@@ -22,6 +22,7 @@ import { useAtomValue } from "jotai";
 import { sumBy } from "es-toolkit";
 
 import { buildActivityIntradayQuery } from "@/api/intraday";
+import { physicalRangeForLocalDay } from "@/api/datetime";
 import { DateFormats } from "@/utils/date-formats";
 import { FRACTION_DIGITS_2 } from "@/utils/number-formats";
 import { aggregateByHour } from "@/components/charts/timeseries/aggregation";
@@ -121,8 +122,7 @@ function Overview() {
 
 function DistanceIntraday() {
   const day = useSelectedDay();
-  const startTime = day.startOf("day");
-  const endTime = day.endOf("day");
+  const { start: startTime, end: endTime } = physicalRangeForLocalDay(day);
 
   const { localizedKilometers, localizedKilometersName } = useUnits();
 
@@ -150,7 +150,7 @@ function DistanceIntraday() {
           {
             dataKey: "dateTime",
             scaleType: "band",
-            valueFormatter: DateFormats.TIME.format,
+            valueFormatter: DateFormats.formatTime,
           },
         ]}
         yAxis={[

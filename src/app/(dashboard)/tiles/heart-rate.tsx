@@ -3,6 +3,8 @@ import { DialogContent, DialogTitle, Stack, Typography } from "@mui/material";
 import { LineChart, SparkLineChart, PiecewiseColorLegend } from "@mui/x-charts";
 
 import { buildHeartRateIntradayQuery } from "@/api/intraday";
+import { physicalRangeForLocalDay } from "@/api/datetime";
+import { DateFormats } from "@/utils/date-formats";
 import { FRACTION_DIGITS_0 } from "@/utils/number-formats";
 import { createHeartRateZoneColorMap } from "@/config/heart-rate";
 
@@ -26,11 +28,10 @@ const HEART_ICON = (
 
 export function HeartRateTileContent() {
   const day = useSelectedDay();
+  const { start, end } = physicalRangeForLocalDay(day);
   const {
     data: { intradayData, heartRateZones },
-  } = useSuspenseQuery(
-    buildHeartRateIntradayQuery("5min", day.startOf("day"), day.endOf("day")),
-  );
+  } = useSuspenseQuery(buildHeartRateIntradayQuery("5min", start, end));
 
   let low: number | undefined = undefined;
   let high: number | undefined = undefined;
@@ -103,8 +104,7 @@ function HeartRateTileDialogContent() {
 
 function HeartRateIntraday() {
   const day = useSelectedDay();
-  const startTime = day.startOf("day");
-  const endTime = day.endOf("day");
+  const { start: startTime, end: endTime } = physicalRangeForLocalDay(day);
 
   const { data: { intradayData = undefined, heartRateZones } = {} } =
     useSuspenseQuery(buildHeartRateIntradayQuery("1min", startTime, endTime));
@@ -117,7 +117,13 @@ function HeartRateIntraday() {
       loading={!intradayData}
       dataset={intradayData ?? []}
       tooltip={{ trigger: (intradayData?.length ?? 0 > 0) ? "axis" : "none" }}
-      xAxis={[{ dataKey: "dateTime", scaleType: "time" }]}
+      xAxis={[
+        {
+          dataKey: "dateTime",
+          scaleType: "time",
+          valueFormatter: DateFormats.formatTime,
+        },
+      ]}
       yAxis={[
         {
           label: "BPM",

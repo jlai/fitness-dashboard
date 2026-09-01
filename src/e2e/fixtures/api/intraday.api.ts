@@ -9,6 +9,10 @@ const HEART_RATE_DATAPOINTS_URL =
 const HEART_RATE_ZONES_DATAPOINTS_URL =
   "**/v4/users/*/dataTypes/daily-heart-rate-zones/dataPoints**";
 
+function rollUpUrl(dataType: string) {
+  return `**/v4/users/*/dataTypes/${dataType}/dataPoints:rollUp**`;
+}
+
 export class IntradayApi {
   constructor(private readonly page: Page) {}
 
@@ -26,6 +30,12 @@ export class IntradayApi {
         json: { dataPoints: [] },
       });
     });
+
+    for (const dataType of ["distance", "floors", "total-calories"]) {
+      await page.route(rollUpUrl(dataType), async (route) => {
+        await route.fulfill({ json: { rollupDataPoints: [] } });
+      });
+    }
   }
 
   async setHeartIntradayResponse(dataPoints: ReadonlyArray<DataPoint>) {

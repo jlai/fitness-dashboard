@@ -15,7 +15,7 @@ import {
 } from "@generated/orval/fetch/google-health-api/users/users";
 
 import { graduallyStale } from "./cache-settings";
-import { formatAsDate } from "./datetime";
+import { formatAsCivilDateTime, formatAsDate } from "./datetime";
 
 /** Union fields on DataPoint that correspond to a listable data type. */
 type DataPointDataKey = Exclude<keyof DataPoint, "name" | "dataSource">;
@@ -374,15 +374,23 @@ export function buildDatapointsQuery<T extends DataType>(
   dataType: T,
   start: Dayjs,
   end: Dayjs,
+  options?: { timeField?: "civil" | "physical" },
 ) {
   const kind = DATA_TYPE_FILTER_KIND[dataType];
-  const usesCivilDate = kind === "daily" || kind === "exercise";
-  const startValue = usesCivilDate ? formatAsDate(start) : start.toISOString();
-  const endValue = usesCivilDate ? formatAsDate(end) : end.toISOString();
-  const timeField = usesCivilDate ? "civil" : "physical";
+  const timeField =
+    options?.timeField ??
+    (kind === "daily" || kind === "exercise" ? "civil" : "physical");
+  const startValue = formatFilterValue(start, timeField, kind);
+  const endValue = formatFilterValue(end, timeField, kind);
 
   return queryOptions({
-    queryKey: ["datapoints", dataType, start.toISOString(), end.toISOString()],
+    queryKey: [
+      "datapoints",
+      dataType,
+      ...(options?.timeField === "civil" ? (["civil"] as const) : []),
+      start.toISOString(),
+      end.toISOString(),
+    ],
     queryFn: () =>
       listDataPoints(
         dataType,
@@ -390,6 +398,22 @@ export function buildDatapointsQuery<T extends DataType>(
       ),
     staleTime: graduallyStale(end),
   });
+}
+
+function formatFilterValue(
+  day: Dayjs,
+  timeField: "civil" | "physical",
+  kind: FilterKind,
+) {
+  if (timeField === "physical") {
+    return day.toISOString();
+  }
+
+  if (kind === "daily" || kind === "exercise") {
+    return formatAsDate(day);
+  }
+
+  return formatAsCivilDateTime(day);
 }
 
 function toCivilDate(day: Dayjs): CivilDateTime {
@@ -473,10 +497,42 @@ export function buildDailyRollupQuery<T extends DailyRollupDataType>(
   });
 }
 
+const MAX_ROLLUP_PAGE_SIZE = 10000;
+const SECONDS_PER_DAY = 24 * 60 * 60;
+
 function maxRollupRangeDays(dataType: RollupDataType) {
   return FOURTEEN_DAY_ROLLUP_TYPES.has(dataType as DailyRollupDataType)
     ? 14
     : 90;
+}
+
+function parseDurationSeconds(duration: string) {
+  const match = /^(\d+(?:\.\d+)?)s$/.exec(duration);
+  if (!match) {
+    throw new Error(`Unsupported rollup windowSize: ${duration}`);
+  }
+
+  return Number(match[1]);
+}
+
+/** pageSize such that windowSize * pageSize stays within the API max range. */
+export function rollupPageSize(
+  dataType: RollupDataType,
+  windowSize: string,
+  start: Dayjs,
+  end: Dayjs,
+) {
+  const windowSeconds = parseDurationSeconds(windowSize);
+  if (windowSeconds <= 0) {
+    throw new Error("rollup windowSize must be at least 1 second");
+  }
+
+  const maxRangeSeconds = maxRollupRangeDays(dataType) * SECONDS_PER_DAY;
+  const maxByConstraint = Math.floor(maxRangeSeconds / windowSeconds);
+  const rangeSeconds = Math.max(end.diff(start, "millisecond") / 1000, 0);
+  const needed = Math.max(1, Math.ceil(rangeSeconds / windowSeconds));
+
+  return Math.min(needed, maxByConstraint, MAX_ROLLUP_PAGE_SIZE);
 }
 
 async function listRollups<T extends RollupDataType>(
@@ -508,7 +564,12 @@ async function listRollups<T extends RollupDataType>(
             endTime: windowEnd.toISOString(),
           },
           windowSize,
-          pageSize: 10000,
+          pageSize: rollupPageSize(
+            dataType,
+            windowSize,
+            windowStart,
+            windowEnd,
+          ),
           pageToken,
         },
       );

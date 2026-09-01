@@ -66,6 +66,9 @@ export class TimeSeriesApi {
     await this.page.route(dailyRollUpUrl("floors"), async (route) => {
       await route.fulfill({ json: { rollupDataPoints: [] } });
     });
+    await this.page.route(dailyRollUpUrl("total-calories"), async (route) => {
+      await route.fulfill({ json: { rollupDataPoints: [] } });
+    });
   }
 
   async setLifetimeRollup(
@@ -88,6 +91,49 @@ export class TimeSeriesApi {
               ...value,
             },
           ],
+        },
+      });
+    });
+  }
+
+  async setActivityTimeSeriesResponse(
+    resource: "distance" | "floors" | "calories",
+    response: ReadonlyArray<TimeSeriesEntry<string>>,
+  ) {
+    const dataType =
+      resource === "calories"
+        ? "total-calories"
+        : resource === "distance"
+          ? "distance"
+          : "floors";
+
+    await this.page.route(dailyRollUpUrl(dataType), async (route) => {
+      await route.fulfill({
+        json: {
+          rollupDataPoints: response.map((entry): DailyRollupDataPoint => {
+            const civilStartTime = civilStartTimeFromDateTime(entry.dateTime);
+
+            if (resource === "distance") {
+              return {
+                civilStartTime,
+                distance: {
+                  millimetersSum: String(Number(entry.value) * 1_000_000),
+                },
+              };
+            }
+
+            if (resource === "floors") {
+              return {
+                civilStartTime,
+                floors: { countSum: entry.value },
+              };
+            }
+
+            return {
+              civilStartTime,
+              totalCalories: { kcalSum: Number(entry.value) },
+            };
+          }),
         },
       });
     });

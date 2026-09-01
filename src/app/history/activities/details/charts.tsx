@@ -52,6 +52,7 @@ import {
 import { FlexSpacer } from "@/components/layout/flex";
 import { createHeartRateZoneColorMap } from "@/config/heart-rate";
 import { ParsedHeartRateZones } from "@/api/heart-rate";
+import { currentTimeZone } from "@/utils/date-formats";
 
 import { useTrackpoints } from "./load-tcx";
 import { highlightedXAtom, xScaleMeasureAtom } from "./atoms";
@@ -60,22 +61,25 @@ import { SplitsChart } from "./splits";
 const TIME_FORMAT = new Intl.DateTimeFormat(undefined, {
   hour: "numeric",
   minute: "2-digit",
+  timeZone: currentTimeZone(),
 });
 
 const TIME_FORMAT_WITH_SECONDS = new Intl.DateTimeFormat(undefined, {
   hour: "numeric",
   minute: "2-digit",
   second: "2-digit",
+  timeZone: currentTimeZone(),
 });
 
 function formatTime(value: Date, context: AxisValueFormatterContext) {
-  if (isNaN(value.getDate())) {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) {
     return "";
   }
 
   return context.location === "tick"
-    ? TIME_FORMAT.format(value)
-    : TIME_FORMAT_WITH_SECONDS.format(value);
+    ? TIME_FORMAT.format(date)
+    : TIME_FORMAT_WITH_SECONDS.format(date);
 }
 
 export function ActivityTcxCharts({
@@ -104,7 +108,7 @@ export function ActivityTcxCharts({
     .add(1, "minute");
 
   const { data: caloriesIntradayRaw } = useQuery(
-    buildActivityIntradayQuery("calories", "1min", startTime, endTime)
+    buildActivityIntradayQuery("calories", "1min", startTime, endTime),
   );
 
   const { data: heartRateIntradayResponse } = useQuery({

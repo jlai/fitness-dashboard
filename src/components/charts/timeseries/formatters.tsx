@@ -7,7 +7,7 @@ import durationPlugin from "dayjs/plugin/duration";
 
 import { NumberFormats } from "@/utils/number-formats";
 import { DayjsRange } from "@/components/calendar/period-navigator";
-import { DateFormats } from "@/utils/date-formats";
+import { DateFormats, currentTimeZone } from "@/utils/date-formats";
 
 dayjs.extend(durationPlugin);
 
@@ -16,20 +16,25 @@ export const TOOLTIP_DATE_FORMAT = new Intl.DateTimeFormat(undefined, {
   month: "long",
   day: "numeric",
   year: "numeric",
+  timeZone: currentTimeZone(),
 });
 
 export const MONTH_ONLY_FORMAT = new Intl.DateTimeFormat(undefined, {
   month: "short",
+  timeZone: currentTimeZone(),
 });
 
 export const MONTH_YEAR_FORMAT = new Intl.DateTimeFormat(undefined, {
   month: "short",
   year: "numeric",
+  timeZone: currentTimeZone(),
 });
 
 export function getTickFormatterForDayRange({ startDay, endDay }: DayjsRange) {
+  const timeZone = currentTimeZone();
   const options: Intl.DateTimeFormatOptions = {
     day: "numeric",
+    timeZone,
   };
 
   if (startDay.isSame(endDay, "day")) {
@@ -47,7 +52,8 @@ export function getTickFormatterForDayRange({ startDay, endDay }: DayjsRange) {
     options.year = "numeric";
   }
 
-  return new Intl.DateTimeFormat(undefined, options).format;
+  const formatter = new Intl.DateTimeFormat(undefined, options);
+  return (value: Date | number | string) => formatter.format(new Date(value));
 }
 
 export function getTooltipFormatterForDayRange({
@@ -55,10 +61,11 @@ export function getTooltipFormatterForDayRange({
   endDay,
 }: DayjsRange) {
   if (startDay.isSame(endDay, "day")) {
-    return DateFormats.TIME.format;
+    return DateFormats.formatTime;
   }
 
-  return TOOLTIP_DATE_FORMAT.format;
+  return (value: Date | number | string) =>
+    TOOLTIP_DATE_FORMAT.format(new Date(value));
 }
 
 export function durationTickFormat(value: number) {

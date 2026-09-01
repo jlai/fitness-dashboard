@@ -91,8 +91,10 @@ export function aggregateByHour(data: Array<IntradayEntry>) {
     dayjs(entry.dateTime).startOf("hour").toISOString(),
   );
 
-  return Object.entries(byHour).map(([timestamp, entries]) => ({
-    dateTime: new Date(timestamp),
-    value: sumBy(entries, (entry) => entry.value),
-  }));
+  return Object.entries(byHour)
+    .map(([timestamp, entries]) => ({
+      dateTime: new Date(timestamp),
+      value: sumBy(entries, (entry) => entry.value),
+    }))
+    .toSorted((a, b) => a.dateTime.getTime() - b.dateTime.getTime());
 }

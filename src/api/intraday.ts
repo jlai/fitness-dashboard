@@ -16,8 +16,8 @@ import {
   getDataPointValue,
   getRollupValue,
   type DataPointFor,
-  type DataType,
   type RollupDataPointFor,
+  type RollupDataType,
 } from "./datapoints";
 import { parseDailyHeartRateZones } from "./heart-rate";
 import { ActiveZoneMinutesTimeSeriesValue } from "./times-series";
@@ -31,16 +31,15 @@ export type IntradayEntry<ValueType = number> = {
 export type ActivityIntradayResource =
   "calories" | "distance" | "floors" | "steps";
 
+type ActivityRollupResource = Exclude<ActivityIntradayResource, "steps">;
+
 export type IntradayDetailLevel = "1min" | "5min" | "15min";
 
-const ACTIVITY_INTRADAY_DATA_TYPES = {
+const ACTIVITY_INTRADAY_ROLLUP_DATA_TYPES = {
+  calories: "total-calories",
   distance: "distance",
   floors: "floors",
-  steps: "steps",
-} as const satisfies Record<
-  Exclude<ActivityIntradayResource, "calories">,
-  DataType
->;
+} as const satisfies Record<ActivityRollupResource, RollupDataType>;
 
 const DETAIL_LEVEL_MINUTES: Record<IntradayDetailLevel, number> = {
   "1min": 1,
@@ -69,12 +68,24 @@ function dateTimeFromCivil(civil?: CivilDateTime) {
   );
 }
 
-function dateTimeFromInterval(interval?: ObservationTimeInterval) {
-  if (interval?.startTime) {
-    return new Date(interval.startTime);
+function dateTimePreferringCivil(
+  civil: CivilDateTime | undefined,
+  physical?: string,
+) {
+  const fromCivil = dateTimeFromCivil(civil);
+  if (fromCivil && civil?.time) {
+    return fromCivil;
   }
 
-  return dateTimeFromCivil(interval?.civilStartTime);
+  if (physical) {
+    return new Date(physical);
+  }
+
+  return fromCivil;
+}
+
+function dateTimeFromInterval(interval?: ObservationTimeInterval) {
+  return dateTimePreferringCivil(interval?.civilStartTime, interval?.startTime);
 }
 
 function finiteNumber(value: unknown) {
@@ -135,78 +146,90 @@ function sumActiveZoneMinutes(
   };
 }
 
-type ActivityIntradayDataPoint =
-  DataPointFor<"steps"> | DataPointFor<"floors"> | DataPointFor<"distance">;
-
 export function toActivityIntradayEntries(
-  resource: Exclude<ActivityIntradayResource, "calories">,
-  dataPoints: ReadonlyArray<ActivityIntradayDataPoint>,
+  resource: "steps",
+  dataPoints: ReadonlyArray<DataPointFor<"steps">>,
 ): Array<IntradayEntry> {
+  return dataPoints.flatMap((dataPoint) => {
+    const value = getDataPointValue(resource, dataPoint);
+    const dateTime = dateTimeFromInterval(value.interval);
+    const count = finiteNumber(value.count);
+
+    if (!dateTime || count == null) {
+      return [];
+    }
+
+    return [{ dateTime, value: count }];
+  });
+}
+
+function activityRollupValue<T extends ActivityRollupResource>(
+  resource: T,
+  dataPoint: RollupDataPointFor<
+    (typeof ACTIVITY_INTRADAY_ROLLUP_DATA_TYPES)[T]
+  >,
+): number | undefined {
   switch (resource) {
-    case "steps":
-      return (dataPoints as Array<DataPointFor<"steps">>).flatMap(
-        (dataPoint) => {
-          const value = getDataPointValue("steps", dataPoint);
-          const dateTime = dateTimeFromInterval(value.interval);
-          const count = finiteNumber(value.count);
-
-          if (!dateTime || count == null) {
-            return [];
-          }
-
-          return [{ dateTime, value: count }];
-        },
+    case "calories":
+      return (
+        finiteNumber(
+          getRollupValue(
+            "total-calories",
+            dataPoint as RollupDataPointFor<"total-calories">,
+          ).kcalSum,
+        ) ?? 0
       );
+    case "distance": {
+      const millimeters = finiteNumber(
+        getRollupValue("distance", dataPoint as RollupDataPointFor<"distance">)
+          .millimetersSum,
+      );
+
+      return millimeters == null
+        ? undefined
+        : millimeters / MILLIMETERS_PER_KILOMETER;
+    }
     case "floors":
-      return (dataPoints as Array<DataPointFor<"floors">>).flatMap(
-        (dataPoint) => {
-          const value = getDataPointValue("floors", dataPoint);
-          const dateTime = dateTimeFromInterval(value.interval);
-          const count = finiteNumber(value.count);
-
-          if (!dateTime || count == null) {
-            return [];
-          }
-
-          return [{ dateTime, value: count }];
-        },
-      );
-    case "distance":
-      return (dataPoints as Array<DataPointFor<"distance">>).flatMap(
-        (dataPoint) => {
-          const value = getDataPointValue("distance", dataPoint);
-          const dateTime = dateTimeFromInterval(value.interval);
-          const millimeters = finiteNumber(value.millimeters);
-
-          if (!dateTime || millimeters == null) {
-            return [];
-          }
-
-          return [{ dateTime, value: millimeters / MILLIMETERS_PER_KILOMETER }];
-        },
+      return finiteNumber(
+        getRollupValue("floors", dataPoint as RollupDataPointFor<"floors">)
+          .countSum,
       );
   }
+}
+
+export function toActivityRollupIntradayEntries<
+  T extends ActivityRollupResource,
+>(
+  resource: T,
+  rollupDataPoints: ReadonlyArray<
+    RollupDataPointFor<(typeof ACTIVITY_INTRADAY_ROLLUP_DATA_TYPES)[T]>
+  >,
+): Array<IntradayEntry> {
+  return rollupDataPoints
+    .flatMap((dataPoint) => {
+      if (!dataPoint.startTime) {
+        return [];
+      }
+
+      const value = activityRollupValue(resource, dataPoint);
+      if (value == null) {
+        return [];
+      }
+
+      return [
+        {
+          dateTime: new Date(dataPoint.startTime),
+          value,
+        },
+      ];
+    })
+    .toSorted((a, b) => a.dateTime.getTime() - b.dateTime.getTime());
 }
 
 export function toCaloriesIntradayEntries(
   rollupDataPoints: ReadonlyArray<RollupDataPointFor<"total-calories">>,
 ): Array<IntradayEntry> {
-  return rollupDataPoints.flatMap((dataPoint) => {
-    if (!dataPoint.startTime) {
-      return [];
-    }
-
-    const kcal = finiteNumber(
-      getRollupValue("total-calories", dataPoint).kcalSum,
-    );
-
-    return [
-      {
-        dateTime: new Date(dataPoint.startTime),
-        value: kcal ?? 0,
-      },
-    ];
-  });
+  return toActivityRollupIntradayEntries("calories", rollupDataPoints);
 }
 
 export function toHeartRateIntradayEntries(
@@ -214,9 +237,10 @@ export function toHeartRateIntradayEntries(
 ): Array<IntradayEntry> {
   return dataPoints.flatMap((dataPoint) => {
     const value = getDataPointValue("heart-rate", dataPoint);
-    const dateTime = value.sampleTime?.physicalTime
-      ? new Date(value.sampleTime.physicalTime)
-      : dateTimeFromCivil(value.sampleTime?.civilTime);
+    const dateTime = dateTimePreferringCivil(
+      value.sampleTime?.civilTime,
+      value.sampleTime?.physicalTime,
+    );
     const beatsPerMinute = finiteNumber(value.beatsPerMinute);
 
     if (!dateTime || beatsPerMinute == null) {
@@ -257,67 +281,63 @@ export function toActiveZoneMinutesIntradayEntries(
   });
 }
 
-type CountedActivityIntradayResource = Exclude<
-  ActivityIntradayResource,
-  "calories"
->;
-
-function buildCaloriesIntradayQuery(
+function buildStepsIntradayQuery(
   detailLevel: IntradayDetailLevel,
   startTime: Dayjs,
   endTime: Dayjs,
 ) {
-  const windowSize = `${DETAIL_LEVEL_MINUTES[detailLevel] * 60}s`;
-
   return queryOptions({
-    ...buildRollupQuery("total-calories", startTime, endTime, windowSize),
-    select: ({ rollupDataPoints }) =>
-      toCaloriesIntradayEntries(rollupDataPoints),
-  });
-}
-
-function buildCountedActivityIntradayQuery(
-  resource: CountedActivityIntradayResource,
-  detailLevel: IntradayDetailLevel,
-  startTime: Dayjs,
-  endTime: Dayjs,
-) {
-  const dataType = ACTIVITY_INTRADAY_DATA_TYPES[resource];
-
-  return queryOptions({
-    ...buildDatapointsQuery(dataType, startTime, endTime),
+    ...buildDatapointsQuery("steps", startTime, endTime, {
+      timeField: "civil",
+    }),
     select: ({ dataPoints }) =>
       aggregateIntradayEntries(
-        toActivityIntradayEntries(resource, dataPoints),
+        toActivityIntradayEntries("steps", dataPoints),
         detailLevel,
         sumNumbers,
       ),
   });
 }
 
-export function buildActivityIntradayQuery(
-  resource: "calories",
+function buildActivityRollupIntradayQuery(
+  resource: ActivityRollupResource,
   detailLevel: IntradayDetailLevel,
   startTime: Dayjs,
   endTime: Dayjs,
-): ReturnType<typeof buildCaloriesIntradayQuery>;
+) {
+  const windowSize = `${DETAIL_LEVEL_MINUTES[detailLevel] * 60}s`;
+  const dataType = ACTIVITY_INTRADAY_ROLLUP_DATA_TYPES[resource];
+
+  return queryOptions({
+    ...buildRollupQuery(dataType, startTime, endTime, windowSize),
+    select: ({ rollupDataPoints }) =>
+      toActivityRollupIntradayEntries(resource, rollupDataPoints),
+  });
+}
+
 export function buildActivityIntradayQuery(
-  resource: CountedActivityIntradayResource,
+  resource: "steps",
   detailLevel: IntradayDetailLevel,
   startTime: Dayjs,
   endTime: Dayjs,
-): ReturnType<typeof buildCountedActivityIntradayQuery>;
+): ReturnType<typeof buildStepsIntradayQuery>;
+export function buildActivityIntradayQuery(
+  resource: ActivityRollupResource,
+  detailLevel: IntradayDetailLevel,
+  startTime: Dayjs,
+  endTime: Dayjs,
+): ReturnType<typeof buildActivityRollupIntradayQuery>;
 export function buildActivityIntradayQuery(
   resource: ActivityIntradayResource,
   detailLevel: IntradayDetailLevel,
   startTime: Dayjs,
   endTime: Dayjs,
 ) {
-  if (resource === "calories") {
-    return buildCaloriesIntradayQuery(detailLevel, startTime, endTime);
+  if (resource === "steps") {
+    return buildStepsIntradayQuery(detailLevel, startTime, endTime);
   }
 
-  return buildCountedActivityIntradayQuery(
+  return buildActivityRollupIntradayQuery(
     resource,
     detailLevel,
     startTime,
@@ -331,7 +351,9 @@ export function buildActiveZoneMinutesIntradayQuery(
   endTime: Dayjs,
 ) {
   return queryOptions({
-    ...buildDatapointsQuery("active-zone-minutes", startTime, endTime),
+    ...buildDatapointsQuery("active-zone-minutes", startTime, endTime, {
+      timeField: "civil",
+    }),
     select: ({ dataPoints }) =>
       aggregateIntradayEntries(
         toActiveZoneMinutesIntradayEntries(dataPoints),
@@ -346,7 +368,9 @@ export function buildHeartRateIntradayQuery(
   startTime: Dayjs,
   endTime: Dayjs,
 ) {
-  const samplesQuery = buildDatapointsQuery("heart-rate", startTime, endTime);
+  const samplesQuery = buildDatapointsQuery("heart-rate", startTime, endTime, {
+    timeField: "civil",
+  });
   const zonesQuery = buildOneDayDatapointsQuery(
     "daily-heart-rate-zones",
     startTime,

@@ -7,6 +7,7 @@ import { parseDailyHeartRateZones } from "@/api/heart-rate";
 import {
   aggregateIntradayEntries,
   toActivityIntradayEntries,
+  toActivityRollupIntradayEntries,
   toActiveZoneMinutesIntradayEntries,
   toCaloriesIntradayEntries,
   toHeartRateIntradayEntries,
@@ -36,39 +37,45 @@ describe("toActivityIntradayEntries", () => {
     ]);
   });
 
-  it("converts distance millimeters to kilometers", () => {
-    const dataPoints: Array<DataPointFor<"distance">> = [
-      {
-        distance: {
-          millimeters: "2500000",
-          interval: { startTime: "2024-05-07T08:00:00Z" },
-        },
-      },
-    ];
-
-    expect(toActivityIntradayEntries("distance", dataPoints)).toEqual([
-      { dateTime: new Date("2024-05-07T08:00:00Z"), value: 2.5 },
-    ]);
-  });
-
   it("skips datapoints without a usable timestamp", () => {
-    const dataPoints: Array<DataPointFor<"floors">> = [
-      { floors: { count: "2" } },
+    const dataPoints: Array<DataPointFor<"steps">> = [
+      { steps: { count: "2" } },
       {
-        floors: {
+        steps: {
           count: "1",
           interval: { startTime: "2024-05-07T09:00:00Z" },
         },
       },
     ];
 
-    expect(toActivityIntradayEntries("floors", dataPoints)).toEqual([
+    expect(toActivityIntradayEntries("steps", dataPoints)).toEqual([
       { dateTime: new Date("2024-05-07T09:00:00Z"), value: 1 },
+    ]);
+  });
+
+  it("prefers civil start time over physical start time", () => {
+    const dataPoints: Array<DataPointFor<"steps">> = [
+      {
+        steps: {
+          count: "10",
+          interval: {
+            startTime: "2024-05-07T08:00:00Z",
+            civilStartTime: {
+              date: { year: 2024, month: 5, day: 7 },
+              time: { hours: 1, minutes: 0, seconds: 0 },
+            },
+          },
+        },
+      },
+    ];
+
+    expect(toActivityIntradayEntries("steps", dataPoints)).toEqual([
+      { dateTime: new Date(2024, 4, 7, 1, 0, 0), value: 10 },
     ]);
   });
 });
 
-describe("toCaloriesIntradayEntries", () => {
+describe("toActivityRollupIntradayEntries", () => {
   it("maps total-calories rollup windows to dateTime entries", () => {
     const rollupDataPoints: Array<RollupDataPointFor<"total-calories">> = [
       {
@@ -86,6 +93,53 @@ describe("toCaloriesIntradayEntries", () => {
       { dateTime: new Date("2024-05-07T18:17:00Z"), value: 0 },
     ]);
   });
+
+  it("converts distance millimeters to kilometers", () => {
+    const rollupDataPoints: Array<RollupDataPointFor<"distance">> = [
+      {
+        startTime: "2024-05-07T08:00:00Z",
+        distance: { millimetersSum: "2500000" },
+      },
+    ];
+
+    expect(
+      toActivityRollupIntradayEntries("distance", rollupDataPoints),
+    ).toEqual([{ dateTime: new Date("2024-05-07T08:00:00Z"), value: 2.5 }]);
+  });
+
+  it("sorts reverse-chronological rollup windows oldest first", () => {
+    const rollupDataPoints: Array<RollupDataPointFor<"distance">> = [
+      {
+        startTime: "2024-05-07T18:00:00Z",
+        distance: { millimetersSum: "1000000" },
+      },
+      {
+        startTime: "2024-05-07T08:00:00Z",
+        distance: { millimetersSum: "2500000" },
+      },
+    ];
+
+    expect(
+      toActivityRollupIntradayEntries("distance", rollupDataPoints),
+    ).toEqual([
+      { dateTime: new Date("2024-05-07T08:00:00Z"), value: 2.5 },
+      { dateTime: new Date("2024-05-07T18:00:00Z"), value: 1 },
+    ]);
+  });
+
+  it("skips floor rollups without a start time", () => {
+    const rollupDataPoints: Array<RollupDataPointFor<"floors">> = [
+      { floors: { countSum: "2" } },
+      {
+        startTime: "2024-05-07T09:00:00Z",
+        floors: { countSum: "1" },
+      },
+    ];
+
+    expect(toActivityRollupIntradayEntries("floors", rollupDataPoints)).toEqual(
+      [{ dateTime: new Date("2024-05-07T09:00:00Z"), value: 1 }],
+    );
+  });
 });
 
 describe("toHeartRateIntradayEntries", () => {
@@ -101,6 +155,27 @@ describe("toHeartRateIntradayEntries", () => {
 
     expect(toHeartRateIntradayEntries(dataPoints)).toEqual([
       { dateTime: new Date("2024-05-07T18:16:50Z"), value: 76 },
+    ]);
+  });
+
+  it("prefers civil sample time over physical time", () => {
+    const dataPoints: Array<DataPointFor<"heart-rate">> = [
+      {
+        heartRate: {
+          beatsPerMinute: "80",
+          sampleTime: {
+            physicalTime: "2024-05-07T08:16:50Z",
+            civilTime: {
+              date: { year: 2024, month: 5, day: 7 },
+              time: { hours: 1, minutes: 16, seconds: 50 },
+            },
+          },
+        },
+      },
+    ];
+
+    expect(toHeartRateIntradayEntries(dataPoints)).toEqual([
+      { dateTime: new Date(2024, 4, 7, 1, 16, 50), value: 80 },
     ]);
   });
 });
