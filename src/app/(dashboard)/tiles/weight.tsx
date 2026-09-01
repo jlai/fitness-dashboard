@@ -34,19 +34,14 @@ import { useSelectedDay } from "../state";
 
 import { RenderDialogContentProps, TileWithDialog } from "./tile-with-dialog";
 
-// See https://dev.fitbit.com/build/reference/web-api/body-timeseries/get-weight-timeseries-by-date-range/
 const MAX_WEIGHT_LOG_DAYS = 31;
 
 export function WeightTileContent() {
-  const { localizedKilogramsName, weightUnit } = useUnits();
+  const { localizedKilograms, localizedKilogramsName } = useUnits();
   const day = useSelectedDay();
 
   const { data } = useSuspenseQuery(
-    buildGetWeightLogsQuery(
-      day.subtract(MAX_WEIGHT_LOG_DAYS, "days"),
-      day,
-      weightUnit,
-    ),
+    buildGetWeightLogsQuery(day.subtract(MAX_WEIGHT_LOG_DAYS, "days"), day),
   );
 
   let latest: WeightLog | undefined = undefined;
@@ -75,7 +70,12 @@ export function WeightTileContent() {
         <div className="flex-1 flex flex-col items-center justify-center overflow-hidden">
           <MonitorWeight className="size-3/4" />
         </div>
-        <NumericStat value={latest?.weight} unit={localizedKilogramsName} />
+        <NumericStat
+          value={
+            latest ? localizedKilograms(latest.weight) : undefined
+          }
+          unit={localizedKilogramsName}
+        />
       </Stack>
     </TileWithDialog>
   );
@@ -151,8 +151,11 @@ function WeightLogCard({
   weightLog: WeightLog;
   previous?: WeightLog;
 }) {
-  const { localizedKilogramsName } = useUnits();
+  const { localizedKilograms, localizedKilogramsName } = useUnits();
   const daysAgo = dayjs().diff(dayjs(weightLog.date), "days");
+  const weight = localizedKilograms(weightLog.weight);
+  const previousWeight =
+    previous != null ? localizedKilograms(previous.weight) : undefined;
 
   return (
     <Card variant="outlined" className="p-2">
@@ -164,19 +167,20 @@ function WeightLogCard({
         <Stack direction="column">
           <Stack direction="row" alignItems="center" columnGap={2}>
             <Typography variant="h6">
-              {weightLog.weight} {localizedKilogramsName}
+              {NumberFormats.FRACTION_DIGITS_1.format(weight)}{" "}
+              {localizedKilogramsName}
             </Typography>
-            {previous && previous.weight !== weightLog.weight && (
+            {previousWeight != null && previousWeight !== weight && (
               <Box>
                 (
                 <Typography variant="h6" component="span" className="me-2">
-                  {weightLog.weight > previous.weight ? (
+                  {weight > previousWeight ? (
                     <ArrowDropUp className="mx-0 text-slate-500" />
                   ) : (
                     <ArrowDropDown className="mx-0 text-slate-500" />
                   )}
                   {NumberFormats.FRACTION_DIGITS_1.format(
-                    Math.abs(weightLog.weight - previous.weight),
+                    Math.abs(weight - previousWeight),
                   )}{" "}
                   {localizedKilogramsName}
                 </Typography>

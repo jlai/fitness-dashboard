@@ -33,30 +33,10 @@ export class TimeSeriesApi {
   constructor(private readonly page: Page) {}
 
   async setupDefaults() {
-    // Default empty responses for time series
-    await this.page.route(
-      "**/1/user/-/body/weight/date/*/*.json",
-      async (route) => {
-        await route.fulfill({ json: { "body-weight": [] } });
-      },
-    );
-
-    await this.page.route(
-      "**/1/user/-/body/fat/date/*/*.json",
-      async (route) => {
-        await route.fulfill({ json: { "body-fat": [] } });
-      },
-    );
-
-    await this.page.route(
-      "**/1/user/-/body/bmi/date/*/*.json",
-      async (route) => {
-        await route.fulfill({ json: { "body-bmi": [] } });
-      },
-    );
-
     await this.setActiveMinutesTimeSeriesResponse([]);
     await this.setActiveZoneMinutesTimeSeriesResponse([]);
+    await this.setWeightTimeSeriesResponse([]);
+    await this.setFatTimeSeriesResponse([]);
     await this.page.route(dailyRollUpUrl("steps"), async (route) => {
       await route.fulfill({ json: { rollupDataPoints: [] } });
     });
@@ -174,44 +154,40 @@ export class TimeSeriesApi {
 
   async setWeightTimeSeriesResponse(
     response: Readonly<TimeSeriesEntry<string>[]>,
-    dateRange = { start: "*", end: "*" },
   ) {
-    await this.page.route(
-      `**/1/user/-/body/weight/date/${dateRange.start}/${dateRange.end}.json`,
-      async (route) => {
-        await route.fulfill({
-          json: { "body-weight": response },
-        });
-      },
-    );
+    await this.page.route(dailyRollUpUrl("weight"), async (route) => {
+      await route.fulfill({
+        json: {
+          rollupDataPoints: response.map((entry): DailyRollupDataPoint => ({
+            civilStartTime: civilStartTimeFromDateTime(entry.dateTime),
+            weight: {
+              weightGramsAvg: Number(entry.value) * 1000,
+            },
+          })),
+        },
+      });
+    });
   }
 
   async setFatTimeSeriesResponse(
     response: Readonly<TimeSeriesEntry<string>[]>,
-    dateRange = { start: "*", end: "*" },
   ) {
-    await this.page.route(
-      `**/1/user/-/body/fat/date/${dateRange.start}/${dateRange.end}.json`,
-      async (route) => {
-        await route.fulfill({
-          json: { "body-fat": response },
-        });
-      },
-    );
+    await this.page.route(dailyRollUpUrl("body-fat"), async (route) => {
+      await route.fulfill({
+        json: {
+          rollupDataPoints: response.map((entry): DailyRollupDataPoint => ({
+            civilStartTime: civilStartTimeFromDateTime(entry.dateTime),
+            bodyFat: {
+              bodyFatPercentageAvg: Number(entry.value),
+            },
+          })),
+        },
+      });
+    });
   }
 
-  async setBmiTimeSeriesResponse(
-    response: Readonly<TimeSeriesEntry<string>[]>,
-    dateRange = { start: "*", end: "*" },
-  ) {
-    await this.page.route(
-      `**/1/user/-/body/bmi/date/${dateRange.start}/${dateRange.end}.json`,
-      async (route) => {
-        await route.fulfill({
-          json: { "body-bmi": response },
-        });
-      },
-    );
+  async setBmiTimeSeriesResponse() {
+    // BMI is derived from weight + height datapoints.
   }
 
   async setHeartTimeSeriesResponse(

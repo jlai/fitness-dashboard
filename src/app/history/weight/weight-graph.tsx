@@ -4,7 +4,6 @@ import {
   AreaPlot,
   ChartsClipPath,
   ChartsGrid,
-  ChartsReferenceLine,
   ChartsTooltip,
   ChartsXAxis,
   ChartsYAxis,
@@ -31,9 +30,10 @@ import {
 } from "@/components/charts/navigators";
 import { useUnits } from "@/config/units";
 import { NumberFormats } from "@/utils/number-formats";
-import { buildGetBodyWeightGoalQuery } from "@/api/body";
 import { HeaderBar } from "@/components/layout/rows";
 import { getTickFormatterForDayRange } from "@/components/charts/timeseries/formatters";
+
+import { leanFatMassByDate } from "./lean-fat-mass";
 
 export default function ScopedAtomWeightGraph() {
   return (
@@ -52,18 +52,16 @@ export function LeanFatMassGraph() {
 
   const range = useAtomValue(selectedRangeAtom);
 
-  const [{ data: weightData }, { data: fatData }, { data: goal }] = useQueries({
+  const [{ data: weightData }, { data: fatData }] = useQueries({
     queries: [
       buildTimeSeriesQuery("weight", range.startDay, range.endDay),
       buildTimeSeriesQuery("fat", range.startDay, range.endDay),
-      buildGetBodyWeightGoalQuery(),
     ],
   });
 
   const clipPathId = useId();
 
   const { series, dates, minWeight } = useMemo(() => {
-    const today = dayjs();
     const valueFormatter = (value: number | null) =>
       value
         ? `${NumberFormats.FRACTION_DIGITS_1.format(
@@ -71,34 +69,26 @@ export function LeanFatMassGraph() {
           )} ${localizedKilogramsName}`
         : "";
 
-    const dates: Array<Date> = [];
-    const totalSeriesData: Array<number> = [];
-    const fatSeriesData: Array<number> = [];
-    const leanSeriesData: Array<number> = [];
+    const { dates, totalKg, leanKg, fatKg } = leanFatMassByDate(
+      weightData,
+      fatData,
+      dayjs(),
+    );
 
-    if (weightData && fatData) {
-      if (weightData.length !== fatData.length) {
-        throw new Error("weight and fat data unequal length");
-      }
+    const totalSeriesData = totalKg.map(localizedKilograms);
+    const leanSeriesData = leanKg.map((value) =>
+      value == null ? null : localizedKilograms(value),
+    );
+    const fatSeriesData = fatKg.map((value) =>
+      value == null ? null : localizedKilograms(value),
+    );
 
-      for (let i = 0; i < weightData?.length; i++) {
-        if (dayjs(weightData[i].dateTime).isAfter(today)) {
-          break;
-        }
-
-        const weightKg = Number(weightData[i].value);
-        const percentFat = Number(fatData[i].value);
-        const leanKg = weightKg * (1.0 - percentFat / 100);
-        const fatKg = weightKg * (percentFat / 100);
-
-        dates.push(dayjs(weightData[i].dateTime).toDate());
-        totalSeriesData.push(localizedKilograms(weightKg));
-        leanSeriesData.push(localizedKilograms(leanKg));
-        fatSeriesData.push(localizedKilograms(fatKg));
-      }
-    }
-
-    const minWeight = roundDownMinWeight(Math.min(...leanSeriesData) ?? 0);
+    const minCandidates = [...leanSeriesData, ...totalSeriesData].filter(
+      (value): value is number => value != null,
+    );
+    const minWeight = minCandidates.length
+      ? roundDownMinWeight(Math.min(...minCandidates))
+      : 0;
 
     const series: Array<LineSeriesType> = [
       {
@@ -162,15 +152,6 @@ export function LeanFatMassGraph() {
             <AreaPlot />
             <LinePlot />
           </g>
-
-          {goal?.weight && (
-            <ChartsReferenceLine
-              y={localizedKilograms(goal.weight)}
-              lineStyle={{ strokeOpacity: 0.5, strokeDasharray: "5 5" }}
-              label="Goal"
-              labelAlign="end"
-            />
-          )}
 
           <ChartsXAxis />
           <ChartsYAxis />

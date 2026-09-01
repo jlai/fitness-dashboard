@@ -1,27 +1,21 @@
 import dayjs, { Dayjs } from "dayjs";
 import { QueryClient, queryOptions } from "@tanstack/react-query";
 
-import { formatAsDate } from "../datetime";
-import { makeRequest } from "../request";
-import { ONE_DAY_IN_MILLIS } from "../cache-settings";
-import mutationOptions from "../mutation-options";
-import { SettingsWeightUnit, WeightUnitSystem } from "../user";
-
+import { DataSourceRecordingMethod } from "@generated/orval/fetch/google-health-api/models";
 import {
-  GetBodyWeightGoalResponse,
-  GetWeightTimeSeriesResponse,
-} from "./types";
+  healthUsersDataTypesDataPointsBatchDelete,
+  healthUsersDataTypesDataPointsCreate,
+} from "@generated/orval/fetch/google-health-api/users/users";
 
-function fitbitWeightAcceptLanguage(unit: WeightUnitSystem) {
-  switch (unit) {
-    case SettingsWeightUnit.WEIGHT_UNIT_POUNDS:
-      return "en_US";
-    case SettingsWeightUnit.WEIGHT_UNIT_STONE:
-      return "en_GB";
-    default:
-      return "METRIC";
-  }
-}
+import { buildDatapointsQuery } from "../datapoints";
+import { formatAsDate } from "../datetime";
+import mutationOptions from "../mutation-options";
+import type { WeightUnitSystem } from "../user";
+
+import { gramsFromLocalizedWeight, toWeightLogs } from "./helpers";
+
+export * from "./helpers";
+export * from "./types";
 
 interface CreateWeightLogOptions {
   weight: number;
@@ -30,11 +24,32 @@ interface CreateWeightLogOptions {
   percentFat?: number;
 }
 
-// Invalid weight logs and weight trend series
-async function invalidateAllWeightTimeSeries(queryClient: QueryClient) {
-  return Promise.all([
+function utcOffsetDuration(day: Dayjs) {
+  return `${day.utcOffset() * 60}s`;
+}
+
+function sampleTimeForLog(day: Dayjs) {
+  const today = dayjs();
+  return day.isSame(today, "day") ? today : day.startOf("day");
+}
+
+function observationSampleTime(day: Dayjs) {
+  return {
+    physicalTime: day.toISOString(),
+    utcOffset: utcOffsetDuration(day),
+  };
+}
+
+async function invalidateWeightQueries(queryClient: QueryClient) {
+  await Promise.all([
     queryClient.invalidateQueries({
       queryKey: ["weight-logs"],
+    }),
+    queryClient.invalidateQueries({
+      queryKey: ["datapoints", "weight"],
+    }),
+    queryClient.invalidateQueries({
+      queryKey: ["datapoints", "body-fat"],
     }),
     queryClient.invalidateQueries({
       queryKey: ["timeseries", "weight"],
@@ -51,89 +66,82 @@ async function invalidateAllWeightTimeSeries(queryClient: QueryClient) {
 export function buildCreateWeightLogMutation(queryClient: QueryClient) {
   return mutationOptions({
     mutationFn: async (newWeightLog: CreateWeightLogOptions) => {
-      const today = dayjs();
-      const { day, weight, weightUnitSystem, percentFat } = newWeightLog;
+      const sampleTime = sampleTimeForLog(newWeightLog.day);
+      const sample = observationSampleTime(sampleTime);
 
-      const params = new URLSearchParams();
-      params.set("weight", `${weight}`);
-      params.set("date", formatAsDate(day));
-      if (day.isSame(today, "day")) {
-        // use current (browser) time
-        params.set("time", today.format("HH:mm:ss"));
-      }
-
-      await makeRequest(`/1/user/-/body/log/weight.json?${params.toString()}`, {
-        method: "POST",
-        headers: {
-          "Accept-Language": fitbitWeightAcceptLanguage(weightUnitSystem),
+      await healthUsersDataTypesDataPointsCreate("me", "weight", {
+        dataSource: {
+          recordingMethod: DataSourceRecordingMethod.MANUAL,
+        },
+        weight: {
+          sampleTime: sample,
+          weightGrams: gramsFromLocalizedWeight(
+            Number(newWeightLog.weight),
+            newWeightLog.weightUnitSystem,
+          ),
         },
       });
 
-      if (percentFat) {
-        const fatParams = new URLSearchParams();
-        fatParams.set("fat", `${percentFat}`);
-        fatParams.set("date", formatAsDate(day));
-        // API doesn't seem to work correctly if time is passed
-
-        await makeRequest(
-          `/1/user/-/body/log/fat.json?${fatParams.toString()}`,
-          {
-            method: "POST",
+      if (newWeightLog.percentFat) {
+        await healthUsersDataTypesDataPointsCreate("me", "body-fat", {
+          dataSource: {
+            recordingMethod: DataSourceRecordingMethod.MANUAL,
           },
-        );
+          bodyFat: {
+            sampleTime: sample,
+            percentage: Number(newWeightLog.percentFat),
+          },
+        });
       }
     },
-    onSuccess: async () => {
-      await invalidateAllWeightTimeSeries(queryClient);
-    },
+    onSuccess: () => invalidateWeightQueries(queryClient),
   });
 }
 
 export function buildDeleteWeightLogMutation(queryClient: QueryClient) {
   return mutationOptions({
-    mutationFn: async (weightLogId: number) => {
-      await makeRequest(`/1/user/-/body/log/weight/${weightLogId}.json?`, {
-        method: "DELETE",
+    mutationFn: async (weightLogName: string) => {
+      await healthUsersDataTypesDataPointsBatchDelete("me", "weight", {
+        names: [weightLogName],
       });
     },
-    onSuccess: async () => {
-      await invalidateAllWeightTimeSeries(queryClient);
-    },
+    onSuccess: () => invalidateWeightQueries(queryClient),
   });
 }
 
-export function buildGetBodyWeightGoalQuery() {
-  return queryOptions({
-    queryKey: ["body-goal-weight"],
-    queryFn: async () => {
-      const response = await makeRequest(`/1/user/-/body/log/weight/goal.json`);
+export function buildGetWeightLogsQuery(startDay: Dayjs, endDay: Dayjs) {
+  const rangeStart = startDay.startOf("day");
+  const rangeEndExclusive = endDay.startOf("day").add(1, "day");
 
-      return ((await response.json()) as GetBodyWeightGoalResponse).goal;
-    },
-    staleTime: ONE_DAY_IN_MILLIS,
-  });
-}
-
-export function buildGetWeightLogsQuery(
-  startDay: Dayjs,
-  endDay: Dayjs,
-  weightUnitSystem: WeightUnitSystem,
-) {
   return queryOptions({
     queryKey: ["weight-logs", formatAsDate(startDay), formatAsDate(endDay)],
-    queryFn: async () => {
-      const response = await makeRequest(
-        `/1/user/-/body/log/weight/date/${formatAsDate(
-          startDay,
-        )}/${formatAsDate(endDay)}.json`,
-        {
-          headers: {
-            "Accept-Language": fitbitWeightAcceptLanguage(weightUnitSystem),
-          },
-        },
-      );
+    queryFn: async ({ client }) => {
+      const [
+        { dataPoints: weights },
+        { dataPoints: fats },
+        { dataPoints: heights },
+      ] = await Promise.all([
+        client.fetchQuery(
+          buildDatapointsQuery("weight", rangeStart, rangeEndExclusive, {
+            timeField: "civil",
+          }),
+        ),
+        client.fetchQuery(
+          buildDatapointsQuery("body-fat", rangeStart, rangeEndExclusive, {
+            timeField: "civil",
+          }),
+        ),
+        client.fetchQuery(
+          buildDatapointsQuery(
+            "height",
+            rangeStart.subtract(10, "year"),
+            rangeEndExclusive,
+            { timeField: "civil" },
+          ),
+        ),
+      ]);
 
-      return ((await response.json()) as GetWeightTimeSeriesResponse).weight;
+      return toWeightLogs(weights, fats, heights);
     },
   });
 }

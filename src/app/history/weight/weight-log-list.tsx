@@ -44,7 +44,7 @@ function WeightLogRow({
   logEntry: WeightLog;
   onDelete: () => void;
 }) {
-  const units = useUnits();
+  const { localizedKilograms, localizedKilogramsName } = useUnits();
 
   return (
     <TableRow>
@@ -64,21 +64,21 @@ function WeightLogRow({
         )}
       </TableCell>
       <TableCell>
-        {NumberFormats.FRACTION_DIGITS_1.format(log.weight)}{" "}
-        {units.localizedKilogramsName}
+        {NumberFormats.FRACTION_DIGITS_1.format(localizedKilograms(log.weight))}{" "}
+        {localizedKilogramsName}
       </TableCell>
       <TableCell className="w-[40px]">
-        <IconButton onClick={onDelete}>
-          <DeleteIcon />
-        </IconButton>
+        {log.name && (
+          <IconButton onClick={onDelete}>
+            <DeleteIcon />
+          </IconButton>
+        )}
       </TableCell>
     </TableRow>
   );
 }
 
 export default function WeightLogList() {
-  const { weightUnit } = useUnits();
-
   const setShowingCreateWeightDialog = useSetAtom(
     createWeightLogDialogOpenAtom,
   );
@@ -89,7 +89,7 @@ export default function WeightLogList() {
   });
 
   const { data } = useQuery(
-    buildGetWeightLogsQuery(range.startDay, range.endDay, weightUnit),
+    buildGetWeightLogsQuery(range.startDay, range.endDay),
   );
 
   const queryClient = useQueryClient();
@@ -107,7 +107,7 @@ export default function WeightLogList() {
     });
 
     if (confirmed) {
-      await deleteWeightLogId(weightLog.logId);
+      await deleteWeightLogId(weightLog.name);
       showSuccessToast("Deleted weight log");
     }
   }, "Error deleting weight log");
@@ -140,7 +140,7 @@ export default function WeightLogList() {
           <TableBody>
             {data?.toReversed().map((logEntry) => (
               <WeightLogRow
-                key={logEntry.logId}
+                key={logEntry.name || `${logEntry.date}-${logEntry.time}`}
                 logEntry={logEntry}
                 onDelete={() => deleteWeightLog(logEntry)}
               />

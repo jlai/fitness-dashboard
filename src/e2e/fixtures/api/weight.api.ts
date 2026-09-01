@@ -1,97 +1,135 @@
 import { test as base, Page } from "@playwright/test";
 
-import { WeightLog } from "@/api/body/types";
+import type { DataPoint } from "@generated/orval/fetch/google-health-api/models";
+
+const WEIGHT_LIST_URL =
+  /\/v4\/users\/[^/]+\/dataTypes\/weight\/dataPoints(?:\?|$)/;
+const WEIGHT_BATCH_DELETE_URL =
+  /\/v4\/users\/[^/]+\/dataTypes\/weight\/dataPoints:batchDelete(?:\?|$)/;
+const BODY_FAT_LIST_URL =
+  /\/v4\/users\/[^/]+\/dataTypes\/body-fat\/dataPoints(?:\?|$)/;
+const HEIGHT_LIST_URL =
+  /\/v4\/users\/[^/]+\/dataTypes\/height\/dataPoints(?:\?|$)/;
 
 export class WeightApi {
   constructor(private readonly page: Page) {}
 
   async setupDefaults() {
-    await this.page.route(
-      "**/1/user/-/body/log/weight/date/*/*.json",
-      async (route) => {
-        await route.fulfill({ json: { weight: [] } });
-      },
-    );
-
-    // Default mock for weight and fat logging POST requests
-    await this.page.route(
-      "**/1/user/-/body/log/weight.json**",
-      async (route) => {
-        if (route.request().method() === "POST") {
-          await route.fulfill({ status: 200, json: { weightLog: {} } });
-        } else {
-          await route.fallback();
-        }
-      },
-    );
-
-    await this.page.route("**/1/user/-/body/log/fat.json**", async (route) => {
-      if (route.request().method() === "POST") {
-        await route.fulfill({ status: 200, json: { fatLog: {} } });
-      } else {
+    await this.setWeightLogsResponse([]);
+    await this.setBodyFatLogsResponse([]);
+    await this.page.route(HEIGHT_LIST_URL, async (route) => {
+      if (route.request().method() !== "GET") {
         await route.fallback();
+        return;
       }
+
+      await route.fulfill({ json: { dataPoints: [] } });
+    });
+    await this.page.route(WEIGHT_BATCH_DELETE_URL, async (route) => {
+      if (route.request().method() === "POST") {
+        await route.fulfill({ json: {} });
+        return;
+      }
+
+      await route.fallback();
     });
   }
 
-  async setWeightLogsResponse(response: Readonly<WeightLog[]>, date = "*") {
-    await this.page.route(
-      `**/1/user/-/body/log/weight/date/${date}/${date}.json`,
-      async (route) => {
-        await route.fulfill({ json: { weight: response } });
-      },
-    );
+  async setWeightLogsResponse(
+    dataPoints: ReadonlyArray<DataPoint>,
+    date = "*",
+  ) {
+    await this.page.route(WEIGHT_LIST_URL, async (route) => {
+      if (route.request().method() === "POST") {
+        await route.fulfill({
+          json: {
+            done: true,
+            name: "operations/weight-create",
+          },
+        });
+        return;
+      }
+
+      if (route.request().method() !== "GET") {
+        await route.fallback();
+        return;
+      }
+
+      const url = decodeURIComponent(route.request().url());
+      if (date !== "*" && !url.includes(date)) {
+        await route.fulfill({ json: { dataPoints: [] } });
+        return;
+      }
+
+      await route.fulfill({ json: { dataPoints } });
+    });
+  }
+
+  async setBodyFatLogsResponse(
+    dataPoints: ReadonlyArray<DataPoint>,
+    date = "*",
+  ) {
+    await this.page.route(BODY_FAT_LIST_URL, async (route) => {
+      if (route.request().method() === "POST") {
+        await route.fulfill({
+          json: {
+            done: true,
+            name: "operations/body-fat-create",
+          },
+        });
+        return;
+      }
+
+      if (route.request().method() !== "GET") {
+        await route.fallback();
+        return;
+      }
+
+      const url = decodeURIComponent(route.request().url());
+      if (date !== "*" && !url.includes(date)) {
+        await route.fulfill({ json: { dataPoints: [] } });
+        return;
+      }
+
+      await route.fulfill({ json: { dataPoints } });
+    });
   }
 
   async setWeightLogSaveResponse(success = true, errorMessage?: string) {
-    await this.page.route(
-      "**/1/user/-/body/log/weight.json**",
-      async (route) => {
-        if (route.request().method() === "POST") {
-          if (success) {
-            await route.fulfill({
-              status: 201,
-              json: {
-                weightLog: {
-                  logId: Date.now(),
-                  weight: 0, // Will be overridden by the mocked response in setWeightLogsResponse
-                  date: "",
-                  time: "",
-                  source: "API",
-                },
-              },
-            });
-          } else {
-            await route.fulfill({
-              status: 400,
-              json: {
-                errors: [
-                  { message: errorMessage || "Error saving weight log" },
-                ],
-              },
-            });
-          }
-        } else {
-          await route.fallback();
-        }
-      },
-    );
-  }
-
-  async setFatLogSaveResponse(success = true, errorMessage?: string) {
-    await this.page.route("**/1/user/-/body/log/fat.json**", async (route) => {
+    await this.page.route(WEIGHT_LIST_URL, async (route) => {
       if (route.request().method() === "POST") {
         if (success) {
           await route.fulfill({
-            status: 201,
             json: {
-              fatLog: {
-                logId: Date.now(),
-                fat: 0, // Will be overridden by the mocked response in setWeightLogsResponse
-                date: "",
-                time: "",
-                source: "API",
-              },
+              done: true,
+              name: "operations/weight-create",
+            },
+          });
+        } else {
+          await route.fulfill({
+            status: 400,
+            json: {
+              errors: [
+                { message: errorMessage || "Error saving weight log" },
+              ],
+            },
+          });
+        }
+        return;
+      }
+
+      await route.fallback();
+    });
+  }
+
+  async setFatLogSaveResponse(success = true, errorMessage?: string) {
+    await this.page.route(BODY_FAT_LIST_URL, async (route) => {
+      if (route.request().method() === "POST") {
+        if (success) {
+          await route.fulfill({
+            json: {
+              done: true,
+              name: "operations/body-fat-create",
             },
           });
         } else {
@@ -102,9 +140,10 @@ export class WeightApi {
             },
           });
         }
-      } else {
-        await route.fallback();
+        return;
       }
+
+      await route.fallback();
     });
   }
 }
