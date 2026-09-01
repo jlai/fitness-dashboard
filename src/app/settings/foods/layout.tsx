@@ -6,6 +6,7 @@ import React from "react";
 
 import RequireLogin from "@/components/require-login";
 import { RequireScopes } from "@/components/require-scopes";
+import { NUTRITION_READONLY } from "@/config/google-health-scopes";
 
 export default function MealSettingsPage({
   children,
@@ -16,7 +17,7 @@ export default function MealSettingsPage({
 
   return (
     <RequireLogin>
-      <RequireScopes scopes={["nut"]}>
+      <RequireScopes scopes={[NUTRITION_READONLY]}>
         <div className="mb-4">
           <Button
             onClick={() => {

@@ -9,6 +9,7 @@ import { useConfirm } from "material-ui-confirm";
 import { Delete } from "@mui/icons-material";
 
 import { RequireScopes } from "@/components/require-scopes";
+import { LOCATION_READONLY } from "@/config/google-health-scopes";
 import { ResponsiveDialog } from "@/components/dialogs/responsive-dialog";
 import { DateFormats } from "@/utils/date-formats";
 import {
@@ -40,7 +41,7 @@ export function ActivityLogDetailsDialog({
   const exercise = getExerciseFromDataPoint(dataPoint);
 
   const { mutateAsync: deleteActivity } = useMutation(
-    buildDeleteExerciseMutation(queryClient)
+    buildDeleteExerciseMutation(queryClient),
   );
   const confirm = useConfirm();
 
@@ -51,7 +52,7 @@ export function ActivityLogDetailsDialog({
     const { confirmed } = await confirm({
       title: "Delete activity log?",
       description: `Delete ${activityName} activity log at ${DateFormats.formatShortDateTime(
-        dayjs(startTime)
+        dayjs(startTime),
       )}? This cannot be undone.`,
       confirmationText: "Delete",
       confirmationButtonProps: { color: "warning" },
@@ -79,7 +80,7 @@ export function ActivityLogDetailsDialog({
       title={
         dataPoint
           ? `${activityName} on ${DateFormats.formatShortDateTime(
-              dayjs(startTime)
+              dayjs(startTime),
             )}`
           : ""
       }
@@ -88,7 +89,7 @@ export function ActivityLogDetailsDialog({
       onClose={onClose}
     >
       <DialogContent className="p-0 flex-1 flex flex-col">
-        <RequireScopes scopes={["loc"]}>
+        <RequireScopes scopes={[LOCATION_READONLY]}>
           <ActivityDetails dataPoint={dataPoint} />
         </RequireScopes>
       </DialogContent>

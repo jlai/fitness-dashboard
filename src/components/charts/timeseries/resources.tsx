@@ -1,6 +1,7 @@
-import { pick } from "es-toolkit";
+import { pick, uniq } from "es-toolkit";
 
 import { TIME_SERIES_CONFIGS } from "@/api/times-series";
+import type { GoogleHealthScope } from "@/config/google-health-scopes";
 
 import {
   BmiChart,
@@ -31,7 +32,7 @@ import { CardioFitnessChart } from "./advanced/cardio-fitness";
 export interface ChartResourceConfig {
   label: string;
   component: React.ComponentType<object>;
-  requiredScopes: Array<string>;
+  requiredScopes: Array<GoogleHealthScope>;
   maxDays: number;
   supportsIntraday?: boolean;
 }
@@ -114,7 +115,10 @@ export const CHART_RESOURCE_CONFIGS: Record<string, ChartResourceConfig> = {
   "calorie-balance": {
     label: "Calories in vs out",
     component: CalorieBalanceChart,
-    requiredScopes: ["act", "nut"],
+    requiredScopes: uniq([
+      ...TIME_SERIES_CONFIGS.calories.requiredScopes,
+      ...TIME_SERIES_CONFIGS["calories-in"].requiredScopes,
+    ]),
     maxDays: 1095,
   },
   "breathing-rate": {

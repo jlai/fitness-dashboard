@@ -20,6 +20,7 @@ import dayjs from "dayjs";
 
 import { hasTokenScope, useGoogleLoginAndAuthorization } from "@/api/auth";
 import { PRIVACY_POLICY_LINK, WEBSITE_NAME } from "@/config";
+import { SETTINGS_READONLY } from "@/config/google-health-scopes";
 import { allUnitsConfiguredAtom } from "@/storage/settings";
 import { firstLoginDateAtom } from "@/storage/analytics";
 import { formatAsDate } from "@/api/datetime";
@@ -92,7 +93,7 @@ export default function LoginBox() {
           setFirstLoginDate(formatAsDate(dayjs()));
         }
 
-        if (!hasTokenScope("set") && !allUnitsConfigured) {
+        if (!hasTokenScope(SETTINGS_READONLY) && !allUnitsConfigured) {
           router.replace("/settings");
         }
       })

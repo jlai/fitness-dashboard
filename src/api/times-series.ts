@@ -4,6 +4,13 @@ import { groupBy, sumBy } from "es-toolkit";
 
 import { ActiveMinutesRollupByActivityLevelActivityLevel } from "@generated/orval/fetch/google-health-api/models";
 
+import {
+  ACTIVITY_AND_FITNESS_READONLY,
+  HEALTH_METRICS_AND_MEASUREMENTS_READONLY,
+  NUTRITION_READONLY,
+  SLEEP_READONLY,
+  type GoogleHealthScope,
+} from "@/config/google-health-scopes";
 import { isAfterToday } from "@/utils/date-utils";
 
 import type {
@@ -79,7 +86,7 @@ export interface HeartTimeSeriesValue {
 
 interface TimeSeriesResourceConfig {
   dataType: DataType | DailyRollupDataType;
-  requiredScopes: Array<string>;
+  requiredScopes: Array<GoogleHealthScope>;
   maxDays: number;
   noFuture?: boolean;
   mergeByDate?: "sum";
@@ -92,14 +99,14 @@ export const TIME_SERIES_CONFIGS: Record<
 > = {
   calories: {
     dataType: "total-calories",
-    requiredScopes: ["act"],
+    requiredScopes: [ACTIVITY_AND_FITNESS_READONLY],
     maxDays: 1095,
     mapValue: (dataPoint: DailyRollupDataPointFor<"total-calories">) =>
       String(getDailyRollupValue("total-calories", dataPoint).kcalSum ?? 0),
   },
   distance: {
     dataType: "distance",
-    requiredScopes: ["act"],
+    requiredScopes: [ACTIVITY_AND_FITNESS_READONLY],
     maxDays: 1095,
     mapValue: (dataPoint: DailyRollupDataPointFor<"distance">) =>
       String(
@@ -109,21 +116,21 @@ export const TIME_SERIES_CONFIGS: Record<
   },
   steps: {
     dataType: "steps",
-    requiredScopes: ["act"],
+    requiredScopes: [ACTIVITY_AND_FITNESS_READONLY],
     maxDays: 1095,
     mapValue: (dataPoint: DailyRollupDataPointFor<"steps">) =>
       getDailyRollupValue("steps", dataPoint).countSum ?? "0",
   },
   floors: {
     dataType: "floors",
-    requiredScopes: ["act"],
+    requiredScopes: [ACTIVITY_AND_FITNESS_READONLY],
     maxDays: 1095,
     mapValue: (dataPoint: DailyRollupDataPointFor<"floors">) =>
       getDailyRollupValue("floors", dataPoint).countSum ?? "0",
   },
   weight: {
     dataType: "weight",
-    requiredScopes: ["wei"],
+    requiredScopes: [HEALTH_METRICS_AND_MEASUREMENTS_READONLY],
     maxDays: 1095,
     mapValue: (dataPoint: DailyRollupDataPointFor<"weight">) => {
       const grams = getDailyRollupValue("weight", dataPoint).weightGramsAvg;
@@ -132,7 +139,7 @@ export const TIME_SERIES_CONFIGS: Record<
   },
   fat: {
     dataType: "body-fat",
-    requiredScopes: ["wei"],
+    requiredScopes: [HEALTH_METRICS_AND_MEASUREMENTS_READONLY],
     maxDays: 1095,
     mapValue: (dataPoint: DailyRollupDataPointFor<"body-fat">) =>
       String(
@@ -141,14 +148,14 @@ export const TIME_SERIES_CONFIGS: Record<
   },
   bmi: {
     dataType: "weight",
-    requiredScopes: ["wei"],
+    requiredScopes: [HEALTH_METRICS_AND_MEASUREMENTS_READONLY],
     maxDays: 1095,
     mapValue: (dataPoint: DailyRollupDataPointFor<"weight">) =>
       getDailyRollupValue("weight", dataPoint).weightGramsAvg ?? 0,
   },
   ["calories-in"]: {
     dataType: "nutrition-log",
-    requiredScopes: ["nut"],
+    requiredScopes: [NUTRITION_READONLY],
     maxDays: 1095,
     mapValue: (dataPoint: DailyRollupDataPointFor<"nutrition-log">) =>
       String(
@@ -157,7 +164,7 @@ export const TIME_SERIES_CONFIGS: Record<
   },
   water: {
     dataType: "hydration-log",
-    requiredScopes: ["nut"],
+    requiredScopes: [NUTRITION_READONLY],
     maxDays: 1095,
     mapValue: (dataPoint: DailyRollupDataPointFor<"hydration-log">) =>
       String(
@@ -167,7 +174,7 @@ export const TIME_SERIES_CONFIGS: Record<
   },
   heart: {
     dataType: "daily-resting-heart-rate",
-    requiredScopes: ["hr"],
+    requiredScopes: [HEALTH_METRICS_AND_MEASUREMENTS_READONLY],
     maxDays: 366,
     mapValue: (
       dataPoint: DataPointFor<"daily-resting-heart-rate">,
@@ -185,7 +192,7 @@ export const TIME_SERIES_CONFIGS: Record<
   },
   hrv: {
     dataType: "daily-heart-rate-variability",
-    requiredScopes: ["hr"],
+    requiredScopes: [HEALTH_METRICS_AND_MEASUREMENTS_READONLY],
     maxDays: 31,
     mapValue: (dataPoint: DataPointFor<"daily-heart-rate-variability">) => {
       const value = getDataPointValue(
@@ -201,7 +208,7 @@ export const TIME_SERIES_CONFIGS: Record<
   },
   ["active-minutes"]: {
     dataType: "active-minutes",
-    requiredScopes: ["act"],
+    requiredScopes: [ACTIVITY_AND_FITNESS_READONLY],
     maxDays: 1095,
     mapValue: (
       dataPoint: DailyRollupDataPointFor<"active-minutes">,
@@ -237,7 +244,7 @@ export const TIME_SERIES_CONFIGS: Record<
   },
   ["active-zone-minutes"]: {
     dataType: "active-zone-minutes",
-    requiredScopes: ["act"],
+    requiredScopes: [ACTIVITY_AND_FITNESS_READONLY],
     maxDays: Infinity,
     mapValue: (
       dataPoint: DailyRollupDataPointFor<"active-zone-minutes">,
@@ -259,7 +266,7 @@ export const TIME_SERIES_CONFIGS: Record<
   },
   sleep: {
     dataType: "sleep",
-    requiredScopes: ["sle"],
+    requiredScopes: [SLEEP_READONLY],
     maxDays: 100,
     mergeByDate: "sum",
     mapValue: (dataPoint: DataPointFor<"sleep">) =>
@@ -267,7 +274,7 @@ export const TIME_SERIES_CONFIGS: Record<
   },
   ["breathing-rate"]: {
     dataType: "daily-respiratory-rate",
-    requiredScopes: ["res"],
+    requiredScopes: [HEALTH_METRICS_AND_MEASUREMENTS_READONLY],
     maxDays: 31,
     mapValue: (dataPoint: DataPointFor<"daily-respiratory-rate">) => ({
       breathingRate:
@@ -277,7 +284,7 @@ export const TIME_SERIES_CONFIGS: Record<
   },
   ["spo2"]: {
     dataType: "daily-oxygen-saturation",
-    requiredScopes: ["oxy"],
+    requiredScopes: [HEALTH_METRICS_AND_MEASUREMENTS_READONLY],
     maxDays: Infinity,
     mapValue: (dataPoint: DataPointFor<"daily-oxygen-saturation">) => {
       const value = getDataPointValue("daily-oxygen-saturation", dataPoint);
@@ -290,7 +297,7 @@ export const TIME_SERIES_CONFIGS: Record<
   },
   ["cardio-score"]: {
     dataType: "daily-vo2-max",
-    requiredScopes: ["cf"],
+    requiredScopes: [ACTIVITY_AND_FITNESS_READONLY],
     maxDays: 31,
     noFuture: true,
     mapValue: (dataPoint: DataPointFor<"daily-vo2-max">) => ({
@@ -299,7 +306,7 @@ export const TIME_SERIES_CONFIGS: Record<
   },
   ["skin-temperature"]: {
     dataType: "daily-sleep-temperature-derivations",
-    requiredScopes: ["tem"],
+    requiredScopes: [HEALTH_METRICS_AND_MEASUREMENTS_READONLY],
     maxDays: 31,
     mapValue: (
       dataPoint: DataPointFor<"daily-sleep-temperature-derivations">,

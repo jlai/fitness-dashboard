@@ -8,7 +8,7 @@ import { useGoogleLogin, useGoogleOAuth } from "@react-oauth/google";
 
 import { singleAsync } from "@/utils/async";
 import { GOOGLE_OAUTH_CLIENT_ID } from "@/config";
-import { REQUESTED_SCOPES, toScopeKeys } from "@/config/google-health-scopes";
+import { REQUESTED_SCOPES } from "@/config/google-health-scopes";
 
 import { loadGoogleOAuth2 } from "./google-identity";
 
@@ -301,15 +301,13 @@ export const syncAuthTokenEffect = atomEffect((get, set) => {
   };
 });
 
-/**
- * Get scopes granted for the current access token. Note that these use the
- * dashboard's short scope names such as 'act' rather than the full Google
- * Health scope URLs.
- */
+/** Get the full Google Health scope URLs granted for the current access token. */
 export function getAccessTokenScopes() {
   const token = getTokenFromStorage();
 
-  return toScopeKeys(token?.scope?.split(" ") ?? []);
+  return new Set(
+    (token?.scope?.split(" ") ?? []).filter((scope) => scope.length > 0),
+  );
 }
 
 export function getMissingScopes(requiredScopes: Array<string>) {

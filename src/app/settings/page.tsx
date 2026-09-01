@@ -79,7 +79,12 @@ import {
 import { NutritionalValues } from "@/api/nutrition/types";
 import { PATTERN_TO_LOCALE } from "@/utils/number-formats";
 import { getScopeNameList } from "@/config/scopes";
-import { kilometersFromDistanceGoal, millilitersFromWaterGoal, useUnits } from "@/config/units";
+import { PROFILE_READONLY } from "@/config/google-health-scopes";
+import {
+  kilometersFromDistanceGoal,
+  millilitersFromWaterGoal,
+  useUnits,
+} from "@/config/units";
 
 function SettingsRow({
   title,
@@ -113,7 +118,7 @@ function LoginInfo() {
   const encodedId = useAtomValue(userIdAtom);
   const { data: userProfile } = useQuery({
     ...buildUserProfileQuery(),
-    enabled: hasTokenScope("pro"),
+    enabled: hasTokenScope(PROFILE_READONLY),
   });
 
   return userProfile ? (
@@ -435,8 +440,9 @@ function ActivityGoalsSettings() {
   const [activeZoneMinutesGoal, setActiveZoneMinutesGoal] = useAtom(
     activeZoneMinutesGoalAtom,
   );
-  const [weeklyActiveZoneMinutesGoal, setWeeklyActiveZoneMinutesGoal] =
-    useAtom(weeklyActiveZoneMinutesGoalAtom);
+  const [weeklyActiveZoneMinutesGoal, setWeeklyActiveZoneMinutesGoal] = useAtom(
+    weeklyActiveZoneMinutesGoalAtom,
+  );
   const [waterGoal, setWaterGoal] = useAtom(waterGoalAtom);
   const [weeklyWaterGoal, setWeeklyWaterGoal] = useAtom(weeklyWaterGoalAtom);
 
@@ -462,8 +468,9 @@ function ActivityGoalsSettings() {
   return (
     <>
       <SettingsRow title="Goals">
-        Set goals displayed on the dashboard. This does NOT affect your Fitbit account or app.
-        The Google Health API currently does not allow us to get goals from your account, so you have to set them here.
+        Set goals displayed on the dashboard. This does NOT affect your Fitbit
+        account or app. The Google Health API currently does not allow us to get
+        goals from your account, so you have to set them here.
       </SettingsRow>
       <SettingsRow
         title="Daily steps"
@@ -476,7 +483,9 @@ function ActivityGoalsSettings() {
             }
             slotProps={{
               input: {
-                endAdornment: <InputAdornment position="end">steps</InputAdornment>,
+                endAdornment: (
+                  <InputAdornment position="end">steps</InputAdornment>
+                ),
               },
             }}
           />
@@ -493,7 +502,9 @@ function ActivityGoalsSettings() {
             }
             slotProps={{
               input: {
-                endAdornment: <InputAdornment position="end">steps</InputAdornment>,
+                endAdornment: (
+                  <InputAdornment position="end">steps</InputAdornment>
+                ),
               },
             }}
           />
@@ -542,10 +553,7 @@ function ActivityGoalsSettings() {
         action={
           <TextField
             value={localizedKilometers(
-              kilometersFromDistanceGoal(
-                distanceGoal.value,
-                distanceGoal.unit,
-              ),
+              kilometersFromDistanceGoal(distanceGoal.value, distanceGoal.unit),
             )}
             type="number"
             onChange={(event) => {
@@ -606,7 +614,9 @@ function ActivityGoalsSettings() {
             }
             slotProps={{
               input: {
-                endAdornment: <InputAdornment position="end">Cal</InputAdornment>,
+                endAdornment: (
+                  <InputAdornment position="end">Cal</InputAdornment>
+                ),
               },
             }}
           />
@@ -623,7 +633,9 @@ function ActivityGoalsSettings() {
             }
             slotProps={{
               input: {
-                endAdornment: <InputAdornment position="end">Cal</InputAdornment>,
+                endAdornment: (
+                  <InputAdornment position="end">Cal</InputAdornment>
+                ),
               },
             }}
           />
@@ -640,7 +652,9 @@ function ActivityGoalsSettings() {
             }
             slotProps={{
               input: {
-                endAdornment: <InputAdornment position="end">mins</InputAdornment>,
+                endAdornment: (
+                  <InputAdornment position="end">mins</InputAdornment>
+                ),
               },
             }}
           />
@@ -657,7 +671,9 @@ function ActivityGoalsSettings() {
             }
             slotProps={{
               input: {
-                endAdornment: <InputAdornment position="end">mins</InputAdornment>,
+                endAdornment: (
+                  <InputAdornment position="end">mins</InputAdornment>
+                ),
               },
             }}
           />
@@ -674,7 +690,9 @@ function ActivityGoalsSettings() {
             }
             slotProps={{
               input: {
-                endAdornment: <InputAdornment position="end">mins</InputAdornment>,
+                endAdornment: (
+                  <InputAdornment position="end">mins</InputAdornment>
+                ),
               },
             }}
           />
@@ -691,7 +709,9 @@ function ActivityGoalsSettings() {
             }
             slotProps={{
               input: {
-                endAdornment: <InputAdornment position="end">mins</InputAdornment>,
+                endAdornment: (
+                  <InputAdornment position="end">mins</InputAdornment>
+                ),
               },
             }}
           />

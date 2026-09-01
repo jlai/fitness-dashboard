@@ -27,6 +27,7 @@ import {
   WeightUnitSystem,
 } from "@/api/user";
 import { hasTokenScope } from "@/api/auth";
+import { SETTINGS_READONLY } from "@/config/google-health-scopes";
 
 export const MILES_PER_KM = 0.621371;
 const FEET_PER_METER = 3.28084;
@@ -192,7 +193,7 @@ export function useUnits() {
         !waterUnitSystem ||
         !temperatureUnitSystem
       ) {
-        if (!hasTokenScope("set")) {
+        if (!hasTokenScope(SETTINGS_READONLY)) {
           return {
             distanceUnitSystem:
               distanceUnitSystem ?? DEFAULT_UNITS.distanceUnitSystem,

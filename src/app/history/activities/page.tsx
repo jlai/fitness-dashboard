@@ -10,6 +10,7 @@ import { FlexSpacer } from "@/components/layout/flex";
 import CreateActivityLogDialog, {
   createActivityLogDialogOpenAtom,
 } from "@/components/logging/create-activity-log";
+import { ACTIVITY_AND_FITNESS_READONLY } from "@/config/google-health-scopes";
 
 import { ActivityLogDetailsHashLoader } from "./details";
 import ActivityLogList from "./activity-log-list";
@@ -20,7 +21,9 @@ export default function ActivityHistoryPage() {
   );
 
   return (
-    <RequireScopes scopes={["act"]}>
+    <RequireScopes
+      scopes={[ACTIVITY_AND_FITNESS_READONLY]}
+    >
       <HeaderBar>
         <Typography variant="h5">Activity logs</Typography>
         <FlexSpacer />
