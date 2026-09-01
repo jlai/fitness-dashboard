@@ -1,23 +1,19 @@
 import { test as base, Page } from "@playwright/test";
 
-import { Device } from "@/api/devices";
+import { PairedDevice } from "@/api/devices";
+
+const PAIRED_DEVICES_URL = "**/v4/users/*/pairedDevices**";
 
 export class DevicesApi {
   constructor(private readonly page: Page) {}
 
   async setupDefaults() {
-    const page = this.page;
-
-    await page.route("**/1/user/-/devices.json", async (route) => {
-      await route.fulfill({
-        json: [],
-      });
-    });
+    await this.setDevicesResponse([]);
   }
 
-  async setDevicesResponse(response: Readonly<Device[]>, date = "*") {
-    await this.page.route(`**/1/user/-/devices.json`, async (route) => {
-      await route.fulfill({ json: response });
+  async setDevicesResponse(pairedDevices: Readonly<PairedDevice[]>) {
+    await this.page.route(PAIRED_DEVICES_URL, async (route) => {
+      await route.fulfill({ json: { pairedDevices } });
     });
   }
 }

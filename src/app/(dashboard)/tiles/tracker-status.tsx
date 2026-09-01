@@ -26,7 +26,12 @@ import dayjs from "dayjs";
 import { useId } from "react";
 
 import { NumberFormats } from "@/utils/number-formats";
-import { buildGetDevicesQuery, Device } from "@/api/devices";
+import {
+  buildGetDevicesQuery,
+  getPairedDeviceId,
+  PairedDevice,
+  PairedDeviceDeviceType,
+} from "@/api/devices";
 import { DateFormats } from "@/utils/date-formats";
 import { FormRow } from "@/components/forms/form-row";
 
@@ -42,13 +47,14 @@ interface ResolveDeviceOptions {
 }
 
 export function resolveDevice(
-  devices: Device[],
+  devices: PairedDevice[],
   { deviceId }: ResolveDeviceOptions = {},
 ) {
   const sortedDevices = sortBy(devices, ["lastSyncTime"]).toReversed();
 
   let tracker =
-    deviceId && sortedDevices.find((device) => device.id === deviceId);
+    deviceId &&
+    sortedDevices.find((device) => getPairedDeviceId(device) === deviceId);
 
   if (tracker) {
     return tracker;
@@ -56,7 +62,8 @@ export function resolveDevice(
 
   tracker = sortedDevices.find(
     (device) =>
-      device.type === "TRACKER" && device.deviceVersion !== "MobileTrack",
+      device.deviceType === PairedDeviceDeviceType.TRACKER &&
+      device.deviceVersion !== "MobileTrack",
   );
 
   if (!tracker || !tracker.lastSyncTime) {
@@ -75,7 +82,10 @@ export function TrackerStatusTileContent() {
   const tracker = resolveDevice(devices, { deviceId: settings.deviceId });
 
   const today = dayjs();
-  const lastSync = tracker && dayjs(tracker.lastSyncTime);
+  const lastSync = tracker?.lastSyncTime && dayjs(tracker.lastSyncTime);
+  const batteryLevel = tracker?.batteryLevel;
+  const showBattery =
+    tracker?.deviceVersion !== "MobileTrack" && batteryLevel != null;
 
   return (
     <TileWithDialog dialogComponent={TrackerStatusTileDialogContent}>
@@ -88,12 +98,11 @@ export function TrackerStatusTileContent() {
       >
         {lastSync && (
           <>
-            {tracker && tracker.deviceVersion !== "MobileTrack" && (
+            {showBattery && (
               <Stack direction="row" alignItems="center" columnGap={1}>
-                <BatteryIcon level={tracker.batteryLevel} />
+                <BatteryIcon level={batteryLevel} />
                 <Typography>
-                  {NumberFormats.FRACTION_DIGITS_0.format(tracker.batteryLevel)}
-                  %
+                  {NumberFormats.FRACTION_DIGITS_0.format(batteryLevel)}%
                 </Typography>
               </Stack>
             )}
@@ -131,12 +140,16 @@ function BatteryIcon({ level }: { level: number }) {
   }
 }
 
-function formatOptionDetails(device: Device) {
-  const parts = [
-    `Last sync: ${DateFormats.formatShortDate(dayjs(device.lastSyncTime))}`,
-  ];
+function formatOptionDetails(device: PairedDevice) {
+  const parts: string[] = [];
 
-  if (device.deviceVersion !== "MobileTrack") {
+  if (device.lastSyncTime) {
+    parts.push(
+      `Last sync: ${DateFormats.formatShortDate(dayjs(device.lastSyncTime))}`,
+    );
+  }
+
+  if (device.deviceVersion !== "MobileTrack" && device.batteryLevel != null) {
     parts.push(`${device.batteryLevel}%`);
   }
 
@@ -172,9 +185,15 @@ function TrackerStatusTileDialogContent({
             >
               <MenuItem value="">Most recent</MenuItem>
               {devices
-                .filter((device) => device.type === "TRACKER")
+                .filter(
+                  (device) =>
+                    device.deviceType === PairedDeviceDeviceType.TRACKER,
+                )
                 .map((device) => (
-                  <MenuItem key={device.id} value={device.id}>
+                  <MenuItem
+                    key={device.name ?? getPairedDeviceId(device)}
+                    value={getPairedDeviceId(device)}
+                  >
                     <ListItemText
                       primary={device.deviceVersion}
                       secondary={formatOptionDetails(device)}

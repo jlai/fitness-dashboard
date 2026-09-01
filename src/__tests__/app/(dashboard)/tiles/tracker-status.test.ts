@@ -1,5 +1,10 @@
+import { getPairedDeviceId } from "@/api/devices";
 import { resolveDevice } from "@/app/(dashboard)/tiles/tracker-status";
-import { TRACKER_DEVICE, MOBILE_TRACK_DEVICE } from "@/e2e/data/devices";
+import {
+  MOBILE_TRACK_DEVICE,
+  TRACKER_DEVICE,
+  TRACKER_DEVICE_2,
+} from "@/e2e/data/devices";
 
 describe("resolveDevice", () => {
   it("resolves tracker", () => {
@@ -13,5 +18,12 @@ describe("resolveDevice", () => {
 
     const device = resolveDevice([tracker1, tracker2]);
     expect(device).toBe(tracker2);
+  });
+
+  it("resolves a specific paired device by id", () => {
+    const device = resolveDevice([TRACKER_DEVICE, TRACKER_DEVICE_2], {
+      deviceId: getPairedDeviceId(TRACKER_DEVICE_2),
+    });
+    expect(device).toBe(TRACKER_DEVICE_2);
   });
 });
