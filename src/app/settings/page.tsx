@@ -46,7 +46,6 @@ import {
 } from "@/api/user";
 import {
   distanceUnitAtom,
-  enableAdvancedScopesAtom,
   foodLogShowCopyIndividualButtonAtom,
   useNutritionGoalsForLabelAtom,
   showNutritionLabelAtom,
@@ -1010,9 +1009,6 @@ function LanguageSettings() {
 function AdvancedSettings() {
   const confirm = useConfirm();
   const setUserTiles = useSetAtom(userTilesAtom);
-  const [enableAdvancedScopes, setEnableAdvancedScopes] = useAtom(
-    enableAdvancedScopesAtom,
-  );
   const [increasedTileLimits, setIncreasedTileLimits] = useAtom(
     increasedTileLimitsAtom,
   );
@@ -1030,18 +1026,6 @@ function AdvancedSettings() {
   return (
     <>
       <SettingsRow title="Advanced settings"></SettingsRow>
-      <SettingsRow
-        title="Show advanced body metrics"
-        action={
-          <Switch
-            checked={enableAdvancedScopes}
-            onChange={(_event, checked) => setEnableAdvancedScopes(checked)}
-          />
-        }
-      >
-        Enable graphs for breathing rate, skin temperature, VO2 Max. This
-        requires granting additional permissions.
-      </SettingsRow>
       <SettingsRow
         title="Ignore tile limit"
         action={

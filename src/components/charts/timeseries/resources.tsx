@@ -170,9 +170,7 @@ export const CHART_RESOURCE_MENU_ITEMS: Array<ChartResource | "-"> = [
   "calorie-balance",
   "calories-in",
   "water",
-];
-
-export const ADVANCED_CHART_RESOURCE_MENU_ITEMS: Array<ChartResource | "-"> = [
+  "-",
   "breathing-rate",
   "spo2",
   "skin-temperature",

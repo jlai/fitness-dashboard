@@ -351,15 +351,6 @@ export const mapStyleAtom = atomWithStorage<string>(
   },
 );
 
-export const enableAdvancedScopesAtom = atomWithStorage<boolean>(
-  "auth:advanced-scopes",
-  false,
-  undefined,
-  {
-    getOnInit: true,
-  },
-);
-
 export const increasedTileLimitsAtom = atomWithStorage<boolean>(
   "dashboard:increased-tile-limits",
   false,
