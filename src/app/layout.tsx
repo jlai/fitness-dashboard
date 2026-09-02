@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { Roboto, Poppins } from "next/font/google";
+import { headers } from "next/headers";
 import { HydrationProvider } from "react-hydration-provider";
 import { Container } from "@mui/material";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v16-appRouter";
 import { Suspense } from "react";
 
-import { CONTENT_SECURITY_POLICY } from "@/config/content-security-policy";
 import { ErrorBoundary } from "@/components/error";
 import { ClientSideSetup } from "./client-setup-wrapper";
 
@@ -20,21 +20,19 @@ export const metadata: Metadata = {
   description: "Dashboard for Fitbit data",
 };
 
-export default function RootPageLayout({
+export default async function RootPageLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+
   return (
     <html lang="en">
-      <meta
-        httpEquiv="Content-Security-Policy"
-        content={CONTENT_SECURITY_POLICY}
-      />
       <body className={`${roboto.className}`}>
         <HydrationProvider>
-          <AppRouterCacheProvider options={{ key: "css" }}>
-            <ClientSideSetup>
+          <AppRouterCacheProvider options={{ key: "css", nonce }}>
+            <ClientSideSetup nonce={nonce}>
               <Header />
               <main>
                 <ErrorBoundary>

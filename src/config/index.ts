@@ -77,7 +77,7 @@ export const SURVEY_DATE_RANGE = ((value: string | undefined) => {
 /** URL to send anonymous analytics */
 export const ANALYTICS_PING_URL = process.env.NEXT_PUBLIC_ANALYTICS_PING_URL;
 
-/** Extra content security script-src */
+/** Extra content security script-src URLs (space-separated) */
 export const EXTRA_CSP_SCRIPT_SRC =
   process.env.NEXT_PUBLIC_CSP_EXTRA_SCRIPT_SRC;
 

@@ -58,17 +58,25 @@ function Setup({ children }: { children: React.ReactNode }) {
 
 export default function ClientSideSetup({
   children,
+  nonce,
 }: {
   children: React.ReactNode;
+  nonce?: string;
 }) {
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
   const theme = useMemo(
     () => buildTheme(prefersDarkMode ? "dark" : "light"),
     [prefersDarkMode],
   );
+  // Keep the document nonce from the first paint. Client navigations can
+  // receive a new x-nonce on RSC requests, but the document CSP does not change.
+  const documentNonce = React.useRef(nonce).current;
 
   return (
-    <GoogleOAuthProvider clientId={GOOGLE_OAUTH_CLIENT_ID}>
+    <GoogleOAuthProvider
+      clientId={GOOGLE_OAUTH_CLIENT_ID}
+      nonce={documentNonce}
+    >
       <ThemeProvider theme={theme}>
         <JotaiProvider>
           <LocalizationProvider dateAdapter={AdapterDayjs}>
