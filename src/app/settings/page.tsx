@@ -1,8 +1,9 @@
 "use client";
 
-import React, { Suspense, useCallback } from "react";
+import React, { useCallback } from "react";
 import {
   Button,
+  Chip,
   Container,
   InputAdornment,
   MenuItem,
@@ -17,22 +18,21 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { useAtom, useAtomValue, useSetAtom } from "jotai";
+import { useAtom, useSetAtom } from "jotai";
 import { RESET } from "jotai/utils";
 import { useConfirm } from "material-ui-confirm";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 
 import { userTilesAtom } from "@/storage/tiles";
 import {
   getAccessTokenScopes,
-  hasTokenScope,
+  logout,
   revokeAuthorization,
   useLoggedIn,
   useGoogleLoginAndAuthorization,
-  userIdAtom,
 } from "@/api/auth";
 import {
-  buildUserProfileQuery,
   DistanceUnitSystem,
   SettingsDistanceUnit,
   SettingsSwimUnit,
@@ -78,8 +78,7 @@ import {
 } from "@/storage/settings";
 import { NutritionalValues } from "@/api/nutrition/types";
 import { PATTERN_TO_LOCALE } from "@/utils/number-formats";
-import { getScopeNameList } from "@/config/scopes";
-import { PROFILE_READONLY } from "@/config/google-health-scopes";
+import { getScopeName } from "@/config/scopes";
 import {
   kilometersFromDistanceGoal,
   millilitersFromWaterGoal,
@@ -114,34 +113,50 @@ function SettingsRow({
   );
 }
 
-function LoginInfo() {
-  const encodedId = useAtomValue(userIdAtom);
-  const { data: userProfile } = useQuery({
-    ...buildUserProfileQuery(),
-    enabled: hasTokenScope(PROFILE_READONLY),
-  });
+function LoginSettings() {
+  const loggedIn = useLoggedIn();
 
-  return userProfile ? (
-    <>
-      You&apos;re currently logged in as {userProfile.fullName} (session{" "}
-      <code>{encodedId}</code>)
-    </>
-  ) : (
-    encodedId && (
-      <>
-        You&apos;re currently logged in (session <code>{encodedId}</code>)
-      </>
-    )
+  return loggedIn ? <LoggedInAccountSettings /> : <LoggedOutAccountSettings />;
+}
+
+function LoggedOutAccountSettings() {
+  const { loginToGoogleAndAuthorize, ready } = useGoogleLoginAndAuthorization();
+
+  return (
+    <SettingsRow
+      title="Google account"
+      action={
+        <Button onClick={() => loginToGoogleAndAuthorize()} disabled={!ready}>
+          Login
+        </Button>
+      }
+    >
+      You&apos;re not currently logged in.
+    </SettingsRow>
   );
 }
 
-function LoginSettings() {
+function LoggedInAccountSettings() {
   const confirm = useConfirm();
   const queryClient = useQueryClient();
+  const router = useRouter();
   const scopes = getAccessTokenScopes();
-  const { googleLoginAndAuthorization } = useGoogleLoginAndAuthorization({
+  const { loginToGoogleAndAuthorize } = useGoogleLoginAndAuthorization({
     selectAccount: true,
+    includeGrantedScopes: false,
   });
+
+  const handleLogout = () => {
+    confirm({
+      description: "Log out?",
+    }).then(({ confirmed }) => {
+      if (confirmed) {
+        logout();
+        queryClient.clear();
+        router.replace("/");
+      }
+    });
+  };
 
   const switchAccounts = () => {
     confirm({
@@ -149,7 +164,7 @@ function LoginSettings() {
     }).then(({ confirmed }) => {
       if (confirmed) {
         queryClient.clear();
-        googleLoginAndAuthorization();
+        loginToGoogleAndAuthorize();
       }
     });
   };
@@ -157,10 +172,11 @@ function LoginSettings() {
   const unlinkAccount = () => {
     confirm({
       description: "Sign out and unlink this website from your Google account?",
-    }).then(({ confirmed }) => {
+    }).then(async ({ confirmed }) => {
       if (confirmed) {
-        revokeAuthorization();
+        await revokeAuthorization();
         queryClient.clear();
+        router.replace("/");
       }
     });
   };
@@ -169,26 +185,30 @@ function LoginSettings() {
     <>
       <SettingsRow
         title="Google account"
-        action={<Button onClick={switchAccounts}>Logout</Button>}
+        action={<Button onClick={handleLogout}>Logout</Button>}
       >
-        <Suspense fallback={<></>}>
-          <LoginInfo />
-        </Suspense>
+        You&apos;re currently logged in
       </SettingsRow>
       {scopes && scopes.size > 0 && (
         <SettingsRow title="Granted permissions" component="div">
           <div>
-            Types of data that this website is allowed to access from your
-            Google Health account:
+            These are the permissions that this website is allowed to access from your Google Health account.
+            To remove permissions, unlink your account and sign in again.
           </div>
-          <div className="font-mono">{getScopeNameList([...scopes])}</div>
+          <div className="mt-2 flex flex-wrap gap-1">
+            {[...scopes]
+              .sort((a, b) => getScopeName(a).localeCompare(getScopeName(b)))
+              .map((scope) => (
+                <Chip key={scope} label={getScopeName(scope)} size="small" />
+              ))}
+          </div>
         </SettingsRow>
       )}
       <SettingsRow
-        title="Change permissions / switch accounts"
+        title="Switch accounts"
         action={<Button onClick={switchAccounts}>Switch accounts</Button>}
       >
-        Change permissions or sign in with a different account
+        Sign in with a different account
       </SettingsRow>
       <SettingsRow
         title="Unlink Google account"
@@ -198,8 +218,8 @@ function LoginSettings() {
           </Button>
         }
       >
-        Unlink access to Google account from this website (across all browser
-        sessions)
+        Unlink this website from your Google account and remove all permissions.
+        You will need to sign in again to use the website.
       </SettingsRow>
     </>
   );
@@ -1074,10 +1094,11 @@ export default function SettingsPage() {
     process.env.NODE_ENV !== "production" ||
     process.env.NEXT_PUBLIC_ENABLE_DEV_MODE === "true";
 
-  const loggedIn = useLoggedIn();
-
   return (
     <Container maxWidth="lg">
+      <SettingsTable>
+        <LoginSettings />
+      </SettingsTable>
       <SettingsTable>
         <LanguageSettings />
       </SettingsTable>
@@ -1096,11 +1117,6 @@ export default function SettingsPage() {
       <SettingsTable>
         <AdvancedSettings />
       </SettingsTable>
-      {loggedIn && (
-        <SettingsTable>
-          <LoginSettings />
-        </SettingsTable>
-      )}
       {enableDevSettings && (
         <SettingsTable>
           <DeveloperSettings />

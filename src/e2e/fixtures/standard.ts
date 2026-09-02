@@ -8,7 +8,6 @@ const TOKEN_STRING = JSON.stringify({
   accessToken: "FAKE_ACCESS_TOKEN",
   expiresAt: Date.now() + 10 * 365 * 24 * 60 * 60 * 1000,
   scope: REQUESTED_SCOPES.join(" "),
-  userId: "FAKE_USER_ID",
 });
 
 export const test = base.extend({

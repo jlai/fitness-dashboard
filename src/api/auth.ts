@@ -34,11 +34,6 @@ export interface GoogleToken {
   expiresAt?: number;
   /** Space-delimited list of scopes the user actually granted. */
   scope?: string;
-  /**
-   * Stable id for this browser login session. Google's code client does not
-   * return a user id, so we keep one locally across silent refreshes.
-   */
-  userId?: string;
 }
 
 interface TokenEndpointResponse {
@@ -104,7 +99,6 @@ function tokenFromResponse(
       ? Date.now() + expiresInSeconds * 1000
       : undefined,
     scope: response.scope ?? previous?.scope,
-    userId: previous?.userId ?? crypto.randomUUID(),
   };
 }
 
@@ -114,10 +108,16 @@ function tokenFromResponse(
  */
 export function useGoogleLoginAndAuthorization({
   selectAccount = false,
+  includeGrantedScopes = true,
   additionalScopes = [],
 }: {
   /** Also prompt the user to pick which Google account to use. */
   selectAccount?: boolean;
+  /**
+   * When false, the new token covers only the scopes requested in this
+   * authorization (Google default is true / incremental auth).
+   */
+  includeGrantedScopes?: boolean;
   /** Extra scopes to request in addition to {@link REQUESTED_SCOPES}. */
   additionalScopes?: Array<string>;
 } = {}) {
@@ -161,6 +161,7 @@ export function useGoogleLoginAndAuthorization({
     ...AUTH_CODE_LOGIN_OPTIONS,
     scope: [...new Set([...REQUESTED_SCOPES, ...additionalScopes])].join(" "),
     select_account: selectAccount,
+    include_granted_scopes: includeGrantedScopes,
     redirect_uri:
       typeof window !== "undefined" ? window.location.origin : undefined,
     onSuccess: (codeResponse) => {
@@ -180,14 +181,14 @@ export function useGoogleLoginAndAuthorization({
     },
   });
 
-  const googleLoginAndAuthorization = useCallback(() => {
+  const loginToGoogleAndAuthorize = useCallback(() => {
     return new Promise<void>((resolve, reject) => {
       pendingRef.current = { resolve, reject };
       login();
     });
-  }, [login]);
+  }, [login, includeGrantedScopes, selectAccount]);
 
-  return { googleLoginAndAuthorization, ready: scriptLoadedSuccessfully };
+  return { loginToGoogleAndAuthorize, ready: scriptLoadedSuccessfully };
 }
 
 export async function logout() {
@@ -276,7 +277,7 @@ export const getFreshAccessToken = singleAsync(async () => {
 
 /**
  * This is a copy of the Google token wrapped in an atom, which allows us to
- * observe changes such as getting logged out, userId changes, etc.
+ * observe changes such as getting logged out.
  */
 const googleTokenAtom = atom<GoogleToken | null>(getTokenFromStorage());
 
@@ -332,18 +333,6 @@ export function useMissingScopes(requiredScopes: Array<string> = []) {
 export function hasTokenScope(scope: string) {
   return getAccessTokenScopes().has(scope);
 }
-
-export const rawUserIdAtom = atom((get) => get(googleTokenAtom)?.userId);
-
-export const userIdAtom = atom((get) => {
-  const userId = get(rawUserIdAtom);
-
-  if (!userId) {
-    throw new Error("no token available");
-  }
-
-  return userId;
-});
 
 export function useLoggedIn() {
   const token = useAtomValue(googleTokenAtom);

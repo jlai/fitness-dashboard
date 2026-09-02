@@ -40,7 +40,7 @@ export function MissingScopesAlert({
   message?: string;
 }) {
   const missingScopes = useMissingScopes(requiredScopes);
-  const { googleLoginAndAuthorization } = useGoogleLoginAndAuthorization({
+  const { loginToGoogleAndAuthorize } = useGoogleLoginAndAuthorization({
     additionalScopes: missingScopes,
   });
   const disabled = missingScopes.length > 0;
@@ -55,7 +55,7 @@ export function MissingScopesAlert({
             <Button
               type="button"
               size="small"
-              onClick={() => googleLoginAndAuthorization()}
+              onClick={() => loginToGoogleAndAuthorize()}
             >
               Update permissions
             </Button>
@@ -86,7 +86,7 @@ function CompactMissingScopes({
   scopes: Array<string>;
 }) {
   const confirm = useConfirm();
-  const { googleLoginAndAuthorization } = useGoogleLoginAndAuthorization({
+  const { loginToGoogleAndAuthorize } = useGoogleLoginAndAuthorization({
     additionalScopes: scopes,
   });
 
@@ -102,7 +102,7 @@ function CompactMissingScopes({
       ),
     }).then(({ confirmed }) => {
       if (confirmed) {
-        googleLoginAndAuthorization();
+        loginToGoogleAndAuthorize();
       }
     });
   };
@@ -129,7 +129,7 @@ function MissingScopes({
   name?: string;
   scopes: Array<string>;
 }) {
-  const { googleLoginAndAuthorization } = useGoogleLoginAndAuthorization({
+  const { loginToGoogleAndAuthorize } = useGoogleLoginAndAuthorization({
     additionalScopes: scopes,
   });
 
@@ -139,7 +139,7 @@ function MissingScopes({
         {name ?? "This page"} requires additional permissions from your Google
         account: {scopes.map((scope) => getScopeName(scope)).join(", ")}
       </Typography>
-      <Button onClick={() => googleLoginAndAuthorization()}>
+      <Button onClick={() => loginToGoogleAndAuthorize()}>
         Update permissions
       </Button>
     </div>

@@ -12,7 +12,6 @@ import {
   healthUsersGetSettings,
 } from "@generated/orval/fetch/google-health-api/users/users";
 
-import { makeRequest } from "./request";
 import { ONE_DAY_IN_MILLIS } from "./cache-settings";
 
 export {
@@ -121,35 +120,6 @@ export function parseWeightUnit(value: unknown): WeightUnitSystem | undefined {
     default:
       return undefined;
   }
-}
-
-// https://dev.fitbit.com/build/reference/web-api/user/get-profile/
-interface GetUserProfileResponse {
-  user: {
-    fullName: string;
-    avatar: string;
-    avatar150: string;
-    avatar650: string;
-
-    distanceUnit: "en_US" | "METRIC";
-    swimUnit: "en_US" | "METRIC";
-    temperatureUnit: "en_US" | "METRIC";
-    waterUnit: "en_US" | "METRIC";
-    waterUnitName: string;
-    weightUnit: "en_US" | "en_GB" | "METRIC";
-  };
-}
-
-export function buildUserProfileQuery() {
-  return queryOptions({
-    queryKey: ["user-profile"],
-    queryFn: async () => {
-      const response = await makeRequest(`/1/user/-/profile.json`);
-
-      return ((await response.json()) as GetUserProfileResponse).user;
-    },
-    staleTime: ONE_DAY_IN_MILLIS,
-  });
 }
 
 export function buildUserSettingsQuery() {

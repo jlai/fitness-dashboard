@@ -83,11 +83,11 @@ export default function LoginBox() {
   const router = useRouter();
   const allUnitsConfigured = useAtomValue(allUnitsConfiguredAtom);
   const [firstLoginDate, setFirstLoginDate] = useAtom(firstLoginDateAtom);
-  const { googleLoginAndAuthorization, ready } =
+  const { loginToGoogleAndAuthorize, ready } =
     useGoogleLoginAndAuthorization();
 
   const login = useCallback(() => {
-    googleLoginAndAuthorization()
+    loginToGoogleAndAuthorize()
       .then(() => {
         if (!firstLoginDate) {
           setFirstLoginDate(formatAsDate(dayjs()));
@@ -98,12 +98,12 @@ export default function LoginBox() {
         }
       })
       .catch(() => {
-        // googleLoginAndAuthorization already toasts on failure
+        // loginToGoogleAndAuthorize already toasts on failure
       });
   }, [
     allUnitsConfigured,
     firstLoginDate,
-    googleLoginAndAuthorization,
+    loginToGoogleAndAuthorize,
     router,
     setFirstLoginDate,
   ]);

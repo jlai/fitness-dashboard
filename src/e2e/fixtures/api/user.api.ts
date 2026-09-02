@@ -12,32 +12,6 @@ import {
   Settings,
 } from "@generated/orval/fetch/google-health-api/models";
 
-interface UserProfile {
-  fullName: string;
-  avatar: string;
-  avatar150: string;
-  avatar650: string;
-  distanceUnit: "en_US" | "METRIC";
-  swimUnit: "en_US" | "METRIC";
-  temperatureUnit: "en_US" | "METRIC";
-  waterUnit: "en_US" | "METRIC";
-  waterUnitName: string;
-  weightUnit: "en_US" | "en_GB" | "METRIC";
-}
-
-const DEFAULT_USER_PROFILE: UserProfile = {
-  fullName: "Test User",
-  avatar: "https://example.com/avatar.jpg",
-  avatar150: "https://example.com/avatar150.jpg",
-  avatar650: "https://example.com/avatar650.jpg",
-  distanceUnit: "METRIC",
-  swimUnit: "METRIC",
-  temperatureUnit: "METRIC",
-  waterUnit: "METRIC",
-  waterUnitName: "ml",
-  weightUnit: "METRIC",
-};
-
 const DEFAULT_USER_SETTINGS: Settings = {
   distanceUnit: SettingsDistanceUnit.DISTANCE_UNIT_KILOMETERS,
   swimUnit: SettingsSwimUnit.SWIM_UNIT_METERS,
@@ -54,19 +28,8 @@ export class UserApi {
   constructor(private readonly page: Page) {}
 
   async setupDefaults() {
-    await this.page.route("**/1/user/-/profile.json", async (route) => {
-      await route.fulfill({ json: { user: DEFAULT_USER_PROFILE } });
-    });
     await this.setUserSettings();
     await this.setHealthProfile();
-  }
-
-  async setUserProfile(profile: Partial<UserProfile> = {}) {
-    const userProfile = { ...DEFAULT_USER_PROFILE, ...profile };
-
-    await this.page.route("**/1/user/-/profile.json", async (route) => {
-      await route.fulfill({ json: { user: userProfile } });
-    });
   }
 
   async setUserSettings(settings: Partial<Settings> = {}) {
