@@ -33,12 +33,16 @@ export function RequireScopes({
 export function MissingScopesAlert({
   scopes: requiredScopes,
   children,
+  message,
 }: {
   scopes: Array<string>;
   children?: React.ReactNode;
+  message?: string;
 }) {
   const missingScopes = useMissingScopes(requiredScopes);
-  const { googleLoginAndAuthorization } = useGoogleLoginAndAuthorization();
+  const { googleLoginAndAuthorization } = useGoogleLoginAndAuthorization({
+    additionalScopes: missingScopes,
+  });
   const disabled = missingScopes.length > 0;
 
   return (
@@ -57,8 +61,9 @@ export function MissingScopesAlert({
             </Button>
           }
         >
-          Saving requires additional permissions from your Google account:{" "}
-          {getScopeNameList(missingScopes)}
+          {message ??
+            "Saving requires additional permissions from your Google account"}
+          : {getScopeNameList(missingScopes)}
         </Alert>
       )}
       {children != null && (
@@ -81,7 +86,9 @@ function CompactMissingScopes({
   scopes: Array<string>;
 }) {
   const confirm = useConfirm();
-  const { googleLoginAndAuthorization } = useGoogleLoginAndAuthorization();
+  const { googleLoginAndAuthorization } = useGoogleLoginAndAuthorization({
+    additionalScopes: scopes,
+  });
 
   const handleReconsentClicked = () => {
     confirm({
@@ -122,7 +129,9 @@ function MissingScopes({
   name?: string;
   scopes: Array<string>;
 }) {
-  const { googleLoginAndAuthorization } = useGoogleLoginAndAuthorization();
+  const { googleLoginAndAuthorization } = useGoogleLoginAndAuthorization({
+    additionalScopes: scopes,
+  });
 
   return (
     <div className="flex-grow flex flex-col items-center place-items-center p-2">

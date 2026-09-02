@@ -114,9 +114,12 @@ function tokenFromResponse(
  */
 export function useGoogleLoginAndAuthorization({
   selectAccount = false,
+  additionalScopes = [],
 }: {
   /** Also prompt the user to pick which Google account to use. */
   selectAccount?: boolean;
+  /** Extra scopes to request in addition to {@link REQUESTED_SCOPES}. */
+  additionalScopes?: Array<string>;
 } = {}) {
   const { scriptLoadedSuccessfully } = useGoogleOAuth();
   const pendingRef = useRef<{
@@ -156,6 +159,7 @@ export function useGoogleLoginAndAuthorization({
 
   const login = useGoogleLogin({
     ...AUTH_CODE_LOGIN_OPTIONS,
+    scope: [...new Set([...REQUESTED_SCOPES, ...additionalScopes])].join(" "),
     select_account: selectAccount,
     redirect_uri:
       typeof window !== "undefined" ? window.location.origin : undefined,

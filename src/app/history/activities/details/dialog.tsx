@@ -8,8 +8,6 @@ import {
 import { useConfirm } from "material-ui-confirm";
 import { Delete } from "@mui/icons-material";
 
-import { RequireScopes } from "@/components/require-scopes";
-import { LOCATION_READONLY } from "@/config/google-health-scopes";
 import { ResponsiveDialog } from "@/components/dialogs/responsive-dialog";
 import { DateFormats } from "@/utils/date-formats";
 import {
@@ -89,9 +87,7 @@ export function ActivityLogDetailsDialog({
       onClose={onClose}
     >
       <DialogContent className="p-0 flex-1 flex flex-col">
-        <RequireScopes scopes={[LOCATION_READONLY]}>
-          <ActivityDetails dataPoint={dataPoint} />
-        </RequireScopes>
+        <ActivityDetails dataPoint={dataPoint} />
       </DialogContent>
     </ResponsiveDialog>
   );

@@ -30,6 +30,7 @@ import {
   getExerciseFromDataPoint,
 } from "@/api/exercise/helpers";
 import { MAPLIBRE_STYLE_URL } from "@/config";
+import { LOCATION_READONLY } from "@/config/google-health-scopes";
 import { HeaderBar } from "@/components/layout/rows";
 import { ParsedTcx, Trackpoint } from "@/api/exercise/tcx";
 import { FlexSpacer } from "@/components/layout/flex";
@@ -41,6 +42,8 @@ import {
 } from "@/utils/distances";
 import { formatDuration } from "@/utils/duration-formats";
 import { ACTIVITY_ICONS } from "@/config/common-ids";
+import { useMissingScopes } from "@/api/auth";
+import { MissingScopesAlert } from "@/components/require-scopes";
 
 import {
   useFetchTcxAsString,
@@ -157,7 +160,13 @@ export function ActivityDetails({
 }) {
   const { distanceUnit } = useUnits();
   const [xScaleMeasure, setXScaleMeasure] = useAtom(xScaleMeasureAtom);
-  const tcxString = useFetchTcxAsString(getExerciseDataPointId(dataPoint));
+  const exercise = getExerciseFromDataPoint(dataPoint);
+  const hasGps = Boolean(exercise.exerciseMetadata?.hasGps);
+  const cannotReadLocation = useMissingScopes([LOCATION_READONLY]).length > 0;
+  const tcxString = useFetchTcxAsString(
+    getExerciseDataPointId(dataPoint),
+    !cannotReadLocation,
+  );
   const parsedTcx = useParsedTcx(tcxString);
 
   const hasDistances =
@@ -186,6 +195,15 @@ export function ActivityDetails({
   return (
     <Stack direction="column" className="min-h-0 h-full flex-1">
       <ActivityOverview dataPoint={dataPoint} tcxString={tcxString} />
+
+      {hasGps && cannotReadLocation && (
+        <div className="p-4">
+          <MissingScopesAlert
+            scopes={[LOCATION_READONLY]}
+            message="Viewing the GPS track requires additional permissions from your Google account"
+          />
+        </div>
+      )}
 
       {parsedTcx && (
         <PanelGroup direction={panelDirection} className="h-full">
