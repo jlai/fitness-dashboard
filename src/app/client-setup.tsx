@@ -18,7 +18,10 @@ import { queryClientAtom } from "jotai-tanstack-query";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 
 import { syncAuthTokenEffect } from "@/api/auth";
-import { warnOnRateLimitExceededEffect } from "@/api/request";
+import {
+  redirectOnAccountNotLinkedEffect,
+  warnOnRateLimitExceededEffect,
+} from "@/api/request";
 import { GOOGLE_OAUTH_CLIENT_ID } from "@/config";
 import { analyticsPingEffect } from "@/storage/analytics";
 import {
@@ -44,6 +47,7 @@ function Setup({ children }: { children: React.ReactNode }) {
   useAtom(syncAuthTokenEffect);
   useAtom(analyticsPingEffect);
   useAtom(warnOnRateLimitExceededEffect);
+  useAtom(redirectOnAccountNotLinkedEffect);
   useAtom(numberFormatAtomEffect);
   useAtom(dateFormatAtomEffect);
 

@@ -5,9 +5,12 @@ import { toast } from "mui-sonner";
 import JSONWithBigInt from "json-bigint-native";
 
 import { getFreshAccessToken } from "./auth";
-import { GOOGLE_HEALTH_API_URL } from "@/config";
+import { GOOGLE_HEALTH_API_URL, withBasePath } from "@/config";
 
 const RATE_LIMIT_EXCEEDED_EVENT_TYPE = "fitbitratelimitexceeded";
+const ACCOUNT_NOT_LINKED_EVENT_TYPE = "googlehealthaccountnotlinked";
+const ACCOUNT_NOT_LINKED_REASON = "ACCOUNT_NOT_LINKED";
+export const ACCOUNT_NOT_LINKED_PAGE_PATH = "/about/not-signed-up";
 
 export interface ErrorResponseBody {
   errors: Array<{
@@ -53,7 +56,12 @@ export async function makeRequest(
       window.dispatchEvent(new CustomEvent(RATE_LIMIT_EXCEEDED_EVENT_TYPE));
     }
 
-    const errors = await extractErrors(response);
+    const { errors, json } = await readErrorResponse(response);
+
+    if (isAccountNotLinkedError(json)) {
+      window.dispatchEvent(new CustomEvent(ACCOUNT_NOT_LINKED_EVENT_TYPE));
+    }
+
     const errorText = errors
       ? errors.map((error: any) => error.message).join(" ")
       : undefined;
@@ -93,31 +101,111 @@ export const warnOnRateLimitExceededEffect = atomEffect((get, set) => {
   };
 });
 
+export function redirectToAccountNotLinkedPage() {
+  const destination = withBasePath(ACCOUNT_NOT_LINKED_PAGE_PATH);
+  if (window.location.pathname !== destination) {
+    window.location.assign(destination);
+  }
+}
+
+/** Redirect to account-not-linked instructions when the Google account is not linked. */
+export const redirectOnAccountNotLinkedEffect = atomEffect(() => {
+  window.addEventListener(
+    ACCOUNT_NOT_LINKED_EVENT_TYPE,
+    redirectToAccountNotLinkedPage,
+  );
+
+  return () => {
+    window.removeEventListener(
+      ACCOUNT_NOT_LINKED_EVENT_TYPE,
+      redirectToAccountNotLinkedPage,
+    );
+  };
+});
+
+interface GoogleRpcErrorInfo {
+  reason?: string;
+}
+
+interface GoogleErrorBody {
+  error?: {
+    message?: string;
+    status?: string;
+    details?: GoogleRpcErrorInfo[];
+  };
+}
+
+function parseJsonBody(text: string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return undefined;
+  }
+}
+
+export function isAccountNotLinkedError(body: unknown): boolean {
+  if (!body || typeof body !== "object") {
+    return false;
+  }
+
+  const details = (body as GoogleErrorBody).error?.details;
+  return (
+    Array.isArray(details) &&
+    details.some((detail) => detail?.reason === ACCOUNT_NOT_LINKED_REASON)
+  );
+}
+
+function errorsFromParsedBody(
+  text: string,
+  json: unknown,
+): ErrorResponseBody["errors"] {
+  if (json && typeof json === "object") {
+    const fitbitErrors = (json as ErrorResponseBody).errors;
+    if (Array.isArray(fitbitErrors)) {
+      return fitbitErrors;
+    }
+
+    const googleError = (json as GoogleErrorBody).error;
+    if (googleError?.message) {
+      return [
+        {
+          errorType: googleError.status ?? "unknown",
+          fieldName: "unknown",
+          message: googleError.message,
+        },
+      ];
+    }
+  }
+
+  return [{ message: text, errorType: "unknown", fieldName: "unknown" }];
+}
+
+async function readErrorResponse(response: Response) {
+  try {
+    const text = await response.text();
+    const json = parseJsonBody(text);
+    return { json, errors: errorsFromParsedBody(text, json) };
+  } catch {
+    return {
+      json: undefined,
+      errors: [
+        {
+          message: "Failed to read error response",
+          errorType: "unknown",
+          fieldName: "unknown",
+        },
+      ],
+    };
+  }
+}
+
 /**
  * Extract error messages from response body.
  * See https://dev.fitbit.com/build/reference/web-api/troubleshooting-guide/error-handling/
  */
 export async function extractErrors(response: Response) {
-  try {
-    const text = await response.text();
-
-    // Try to parse as JSON first
-    try {
-      const json = JSON.parse(text);
-      return json.errors;
-    } catch (parseError) {
-      // If not JSON, return the text as error message
-      return [{ message: text, errorType: "unknown", fieldName: "unknown" }];
-    }
-  } catch (error: any) {
-    return [
-      {
-        message: "Failed to read error response",
-        errorType: "unknown",
-        fieldName: "unknown",
-      },
-    ];
-  }
+  const { errors } = await readErrorResponse(response);
+  return errors;
 }
 
 /** Get JSON body from a Response with BigInt support */
