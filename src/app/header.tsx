@@ -64,7 +64,7 @@ function SiteBranding({ className = "" }: { className: string }) {
           )}
         </div>
       </div>
-      <Chip label="Preview" color="warning" variant="filled" className="ml-4" />
+      <Chip label="Health Preview" color="info" variant="filled" className="ml-4" />
     </div>
   );
 }
