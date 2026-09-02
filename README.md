@@ -64,6 +64,10 @@ To connect, open your web browser to http://localhost:3000
 Create `.env.production.local` with any custom environment properties,
 or set them using environment variables if using a cloud build pipeline.
 
+To serve the app under a URL prefix such as `https://example.com/fitness`,
+set `NEXT_PUBLIC_BASE_PATH=/fitness` at **build time**. The value should start
+with a slash and should not have a trailing slash.
+
 Build the static site:
 
 ```bash

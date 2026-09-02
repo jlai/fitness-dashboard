@@ -1,6 +1,8 @@
 import dayjs from "dayjs";
 import DOMPurify from "dompurify";
 
+export { BASE_PATH, withBasePath } from "./base-path";
+
 export function requiredVar(value?: string) {
   if (!value) {
     throw new Error(`Environment variable missing`);

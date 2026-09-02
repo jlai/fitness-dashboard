@@ -7,7 +7,7 @@ import { toast } from "mui-sonner";
 import { useGoogleLogin, useGoogleOAuth } from "@react-oauth/google";
 
 import { singleAsync } from "@/utils/async";
-import { GOOGLE_OAUTH_CLIENT_ID } from "@/config";
+import { GOOGLE_OAUTH_CLIENT_ID, withBasePath } from "@/config";
 import { REQUESTED_SCOPES } from "@/config/google-health-scopes";
 
 import { loadGoogleOAuth2 } from "./google-identity";
@@ -18,7 +18,9 @@ const EXPIRING_SOON_MILLIS = 2 * 60 * 1000;
 const GOOGLE_TOKEN_STORAGE_KEY = "auth:google-token";
 const AUTH_TOKEN_UPDATE_EVENT_TYPE = "authtokenupdated";
 
-const TOKEN_EXCHANGE_PATH = "/auth/google-oauth2-policy-requires-a-server";
+const TOKEN_EXCHANGE_PATH = withBasePath(
+  "/auth/google-oauth2-policy-requires-a-server",
+);
 
 const AUTH_CODE_LOGIN_OPTIONS = {
   flow: "auth-code" as const,

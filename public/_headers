@@ -3,3 +3,6 @@
 /_next/static/*
   Cache-Control: public,max-age=31536000,immutable
   Cross-Origin-Opener-Policy: same-origin-allow-popups
+/*/_next/static/*
+  Cache-Control: public,max-age=31536000,immutable
+  Cross-Origin-Opener-Policy: same-origin-allow-popups

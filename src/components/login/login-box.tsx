@@ -83,8 +83,7 @@ export default function LoginBox() {
   const router = useRouter();
   const allUnitsConfigured = useAtomValue(allUnitsConfiguredAtom);
   const [firstLoginDate, setFirstLoginDate] = useAtom(firstLoginDateAtom);
-  const { loginToGoogleAndAuthorize, ready } =
-    useGoogleLoginAndAuthorization();
+  const { loginToGoogleAndAuthorize, ready } = useGoogleLoginAndAuthorization();
 
   const login = useCallback(() => {
     loginToGoogleAndAuthorize()
@@ -120,9 +119,9 @@ export default function LoginBox() {
             view runs and other activities, and more. This is a free interface
             created by Fitbit users, for Fitbit users, and is not affiliated
             with Fitbit or Google LLC.{" "}
-            <a href="/about" className="underline">
+            <Link href="/about" className="underline">
               Learn more
-            </a>
+            </Link>
             .
           </Typography>
         </div>
@@ -169,9 +168,9 @@ export default function LoginBox() {
                 </p>
                 <p>
                   You can add or remove permissions later in the{" "}
-                  <a href="/settings" className="underline">
+                  <Link href="/settings" className="underline">
                     settings
-                  </a>{" "}
+                  </Link>{" "}
                   if you change your mind, or completely remove access on your
                   Google Account&apos;s{" "}
                   <a
