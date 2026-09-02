@@ -18,6 +18,9 @@ import {
   toNutritionLogMealType,
 } from "@/api/nutrition";
 import { showSuccessToast, withErrorToaster } from "@/components/toast";
+import { MissingScopesAlert } from "@/components/require-scopes";
+import { NUTRITION_WRITEONLY } from "@/config/google-health-scopes";
+import { useMissingScopes } from "@/api/auth";
 
 import { selectedFoodLogsAtom } from "../atoms";
 
@@ -35,6 +38,8 @@ export function MoveFoodLogsDialog() {
   const { mutateAsync: updateFoodLogs } = useMutation(
     buildUpdateFoodLogsMutation(queryClient),
   );
+
+  const cannotWrite = useMissingScopes([NUTRITION_WRITEONLY]).length > 0;
 
   const onSubmit = withErrorToaster(async (values: MoveFoodLogsFormData) => {
     await updateFoodLogs(
@@ -60,13 +65,21 @@ export function MoveFoodLogsDialog() {
       >
         <DialogTitle>Move to a different time?</DialogTitle>
         <DialogContent>
-          <div className="py-4 w-full">
-            <MealTypeElement name="mealType" fullWidth />
-          </div>
+          <MissingScopesAlert scopes={[NUTRITION_WRITEONLY]}>
+            <div className="py-4 w-full">
+              <MealTypeElement
+                name="mealType"
+                fullWidth
+                disabled={cannotWrite}
+              />
+            </div>
+          </MissingScopesAlert>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpen(false)}>Cancel</Button>
-          <Button type="submit">Move</Button>
+          <Button type="submit" disabled={cannotWrite}>
+            Move
+          </Button>
         </DialogActions>
       </FormContainer>
     </Dialog>

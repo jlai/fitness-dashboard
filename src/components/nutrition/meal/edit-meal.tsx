@@ -38,6 +38,9 @@ import NutritionPopover, {
 } from "@/components/nutrition/label/nutrition-popover";
 import { macroGoalsAtom } from "@/storage/settings";
 import { showSuccessToast, withErrorToaster } from "@/components/toast";
+import { MissingScopesAlert } from "@/components/require-scopes";
+import { NUTRITION_WRITEONLY } from "@/config/google-health-scopes";
+import { useMissingScopes } from "@/api/auth";
 
 import SearchFoods from "../food/food-search";
 import { FoodServingSizeInput } from "../food/serving-size";
@@ -125,6 +128,8 @@ export function EditMeal({
     control,
   });
 
+  const cannotWrite = useMissingScopes([NUTRITION_WRITEONLY]).length > 0;
+
   useEffect(() => {
     reset({
       id: draftMeal?.id,
@@ -153,34 +158,45 @@ export function EditMeal({
   return (
     <FormProvider {...form}>
       <form onSubmit={handleSubmit(onSubmit)}>
-        <div className="flex flex-row items-center gap-x-4 mb-8">
-          <TextField
-            label="Meal name"
-            className="w-[350px]"
-            {...nameFieldProps}
-          />
-          <TextField label="Description" fullWidth {...descriptionFieldProps} />
-        </div>
-        <div>
-          <Typography variant="h5" className="mb-4">
-            Foods in meal
-          </Typography>
-          <EditFoodList />
-        </div>
-        <div className="flex flex-row items-center mt-8 justify-end gap-x-4">
-          {showDelete && (
+        <MissingScopesAlert scopes={[NUTRITION_WRITEONLY]}>
+          <div className="flex flex-row items-center gap-x-4 mb-8">
+            <TextField
+              label="Meal name"
+              className="w-[350px]"
+              {...nameFieldProps}
+              disabled={cannotWrite}
+            />
+            <TextField
+              label="Description"
+              fullWidth
+              {...descriptionFieldProps}
+              disabled={cannotWrite}
+            />
+          </div>
+          <div>
+            <Typography variant="h5" className="mb-4">
+              Foods in meal
+            </Typography>
+            <EditFoodList />
+          </div>
+          <div className="flex flex-row items-center mt-8 justify-end gap-x-4">
+            {showDelete && (
+              <Button
+                disabled={isNewMeal || cannotWrite}
+                onClick={() => onDeleteMeal(draftMeal!)}
+                color="warning"
+              >
+                Delete meal
+              </Button>
+            )}
             <Button
-              disabled={isNewMeal}
-              onClick={() => onDeleteMeal(draftMeal!)}
-              color="warning"
+              disabled={cannotWrite || !form.formState.isValid}
+              type="submit"
             >
-              Delete meal
+              {isNewMeal ? "Create meal" : "Update meal"}
             </Button>
-          )}
-          <Button disabled={!form.formState.isValid} type="submit">
-            {isNewMeal ? "Create meal" : "Update meal"}
-          </Button>
-        </div>
+          </div>
+        </MissingScopesAlert>
       </form>
     </FormProvider>
   );
@@ -233,8 +249,7 @@ function FoodRow({
                               energy: { kcal: food.calories },
                               serving: {
                                 amount: food.amount,
-                                foodMeasurementUnitDisplayName:
-                                  food.unit?.name,
+                                foodMeasurementUnitDisplayName: food.unit?.name,
                               },
                             },
                       foodId: food.foodId,

@@ -27,10 +27,12 @@ export function ActivityTypeInput({
   value,
   onChange,
   error,
+  disabled,
 }: {
   value: ActivityTypeOption | null;
   onChange: (value: ActivityTypeOption | null) => void;
   error?: FieldError;
+  disabled?: boolean;
 }) {
   const { data: categorizedActivityTypes } = useQuery(
     buildActivityTypesQuery(),
@@ -75,7 +77,7 @@ export function ActivityTypeInput({
     <Autocomplete<ActivityTypeOption>
       value={value}
       onChange={(event, value) => onChange(value)}
-      disabled={!options}
+      disabled={disabled || !options}
       options={options ?? []}
       groupBy={(option) => option.group}
       getOptionLabel={(option) => option.name}
@@ -114,9 +116,11 @@ export function ActivityTypeInput({
 export function ActivityTypeElement({
   name,
   rules,
+  disabled,
 }: {
   name: string;
   rules?: UseControllerProps["rules"];
+  disabled?: boolean;
 }) {
   const { field, fieldState } = useController({
     name,
@@ -128,6 +132,7 @@ export function ActivityTypeElement({
       value={field.value}
       onChange={field.onChange}
       error={fieldState.error}
+      disabled={disabled}
     />
   );
 }

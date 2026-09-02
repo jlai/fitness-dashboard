@@ -315,6 +315,16 @@ export function getMissingScopes(requiredScopes: Array<string>) {
   return requiredScopes.filter((scope) => !currentScopes.has(scope));
 }
 
+/** Reactive missing-scope check; updates after the user grants additional permissions. */
+export function useMissingScopes(requiredScopes: Array<string> = []) {
+  const token = useAtomValue(googleTokenAtom);
+  const currentScopes = new Set(
+    (token?.scope?.split(" ") ?? []).filter((scope) => scope.length > 0),
+  );
+
+  return requiredScopes.filter((scope) => !currentScopes.has(scope));
+}
+
 export function hasTokenScope(scope: string) {
   return getAccessTokenScopes().has(scope);
 }

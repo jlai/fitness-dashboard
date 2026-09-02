@@ -1,9 +1,9 @@
 "use client";
 
-import { Typography, Button, Stack } from "@mui/material";
+import { Alert, Typography, Button, Stack } from "@mui/material";
 import { useConfirm } from "material-ui-confirm";
 
-import { getMissingScopes, useGoogleLoginAndAuthorization } from "@/api/auth";
+import { useGoogleLoginAndAuthorization, useMissingScopes } from "@/api/auth";
 import { getScopeName, getScopeNameList } from "@/config/scopes";
 
 export function RequireScopes({
@@ -17,19 +17,60 @@ export function RequireScopes({
   compact?: boolean;
   name?: string;
 }) {
-  if (requiredScopes) {
-    const missingScopes = getMissingScopes(requiredScopes);
+  const missingScopes = useMissingScopes(requiredScopes);
 
-    if (missingScopes.length > 0) {
-      return compact ? (
-        <CompactMissingScopes name={name} scopes={missingScopes} />
-      ) : (
-        <MissingScopes name={name} scopes={missingScopes} />
-      );
-    }
+  if (requiredScopes && missingScopes.length > 0) {
+    return compact ? (
+      <CompactMissingScopes name={name} scopes={missingScopes} />
+    ) : (
+      <MissingScopes name={name} scopes={missingScopes} />
+    );
   }
 
   return children;
+}
+
+export function MissingScopesAlert({
+  scopes: requiredScopes,
+  children,
+}: {
+  scopes: Array<string>;
+  children?: React.ReactNode;
+}) {
+  const missingScopes = useMissingScopes(requiredScopes);
+  const { googleLoginAndAuthorization } = useGoogleLoginAndAuthorization();
+  const disabled = missingScopes.length > 0;
+
+  return (
+    <>
+      {disabled && (
+        <Alert
+          severity="warning"
+          className="mb-4"
+          action={
+            <Button
+              type="button"
+              size="small"
+              onClick={() => googleLoginAndAuthorization()}
+            >
+              Update permissions
+            </Button>
+          }
+        >
+          Saving requires additional permissions from your Google account:{" "}
+          {getScopeNameList(missingScopes)}
+        </Alert>
+      )}
+      {children != null && (
+        <fieldset
+          disabled={disabled}
+          className="m-0 min-w-0 w-full border-0 p-0"
+        >
+          {children}
+        </fieldset>
+      )}
+    </>
+  );
 }
 
 function CompactMissingScopes({
