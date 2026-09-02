@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import {
   Button,
   Chip,
@@ -26,6 +26,7 @@ import { useRouter } from "next/navigation";
 
 import { userTilesAtom } from "@/storage/tiles";
 import {
+  forceTokenRefresh,
   getAccessTokenScopes,
   logout,
   revokeAuthorization,
@@ -83,6 +84,7 @@ import {
   millilitersFromWaterGoal,
   useUnits,
 } from "@/config/units";
+import { showSuccessToast, withErrorToaster } from "@/components/toast";
 
 function SettingsRow({
   title,
@@ -1054,9 +1056,37 @@ function AdvancedSettings() {
 }
 
 function DeveloperSettings() {
+  const loggedIn = useLoggedIn();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleForceRefresh = withErrorToaster(async () => {
+    setRefreshing(true);
+
+    try {
+      await forceTokenRefresh();
+      showSuccessToast("OAuth token refreshed");
+    } finally {
+      setRefreshing(false);
+    }
+  }, "Failed to refresh OAuth token");
+
   return (
     <>
       <SettingsRow title="Developer settings"></SettingsRow>
+      <SettingsRow
+        title="Refresh OAuth token"
+        action={
+          <Button
+            onClick={handleForceRefresh}
+            disabled={!loggedIn || refreshing}
+          >
+            Refresh token
+          </Button>
+        }
+      >
+        Force a Google OAuth access token refresh using the stored refresh
+        token. For debugging token expiry and refresh.
+      </SettingsRow>
     </>
   );
 }

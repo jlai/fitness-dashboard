@@ -30,10 +30,6 @@ export const GOOGLE_OAUTH_CLIENT_ID = requiredVar(
   process.env.NEXT_PUBLIC_GOOGLE_OAUTH_CLIENT_ID,
 );
 
-/** Used when exchanging an authorization code / refresh token with Google. */
-export const GOOGLE_OAUTH_CLIENT_SECRET =
-  process.env.GOOGLE_OAUTH_CLIENT_SECRET ?? "";
-
 /** URL for MapLibre style JSON (usually contains API key) */
 export const MAPLIBRE_STYLE_URL = process.env.NEXT_PUBLIC_MAPLIBRE_STYLE_URL;
 

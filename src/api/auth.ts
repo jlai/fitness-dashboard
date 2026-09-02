@@ -54,6 +54,7 @@ async function fetchGoogleToken(
 ): Promise<TokenEndpointResponse> {
   const response = await fetch(TOKEN_EXCHANGE_PATH, {
     method: "POST",
+    mode: "same-origin",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
     },
@@ -247,6 +248,21 @@ function clearToken() {
   window.dispatchEvent(new CustomEvent(AUTH_TOKEN_UPDATE_EVENT_TYPE));
 }
 
+async function refreshStoredAccessToken() {
+  const token = getTokenFromStorage();
+
+  if (!token?.refreshToken) {
+    throw new Error("no refresh token available");
+  }
+
+  const response = await refreshGoogleToken(token.refreshToken);
+  const updatedToken = tokenFromResponse(response, token);
+
+  saveTokenToStorage(updatedToken);
+
+  return updatedToken.accessToken;
+}
+
 export const getFreshAccessToken = singleAsync(async () => {
   const token = getTokenFromStorage();
 
@@ -264,18 +280,18 @@ export const getFreshAccessToken = singleAsync(async () => {
   }
 
   try {
-    const response = await refreshGoogleToken(token.refreshToken);
-    const updatedToken = tokenFromResponse(response, token);
-
-    saveTokenToStorage(updatedToken);
-
-    return updatedToken.accessToken;
+    return await refreshStoredAccessToken();
   } catch (e) {
     console.error("error while refreshing token", e);
     clearToken();
     throw e;
   }
 });
+
+/** Always exchange the stored refresh token for a new access token. */
+export async function forceTokenRefresh() {
+  return refreshStoredAccessToken();
+}
 
 /**
  * This is a copy of the Google token wrapped in an atom, which allows us to

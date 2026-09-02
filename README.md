@@ -34,6 +34,7 @@ in it:
 ```
 NEXT_PUBLIC_GOOGLE_OAUTH_CLIENT_ID=idgoeshere
 GOOGLE_OAUTH_CLIENT_SECRET=secretgoeshere
+GOOGLE_OAUTH_PROXY_ALLOWED_ORIGIN=http://localhost:3000
 ```
 
 ### Docker Compose
