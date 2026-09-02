@@ -58,10 +58,10 @@ function PermissionsTable() {
           Display maps of GPS-tracked activity logs.
         </PermissionInfo>
         <PermissionInfo title="Nutrition">
-          Display and log food and water consumption and goals.
+          Display and log food and water consumption.
         </PermissionInfo>
         <PermissionInfo title="Profile">
-          Display your account name.
+          Used to determine account age so we know how far back to fetch data.
         </PermissionInfo>
         <PermissionInfo title="Settings">
           Get distance/weight/water unit settings. If you turn off this
@@ -115,10 +115,10 @@ export default function LoginBox() {
         </Typography>
         <div className="space-y-4">
           <Typography variant="body1">
-            This website lets you explore your Fitbit exercise stats, log meals,
-            view runs and other activities, and more. This is a free interface
-            created by Fitbit users, for Fitbit users, and is not affiliated
-            with Fitbit or Google LLC.{" "}
+            This website lets you explore your Google Health (formerly Fitbit)
+            exercise stats, log meals, view runs and other activities, and more.
+            This is a free interface created by Google Health users, for Google
+            Health users, and is not affiliated with Google LLC.{" "}
             <Link href="/about" className="underline">
               Learn more
             </Link>
@@ -132,15 +132,13 @@ export default function LoginBox() {
         </Typography>
         <div className="space-y-4">
           <Typography variant="body1">
-            Connect the Google account holding your Google Health data to view
-            your daily stats, historical graphs and logs, and log new activities
+            Sign in with your Google Account to view your daily stats from
+            Google Health, historical graphs and logs, and log new activities
             and other data.
           </Typography>
           <Typography variant="body1">
-            No health or personal information will be shared with the operators
-            of this website or any third party. Data retrieved from the Google
-            Health API will be stored solely in your browser&apos;s memory and
-            offline storage/cache.{" "}
+            This works entirely in your browser. No signups, no data collection,
+            no ads.{" "}
             {PRIVACY_POLICY_LINK && (
               <span>
                 View our{" "}
@@ -154,6 +152,17 @@ export default function LoginBox() {
                 for more details.
               </span>
             )}
+          </Typography>
+          <Typography variant="body1">
+            Ready to get started? Click the button below.
+          </Typography>
+        </div>
+        <div className="my-8 flex flex-col items-center">
+          <LoginButton onClick={login} disabled={!ready} />
+        </div>
+        <section>
+          <Typography variant="h5" marginBottom="24px">
+            Q&amp;A
           </Typography>
           <Accordion>
             <AccordionSummary expandIcon={<ArrowDropDown />}>
@@ -171,25 +180,36 @@ export default function LoginBox() {
                   <Link href="/settings" className="underline">
                     settings
                   </Link>{" "}
-                  if you change your mind, or completely remove access on your
-                  Google Account&apos;s{" "}
+                  if you change your mind, or completely remove access on the
+                  settings page or on your Google Account&apos;s{" "}
                   <a
-                    href="https://myaccount.google.com/permissions"
+                    href="https://myaccount.google.com/connections"
                     target="_blank"
                     className="underline"
                   >
-                    third-party apps
+                    linked apps
                   </a>{" "}
-                  page.
+                  manager.
                 </p>
                 <PermissionsTable />
               </div>
             </AccordionDetails>
           </Accordion>
-        </div>
-        <div className="mt-8 flex flex-col items-center">
-          <LoginButton onClick={login} disabled={!ready} />
-        </div>
+          <Accordion>
+            <AccordionSummary expandIcon={<ArrowDropDown />}>
+              How is my data stored?
+            </AccordionSummary>
+            <AccordionDetails>
+              <div className="space-y-2">
+                <p>
+                  Health data is retrieved from the Google Health API. Some of
+                  the data may be cached in your browser&apos;s memory and local
+                  offline storage/cache. No data is stored on our servers/cloud.
+                </p>
+              </div>
+            </AccordionDetails>
+          </Accordion>
+        </section>
       </section>
     </Container>
   );

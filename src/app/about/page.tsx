@@ -16,7 +16,7 @@ export default function AboutPage() {
       <section className="space-y-4">
         <Typography variant="h4">Introduction</Typography>
         <Typography variant="body2">
-          A dashboard for viewing stats from your Fitbit account, managing and
+          A dashboard for viewing stats from your Google Health account, managing and
           logging meals, viewing maps of your runs, and more. This is an early
           preview. There are likely to be bugs and some data may not be
           displayed accurately.
@@ -47,12 +47,12 @@ export default function AboutPage() {
         <Typography variant="body2">
           This website uses the{" "}
           <a
-            href="https://dev.fitbit.com/"
+            href="https://developers.google.com/health"
             className="underline"
             target="_blank"
             rel="noreferrer"
           >
-            Fitbit Web API
+            Google Health API
           </a>{" "}
           to directly get and display your fitness stats, without passing
           through or syncing to other cloud servers. This means we don&apos;t
@@ -60,14 +60,14 @@ export default function AboutPage() {
           outside your browser.
         </Typography>
         <Typography variant="body2">
-          When you connect with Fitbit, we redirect you to the Fitbit login
-          page. You&apos;ll be asked to grant permission to this website for
-          your Fitbit data, and you can choose what types of data you would like
-          to authorize access for. Fitbit then redirects back to this site with
-          an access token, which is stored locally in your browser. This token
-          allows your browser to request data from Fitbit&apos;s servers without
-          syncing it to another account or server like some other 3rd party
-          services.
+          When you connect with Google, we will open a new window to log into
+          your Google Account. You&apos;ll be asked to grant permission to this
+          website for your Google Health data, and you can choose what types of
+          data you would like to authorize access for. Google then redirects
+          back to this site with an access token, which is stored locally in
+          your browser. This token allows your browser to request data from
+          Google&apos;s servers without syncing it to another account or server
+          like some other 3rd party services.
         </Typography>
         <Typography variant="body2">
           Some features, such as displaying maps of runs, may send coordinates
@@ -109,44 +109,6 @@ export default function AboutPage() {
                 Contact
               </Button>
             )}
-          </AccordionDetails>
-        </Accordion>
-        <Accordion>
-          <AccordionSummary expandIcon={<ArrowDropDown />}>
-            Help, I&quot;m getting a blank page or errors due to rate limits
-          </AccordionSummary>
-          <AccordionDetails>
-            The Fitbit Web API has rate limits on the number of data requests
-            this website can make on behalf of a user. If the limit is exceeded,
-            you may need to wait until the next hour for the quota to reset.
-          </AccordionDetails>
-        </Accordion>
-        <Accordion>
-          <AccordionSummary expandIcon={<ArrowDropDown />}>
-            Can I edit activities or sleep logs?
-          </AccordionSummary>
-          <AccordionDetails>
-            Unfortunately this is not supported in the Fitbit Web API.
-          </AccordionDetails>
-        </Accordion>
-        <Accordion>
-          <AccordionSummary expandIcon={<ArrowDropDown />}>
-            Food search isn&quot;t returning any results
-          </AccordionSummary>
-          <AccordionDetails>
-            There seems to be a problem with the Fitbit API where the food
-            search sometimes returns blank results. Unfortunately, this will be
-            up to Fitbit to fix.
-          </AccordionDetails>
-        </Accordion>
-        <Accordion>
-          <AccordionSummary expandIcon={<ArrowDropDown />}>
-            I keep getting signed out
-          </AccordionSummary>
-          <AccordionDetails>
-            The Fitbit API has limits on having active sessions in multiple
-            browsers. If you log in from multiple browsers, or for example on a
-            desktop and a mobile device, you may have to re-login.
           </AccordionDetails>
         </Accordion>
       </section>
