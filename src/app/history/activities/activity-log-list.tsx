@@ -23,7 +23,7 @@ import { useUnits } from "@/config/units";
 import { buildGetExerciseListInfiniteQuery } from "@/api/exercise/exercise";
 import HistoryList from "@/components/history-list/history-list";
 
-import { activityLogIdHashAtom } from "./details";
+import { exerciseIdHashAtom } from "./details";
 
 const NUMBER_FORMAT = new Intl.NumberFormat(undefined, {
   maximumFractionDigits: 2,
@@ -39,7 +39,7 @@ function ActivityLogRow({
   logEntry: ExerciseDataPoint;
 }) {
   const units = useUnits();
-  const setHashLogId = useSetAtom(activityLogIdHashAtom);
+  const setHashLogId = useSetAtom(exerciseIdHashAtom);
   const queryClient = useQueryClient();
 
   const exercise = getExerciseFromDataPoint(dataPoint);
@@ -62,7 +62,7 @@ function ActivityLogRow({
   return (
     <TableRow key={logId}>
       <TableCell>
-        <a onClick={showActivityLogDetails} href={`#activityLogId=${logId}`}>
+        <a onClick={showActivityLogDetails} href={`#exerciseId=${logId}`}>
           <div className="flex flex-row items-center gap-x-2">
             <div>{DateFormats.formatShortDateTime(dayjs(startTime))}</div>
             {isPossiblyTracked(dataPoint) && (

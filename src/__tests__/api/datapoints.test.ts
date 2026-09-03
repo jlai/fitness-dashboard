@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
 
-import { rollupPageSize } from "@/api/datapoints";
+import { isValidDataPointId, rollupPageSize } from "@/api/datapoints";
 
 const FIFTEEN_MINUTES = 900;
 const FIVE_MINUTES = 300;
@@ -52,5 +52,27 @@ describe("rollupPageSize", () => {
 
     expect(pageSize).toBe(10000);
     expect(pageSize * ONE_MINUTE).toBeLessThanOrEqual(14 * SECONDS_PER_DAY);
+  });
+});
+
+describe("isValidDataPointId", () => {
+  it("accepts 4-63 character ids of lowercase letters, numbers, and hyphens", () => {
+    expect(isValidDataPointId("abcd")).toBe(true);
+    expect(isValidDataPointId("a1b2")).toBe(true);
+    expect(isValidDataPointId("banana-split")).toBe(true);
+    expect(
+      isValidDataPointId("a1b2c3d4-e5f6-7890-1234-567890abcdef"),
+    ).toBe(true);
+    expect(isValidDataPointId("a".repeat(63))).toBe(true);
+  });
+
+  it("rejects ids that are too short, too long, or use other characters", () => {
+    expect(isValidDataPointId("")).toBe(false);
+    expect(isValidDataPointId("abc")).toBe(false);
+    expect(isValidDataPointId("a".repeat(64))).toBe(false);
+    expect(isValidDataPointId("ABCD")).toBe(false);
+    expect(isValidDataPointId("ab_cd")).toBe(false);
+    expect(isValidDataPointId("ab/cd")).toBe(false);
+    expect(isValidDataPointId("ab cd")).toBe(false);
   });
 });

@@ -291,6 +291,18 @@ function pageSizeFor(dataType: DataType) {
   return dataType === "exercise" || dataType === "sleep" ? 25 : 10000;
 }
 
+/**
+ * Whether `dataPointId` is a valid last segment of a DataPoint name.
+ *
+ * Client-provided IDs must be a string of 4-63 characters containing only
+ * lowercase letters, numbers, and hyphens.
+ *
+ * @see https://developers.google.com/health/reference/rest/v4/users.dataTypes.dataPoints#DataPoint
+ */
+export function isValidDataPointId(dataPointId: string) {
+  return /^[a-z0-9-]{4,63}$/.test(dataPointId);
+}
+
 export async function getDataPoint<T extends DataType>(
   dataType: T,
   dataPointId: string,

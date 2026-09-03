@@ -1,14 +1,17 @@
 import { atom } from "jotai";
 import { atomWithHash } from "jotai-location";
 
+import { isValidDataPointId } from "@/api/datapoints";
 import { cleanHashReplaceState } from "@/utils/hash";
 
-export const activityLogIdHashAtom = atomWithHash<string | null>(
-  "activityLogId",
+export const exerciseIdHashAtom = atomWithHash<string | null>(
+  "exerciseId",
   null,
   {
-    serialize: (value: string | null) => value ?? "",
-    deserialize: (value: string) => value || null,
+    serialize: (value: string | null) =>
+      value && isValidDataPointId(value) ? value : "",
+    deserialize: (value: string) =>
+      value && isValidDataPointId(value) ? value : null,
     setHash: cleanHashReplaceState,
   }
 );
