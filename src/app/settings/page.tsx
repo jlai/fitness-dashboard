@@ -142,14 +142,12 @@ function LoggedInAccountSettings() {
   const queryClient = useQueryClient();
   const router = useRouter();
   const scopes = getAccessTokenScopes();
-  const { loginToGoogleAndAuthorize } = useGoogleLoginAndAuthorization({
-    selectAccount: true,
-    includeGrantedScopes: false,
-  });
 
   const handleLogout = () => {
     confirm({
-      description: "Log out?",
+      title: "Sign out",
+      description: "Sign out of your Google account on this website?",
+      confirmationText: "Sign out",
     }).then(({ confirmed }) => {
       if (confirmed) {
         logout();
@@ -159,20 +157,11 @@ function LoggedInAccountSettings() {
     });
   };
 
-  const switchAccounts = () => {
-    confirm({
-      description: "Log out?",
-    }).then(({ confirmed }) => {
-      if (confirmed) {
-        queryClient.clear();
-        loginToGoogleAndAuthorize();
-      }
-    });
-  };
-
   const unlinkAccount = () => {
     confirm({
-      description: "Sign out and unlink this website from your Google account?",
+      title: "Unlink account",
+      description:
+        "Sign out and unlink this website from your Google account? This will sign you out of any other browser sessions as well.",
     }).then(async ({ confirmed }) => {
       if (confirmed) {
         await revokeAuthorization();
@@ -186,15 +175,16 @@ function LoggedInAccountSettings() {
     <>
       <SettingsRow
         title="Google account"
-        action={<Button onClick={handleLogout}>Logout</Button>}
+        action={<Button onClick={handleLogout}>Sign out</Button>}
       >
         You&apos;re currently logged in
       </SettingsRow>
       {scopes && scopes.size > 0 && (
         <SettingsRow title="Granted permissions" component="div">
           <div>
-            These are the permissions that this website is allowed to access from your Google Health account.
-            To remove permissions, unlink your account and sign in again.
+            These are the permissions that this website is allowed to access
+            from your Google Health account. To remove permissions, unlink your
+            account and sign in again.
           </div>
           <div className="mt-2 flex flex-wrap gap-1">
             {[...scopes]
@@ -205,12 +195,6 @@ function LoggedInAccountSettings() {
           </div>
         </SettingsRow>
       )}
-      <SettingsRow
-        title="Switch accounts"
-        action={<Button onClick={switchAccounts}>Switch accounts</Button>}
-      >
-        Sign in with a different account
-      </SettingsRow>
       <SettingsRow
         title="Unlink Google account"
         action={
@@ -1057,7 +1041,13 @@ function AdvancedSettings() {
 
 function DeveloperSettings() {
   const loggedIn = useLoggedIn();
+  const confirm = useConfirm();
+  const queryClient = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
+  const { loginToGoogleAndAuthorize, ready } = useGoogleLoginAndAuthorization({
+    selectAccount: true,
+    includeGrantedScopes: false,
+  });
 
   const handleForceRefresh = withErrorToaster(async () => {
     setRefreshing(true);
@@ -1069,6 +1059,20 @@ function DeveloperSettings() {
       setRefreshing(false);
     }
   }, "Failed to refresh OAuth token");
+
+  const switchAccounts = () => {
+    confirm({
+      title: "Switch accounts",
+      description:
+        "Sign out of your current account on this website and sign in again?",
+      confirmationText: "Sign out",
+    }).then(({ confirmed }) => {
+      if (confirmed) {
+        queryClient.clear();
+        loginToGoogleAndAuthorize();
+      }
+    });
+  };
 
   return (
     <>
@@ -1086,6 +1090,16 @@ function DeveloperSettings() {
       >
         Force a Google OAuth access token refresh using the stored refresh
         token. For debugging token expiry and refresh.
+      </SettingsRow>
+      <SettingsRow
+        title="Switch accounts"
+        action={
+          <Button onClick={switchAccounts} disabled={!loggedIn || !ready}>
+            Switch accounts
+          </Button>
+        }
+      >
+        Sign in with a different account
       </SettingsRow>
     </>
   );

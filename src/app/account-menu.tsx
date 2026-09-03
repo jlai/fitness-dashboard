@@ -84,7 +84,7 @@ export default function AccountMenu() {
             <ListItemIcon>
               <LogoutIcon />
             </ListItemIcon>
-            <ListItemText>Logout</ListItemText>
+            <ListItemText>Sign out</ListItemText>
           </MenuItem>
         )}
       </Menu>
