@@ -56,7 +56,12 @@ function SiteBranding({ className = "" }: { className: string }) {
         <div className={`${poppins.className} text-sm text-end`}>
           hosted by{" "}
           {HOST_WEBSITE_LINK ? (
-            <a href={HOST_WEBSITE_LINK} target="_blank" className="underline">
+            <a
+              href={HOST_WEBSITE_LINK}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline"
+            >
               {HOST_WEBSITE_NAME}
             </a>
           ) : (

@@ -55,6 +55,7 @@ export default function AccountMenu() {
             <Link
               href={WHATS_NEW_LINK}
               target="_blank"
+              rel="noopener noreferrer"
               className="flex flex-row"
             >
               <ListItemIcon>

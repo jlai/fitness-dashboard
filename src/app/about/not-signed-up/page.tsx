@@ -36,6 +36,7 @@ export default function AccountNotLinkedPage() {
           <a
             href="https://www.google.com/health"
             target="_blank"
+            rel="noopener noreferrer"
             className="underline"
           >
             learn more about Google Health

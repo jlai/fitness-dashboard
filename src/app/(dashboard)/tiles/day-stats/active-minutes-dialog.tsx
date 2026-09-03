@@ -126,6 +126,7 @@ function Overview() {
         <a
           href="https://support.google.com/fitbit/answer/14236509"
           target="_blank"
+          rel="noopener noreferrer"
           className="underline"
         >
           Fitbit FAQ page

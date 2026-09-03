@@ -12,6 +12,8 @@ This application is intended to comply with [CASA](https://github.com/appdefense
 when deployed to a server. The requirements and considerations should be taken into consideration especially when implementing
 OAuth2-related functionality.
 
+External links that open in a new tab (`target="_blank"`) must include `rel="noopener noreferrer"`. This applies to `<a>` tags, Next.js `Link`, MUI `Button`/`Link` with an external `href`, and links injected via sanitized HTML.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 # This is NOT the Next.js you know

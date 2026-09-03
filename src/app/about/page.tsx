@@ -35,7 +35,12 @@ export default function AboutPage() {
         </Typography>
         {TOS_LINK && (
           <Typography variant="body2">
-            <Button variant="text" href={TOS_LINK} target="_blank">
+            <Button
+              variant="text"
+              href={TOS_LINK}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               View Terms of Service
             </Button>
           </Typography>
@@ -50,7 +55,7 @@ export default function AboutPage() {
             href="https://developers.google.com/health"
             className="underline"
             target="_blank"
-            rel="noreferrer"
+            rel="noopener noreferrer"
           >
             Google Health API
           </a>{" "}
@@ -75,7 +80,12 @@ export default function AboutPage() {
         </Typography>
         {PRIVACY_POLICY_LINK && (
           <Typography variant="body2">
-            <Button variant="text" href={PRIVACY_POLICY_LINK} target="_blank">
+            <Button
+              variant="text"
+              href={PRIVACY_POLICY_LINK}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               View Privacy Policy
             </Button>
           </Typography>
@@ -94,6 +104,7 @@ export default function AboutPage() {
               variant="text"
               href="https://github.com/jlai/fitness-dashboard/discussions"
               target="_blank"
+              rel="noopener noreferrer"
             >
               Feature suggestions
             </Button>
@@ -101,11 +112,17 @@ export default function AboutPage() {
               variant="text"
               href="https://github.com/jlai/fitness-dashboard/issues"
               target="_blank"
+              rel="noopener noreferrer"
             >
               Bug reports
             </Button>
             {CONTACT_INFO_LINK && (
-              <Button variant="text" href={CONTACT_INFO_LINK} target="_blank">
+              <Button
+                variant="text"
+                href={CONTACT_INFO_LINK}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 Contact
               </Button>
             )}

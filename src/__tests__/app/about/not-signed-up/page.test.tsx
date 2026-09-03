@@ -35,5 +35,6 @@ describe("AccountNotLinkedPage", () => {
     expect(learnMoreLink.getAttribute("href")).toBe(
       "https://www.google.com/health",
     );
+    expect(learnMoreLink.getAttribute("rel")).toBe("noopener noreferrer");
   });
 });

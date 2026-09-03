@@ -145,6 +145,7 @@ export default function LoginBox() {
                 <Link
                   href={PRIVACY_POLICY_LINK}
                   target="_blank"
+                  rel="noopener noreferrer"
                   className="underline"
                 >
                   privacy policy
@@ -185,6 +186,7 @@ export default function LoginBox() {
                   <a
                     href="https://myaccount.google.com/connections"
                     target="_blank"
+                    rel="noopener noreferrer"
                     className="underline"
                   >
                     linked apps

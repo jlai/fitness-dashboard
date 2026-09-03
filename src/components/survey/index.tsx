@@ -86,7 +86,7 @@ export function SurveyButton() {
             <Button
               href={SURVEY_LINK}
               target="_blank"
-              rel="noreferrer noopener"
+              rel="noopener noreferrer"
               onClick={handleOpenSurvey}
             >
               Open survey
