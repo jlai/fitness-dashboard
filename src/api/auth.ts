@@ -130,14 +130,22 @@ export function useGoogleLoginAndAuthorization({
     reject: (error: unknown) => void;
   } | null>(null);
 
-  const failPending = useCallback((error: unknown) => {
-    const pending = pendingRef.current;
-    pendingRef.current = null;
+  const failPending = useCallback(
+    (error: unknown, { silent = false }: { silent?: boolean } = {}) => {
+      const pending = pendingRef.current;
+      pendingRef.current = null;
 
-    console.error("error starting login flow", error);
-    toast.error("Unable to reach Google to sign in");
-    pending?.reject(error instanceof Error ? error : new Error(String(error)));
-  }, []);
+      if (!silent) {
+        console.error("error starting login flow", error);
+        toast.error("Unable to reach Google to sign in");
+      }
+
+      pending?.reject(
+        error instanceof Error ? error : new Error(String(error)),
+      );
+    },
+    [],
+  );
 
   const completeLogin = useCallback(
     async (code: string) => {
@@ -177,10 +185,11 @@ export function useGoogleLoginAndAuthorization({
             errorResponse.error ||
             "authorization failed",
         ),
+        { silent: errorResponse.error === "access_denied" },
       );
     },
     onNonOAuthError: (error) => {
-      failPending(error);
+      failPending(error, { silent: error.type === "popup_closed" });
     },
   });
 
