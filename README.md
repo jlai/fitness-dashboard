@@ -1,6 +1,6 @@
 # Fitness Dashboard
 
-This is a dashboard app for displaying your fitness data using the Fitbit Web API.
+This is a dashboard app for displaying your fitness data using the Google Health API.
 
 Technologies used:
 
@@ -69,16 +69,6 @@ To serve the app under a URL prefix such as `https://example.com/fitness`,
 set `NEXT_PUBLIC_BASE_PATH=/fitness` at **build time**. The value should start
 with a slash and should not have a trailing slash.
 
-Build the static site:
-
-```bash
-npm run build
-```
-
-Upload the files to a hosting service. Note that you'll need to configure SPA-style
-routing so that 404's get rewritten to serve `index.html`. The process for this will
-vary by hosting provider.
-
 ## Running tests
 
 ### Unit tests (jest)
@@ -120,5 +110,4 @@ npx playwright test --debug
 
 ## Contributing
 
-Since this project is early in development and will likely undergo major refactorings,
 I recommend keeping pull requests small, and open a ticket to discuss larger changes.
