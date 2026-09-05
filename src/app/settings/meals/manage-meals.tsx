@@ -4,10 +4,10 @@ import { Button, Divider, Paper, Typography } from "@mui/material";
 import { useState, useCallback, Suspense } from "react";
 
 import { Meal } from "@/api/nutrition";
+import { DividedStack } from "@/components/layout/flex";
+import { CreateOrEditMeal } from "@/components/nutrition/meal/edit-meal";
 import SearchMeals from "@/components/nutrition/meal/meal-search";
 import { useUnits } from "@/config/units";
-import { CreateOrEditMeal } from "@/components/nutrition/meal/edit-meal";
-import { DividedStack } from "@/components/layout/flex";
 
 export default function ManageMeals() {
   // Don't need this, just preload for now

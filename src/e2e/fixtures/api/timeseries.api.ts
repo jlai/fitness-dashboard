@@ -40,7 +40,14 @@ export class TimeSeriesApi {
     await this.page.route(
       "**/1/user/-/activities/goals/daily.json",
       async (route) => {
-        await route.fulfill({ json: {} });
+        await route.fulfill({ json: { goals: {} } });
+      }
+    );
+
+    await this.page.route(
+      "**/1/user/-/activities/goals/weekly.json",
+      async (route) => {
+        await route.fulfill({ json: { goals: {} } });
       }
     );
   }
@@ -139,6 +146,38 @@ export class TimeSeriesApi {
         await route.fulfill({
           json: goals,
         });
+      }
+    );
+  }
+
+  async setDailyActivityGoalsResponse(goals: {
+    activeMinutes?: number;
+    activeZoneMinutes?: number;
+    caloriesOut?: number;
+    distance?: number;
+    floors?: number;
+    steps?: number;
+  }) {
+    await this.page.route(
+      "**/1/user/-/activities/goals/daily.json",
+      async (route) => {
+        await route.fulfill({ json: { goals } });
+      }
+    );
+  }
+
+  async setWeeklyActivityGoalsResponse(goals: {
+    activeMinutes?: number;
+    activeZoneMinutes?: number;
+    caloriesOut?: number;
+    distance?: number;
+    floors?: number;
+    steps?: number;
+  }) {
+    await this.page.route(
+      "**/1/user/-/activities/goals/weekly.json",
+      async (route) => {
+        await route.fulfill({ json: { goals } });
       }
     );
   }

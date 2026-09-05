@@ -32,6 +32,32 @@ export class WeightApi {
         await route.fallback();
       }
     });
+
+    await this.page.route(
+      "**/1/user/-/body/log/weight/goal.json",
+      async (route) => {
+        await route.fulfill({ json: { goal: {} } });
+      }
+    );
+  }
+
+  async setWeightGoalResponse(weight: number) {
+    await this.page.route(
+      "**/1/user/-/body/log/weight/goal.json",
+      async (route) => {
+        await route.fulfill({
+          json: {
+            goal: {
+              goalType: "LOSE",
+              startDate: "2021-01-01",
+              startWeight: weight,
+              weight,
+              weightThreshold: 0.05,
+            },
+          },
+        });
+      }
+    );
   }
 
   async setWeightLogsResponse(response: Readonly<WeightLog[]>, date = "*") {

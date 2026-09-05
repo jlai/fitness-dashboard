@@ -1,6 +1,6 @@
 import { test as base, Page } from "@playwright/test";
 
-import { Food, GetFoodLogResponse } from "@/api/nutrition";
+import { Food, GetFoodLogResponse, Meal } from "@/api/nutrition";
 import { SCRAMBLED_EGGS } from "@/e2e/data/nutrition/food-log-list";
 
 export class NutritionApi {
@@ -12,7 +12,15 @@ export class NutritionApi {
     const page = this.page;
 
     await page.route("**/1/foods/units.json", async (route) => {
-      await route.fulfill({ json: [] });
+      await route.fulfill({
+        json: [
+          { id: 304, name: "serving", plural: "servings" },
+          { id: 226, name: "g", plural: "g" },
+          { id: 180, name: "oz", plural: "oz" },
+          { id: 147, name: "lb", plural: "lb" },
+          { id: 389, name: "cup", plural: "cups" },
+        ],
+      });
     });
     await page.route("**/1/user/-/foods/log/favorite.json", async (route) => {
       await route.fulfill({ json: [...this.favorites.values()] });
@@ -27,8 +35,18 @@ export class NutritionApi {
     await page.route("**/1/user/-/foods.json", async (route) => {
       await route.fulfill({ json: { foods: [] } });
     });
+    await page.route("**/1/user/-/meals.json", async (route) => {
+      if (route.request().method() === "GET") {
+        await route.fulfill({ json: { meals: [] } });
+      } else {
+        await route.fallback();
+      }
+    });
     await page.route("**/1/user/-/foods/log/date/*.json", async (route) => {
       await route.fulfill({ json: { foods: [] } });
+    });
+    await page.route("**/1/user/-/foods/log/water/goal.json", async (route) => {
+      await route.fulfill({ json: { goal: {} } });
     });
 
     // Update or delete favorite
@@ -78,6 +96,47 @@ export class NutritionApi {
         await route.fallback();
       }
     });
+  }
+
+  async setFoodResponse(food: Food) {
+    await this.page.route(`**/1/foods/${food.foodId}.json`, async (route) => {
+      if (route.request().method() === "GET") {
+        await route.fulfill({ json: { food } });
+      } else {
+        await route.fallback();
+      }
+    });
+  }
+
+  async setCustomFoodsResponse(foods: ReadonlyArray<Food>) {
+    await this.page.route("**/1/user/-/foods.json", async (route) => {
+      if (route.request().method() === "GET") {
+        await route.fulfill({ json: { foods } });
+      } else {
+        await route.fallback();
+      }
+    });
+  }
+
+  async setMealsResponse(meals: ReadonlyArray<Meal>) {
+    await this.page.route("**/1/user/-/meals.json", async (route) => {
+      if (route.request().method() === "GET") {
+        await route.fulfill({ json: { meals } });
+      } else {
+        await route.fallback();
+      }
+    });
+  }
+
+  async setWaterGoalResponse(goal: number) {
+    await this.page.route(
+      "**/1/user/-/foods/log/water/goal.json",
+      async (route) => {
+        await route.fulfill({
+          json: { goal: { goal, startDate: "2021-01-01" } },
+        });
+      }
+    );
   }
 
   async setFoodLogsResponse(

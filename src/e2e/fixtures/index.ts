@@ -9,6 +9,7 @@ import { test as dashboardTest } from "./dashboard";
 import { test as weightApiTest } from "./api/weight.api";
 import { test as userApiTest } from "./api/user.api";
 import { test as timeSeriesApiTest } from "./api/timeseries.api";
+import { test as sleepApiTest } from "./api/sleep.api";
 
 export const test = mergeTests(
   standardTest,
@@ -19,6 +20,7 @@ export const test = mergeTests(
   dashboardTest,
   weightApiTest,
   userApiTest,
-  timeSeriesApiTest
+  timeSeriesApiTest,
+  sleepApiTest
 );
 export { expect } from "@playwright/test";
