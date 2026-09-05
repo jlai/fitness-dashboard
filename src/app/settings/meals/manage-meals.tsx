@@ -8,6 +8,7 @@ import SearchMeals from "@/components/nutrition/meal/meal-search";
 import { useUnits } from "@/config/units";
 import { CreateOrEditMeal } from "@/components/nutrition/meal/edit-meal";
 import { DividedStack } from "@/components/layout/flex";
+import BackupMealsAlert from "@/components/nutrition/meal/backup-meals-alert";
 
 export default function ManageMeals() {
   // Don't need this, just preload for now
@@ -49,6 +50,7 @@ export default function ManageMeals() {
       <Typography variant="h4" className="mb-8">
         Manage meals
       </Typography>
+      <BackupMealsAlert />
       <DividedStack>
         <div className="flex-1">
           <Suspense>

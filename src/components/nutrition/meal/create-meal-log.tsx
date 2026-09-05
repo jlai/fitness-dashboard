@@ -19,6 +19,7 @@ import { showSuccessToast, withErrorToaster } from "@/components/toast";
 
 import { MealTypeElement } from "../food/meal-type-element";
 
+import BackupMealsAlert from "./backup-meals-alert";
 import { SearchMealsElement } from "./meal-search";
 
 interface CreateMealLogFormData {
@@ -76,32 +77,35 @@ export default function CreateMealLog() {
   }, "Error logging meal");
 
   return (
-    <FormContainer<CreateMealLogFormData>
-      formContext={formContext}
-      onSuccess={logMeal}
-    >
-      <DividedStack>
-        <div className="flex-1">
-          <FormRows>
-            <FormRow>
-              <SearchMealsElement name="meal" />
-            </FormRow>
-            <FormRow>
-              <MealTypeElement name="mealType" />
-              <LinkedDayElement name="daySource" />
-              <div className="flex-grow min-w-0"></div>
-              <Button type="submit" disabled={!watch("meal")}>
-                Log meal
-              </Button>
-            </FormRow>
-          </FormRows>
-        </div>
-        <div>
-          <Button href="/settings/meals" LinkComponent={NextLink}>
-            Manage meals
-          </Button>
-        </div>
-      </DividedStack>
-    </FormContainer>
+    <>
+      <BackupMealsAlert />
+      <FormContainer<CreateMealLogFormData>
+        formContext={formContext}
+        onSuccess={logMeal}
+      >
+        <DividedStack>
+          <div className="flex-1">
+            <FormRows>
+              <FormRow>
+                <SearchMealsElement name="meal" />
+              </FormRow>
+              <FormRow>
+                <MealTypeElement name="mealType" />
+                <LinkedDayElement name="daySource" />
+                <div className="flex-grow min-w-0"></div>
+                <Button type="submit" disabled={!watch("meal")}>
+                  Log meal
+                </Button>
+              </FormRow>
+            </FormRows>
+          </div>
+          <div>
+            <Button href="/settings/meals" LinkComponent={NextLink}>
+              Manage meals
+            </Button>
+          </div>
+        </DividedStack>
+      </FormContainer>
+    </>
   );
 }

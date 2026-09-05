@@ -16,6 +16,7 @@ import { ServingSize } from "@/utils/food-amounts";
 import { DividedStack } from "@/components/layout/flex";
 import { showSuccessToast, withErrorToaster } from "@/components/toast";
 
+import BackupCustomFoodsAlert from "./backup-custom-foods-alert";
 import { SearchFoodsElement } from "./food-search";
 import { FoodServingSizeElement } from "./serving-size";
 import { MealTypeElement } from "./meal-type-element";
@@ -111,22 +112,25 @@ export function CreateFoodLogForm() {
 
 export default function CreateFoodLog() {
   return (
-    <DividedStack>
-      <div className="flex-1">
-        <CreateFoodLogForm />
-      </div>
-      <Stack direction="column" rowGap={2}>
-        <Button
-          href="/settings/foods/custom"
-          LinkComponent={NextLink}
-          startIcon={<WarningOutlined />}
-        >
-          Custom foods
-        </Button>
-        <Button href="/settings/foods/favorite" LinkComponent={NextLink}>
-          Favorites
-        </Button>
-      </Stack>
-    </DividedStack>
+    <>
+      <BackupCustomFoodsAlert />
+      <DividedStack>
+        <div className="flex-1">
+          <CreateFoodLogForm />
+        </div>
+        <Stack direction="column" rowGap={2}>
+          <Button
+            href="/settings/foods/custom"
+            LinkComponent={NextLink}
+            startIcon={<WarningOutlined />}
+          >
+            Custom foods
+          </Button>
+          <Button href="/settings/foods/favorite" LinkComponent={NextLink}>
+            Favorites
+          </Button>
+        </Stack>
+      </DividedStack>
+    </>
   );
 }

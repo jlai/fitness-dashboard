@@ -1,6 +1,6 @@
 import { test as base, Page } from "@playwright/test";
 
-import { Food, GetFoodLogResponse } from "@/api/nutrition";
+import { Food, GetFoodLogResponse, Meal } from "@/api/nutrition";
 import { SCRAMBLED_EGGS } from "@/e2e/data/nutrition/food-log-list";
 
 export class NutritionApi {
@@ -26,6 +26,13 @@ export class NutritionApi {
     // custom foods
     await page.route("**/1/user/-/foods.json", async (route) => {
       await route.fulfill({ json: { foods: [] } });
+    });
+    await page.route("**/1/user/-/meals.json", async (route) => {
+      if (route.request().method() === "GET") {
+        await route.fulfill({ json: { meals: [] } });
+      } else {
+        await route.fallback();
+      }
     });
     await page.route("**/1/user/-/foods/log/date/*.json", async (route) => {
       await route.fulfill({ json: { foods: [] } });
@@ -74,6 +81,26 @@ export class NutritionApi {
     await page.route("**/1/user/-/foods/log/*.json**", async (route) => {
       if (["POST", "DELETE"].includes(route.request().method())) {
         await route.fulfill({ status: 200 });
+      } else {
+        await route.fallback();
+      }
+    });
+  }
+
+  async setCustomFoodsResponse(foods: ReadonlyArray<Food>) {
+    await this.page.route("**/1/user/-/foods.json", async (route) => {
+      if (route.request().method() === "GET") {
+        await route.fulfill({ json: { foods } });
+      } else {
+        await route.fallback();
+      }
+    });
+  }
+
+  async setMealsResponse(meals: ReadonlyArray<Meal>) {
+    await this.page.route("**/1/user/-/meals.json", async (route) => {
+      if (route.request().method() === "GET") {
+        await route.fulfill({ json: { meals } });
       } else {
         await route.fallback();
       }

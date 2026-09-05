@@ -24,6 +24,7 @@ import { buildDeleteCustomFoodsMutation } from "@/api/nutrition/foods";
 import NutritionPopover, {
   ShowLabelAction,
 } from "@/components/nutrition/label/nutrition-popover";
+import BackupCustomFoodsAlert from "@/components/nutrition/food/backup-custom-foods-alert";
 import { macroGoalsAtom } from "@/storage/settings";
 import { showSuccessToast, withErrorToaster } from "@/components/toast";
 
@@ -108,6 +109,7 @@ export default function ManageCustomFoods() {
         offset={[0, 15]}
       />
       <CreateCustomFoodDialog />
+      <BackupCustomFoodsAlert className="m-4" />
       <Alert severity="error">
         Custom foods are not currently available due to changes in the Fitbit
         API.
