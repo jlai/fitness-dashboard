@@ -23,7 +23,10 @@ import { uniqBy } from "es-toolkit";
 
 import { buildSearchFoodsQuery } from "@/api/nutrition/search";
 import { Food } from "@/api/nutrition";
+import { mapFoodDataPoint } from "@/api/nutrition/helpers";
 import { formatFoodName } from "@/utils/other-formats";
+import { db as dashDb } from "@/storage/db/dashdb";
+import { importFromFitbitMigrationDb } from "@/storage/db/import-from-fitbit-migration";
 
 type FoodOption = Food & {
   recent?: boolean;
@@ -49,9 +52,9 @@ function buildSavedFoodsQuery() {
   return queryOptions({
     queryKey: ["saved-foods"],
     queryFn: async (): Promise<FoodOption[]> => {
-      // Favorite, frequent, recent, and custom food lists are not available
-      // on the Google Health API yet. Restore these queries when they are.
-      return [];
+      await importFromFitbitMigrationDb();
+      const dataPoints = await dashDb.clientOnlyFoods.toArray();
+      return dataPoints.map((dataPoint) => mapFoodDataPoint(dataPoint));
     },
   });
 }

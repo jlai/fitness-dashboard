@@ -4,6 +4,7 @@ import { Dayjs } from "dayjs";
 import {
   DataSourceRecordingMethod,
   type NutritionLog,
+  type NutritionLogMealType,
   type Serving,
 } from "@generated/orval/fetch/google-health-api/models";
 import {
@@ -15,7 +16,12 @@ import {
 import { formatAsDate } from "../datetime";
 import mutationOptions from "../mutation-options";
 
-import { getDataPointIdFromName } from "./helpers";
+import {
+  getDataPointIdFromName,
+  nutritionalValuesToHealthFields,
+  scaleNutritionalValues,
+} from "./helpers";
+import type { MealFood } from "./types";
 
 export interface CreateFoodLogOptions {
   nutritionLog: NutritionLog;
@@ -63,6 +69,44 @@ export function nutritionLogServing(amount: number, unitId: string): Serving {
     ...(unitId
       ? { foodMeasurementUnit: foodMeasurementUnitResourceName(unitId) }
       : {}),
+  };
+}
+
+export function nutritionLogFromMealFood(
+  food: MealFood,
+  mealType: NutritionLogMealType,
+): NutritionLog {
+  const unitId = food.unit?.id ?? food.defaultUnit?.id ?? "";
+  const serving = nutritionLogServing(food.amount, unitId);
+
+  if (food.accessLevel !== "PRIVATE") {
+    return {
+      food: foodResourceName(food.foodId),
+      mealType,
+      serving,
+    };
+  }
+
+  const factor = food.amount / (food.defaultServingSize || 1);
+  const fields = nutritionalValuesToHealthFields(
+    scaleNutritionalValues(
+      {
+        calories: food.calories,
+        ...food.nutritionalValues,
+      },
+      factor,
+    ),
+  );
+
+  return {
+    foodDisplayName: food.name,
+    mealType,
+    serving,
+    energy: fields.energy,
+    energyFromFat: fields.energyFromFat,
+    totalCarbohydrate: fields.totalCarbohydrate,
+    totalFat: fields.totalFat,
+    nutrients: fields.nutrients,
   };
 }
 

@@ -231,8 +231,7 @@ function mapFoodServing(
     };
   }
 
-  const name =
-    serving.foodMeasurementUnitDisplayName ?? lookedUp?.name ?? "";
+  const name = serving.foodMeasurementUnitDisplayName ?? lookedUp?.name ?? "";
 
   return {
     multiplier: serving.multiplier ?? 1,
@@ -327,6 +326,339 @@ export function mapFoodDataPoint(
   };
 }
 
+function milligramsToGrams(value: number) {
+  return value / GRAMS_TO_MILLIGRAMS;
+}
+
+type ReverseNutrientMapping = {
+  field: keyof NutritionalValues;
+  nutrient: NutrientQuantityNutrient;
+  toGrams: (fitbitValue: number) => number;
+};
+
+/** Fitbit-style nutrient fields → Health nutrient quantities. Dedicated Food fields are omitted. */
+const NUTRIENT_TO_HEALTH: Array<ReverseNutrientMapping> = [
+  {
+    field: "biotin",
+    nutrient: NutrientQuantityNutrient.BIOTIN,
+    toGrams: milligramsToGrams,
+  },
+  {
+    field: "calcium",
+    nutrient: NutrientQuantityNutrient.CALCIUM,
+    toGrams: milligramsToGrams,
+  },
+  {
+    field: "cholesterol",
+    nutrient: NutrientQuantityNutrient.CHOLESTEROL,
+    toGrams: milligramsToGrams,
+  },
+  {
+    field: "copper",
+    nutrient: NutrientQuantityNutrient.COPPER,
+    toGrams: milligramsToGrams,
+  },
+  {
+    field: "fiber",
+    nutrient: NutrientQuantityNutrient.DIETARY_FIBER,
+    toGrams: grams,
+  },
+  {
+    field: "dietaryFiber",
+    nutrient: NutrientQuantityNutrient.DIETARY_FIBER,
+    toGrams: grams,
+  },
+  {
+    field: "folicAcid",
+    nutrient: NutrientQuantityNutrient.FOLIC_ACID,
+    toGrams: milligramsToGrams,
+  },
+  {
+    field: "iodine",
+    nutrient: NutrientQuantityNutrient.IODINE,
+    toGrams: milligramsToGrams,
+  },
+  {
+    field: "iron",
+    nutrient: NutrientQuantityNutrient.IRON,
+    toGrams: milligramsToGrams,
+  },
+  {
+    field: "magnesium",
+    nutrient: NutrientQuantityNutrient.MAGNESIUM,
+    toGrams: milligramsToGrams,
+  },
+  {
+    field: "niacin",
+    nutrient: NutrientQuantityNutrient.NIACIN,
+    toGrams: milligramsToGrams,
+  },
+  {
+    field: "pantothenicAcid",
+    nutrient: NutrientQuantityNutrient.PANTOTHENIC_ACID,
+    toGrams: milligramsToGrams,
+  },
+  {
+    field: "phosphorus",
+    nutrient: NutrientQuantityNutrient.PHOSPHORUS,
+    toGrams: milligramsToGrams,
+  },
+  {
+    field: "potassium",
+    nutrient: NutrientQuantityNutrient.POTASSIUM,
+    toGrams: milligramsToGrams,
+  },
+  {
+    field: "protein",
+    nutrient: NutrientQuantityNutrient.PROTEIN,
+    toGrams: grams,
+  },
+  {
+    field: "riboflavin",
+    nutrient: NutrientQuantityNutrient.RIBOFLAVIN,
+    toGrams: milligramsToGrams,
+  },
+  {
+    field: "saturatedFat",
+    nutrient: NutrientQuantityNutrient.SATURATED_FAT,
+    toGrams: grams,
+  },
+  {
+    field: "sodium",
+    nutrient: NutrientQuantityNutrient.SODIUM,
+    toGrams: milligramsToGrams,
+  },
+  {
+    field: "sugars",
+    nutrient: NutrientQuantityNutrient.SUGAR,
+    toGrams: grams,
+  },
+  {
+    field: "thiamin",
+    nutrient: NutrientQuantityNutrient.THIAMIN,
+    toGrams: milligramsToGrams,
+  },
+  {
+    field: "transFat",
+    nutrient: NutrientQuantityNutrient.TRANS_FAT,
+    toGrams: grams,
+  },
+  {
+    field: "vitaminA",
+    nutrient: NutrientQuantityNutrient.VITAMIN_A,
+    toGrams: milligramsToGrams,
+  },
+  {
+    field: "vitaminB12",
+    nutrient: NutrientQuantityNutrient.VITAMIN_B12,
+    toGrams: milligramsToGrams,
+  },
+  {
+    field: "vitaminB6",
+    nutrient: NutrientQuantityNutrient.VITAMIN_B6,
+    toGrams: milligramsToGrams,
+  },
+  {
+    field: "vitaminC",
+    nutrient: NutrientQuantityNutrient.VITAMIN_C,
+    toGrams: milligramsToGrams,
+  },
+  {
+    field: "vitaminD",
+    nutrient: NutrientQuantityNutrient.VITAMIN_D,
+    toGrams: milligramsToGrams,
+  },
+  {
+    field: "vitaminE",
+    nutrient: NutrientQuantityNutrient.VITAMIN_E,
+    toGrams: milligramsToGrams,
+  },
+  {
+    field: "zinc",
+    nutrient: NutrientQuantityNutrient.ZINC,
+    toGrams: milligramsToGrams,
+  },
+];
+
+export function toNutrientQuantities(
+  values?: NutritionalValues,
+): NutrientQuantity[] | undefined {
+  if (!values) {
+    return undefined;
+  }
+
+  const seen = new Set<NutrientQuantityNutrient>();
+  const nutrients: NutrientQuantity[] = [];
+
+  for (const { field, nutrient, toGrams } of NUTRIENT_TO_HEALTH) {
+    const value = values[field];
+    if (value == null || seen.has(nutrient)) {
+      continue;
+    }
+
+    seen.add(nutrient);
+    nutrients.push({
+      nutrient,
+      quantity: { grams: toGrams(value) },
+    });
+  }
+
+  return nutrients.length > 0 ? nutrients : undefined;
+}
+
+export function nutritionalValuesToHealthFields(values?: NutritionalValues) {
+  const carbGrams = values?.totalCarbohydrate ?? values?.carbs;
+  const fatGrams = values?.totalFat ?? values?.fat;
+
+  return {
+    energy: values?.calories != null ? { kcal: values.calories } : undefined,
+    energyFromFat:
+      values?.caloriesFromFat != null
+        ? { kcal: values.caloriesFromFat }
+        : undefined,
+    totalCarbohydrate: carbGrams != null ? { grams: carbGrams } : undefined,
+    totalFat: fatGrams != null ? { grams: fatGrams } : undefined,
+    nutrients: toNutrientQuantities(values),
+  };
+}
+
+export function scaleNutritionalValues(
+  values: NutritionalValues | undefined,
+  factor: number,
+): NutritionalValues | undefined {
+  if (!values) {
+    return undefined;
+  }
+
+  const scaled: NutritionalValues = {};
+  for (const [key, value] of Object.entries(values)) {
+    if (typeof value === "number") {
+      scaled[key as keyof NutritionalValues] = value * factor;
+    }
+  }
+
+  return scaled;
+}
+
+function foodMeasurementUnitResourceName(unitId: string) {
+  return `users/me/dataTypes/food-measurement-unit/dataPoints/${unitId}`;
+}
+
+function toHealthFoodServing(
+  amount: number,
+  multiplier: number,
+  unit: FoodUnit,
+): HealthFoodServing {
+  return {
+    amount,
+    multiplier,
+    ...(unit.id
+      ? { foodMeasurementUnit: foodMeasurementUnitResourceName(unit.id) }
+      : {}),
+    ...(unit.name ? { foodMeasurementUnitDisplayName: unit.name } : {}),
+    ...(unit.plural
+      ? { foodMeasurementUnitDisplayNamePlural: unit.plural }
+      : {}),
+  };
+}
+
+function healthServingsFromFood(food: Food): HealthFoodServing[] {
+  if (food.servings?.length) {
+    return food.servings.map((serving) =>
+      toHealthFoodServing(
+        serving.servingSize,
+        serving.multiplier,
+        serving.unit,
+      ),
+    );
+  }
+
+  const servings: HealthFoodServing[] = [];
+  const seen = new Set<string>();
+  const defaultUnit = food.defaultUnit ?? food.unit;
+
+  if (defaultUnit) {
+    servings.push(
+      toHealthFoodServing(food.defaultServingSize ?? 1, 1, defaultUnit),
+    );
+    seen.add(defaultUnit.id);
+  }
+
+  for (const unitId of food.units) {
+    if (seen.has(unitId)) {
+      continue;
+    }
+    seen.add(unitId);
+    servings.push(
+      toHealthFoodServing(1, 1, { id: unitId, name: "", plural: "" }),
+    );
+  }
+
+  return servings;
+}
+
+function unitFromHealthServing(
+  serving?: HealthFoodServing,
+): FoodUnit | undefined {
+  if (
+    !serving?.foodMeasurementUnit &&
+    !serving?.foodMeasurementUnitDisplayName
+  ) {
+    return undefined;
+  }
+
+  const name = serving.foodMeasurementUnitDisplayName ?? "";
+
+  return {
+    id: getDataPointIdFromName(serving.foodMeasurementUnit),
+    name,
+    plural: serving.foodMeasurementUnitDisplayNamePlural ?? name,
+  };
+}
+
+export function foodToDataPoint(food: Food): FoodDataPoint {
+  const servings = healthServingsFromFood(food);
+  const defaultUnit =
+    food.defaultUnit ?? food.unit ?? unitFromHealthServing(servings[0]);
+  const matchingDefault = defaultUnit
+    ? servings.find(
+        (serving) =>
+          getDataPointIdFromName(serving.foodMeasurementUnit) ===
+          defaultUnit.id,
+      )
+    : servings[0];
+  const defaultServing = defaultUnit
+    ? toHealthFoodServing(
+        food.defaultServingSize ?? matchingDefault?.amount ?? 1,
+        matchingDefault?.multiplier ?? 1,
+        defaultUnit,
+      )
+    : matchingDefault;
+  const fields = nutritionalValuesToHealthFields(food.nutritionalValues);
+
+  return {
+    name: `users/me/dataTypes/food/dataPoints/${food.foodId}`,
+    food: {
+      accessLevel:
+        food.accessLevel === "PRIVATE"
+          ? HealthFoodAccessLevel.FOOD_ACCESS_LEVEL_PRIVATE
+          : HealthFoodAccessLevel.FOOD_ACCESS_LEVEL_PUBLIC,
+      displayName: food.name,
+      brand: food.brand,
+      languageCode: food.locale,
+      energyAvg: { kcal: food.calories },
+      ...(fields.energyFromFat ? { energyFromFat: fields.energyFromFat } : {}),
+      ...(fields.totalCarbohydrate
+        ? { totalCarbohydrate: fields.totalCarbohydrate }
+        : {}),
+      ...(fields.totalFat ? { totalFat: fields.totalFat } : {}),
+      defaultServing,
+      ...(servings.length > 0 ? { servings } : {}),
+      ...(fields.nutrients ? { nutrients: fields.nutrients } : {}),
+    },
+  };
+}
+
 const NUTRITION_LOG_MEAL_TYPES: Record<NutritionLogMealType, MealType> = {
   [NutritionLogMealType.MEAL_TYPE_UNSPECIFIED]: MealType.Anytime,
   [NutritionLogMealType.BEFORE_BREAKFAST]: MealType.Anytime,
@@ -406,7 +738,9 @@ export function nutritionLogMacros(log: NutritionLog): NutritionalValues {
   };
 }
 
-export function nutritionLogServingUnit(log: NutritionLog): FoodUnit | undefined {
+export function nutritionLogServingUnit(
+  log: NutritionLog,
+): FoodUnit | undefined {
   const serving = log.serving;
   const lookedUp = serving?.foodMeasurementUnit
     ? foodMeasurementUnitCache.get(serving.foodMeasurementUnit)

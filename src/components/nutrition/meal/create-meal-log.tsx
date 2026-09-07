@@ -10,8 +10,7 @@ import {
   Meal,
   MealType,
   buildCreateMultipleFoodLogsMutation,
-  foodResourceName,
-  nutritionLogServing,
+  nutritionLogFromMealFood,
   toNutritionLogMealType,
 } from "@/api/nutrition";
 import LinkedDayElement, { DaySelectorSource } from "@/components/linked-day";
@@ -60,11 +59,10 @@ export default function CreateMealLog() {
     const foods = meal.mealFoods.map(
       (food) =>
         ({
-          nutritionLog: {
-            food: foodResourceName(food.foodId),
-            mealType: toNutritionLogMealType(mealType),
-            serving: nutritionLogServing(food.amount, food.unit!.id),
-          },
+          nutritionLog: nutritionLogFromMealFood(
+            food,
+            toNutritionLogMealType(mealType),
+          ),
           day,
         }) as CreateFoodLogOptions,
     );

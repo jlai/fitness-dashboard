@@ -9,11 +9,13 @@ import {
   mapFoodDataPoint,
   mapFoodMeasurementUnit,
   mapNutrientQuantities,
+  foodToDataPoint,
   getDataPointIdFromName,
   nutritionLogDay,
   nutritionLogMacros,
   nutritionLogServingUnit,
   summarizeNutritionLogs,
+  toNutrientQuantities,
   toNutritionLogMealType,
 } from "@/api/nutrition/helpers";
 
@@ -26,9 +28,7 @@ describe("getDataPointIdFromName", () => {
 
   it("keeps non-numeric ids as strings", () => {
     expect(
-      getDataPointIdFromName(
-        "users/me/dataTypes/food/dataPoints/banana-split",
-      ),
+      getDataPointIdFromName("users/me/dataTypes/food/dataPoints/banana-split"),
     ).toBe("banana-split");
   });
 });
@@ -160,8 +160,7 @@ describe("mapFoodDataPoint", () => {
   });
 
   it("looks up serving units when display names are missing", () => {
-    const unitName =
-      "users/me/dataTypes/food-measurement-unit/dataPoints/304";
+    const unitName = "users/me/dataTypes/food-measurement-unit/dataPoints/304";
 
     expect(
       mapFoodDataPoint(
@@ -195,6 +194,99 @@ describe("mapFoodDataPoint", () => {
         unit: { id: "304", name: "serving", plural: "servings" },
       },
     ]);
+  });
+});
+
+describe("toNutrientQuantities", () => {
+  it("converts Fitbit-style milligram nutrients to grams", () => {
+    expect(
+      toNutrientQuantities({
+        protein: 31,
+        sodium: 74,
+        fiber: 3,
+      }),
+    ).toEqual([
+      {
+        nutrient: NutrientQuantityNutrient.DIETARY_FIBER,
+        quantity: { grams: 3 },
+      },
+      {
+        nutrient: NutrientQuantityNutrient.PROTEIN,
+        quantity: { grams: 31 },
+      },
+      {
+        nutrient: NutrientQuantityNutrient.SODIUM,
+        quantity: { grams: 0.074 },
+      },
+    ]);
+  });
+});
+
+describe("foodToDataPoint", () => {
+  it("converts a Food into a Food datapoint", () => {
+    const dataPoint = foodToDataPoint({
+      accessLevel: "PRIVATE",
+      foodId: "9001",
+      name: "Homemade Scramble",
+      brand: "Home",
+      locale: "en_US",
+      calories: 147,
+      defaultServingSize: 1,
+      defaultUnit: { id: "304", name: "serving", plural: "servings" },
+      unit: { id: "304", name: "serving", plural: "servings" },
+      units: ["304"],
+      servings: [
+        {
+          multiplier: 1,
+          servingSize: 1,
+          unit: { id: "304", name: "serving", plural: "servings" },
+        },
+      ],
+      nutritionalValues: {
+        calories: 147,
+        protein: 10.55,
+        sodium: 339,
+      },
+    });
+
+    expect(dataPoint).toEqual({
+      name: "users/me/dataTypes/food/dataPoints/9001",
+      food: {
+        accessLevel: FoodAccessLevel.FOOD_ACCESS_LEVEL_PRIVATE,
+        displayName: "Homemade Scramble",
+        brand: "Home",
+        languageCode: "en_US",
+        energyAvg: { kcal: 147 },
+        defaultServing: {
+          amount: 1,
+          multiplier: 1,
+          foodMeasurementUnit:
+            "users/me/dataTypes/food-measurement-unit/dataPoints/304",
+          foodMeasurementUnitDisplayName: "serving",
+          foodMeasurementUnitDisplayNamePlural: "servings",
+        },
+        servings: [
+          {
+            amount: 1,
+            multiplier: 1,
+            foodMeasurementUnit:
+              "users/me/dataTypes/food-measurement-unit/dataPoints/304",
+            foodMeasurementUnitDisplayName: "serving",
+            foodMeasurementUnitDisplayNamePlural: "servings",
+          },
+        ],
+        nutrients: [
+          {
+            nutrient: NutrientQuantityNutrient.PROTEIN,
+            quantity: { grams: 10.55 },
+          },
+          {
+            nutrient: NutrientQuantityNutrient.SODIUM,
+            quantity: { grams: 0.339 },
+          },
+        ],
+      },
+    });
   });
 });
 

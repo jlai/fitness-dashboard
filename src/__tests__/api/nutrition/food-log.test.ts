@@ -1,6 +1,10 @@
 import { NutritionLogMealType } from "@generated/orval/fetch/google-health-api/models";
 
-import { writableNutritionLog } from "@/api/nutrition/food-log";
+import {
+  nutritionLogFromMealFood,
+  writableNutritionLog,
+} from "@/api/nutrition/food-log";
+import type { MealFood } from "@/api/nutrition/types";
 
 const interval = {
   startTime: "2026-06-16T12:00:00.000Z",
@@ -64,6 +68,68 @@ describe("writableNutritionLog", () => {
       totalCarbohydrate: { grams: 0 },
       totalFat: { grams: 3.6 },
       nutrients: [{ nutrient: "PROTEIN", quantity: { grams: 31 } }],
+    });
+  });
+});
+
+describe("nutritionLogFromMealFood", () => {
+  const publicFood: MealFood = {
+    accessLevel: "PUBLIC",
+    foodId: "80850",
+    name: "Scrambled Eggs",
+    calories: 147,
+    amount: 1,
+    unit: { id: "304", name: "serving", plural: "servings" },
+    units: ["304"],
+  };
+
+  it("references catalog foods by resource name", () => {
+    expect(
+      nutritionLogFromMealFood(publicFood, NutritionLogMealType.BREAKFAST),
+    ).toEqual({
+      food: "users/me/dataTypes/food/dataPoints/80850",
+      mealType: NutritionLogMealType.BREAKFAST,
+      serving: {
+        amount: 1,
+        foodMeasurementUnit:
+          "users/me/dataTypes/food-measurement-unit/dataPoints/304",
+      },
+    });
+  });
+
+  it("uses anonymous nutrition logs for private client-only foods", () => {
+    expect(
+      nutritionLogFromMealFood(
+        {
+          ...publicFood,
+          accessLevel: "PRIVATE",
+          foodId: "9001",
+          name: "Homemade Scramble",
+          amount: 2,
+          defaultServingSize: 1,
+          nutritionalValues: { protein: 10, sodium: 100 },
+        },
+        NutritionLogMealType.BREAKFAST,
+      ),
+    ).toEqual({
+      foodDisplayName: "Homemade Scramble",
+      mealType: NutritionLogMealType.BREAKFAST,
+      serving: {
+        amount: 2,
+        foodMeasurementUnit:
+          "users/me/dataTypes/food-measurement-unit/dataPoints/304",
+      },
+      energy: { kcal: 294 },
+      nutrients: [
+        {
+          nutrient: "PROTEIN",
+          quantity: { grams: 20 },
+        },
+        {
+          nutrient: "SODIUM",
+          quantity: { grams: 0.2 },
+        },
+      ],
     });
   });
 });
