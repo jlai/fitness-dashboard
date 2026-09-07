@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAtomValue } from "jotai";
 
 import { NumberFormats } from "@/utils/number-formats";
-import { activeZoneMinutesGoalAtom } from "@/storage/settings";
+import { getGoalsAtom } from "@/storage/goals";
 
 import { ChartSeriesConfig } from "./series-config";
 import { StackedBarChart } from "./mui-renderer";
@@ -47,14 +47,16 @@ const AZM_SERIES_CONFIGS: Array<ChartSeriesConfig<ActiveZoneMinutesDatum>> = [
 
 export function ActiveZoneMinutesChart() {
   const { showGoals } = useTimeSeriesChartConfig();
-  const activeZoneMinutesGoal = useAtomValue(activeZoneMinutesGoalAtom);
+  const activeZoneMinutesGoal = useAtomValue(
+    getGoalsAtom("activeZoneMinutes", "daily"),
+  );
   const { data } = useQuery(
     useTimeSeriesQuery<ActiveZoneMinutesDatum>("active-zone-minutes"),
   );
 
   const props = useAggregation(data, AZM_SERIES_CONFIGS);
 
-  const azmGoal = showGoals && activeZoneMinutesGoal;
+  const azmGoal = showGoals ? activeZoneMinutesGoal?.value : undefined;
 
   return (
     <StackedBarChart
@@ -63,7 +65,7 @@ export function ActiveZoneMinutesChart() {
         azmGoal
           ? {
               label: `Goal: ${NumberFormats.FRACTION_DIGITS_0.format(
-                azmGoal
+                azmGoal,
               )} zone mins`,
               value: azmGoal,
             }

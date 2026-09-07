@@ -16,7 +16,7 @@ import { DateFormats } from "@/utils/date-formats";
 import { buildActivityIntradayQuery } from "@/api/intraday";
 import { physicalRangeForLocalDay } from "@/api/datetime";
 import { FormRows } from "@/components/forms/form-row";
-import { caloriesOutGoalAtom } from "@/storage/settings";
+import { getGoalsAtom } from "@/storage/goals";
 import { buildGetExerciseByDateQuery } from "@/api/exercise/exercise";
 import {
   getExerciseCalories,
@@ -89,15 +89,15 @@ export default function CaloriesDialogContent(props: RenderDialogContentProps) {
 
 function Overview() {
   const currentTotal = Number(useSelectedDayTimeSeries("calories") ?? 0);
-  const dailyGoal = useAtomValue(caloriesOutGoalAtom);
+  const dailyGoal = useAtomValue(getGoalsAtom("caloriesOut", "daily"));
 
-  return (
+  return dailyGoal ? (
     <DailyGoalSummary
       currentTotal={currentTotal}
-      dailyGoal={dailyGoal}
+      dailyGoal={dailyGoal.value}
       unit="Calories"
     />
-  );
+  ) : null;
 }
 
 function CaloriesPieChart() {
@@ -199,13 +199,13 @@ function Settings() {
 
       <FormRows mt={4}>
         <GoalSettings
-          resource="caloriesOut"
+          metric="caloriesOut"
           period="daily"
           label="Daily calories burned goal"
           unit="Cal"
         />
         <GoalSettings
-          resource="caloriesOut"
+          metric="caloriesOut"
           period="weekly"
           label="Weekly calories burned goal"
           unit="Cal"

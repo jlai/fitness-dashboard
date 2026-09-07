@@ -9,14 +9,8 @@ import {
 } from "@/api/user";
 import {
   distanceUnitAtom,
-  DEFAULT_DISTANCE_GOAL,
-  DEFAULT_WATER_GOAL,
-  distanceGoalAtom,
-  stepsGoalAtom,
   swimUnitAtom,
   temperatureUnitAtom,
-  waterGoalAtom,
-  weeklyWaterGoalAtom,
   waterUnitAtom,
   weightUnitAtom,
 } from "@/storage/settings";
@@ -109,21 +103,5 @@ describe("unit storage key migration", () => {
     expect(localStorage.getItem("unit:weight")).toBe(
       JSON.stringify(SettingsWeightUnit.WEIGHT_UNIT_POUNDS),
     );
-  });
-});
-
-describe("custom goal settings storage", () => {
-  beforeEach(() => {
-    localStorage.clear();
-  });
-
-  it("provides default values for individual goal atoms", () => {
-    expect(readMounted(stepsGoalAtom)).toBe(10_000);
-    expect(readMounted(distanceGoalAtom)).toEqual(DEFAULT_DISTANCE_GOAL);
-    expect(readMounted(waterGoalAtom)).toEqual(DEFAULT_WATER_GOAL);
-    expect(readMounted(weeklyWaterGoalAtom)).toEqual({
-      value: 14_000,
-      unit: SettingsWaterUnit.WATER_UNIT_ML,
-    });
   });
 });

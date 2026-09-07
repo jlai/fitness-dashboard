@@ -103,6 +103,7 @@
     "eslint": "^9.39.5",
     "eslint-config-next": "16.3.4",
     "eslint-plugin-import": "^2.29.1",
+    "fake-indexeddb": "^6.2.5",
     "google-discovery-to-swagger": "github:Cobalt0s/google-discovery-to-openapi",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^30.3.0",

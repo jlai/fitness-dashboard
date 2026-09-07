@@ -19,7 +19,7 @@ import { DateFormats } from "@/utils/date-formats";
 import { NumberFormats } from "@/utils/number-formats";
 import { aggregateByHour } from "@/components/charts/timeseries/aggregation";
 import { FormRows } from "@/components/forms/form-row";
-import { floorsGoalAtom, weeklyFloorsGoalAtom } from "@/storage/settings";
+import { getGoalsAtom } from "@/storage/goals";
 
 import { RenderDialogContentProps } from "../tile-with-dialog";
 import { useSelectedDay } from "../../state";
@@ -76,23 +76,27 @@ export default function FloorsDialogContent(props: RenderDialogContentProps) {
 
 function Overview() {
   const { dayValue: currentTotal, weekData } = useDayAndWeekSummary("floors");
-  const dailyGoal = useAtomValue(floorsGoalAtom);
-  const weeklyGoal = useAtomValue(weeklyFloorsGoalAtom);
+  const dailyGoal = useAtomValue(getGoalsAtom("floors", "daily"));
+  const weeklyGoal = useAtomValue(getGoalsAtom("floors", "weekly"));
 
   const weeklyTotal = sumBy(weekData, (entry) => Number(entry.value));
 
   return (
     <Stack direction="row" justifyContent="center">
-      <DailyGoalSummary
-        currentTotal={currentTotal}
-        dailyGoal={dailyGoal}
-        unit="floors"
-      />
-      <WeeklyGoalSummary
-        currentTotal={weeklyTotal}
-        weeklyGoal={weeklyGoal}
-        unit="floors"
-      />
+      {dailyGoal && (
+        <DailyGoalSummary
+          currentTotal={currentTotal}
+          dailyGoal={dailyGoal.value}
+          unit="floors"
+        />
+      )}
+      {weeklyGoal && (
+        <WeeklyGoalSummary
+          currentTotal={weeklyTotal}
+          weeklyGoal={weeklyGoal.value}
+          unit="floors"
+        />
+      )}
     </Stack>
   );
 }
@@ -149,13 +153,13 @@ function Settings() {
 
       <FormRows mt={4}>
         <GoalSettings
-          resource="floors"
+          metric="floors"
           period="daily"
           label="Daily floors goal"
           unit="floors"
         />
         <GoalSettings
-          resource="floors"
+          metric="floors"
           period="weekly"
           label="Weekly floors goal"
           unit="floors"

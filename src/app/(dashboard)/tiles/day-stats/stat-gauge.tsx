@@ -20,14 +20,15 @@ export default function StatGauge({
 }: {
   /** numeric value; this should use localized values for screen reader support */
   value: number;
-  valueMax: number;
+  valueMax?: number;
   valueUnits: string;
   iconSrc?: string;
   innerContent?: React.ReactNode;
   bottomContent?: React.ReactNode;
   ariaLabel?: string;
 }) {
-  const percent = (100 * value) / valueMax;
+  const showGoalRing = valueMax != null && valueMax > 0;
+  const percent = showGoalRing ? (100 * value) / valueMax : 0;
 
   let color;
 
@@ -43,19 +44,23 @@ export default function StatGauge({
     <div className="size-full max-h-full p-2">
       <div className="size-full w-full max-h-full flex flex-col items-center">
         <div className="w-full flex-1 relative min-h-0">
-          <GaugeContainer
-            startAngle={-180}
-            endAngle={180}
-            value={value}
-            valueMax={valueMax}
-            cornerRadius="50%"
-            aria-label={ariaLabel ?? `${valueUnits} progress`}
-          >
-            <GaugeReferenceArc />
-            <GaugeValueArc style={{ fill: color }} />
-          </GaugeContainer>
+          {showGoalRing ? (
+            <GaugeContainer
+              startAngle={-180}
+              endAngle={180}
+              value={value}
+              valueMax={valueMax}
+              cornerRadius="50%"
+              aria-label={ariaLabel ?? `${valueUnits} progress`}
+            >
+              <GaugeReferenceArc />
+              <GaugeValueArc style={{ fill: color }} />
+            </GaugeContainer>
+          ) : (
+            <div className="size-full" aria-label={ariaLabel ?? valueUnits} />
+          )}
           <div className="absolute inset-1/4 flex place-content-center">
-            {innerContent}
+            {showGoalRing ? innerContent : undefined}
             {iconSrc && (
               <Image src={iconSrc} alt="" className="size-3/4 self-center" />
             )}

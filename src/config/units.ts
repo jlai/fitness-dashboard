@@ -315,20 +315,21 @@ export function millimetersToKilometers(millimeters: number) {
   return millimeters / 1_000_000;
 }
 
-export function kilometersFromDistanceGoal(
-  value: number,
-  unit: DistanceUnitSystem,
-) {
-  return unit === SettingsDistanceUnit.DISTANCE_UNIT_MILES
+export function kilometersFromDistanceGoal(value: number, unit: string) {
+  return unit === SettingsDistanceUnit.DISTANCE_UNIT_MILES || unit === "miles"
     ? value / MILES_PER_KM
     : value;
 }
 
-export function millilitersFromWaterGoal(value: number, unit: WaterUnitSystem) {
+export function millilitersFromWaterGoal(value: number, unit: string) {
   switch (unit) {
     case SettingsWaterUnit.WATER_UNIT_FL_OZ:
+    case "fluid ounces":
+    case "fl oz":
       return value / FLUID_OZ_PER_ML;
     case SettingsWaterUnit.WATER_UNIT_CUP:
+    case "cups":
+    case "cup":
       return value / CUP_PER_ML;
     default:
       return value;

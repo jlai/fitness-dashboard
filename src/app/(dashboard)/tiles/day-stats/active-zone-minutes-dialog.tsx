@@ -23,7 +23,7 @@ import { buildActiveZoneMinutesIntradayQuery } from "@/api/intraday";
 import { physicalRangeForLocalDay } from "@/api/datetime";
 import { DateFormats } from "@/utils/date-formats";
 import { HeaderBar } from "@/components/layout/rows";
-import { activeZoneMinutesGoalAtom } from "@/storage/settings";
+import { getGoalsAtom } from "@/storage/goals";
 
 import { RenderDialogContentProps } from "../tile-with-dialog";
 import { useTileSetting } from "../tile";
@@ -78,7 +78,9 @@ export default function ActiveZoneMinutesDialogContent(
 
 function Overview() {
   const selectedDay = useSelectedDay();
-  const activeZoneMinutesGoal = useAtomValue(activeZoneMinutesGoalAtom);
+  const activeZoneMinutesGoal = useAtomValue(
+    getGoalsAtom("activeZoneMinutes", "daily"),
+  );
 
   const { data: azmSeries } = useQuery(
     buildTimeSeriesQuery<TimeSeriesEntry<ActiveZoneMinutesTimeSeriesValue>>(
@@ -102,11 +104,13 @@ function Overview() {
         minute in vigorous and peak zones.
       </Typography>
       <Stack direction="row" justifyContent="center">
-        <DailyGoalSummary
-          currentTotal={dayAzmValue}
-          dailyGoal={activeZoneMinutesGoal}
-          unit="mins"
-        />
+        {activeZoneMinutesGoal && (
+          <DailyGoalSummary
+            currentTotal={dayAzmValue}
+            dailyGoal={activeZoneMinutesGoal.value}
+            unit="mins"
+          />
+        )}
       </Stack>
     </>
   );
@@ -179,13 +183,13 @@ function Settings() {
 
       <FormRows mt={4}>
         <GoalSettings
-          resource="activeZoneMinutes"
+          metric="activeZoneMinutes"
           period="daily"
           label="Daily active zone minutes goal"
           unit="mins"
         />
         <GoalSettings
-          resource="activeZoneMinutes"
+          metric="activeZoneMinutes"
           period="weekly"
           label="Weekly active zone minutes goal"
           unit="mins"

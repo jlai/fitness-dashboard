@@ -16,12 +16,10 @@ import {
 } from "@/config/units";
 import { FormRow } from "@/components/forms/form-row";
 import {
-  getDistanceGoalAtom,
-  getNumericGoalAtom,
-  getWaterGoalAtom,
-  GoalPeriod,
-  NumericGoalResource,
-} from "@/storage/settings";
+  getGoalsAtom,
+  type GoalMetric,
+  type GoalPeriod,
+} from "@/storage/goals";
 import { NumberFormats } from "@/utils/number-formats";
 import { showSuccessToast, withErrorToaster } from "@/components/toast";
 
@@ -128,24 +126,27 @@ export function useDayAndWeekSummary(resource: TimeSeriesResource) {
 }
 
 interface GoalSettingsFormData {
-  goal: number;
+  goal: number | "";
 }
 
 export function GoalSettings({
-  resource,
+  metric,
   period,
   label,
   unit,
 }: {
-  resource: NumericGoalResource;
+  metric: GoalMetric;
   period: GoalPeriod;
   label: string;
   unit: string;
 }) {
-  const goalAtom = getNumericGoalAtom(period, resource);
+  const goalAtom = getGoalsAtom(metric, period);
   const [goal, setGoal] = useAtom(goalAtom);
 
-  const defaultValues = useMemo(() => ({ goal }), [goal]);
+  const defaultValues = useMemo(
+    () => ({ goal: goal?.value ?? ("" as const) }),
+    [goal],
+  );
 
   const form = useForm<GoalSettingsFormData>({
     defaultValues,
@@ -158,7 +159,7 @@ export function GoalSettings({
   const { formState } = form;
 
   const submit = withErrorToaster(async (values: GoalSettingsFormData) => {
-    setGoal(Number(values.goal));
+    setGoal({ value: Number(values.goal), unit: goal?.unit ?? "" });
 
     form.reset({
       goal: values.goal,
@@ -208,13 +209,14 @@ export function DistanceGoalSettings({
   label: string;
   unit: string;
 }) {
-  const goalAtom = getDistanceGoalAtom(period);
+  const goalAtom = getGoalsAtom("distance", period);
   const [goal, setGoal] = useAtom(goalAtom);
   const { distanceUnit, localizedKilometers } = useUnits();
 
-  const displayGoal = localizedKilometers(
-    kilometersFromDistanceGoal(goal.value, goal.unit),
-  );
+  const displayGoal =
+    goal != null
+      ? localizedKilometers(kilometersFromDistanceGoal(goal.value, goal.unit))
+      : ("" as const);
 
   const defaultValues = useMemo(() => ({ goal: displayGoal }), [displayGoal]);
 
@@ -279,13 +281,14 @@ export function WaterGoalSettings({
   label: string;
   unit: string;
 }) {
-  const goalAtom = getWaterGoalAtom(period);
+  const goalAtom = getGoalsAtom("waterVolume", period);
   const [goal, setGoal] = useAtom(goalAtom);
   const { waterUnit, localizedWaterVolume } = useUnits();
 
-  const displayGoal = localizedWaterVolume(
-    millilitersFromWaterGoal(goal.value, goal.unit),
-  );
+  const displayGoal =
+    goal != null
+      ? localizedWaterVolume(millilitersFromWaterGoal(goal.value, goal.unit))
+      : ("" as const);
 
   const defaultValues = useMemo(() => ({ goal: displayGoal }), [displayGoal]);
 

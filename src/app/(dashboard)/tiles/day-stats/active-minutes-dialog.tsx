@@ -21,7 +21,7 @@ import {
   HeartTimeSeriesValue,
   ActiveMinutesTimeSeriesValue,
 } from "@/api/times-series";
-import { activeMinutesGoalAtom } from "@/storage/settings";
+import { getGoalsAtom } from "@/storage/goals";
 
 import { RenderDialogContentProps } from "../tile-with-dialog";
 import { useTileSetting } from "../tile";
@@ -75,7 +75,9 @@ const ACTIVE_MINUTES_HEART_RATE_ZONES = new Set(["Fat Burn", "Cardio", "Peak"]);
 
 export function useActiveMinutes(source: ActiveMinutesSource) {
   const selectedDay = useSelectedDay();
-  const activeMinutesGoal = useAtomValue(activeMinutesGoalAtom);
+  const activeMinutesGoal = useAtomValue(
+    getGoalsAtom("activeMinutes", "daily"),
+  );
 
   const activeMinutesValue =
     useSelectedDayTimeSeries<ActiveMinutesTimeSeriesValue>("active-minutes");
@@ -105,7 +107,7 @@ export function useActiveMinutes(source: ActiveMinutesSource) {
   }
 
   return {
-    activeMinutesGoal,
+    activeMinutesGoal: activeMinutesGoal?.value,
     activeMinutes,
   };
 }
@@ -134,11 +136,13 @@ function Overview() {
         for a more detailed explanation.
       </Typography>
       <Stack direction="row" justifyContent="center">
-        <DailyGoalSummary
-          currentTotal={activeMinutes}
-          dailyGoal={activeMinutesGoal ?? 0}
-          unit="mins"
-        />
+        {activeMinutesGoal != null && (
+          <DailyGoalSummary
+            currentTotal={activeMinutes}
+            dailyGoal={activeMinutesGoal}
+            unit="mins"
+          />
+        )}
       </Stack>
     </>
   );
@@ -224,13 +228,13 @@ function Settings() {
 
         <FormRows mt={4}>
           <GoalSettings
-            resource="activeMinutes"
+            metric="activeMinutes"
             period="daily"
             label="Daily active minutes goal"
             unit="mins"
           />
           <GoalSettings
-            resource="activeMinutes"
+            metric="activeMinutes"
             period="weekly"
             label="Weekly active minutes goal"
             unit="mins"

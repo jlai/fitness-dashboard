@@ -22,7 +22,7 @@ import { NumberFormats } from "@/utils/number-formats";
 import { aggregateByHour } from "@/components/charts/timeseries/aggregation";
 import { HeaderBar } from "@/components/layout/rows";
 import { FormRows } from "@/components/forms/form-row";
-import { stepsGoalAtom, weeklyStepsGoalAtom } from "@/storage/settings";
+import { getGoalsAtom } from "@/storage/goals";
 
 import { RenderDialogContentProps } from "../tile-with-dialog";
 import { useSelectedDay } from "../../state";
@@ -82,23 +82,27 @@ export default function StepsDialogContent(props: RenderDialogContentProps) {
 
 function Overview() {
   const { dayValue: currentTotal, weekData } = useDayAndWeekSummary("steps");
-  const dailyGoal = useAtomValue(stepsGoalAtom);
-  const weeklyGoal = useAtomValue(weeklyStepsGoalAtom);
+  const dailyGoal = useAtomValue(getGoalsAtom("steps", "daily"));
+  const weeklyGoal = useAtomValue(getGoalsAtom("steps", "weekly"));
 
   const weeklySteps = sumBy(weekData, (entry) => Number(entry.value));
 
   return (
     <Stack direction="row" justifyContent="center">
-      <DailyGoalSummary
-        currentTotal={currentTotal}
-        dailyGoal={dailyGoal}
-        unit="steps"
-      />
-      <WeeklyGoalSummary
-        currentTotal={weeklySteps}
-        weeklyGoal={weeklyGoal}
-        unit="steps"
-      />
+      {dailyGoal && (
+        <DailyGoalSummary
+          currentTotal={currentTotal}
+          dailyGoal={dailyGoal.value}
+          unit="steps"
+        />
+      )}
+      {weeklyGoal && (
+        <WeeklyGoalSummary
+          currentTotal={weeklySteps}
+          weeklyGoal={weeklyGoal.value}
+          unit="steps"
+        />
+      )}
     </Stack>
   );
 }
@@ -190,13 +194,13 @@ function Settings() {
 
       <FormRows mt={4}>
         <GoalSettings
-          resource="steps"
+          metric="steps"
           period="daily"
           label="Daily step goal"
           unit="steps"
         />
         <GoalSettings
-          resource="steps"
+          metric="steps"
           period="weekly"
           label="Weekly step goal"
           unit="steps"

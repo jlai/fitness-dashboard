@@ -4,11 +4,7 @@ import { useAtomValue } from "jotai";
 
 import { kilometersFromDistanceGoal, useUnits } from "@/config/units";
 import { NumberFormats } from "@/utils/number-formats";
-import {
-  distanceGoalAtom,
-  floorsGoalAtom,
-  stepsGoalAtom,
-} from "@/storage/settings";
+import { getGoalsAtom } from "@/storage/goals";
 
 import { useAggregation } from "./aggregation";
 import { useRangeInfo, useTimeSeriesData, useTimeSeriesQuery } from "./data";
@@ -44,12 +40,12 @@ export function StepsChart() {
 
 export function DailyStepsChart() {
   const { showGoals } = useTimeSeriesChartConfig();
-  const stepsGoal = useAtomValue(stepsGoalAtom);
+  const stepsGoal = useAtomValue(getGoalsAtom("steps", "daily"));
   const { data } = useQuery(useTimeSeriesQuery("steps"));
 
   const props = useAggregation(data, STEPS_SERIES_CONFIGS);
 
-  const stepGoal = showGoals && stepsGoal;
+  const stepGoal = showGoals ? stepsGoal?.value : undefined;
 
   return (
     <>
@@ -79,7 +75,7 @@ export function DailyStepsChart() {
 export function DistanceChart() {
   const { localizedKilometers, localizedKilometersName } = useUnits();
   const { showGoals } = useTimeSeriesChartConfig();
-  const distanceGoalValue = useAtomValue(distanceGoalAtom);
+  const distanceGoalValue = useAtomValue(getGoalsAtom("distance", "daily"));
   const { data } = useQuery(useTimeSeriesQuery("distance"));
 
   const seriesConfigs = useMemo(
@@ -96,13 +92,14 @@ export function DistanceChart() {
   const props = useAggregation(data, seriesConfigs);
 
   const distanceGoal =
-    showGoals &&
-    localizedKilometers(
-      kilometersFromDistanceGoal(
-        distanceGoalValue.value,
-        distanceGoalValue.unit,
-      ),
-    );
+    showGoals && distanceGoalValue
+      ? localizedKilometers(
+          kilometersFromDistanceGoal(
+            distanceGoalValue.value,
+            distanceGoalValue.unit,
+          ),
+        )
+      : undefined;
 
   return (
     <>
@@ -136,12 +133,12 @@ export function DistanceChart() {
 
 export function FloorsChart() {
   const { showGoals } = useTimeSeriesChartConfig();
-  const floorsGoalValue = useAtomValue(floorsGoalAtom);
+  const floorsGoalValue = useAtomValue(getGoalsAtom("floors", "daily"));
   const { data } = useQuery(useTimeSeriesQuery("floors"));
 
   const props = useAggregation(data, FLOORS_SERIES_CONFIGS);
 
-  const floorsGoal = showGoals && floorsGoalValue;
+  const floorsGoal = showGoals ? floorsGoalValue?.value : undefined;
 
   return (
     <>

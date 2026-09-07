@@ -26,7 +26,7 @@ import {
   buildHydrationLogQuery,
 } from "@/api/nutrition";
 import { millilitersFromWaterGoal } from "@/config/units";
-import { waterGoalAtom } from "@/storage/settings";
+import { getGoalsAtom } from "@/storage/goals";
 
 import NumericStat from "../numeric-stat";
 import { DividedStack } from "../layout/flex";
@@ -229,7 +229,7 @@ export default function WaterEntryPanel() {
 function WaterToday() {
   const day = dayjs();
   const units = useUnits();
-  const waterGoal = useAtomValue(waterGoalAtom);
+  const waterGoal = useAtomValue(getGoalsAtom("waterVolume", "daily"));
 
   const { data: hydrationLog } = useSuspenseQuery(buildHydrationLogQuery(day));
 
@@ -242,18 +242,29 @@ function WaterToday() {
   const { localizedWaterVolumeName, localizedWaterVolume } = units;
 
   const waterConsumed = localizedWaterVolume(waterConsumedMl);
-  const waterGoalMl = millilitersFromWaterGoal(waterGoal.value, waterGoal.unit);
-  const waterGoalNumber = localizedWaterVolume(waterGoalMl);
+  const waterGoalMl =
+    waterGoal != null
+      ? millilitersFromWaterGoal(waterGoal.value, waterGoal.unit)
+      : undefined;
+  const waterGoalNumber =
+    waterGoalMl != null ? localizedWaterVolume(waterGoalMl) : undefined;
 
   return (
     <div className="flex flex-col items-center">
       <Typography variant="h5">Today</Typography>
       <div className="flex flex-row items-center gap-x-2">
-        <NumericStat value={waterConsumed} unit={localizedWaterVolumeName} />{" "}
-        <Typography variant="body1" className="text-2xl">
-          /
-        </Typography>
-        <NumericStat value={waterGoalNumber} unit={localizedWaterVolumeName} />
+        <NumericStat value={waterConsumed} unit={localizedWaterVolumeName} />
+        {waterGoalNumber != null && (
+          <>
+            <Typography variant="body1" className="text-2xl">
+              /
+            </Typography>
+            <NumericStat
+              value={waterGoalNumber}
+              unit={localizedWaterVolumeName}
+            />
+          </>
+        )}
       </div>
     </div>
   );

@@ -61,21 +61,8 @@ import {
   clockHourCycleAtom,
   numberFormatPatternAtom,
   dateFormatPatternAtom,
-  stepsGoalAtom,
-  weeklyStepsGoalAtom,
-  floorsGoalAtom,
-  weeklyFloorsGoalAtom,
-  distanceGoalAtom,
-  weeklyDistanceGoalAtom,
-  caloriesOutGoalAtom,
-  weeklyCaloriesOutGoalAtom,
-  activeMinutesGoalAtom,
-  weeklyActiveMinutesGoalAtom,
-  activeZoneMinutesGoalAtom,
-  weeklyActiveZoneMinutesGoalAtom,
-  waterGoalAtom,
-  weeklyWaterGoalAtom,
 } from "@/storage/settings";
+import { getGoalsAtom } from "@/storage/goals";
 import { NutritionalValues } from "@/api/nutrition/types";
 import { PATTERN_TO_LOCALE } from "@/utils/number-formats";
 import { getScopeName } from "@/config/scopes";
@@ -424,32 +411,44 @@ function MacroGoals() {
 }
 
 function ActivityGoalsSettings() {
-  const [stepsGoal, setStepsGoal] = useAtom(stepsGoalAtom);
-  const [weeklyStepsGoal, setWeeklyStepsGoal] = useAtom(weeklyStepsGoalAtom);
-  const [floorsGoal, setFloorsGoal] = useAtom(floorsGoalAtom);
-  const [weeklyFloorsGoal, setWeeklyFloorsGoal] = useAtom(weeklyFloorsGoalAtom);
-  const [distanceGoal, setDistanceGoal] = useAtom(distanceGoalAtom);
-  const [weeklyDistanceGoal, setWeeklyDistanceGoal] = useAtom(
-    weeklyDistanceGoalAtom,
+  const [stepsGoal, setStepsGoal] = useAtom(getGoalsAtom("steps", "daily"));
+  const [weeklyStepsGoal, setWeeklyStepsGoal] = useAtom(
+    getGoalsAtom("steps", "weekly"),
   );
-  const [caloriesOutGoal, setCaloriesOutGoal] = useAtom(caloriesOutGoalAtom);
+  const [floorsGoal, setFloorsGoal] = useAtom(getGoalsAtom("floors", "daily"));
+  const [weeklyFloorsGoal, setWeeklyFloorsGoal] = useAtom(
+    getGoalsAtom("floors", "weekly"),
+  );
+  const [distanceGoal, setDistanceGoal] = useAtom(
+    getGoalsAtom("distance", "daily"),
+  );
+  const [weeklyDistanceGoal, setWeeklyDistanceGoal] = useAtom(
+    getGoalsAtom("distance", "weekly"),
+  );
+  const [caloriesOutGoal, setCaloriesOutGoal] = useAtom(
+    getGoalsAtom("caloriesOut", "daily"),
+  );
   const [weeklyCaloriesOutGoal, setWeeklyCaloriesOutGoal] = useAtom(
-    weeklyCaloriesOutGoalAtom,
+    getGoalsAtom("caloriesOut", "weekly"),
   );
   const [activeMinutesGoal, setActiveMinutesGoal] = useAtom(
-    activeMinutesGoalAtom,
+    getGoalsAtom("activeMinutes", "daily"),
   );
   const [weeklyActiveMinutesGoal, setWeeklyActiveMinutesGoal] = useAtom(
-    weeklyActiveMinutesGoalAtom,
+    getGoalsAtom("activeMinutes", "weekly"),
   );
   const [activeZoneMinutesGoal, setActiveZoneMinutesGoal] = useAtom(
-    activeZoneMinutesGoalAtom,
+    getGoalsAtom("activeZoneMinutes", "daily"),
   );
   const [weeklyActiveZoneMinutesGoal, setWeeklyActiveZoneMinutesGoal] = useAtom(
-    weeklyActiveZoneMinutesGoalAtom,
+    getGoalsAtom("activeZoneMinutes", "weekly"),
   );
-  const [waterGoal, setWaterGoal] = useAtom(waterGoalAtom);
-  const [weeklyWaterGoal, setWeeklyWaterGoal] = useAtom(weeklyWaterGoalAtom);
+  const [waterGoal, setWaterGoal] = useAtom(
+    getGoalsAtom("waterVolume", "daily"),
+  );
+  const [weeklyWaterGoal, setWeeklyWaterGoal] = useAtom(
+    getGoalsAtom("waterVolume", "weekly"),
+  );
 
   const {
     distanceUnit,
@@ -461,12 +460,13 @@ function ActivityGoalsSettings() {
   } = useUnits();
 
   const setNumericGoal = (
-    setter: (value: number) => void,
+    setter: (update: { value: number; unit: string }) => void,
+    unit: string,
     rawValue: string,
   ) => {
     const value = parseFloat(rawValue);
     if (Number.isFinite(value)) {
-      setter(value);
+      setter({ value, unit });
     }
   };
 
@@ -481,10 +481,14 @@ function ActivityGoalsSettings() {
         title="Daily steps"
         action={
           <TextField
-            value={stepsGoal}
+            value={stepsGoal?.value ?? ""}
             type="number"
             onChange={(event) =>
-              setNumericGoal(setStepsGoal, event.target.value)
+              setNumericGoal(
+                setStepsGoal,
+                stepsGoal?.unit ?? "",
+                event.target.value,
+              )
             }
             slotProps={{
               input: {
@@ -500,10 +504,14 @@ function ActivityGoalsSettings() {
         title="Weekly steps"
         action={
           <TextField
-            value={weeklyStepsGoal}
+            value={weeklyStepsGoal?.value ?? ""}
             type="number"
             onChange={(event) =>
-              setNumericGoal(setWeeklyStepsGoal, event.target.value)
+              setNumericGoal(
+                setWeeklyStepsGoal,
+                weeklyStepsGoal?.unit ?? "",
+                event.target.value,
+              )
             }
             slotProps={{
               input: {
@@ -519,10 +527,14 @@ function ActivityGoalsSettings() {
         title="Daily floors"
         action={
           <TextField
-            value={floorsGoal}
+            value={floorsGoal?.value ?? ""}
             type="number"
             onChange={(event) =>
-              setNumericGoal(setFloorsGoal, event.target.value)
+              setNumericGoal(
+                setFloorsGoal,
+                floorsGoal?.unit ?? "",
+                event.target.value,
+              )
             }
             slotProps={{
               input: {
@@ -538,10 +550,14 @@ function ActivityGoalsSettings() {
         title="Weekly floors"
         action={
           <TextField
-            value={weeklyFloorsGoal}
+            value={weeklyFloorsGoal?.value ?? ""}
             type="number"
             onChange={(event) =>
-              setNumericGoal(setWeeklyFloorsGoal, event.target.value)
+              setNumericGoal(
+                setWeeklyFloorsGoal,
+                weeklyFloorsGoal?.unit ?? "",
+                event.target.value,
+              )
             }
             slotProps={{
               input: {
@@ -557,9 +573,16 @@ function ActivityGoalsSettings() {
         title="Daily distance"
         action={
           <TextField
-            value={localizedKilometers(
-              kilometersFromDistanceGoal(distanceGoal.value, distanceGoal.unit),
-            )}
+            value={
+              distanceGoal
+                ? localizedKilometers(
+                    kilometersFromDistanceGoal(
+                      distanceGoal.value,
+                      distanceGoal.unit,
+                    ),
+                  )
+                : ""
+            }
             type="number"
             onChange={(event) => {
               const value = parseFloat(event.target.value);
@@ -583,12 +606,16 @@ function ActivityGoalsSettings() {
         title="Weekly distance"
         action={
           <TextField
-            value={localizedKilometers(
-              kilometersFromDistanceGoal(
-                weeklyDistanceGoal.value,
-                weeklyDistanceGoal.unit,
-              ),
-            )}
+            value={
+              weeklyDistanceGoal
+                ? localizedKilometers(
+                    kilometersFromDistanceGoal(
+                      weeklyDistanceGoal.value,
+                      weeklyDistanceGoal.unit,
+                    ),
+                  )
+                : ""
+            }
             type="number"
             onChange={(event) => {
               const value = parseFloat(event.target.value);
@@ -612,10 +639,14 @@ function ActivityGoalsSettings() {
         title="Daily calories burned"
         action={
           <TextField
-            value={caloriesOutGoal}
+            value={caloriesOutGoal?.value ?? ""}
             type="number"
             onChange={(event) =>
-              setNumericGoal(setCaloriesOutGoal, event.target.value)
+              setNumericGoal(
+                setCaloriesOutGoal,
+                caloriesOutGoal?.unit ?? "",
+                event.target.value,
+              )
             }
             slotProps={{
               input: {
@@ -631,10 +662,14 @@ function ActivityGoalsSettings() {
         title="Weekly calories burned"
         action={
           <TextField
-            value={weeklyCaloriesOutGoal}
+            value={weeklyCaloriesOutGoal?.value ?? ""}
             type="number"
             onChange={(event) =>
-              setNumericGoal(setWeeklyCaloriesOutGoal, event.target.value)
+              setNumericGoal(
+                setWeeklyCaloriesOutGoal,
+                weeklyCaloriesOutGoal?.unit ?? "",
+                event.target.value,
+              )
             }
             slotProps={{
               input: {
@@ -650,10 +685,14 @@ function ActivityGoalsSettings() {
         title="Daily active minutes"
         action={
           <TextField
-            value={activeMinutesGoal}
+            value={activeMinutesGoal?.value ?? ""}
             type="number"
             onChange={(event) =>
-              setNumericGoal(setActiveMinutesGoal, event.target.value)
+              setNumericGoal(
+                setActiveMinutesGoal,
+                activeMinutesGoal?.unit ?? "",
+                event.target.value,
+              )
             }
             slotProps={{
               input: {
@@ -669,10 +708,14 @@ function ActivityGoalsSettings() {
         title="Weekly active minutes"
         action={
           <TextField
-            value={weeklyActiveMinutesGoal}
+            value={weeklyActiveMinutesGoal?.value ?? ""}
             type="number"
             onChange={(event) =>
-              setNumericGoal(setWeeklyActiveMinutesGoal, event.target.value)
+              setNumericGoal(
+                setWeeklyActiveMinutesGoal,
+                weeklyActiveMinutesGoal?.unit ?? "",
+                event.target.value,
+              )
             }
             slotProps={{
               input: {
@@ -688,10 +731,14 @@ function ActivityGoalsSettings() {
         title="Daily active zone minutes"
         action={
           <TextField
-            value={activeZoneMinutesGoal}
+            value={activeZoneMinutesGoal?.value ?? ""}
             type="number"
             onChange={(event) =>
-              setNumericGoal(setActiveZoneMinutesGoal, event.target.value)
+              setNumericGoal(
+                setActiveZoneMinutesGoal,
+                activeZoneMinutesGoal?.unit ?? "",
+                event.target.value,
+              )
             }
             slotProps={{
               input: {
@@ -707,10 +754,14 @@ function ActivityGoalsSettings() {
         title="Weekly active zone minutes"
         action={
           <TextField
-            value={weeklyActiveZoneMinutesGoal}
+            value={weeklyActiveZoneMinutesGoal?.value ?? ""}
             type="number"
             onChange={(event) =>
-              setNumericGoal(setWeeklyActiveZoneMinutesGoal, event.target.value)
+              setNumericGoal(
+                setWeeklyActiveZoneMinutesGoal,
+                weeklyActiveZoneMinutesGoal?.unit ?? "",
+                event.target.value,
+              )
             }
             slotProps={{
               input: {
@@ -726,9 +777,13 @@ function ActivityGoalsSettings() {
         title="Daily water"
         action={
           <TextField
-            value={localizedWaterVolume(
-              millilitersFromWaterGoal(waterGoal.value, waterGoal.unit),
-            )}
+            value={
+              waterGoal
+                ? localizedWaterVolume(
+                    millilitersFromWaterGoal(waterGoal.value, waterGoal.unit),
+                  )
+                : ""
+            }
             type="number"
             onChange={(event) => {
               const value = parseFloat(event.target.value);
@@ -752,12 +807,16 @@ function ActivityGoalsSettings() {
         title="Weekly water"
         action={
           <TextField
-            value={localizedWaterVolume(
-              millilitersFromWaterGoal(
-                weeklyWaterGoal.value,
-                weeklyWaterGoal.unit,
-              ),
-            )}
+            value={
+              weeklyWaterGoal
+                ? localizedWaterVolume(
+                    millilitersFromWaterGoal(
+                      weeklyWaterGoal.value,
+                      weeklyWaterGoal.unit,
+                    ),
+                  )
+                : ""
+            }
             type="number"
             onChange={(event) => {
               const value = parseFloat(event.target.value);

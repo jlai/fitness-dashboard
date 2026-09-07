@@ -28,7 +28,7 @@ import { FRACTION_DIGITS_2 } from "@/utils/number-formats";
 import { aggregateByHour } from "@/components/charts/timeseries/aggregation";
 import { kilometersFromDistanceGoal, useUnits } from "@/config/units";
 import { FormRows } from "@/components/forms/form-row";
-import { distanceGoalAtom, weeklyDistanceGoalAtom } from "@/storage/settings";
+import { getGoalsAtom } from "@/storage/goals";
 
 import { RenderDialogContentProps } from "../tile-with-dialog";
 import { useSelectedDay } from "../../state";
@@ -86,36 +86,48 @@ export default function DistanceDialogContent(props: RenderDialogContentProps) {
 function Overview() {
   const { dayValue: dailyDistanceKilometers, weekData } =
     useDayAndWeekSummary("distance");
-  const dailyDistanceGoal = useAtomValue(distanceGoalAtom);
-  const weeklyDistanceGoal = useAtomValue(weeklyDistanceGoalAtom);
+  const dailyDistanceGoal = useAtomValue(getGoalsAtom("distance", "daily"));
+  const weeklyDistanceGoal = useAtomValue(getGoalsAtom("distance", "weekly"));
   const { localizedKilometers, localizedKilometersNameLong } = useUnits();
 
   const dailyDistance = localizedKilometers(dailyDistanceKilometers);
-  const dailyGoal = localizedKilometers(
-    kilometersFromDistanceGoal(dailyDistanceGoal.value, dailyDistanceGoal.unit),
-  );
+  const dailyGoal = dailyDistanceGoal
+    ? localizedKilometers(
+        kilometersFromDistanceGoal(
+          dailyDistanceGoal.value,
+          dailyDistanceGoal.unit,
+        ),
+      )
+    : undefined;
 
   const weeklyDistance = localizedKilometers(
     sumBy(weekData, (entry) => Number(entry.value)),
   );
+  const weeklyGoal = weeklyDistanceGoal
+    ? localizedKilometers(
+        kilometersFromDistanceGoal(
+          weeklyDistanceGoal.value,
+          weeklyDistanceGoal.unit,
+        ),
+      )
+    : undefined;
 
   return (
     <Stack direction="row" justifyContent="center">
-      <DailyGoalSummary
-        currentTotal={dailyDistance}
-        dailyGoal={dailyGoal}
-        unit={localizedKilometersNameLong}
-      />
-      <WeeklyGoalSummary
-        currentTotal={weeklyDistance}
-        weeklyGoal={localizedKilometers(
-          kilometersFromDistanceGoal(
-            weeklyDistanceGoal.value,
-            weeklyDistanceGoal.unit,
-          ),
-        )}
-        unit={localizedKilometersNameLong}
-      />
+      {dailyGoal != null && (
+        <DailyGoalSummary
+          currentTotal={dailyDistance}
+          dailyGoal={dailyGoal}
+          unit={localizedKilometersNameLong}
+        />
+      )}
+      {weeklyGoal != null && (
+        <WeeklyGoalSummary
+          currentTotal={weeklyDistance}
+          weeklyGoal={weeklyGoal}
+          unit={localizedKilometersNameLong}
+        />
+      )}
     </Stack>
   );
 }

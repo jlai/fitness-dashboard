@@ -6,7 +6,7 @@ import { useAtomValue } from "jotai";
 
 import { millilitersFromWaterGoal, useUnits } from "@/config/units";
 import { NumberFormats } from "@/utils/number-formats";
-import { waterGoalAtom } from "@/storage/settings";
+import { getGoalsAtom } from "@/storage/goals";
 
 import { SimpleBarChart, SimpleLineChart } from "./mui-renderer";
 import {
@@ -56,7 +56,7 @@ export function CaloriesConsumedChart() {
 
 export function WaterChart() {
   const { localizedWaterVolume, localizedWaterVolumeName } = useUnits();
-  const waterGoal = useAtomValue(waterGoalAtom);
+  const waterGoal = useAtomValue(getGoalsAtom("waterVolume", "daily"));
 
   const { showGoals } = useTimeSeriesChartConfig();
   const { data } = useQuery(useTimeSeriesQuery("water"));
@@ -69,15 +69,16 @@ export function WaterChart() {
         numberFormat: NumberFormats.FRACTION_DIGITS_0.format,
         unit: localizedWaterVolumeName,
       }),
-    [localizedWaterVolume, localizedWaterVolumeName]
+    [localizedWaterVolume, localizedWaterVolumeName],
   );
 
   const props = useAggregation(data, seriesConfigs);
   const waterGoalLine =
-    showGoals &&
-    localizedWaterVolume(
-      millilitersFromWaterGoal(waterGoal.value, waterGoal.unit),
-    );
+    showGoals && waterGoal
+      ? localizedWaterVolume(
+          millilitersFromWaterGoal(waterGoal.value, waterGoal.unit),
+        )
+      : undefined;
 
   return (
     <SimpleBarChart
@@ -86,7 +87,7 @@ export function WaterChart() {
         waterGoalLine
           ? {
               label: `Goal: ${NumberFormats.FRACTION_DIGITS_0.format(
-                waterGoalLine
+                waterGoalLine,
               )} ${localizedWaterVolumeName}`,
               value: waterGoalLine,
             }
@@ -109,7 +110,7 @@ export function WeightChart() {
         unit: localizedKilogramsName,
         showMark: false,
       }),
-    [localizedKilograms, localizedKilogramsName]
+    [localizedKilograms, localizedKilogramsName],
   );
 
   const props = useAggregation(data, seriesConfigs);
