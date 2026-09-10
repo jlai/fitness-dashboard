@@ -1,22 +1,23 @@
 import { render, screen } from "@testing-library/react";
 import { ConfirmProvider } from "material-ui-confirm";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { GoogleOAuthProvider } from "@react-oauth/google";
 
 import AccountNotLinkedPage from "@/app/about/not-signed-up/page";
+
+jest.mock("next/navigation", () => ({
+  useRouter: () => ({ replace: jest.fn() }),
+}));
 
 describe("AccountNotLinkedPage", () => {
   it("explains the account is not linked and offers signing in with a different account", () => {
     const queryClient = new QueryClient();
 
     render(
-      <GoogleOAuthProvider clientId="test-client-id">
-        <QueryClientProvider client={queryClient}>
-          <ConfirmProvider>
-            <AccountNotLinkedPage />
-          </ConfirmProvider>
-        </QueryClientProvider>
-      </GoogleOAuthProvider>,
+      <QueryClientProvider client={queryClient}>
+        <ConfirmProvider>
+          <AccountNotLinkedPage />
+        </ConfirmProvider>
+      </QueryClientProvider>,
     );
 
     expect(

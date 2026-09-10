@@ -18,6 +18,7 @@ import { queryClientAtom } from "jotai-tanstack-query";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 
 import { syncAuthTokenEffect } from "@/api/auth";
+import { GoogleOpenIdAutomaticSignIn } from "@/api/google-openid-automatic-sign-in";
 import {
   redirectOnAccountNotLinkedEffect,
   warnOnRateLimitExceededEffect,
@@ -52,7 +53,10 @@ function Setup({ children }: { children: React.ReactNode }) {
   useAtom(dateFormatAtomEffect);
 
   return (
-    <React.Fragment key={`key-{pageRefreshKey}`}>{children}</React.Fragment>
+    <React.Fragment key={`key-{pageRefreshKey}`}>
+      <GoogleOpenIdAutomaticSignIn />
+      {children}
+    </React.Fragment>
   );
 }
 

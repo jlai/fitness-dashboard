@@ -4,7 +4,8 @@ import { useCallback, useRef } from "react";
 import { atom, useAtomValue } from "jotai";
 import { atomEffect } from "jotai-effect";
 import { toast } from "mui-sonner";
-import { useGoogleLogin, useGoogleOAuth } from "@react-oauth/google";
+import { googleLogout, useGoogleOAuth } from "@react-oauth/google";
+import { jwtDecode } from "jwt-decode";
 
 import { singleAsync } from "@/utils/async";
 import { GOOGLE_OAUTH_CLIENT_ID, withBasePath } from "@/config";
@@ -15,50 +16,182 @@ import { loadGoogleOAuth2 } from "./google-identity";
 // Refresh when token is expiring soon
 const EXPIRING_SOON_MILLIS = 2 * 60 * 1000;
 
-const GOOGLE_TOKEN_STORAGE_KEY = "auth:google-token";
+const SESSION_TOKEN_STORAGE_KEY = "auth:session-token";
+const ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY = "auth:encrypted-health-token";
 const AUTH_TOKEN_UPDATE_EVENT_TYPE = "authtokenupdated";
 
-const TOKEN_EXCHANGE_PATH = withBasePath(
-  "/auth/google-oauth2-policy-requires-a-server",
-);
+const SESSION_PATH = withBasePath("/auth/session");
+const HEALTH_AUTHORIZE_PATH = withBasePath("/auth/health/authorize");
+const HEALTH_ACCESS_PATH = withBasePath("/auth/health/access");
 
-const AUTH_CODE_LOGIN_OPTIONS = {
-  flow: "auth-code" as const,
-  ux_mode: "popup" as const,
-  scope: REQUESTED_SCOPES.join(" "),
-  overrideScope: true,
-};
-
-export interface GoogleToken {
-  accessToken: string;
-  refreshToken?: string;
-  /** Time the access token expires, in epoch millis. */
-  expiresAt?: number;
-  /** Space-delimited list of scopes the user actually granted. */
-  scope?: string;
+interface SessionTokenClaims {
+  sub?: string;
+  iat?: number;
+  exp?: number;
 }
 
 interface TokenEndpointResponse {
-  access_token: string;
-  expires_in: number;
-  refresh_token?: string;
+  access_token?: string;
+  expires_in?: number;
   scope?: string;
+  session_token?: string;
+  encrypted_health_token?: string;
   error?: string;
   error_description?: string;
 }
 
-type TokenExchangeBody = Record<string, string>;
+interface CachedAccessToken {
+  accessToken: string;
+  expiresAt?: number;
+}
 
-async function fetchGoogleToken(
-  params: TokenExchangeBody,
+let cachedAccessToken: CachedAccessToken | null = null;
+let cachedGrantedScope: string | undefined;
+
+function getSessionTokenFromStorage() {
+  if (typeof localStorage === "undefined") {
+    return null;
+  }
+
+  return localStorage.getItem(SESSION_TOKEN_STORAGE_KEY);
+}
+
+function getEncryptedHealthTokenFromStorage() {
+  if (typeof localStorage === "undefined") {
+    return null;
+  }
+
+  return localStorage.getItem(ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY);
+}
+
+export interface AuthSession {
+  sessionToken: string | null;
+  encryptedHealthToken: string | null;
+  sub?: string;
+  scope?: string;
+}
+
+function decodeSessionClaims(token: string) {
+  try {
+    return jwtDecode<SessionTokenClaims>(token);
+  } catch {
+    return null;
+  }
+}
+
+function getSessionClaims(token = getSessionTokenFromStorage()) {
+  if (!token) {
+    return null;
+  }
+
+  return decodeSessionClaims(token);
+}
+
+function isSessionTokenUnexpired(token = getSessionTokenFromStorage()) {
+  if (!token) {
+    return false;
+  }
+
+  const claims = decodeSessionClaims(token);
+
+  if (!claims?.sub || typeof claims.exp !== "number") {
+    return false;
+  }
+
+  return claims.exp * 1000 > Date.now();
+}
+
+function getAuthSession(): AuthSession {
+  const sessionToken = getSessionTokenFromStorage();
+  const claims = sessionToken ? decodeSessionClaims(sessionToken) : null;
+
+  return {
+    sessionToken,
+    encryptedHealthToken: getEncryptedHealthTokenFromStorage(),
+    sub: claims?.sub,
+    scope: cachedGrantedScope,
+  };
+}
+
+function notifyAuthChanged() {
+  window.dispatchEvent(new CustomEvent(AUTH_TOKEN_UPDATE_EVENT_TYPE));
+}
+
+export function getSessionSubject(token = getSessionTokenFromStorage()) {
+  return getSessionClaims(token)?.sub;
+}
+
+export function saveSessionToken(sessionToken: string) {
+  localStorage.setItem(SESSION_TOKEN_STORAGE_KEY, sessionToken);
+  notifyAuthChanged();
+}
+
+function saveEncryptedHealthToken(encryptedHealthToken?: string) {
+  if (encryptedHealthToken) {
+    localStorage.setItem(
+      ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY,
+      encryptedHealthToken,
+    );
+  }
+
+  notifyAuthChanged();
+}
+
+function cacheGrantedScope(scope?: string) {
+  if (!scope) {
+    return;
+  }
+
+  cachedGrantedScope = scope;
+}
+
+function getSessionTokenOrThrow() {
+  const sessionToken = getSessionTokenFromStorage();
+
+  if (!isSessionTokenUnexpired(sessionToken) || !sessionToken) {
+    throw new Error("no session token available");
+  }
+
+  return sessionToken;
+}
+
+function cacheAccessToken(response: TokenEndpointResponse) {
+  const expiresInSeconds = Number(response.expires_in);
+
+  if (!response.access_token) {
+    return;
+  }
+
+  cachedAccessToken = {
+    accessToken: response.access_token,
+    expiresAt: Number.isFinite(expiresInSeconds)
+      ? Date.now() + expiresInSeconds * 1000
+      : undefined,
+  };
+}
+
+function isCachedAccessTokenFresh() {
+  return (
+    !!cachedAccessToken &&
+    !!cachedAccessToken.expiresAt &&
+    cachedAccessToken.expiresAt > Date.now() + EXPIRING_SOON_MILLIS
+  );
+}
+
+async function postSessionJson(
+  path: string,
+  body?: Record<string, string>,
 ): Promise<TokenEndpointResponse> {
-  const response = await fetch(TOKEN_EXCHANGE_PATH, {
+  const sessionToken = getSessionTokenOrThrow();
+
+  const response = await fetch(path, {
     method: "POST",
     mode: "same-origin",
     headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${sessionToken}`,
     },
-    body: new URLSearchParams(params),
+    body: body ? JSON.stringify(body) : undefined,
   });
 
   const payload: TokenEndpointResponse = await response.json();
@@ -72,42 +205,69 @@ async function fetchGoogleToken(
   return payload;
 }
 
-function exchangeCodeForTokens(code: string) {
-  return fetchGoogleToken({
-    client_id: GOOGLE_OAUTH_CLIENT_ID,
-    code,
-    grant_type: "authorization_code",
-    redirect_uri: window.location.origin,
-  });
+function applyHealthTokenResponse(payload: TokenEndpointResponse) {
+  cacheAccessToken(payload);
+  cacheGrantedScope(payload.scope);
+  saveEncryptedHealthToken(payload.encrypted_health_token);
 }
 
-function refreshGoogleToken(refreshToken: string) {
-  return fetchGoogleToken({
-    client_id: GOOGLE_OAUTH_CLIENT_ID,
-    grant_type: "refresh_token",
-    refresh_token: refreshToken,
+export async function createSession(idToken: string) {
+  const response = await fetch(SESSION_PATH, {
+    method: "POST",
+    mode: "same-origin",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ id_token: idToken }),
   });
+
+  const payload: TokenEndpointResponse = await response.json();
+
+  if (!response.ok || payload.error || !payload.session_token) {
+    throw new Error(
+      payload.error_description || payload.error || "session request failed",
+    );
+  }
+
+  cachedAccessToken = null;
+  cachedGrantedScope = undefined;
+  saveSessionToken(payload.session_token);
 }
 
-function tokenFromResponse(
-  response: TokenEndpointResponse,
-  previous?: GoogleToken | null,
-): GoogleToken {
-  const expiresInSeconds = Number(response.expires_in);
+async function exchangeCodeForHealthToken(code: string) {
+  const payload = await postSessionJson(HEALTH_AUTHORIZE_PATH, { code });
 
-  return {
-    accessToken: response.access_token,
-    refreshToken: response.refresh_token ?? previous?.refreshToken,
-    expiresAt: Number.isFinite(expiresInSeconds)
-      ? Date.now() + expiresInSeconds * 1000
-      : undefined,
-    scope: response.scope ?? previous?.scope,
-  };
+  applyHealthTokenResponse(payload);
+
+  if (!getEncryptedHealthTokenFromStorage()) {
+    throw new Error("no refresh token returned");
+  }
+
+  return payload;
+}
+
+async function requestAccessToken() {
+  const encryptedHealthToken = getEncryptedHealthTokenFromStorage();
+
+  if (!encryptedHealthToken) {
+    throw new Error("no encrypted token available");
+  }
+
+  const payload = await postSessionJson(HEALTH_ACCESS_PATH, {
+    encrypted_health_token: encryptedHealthToken,
+  });
+  applyHealthTokenResponse(payload);
+
+  if (!payload.access_token) {
+    throw new Error("no access token returned");
+  }
+
+  return payload.access_token;
 }
 
 /**
- * Prompt the user to authorize via @react-oauth/google's authorization code
- * popup, exchange the code for tokens, then store them.
+ * Prompt the user to authorize Google Health via GIS CodeClient, then send the
+ * code to the server to encrypt the refresh token.
  */
 export function useGoogleLoginAndAuthorization({
   selectAccount = false,
@@ -141,7 +301,16 @@ export function useGoogleLoginAndAuthorization({
       }
 
       pending?.reject(
-        error instanceof Error ? error : new Error(String(error)),
+        error instanceof Error
+          ? error
+          : new Error(
+              typeof error === "object" &&
+                error &&
+                "type" in error &&
+                typeof error.type === "string"
+                ? error.type
+                : String(error),
+            ),
       );
     },
     [],
@@ -152,69 +321,91 @@ export function useGoogleLoginAndAuthorization({
       const pending = pendingRef.current;
 
       try {
-        const response = await exchangeCodeForTokens(code);
-        saveTokenToStorage(
-          tokenFromResponse(
-            response,
-            selectAccount ? null : getTokenFromStorage(),
-          ),
-        );
+        await exchangeCodeForHealthToken(code);
         pendingRef.current = null;
         pending?.resolve();
       } catch (error) {
         failPending(error);
       }
     },
-    [failPending, selectAccount],
+    [failPending],
   );
-
-  const login = useGoogleLogin({
-    ...AUTH_CODE_LOGIN_OPTIONS,
-    scope: [...new Set([...REQUESTED_SCOPES, ...additionalScopes])].join(" "),
-    select_account: selectAccount,
-    include_granted_scopes: includeGrantedScopes,
-    redirect_uri:
-      typeof window !== "undefined" ? window.location.origin : undefined,
-    onSuccess: (codeResponse) => {
-      void completeLogin(codeResponse.code);
-    },
-    onError: (errorResponse) => {
-      failPending(
-        new Error(
-          errorResponse.error_description ||
-            errorResponse.error ||
-            "authorization failed",
-        ),
-        { silent: errorResponse.error === "access_denied" },
-      );
-    },
-    onNonOAuthError: (error) => {
-      failPending(error, { silent: error.type === "popup_closed" });
-    },
-  });
 
   const loginToGoogleAndAuthorize = useCallback(() => {
     return new Promise<void>((resolve, reject) => {
       pendingRef.current = { resolve, reject };
-      login();
+
+      void (async () => {
+        try {
+          const oauth2 = await loadGoogleOAuth2();
+          const hint = selectAccount ? undefined : getSessionSubject();
+          const client = oauth2.initCodeClient({
+            client_id: GOOGLE_OAUTH_CLIENT_ID,
+            scope: [
+              ...new Set([...REQUESTED_SCOPES, ...additionalScopes]),
+            ].join(" "),
+            ux_mode: "popup",
+            redirect_uri: window.location.origin,
+            hint,
+            include_granted_scopes: includeGrantedScopes,
+            select_account: selectAccount,
+            callback: (codeResponse) => {
+              if (codeResponse.error) {
+                failPending(
+                  new Error(
+                    codeResponse.error_description ||
+                      codeResponse.error ||
+                      "authorization failed",
+                  ),
+                  { silent: codeResponse.error === "access_denied" },
+                );
+                return;
+              }
+
+              void completeLogin(codeResponse.code);
+            },
+            error_callback: (error) => {
+              failPending(error, { silent: error.type === "popup_closed" });
+            },
+          });
+
+          client.requestCode();
+        } catch (error) {
+          failPending(error);
+        }
+      })();
     });
-  }, [login, includeGrantedScopes, selectAccount]);
+  }, [
+    additionalScopes,
+    completeLogin,
+    failPending,
+    includeGrantedScopes,
+    selectAccount,
+  ]);
 
   return { loginToGoogleAndAuthorize, ready: scriptLoadedSuccessfully };
 }
 
 export async function logout() {
+  const sessionToken = getSessionTokenFromStorage();
+  googleLogout();
   clearToken();
+
+  if (!sessionToken) {
+    return;
+  }
+
+  await revokeSession(sessionToken);
 }
 
 /** Revoke all access tokens for the developer application, and reset consent. */
 export async function revokeAuthorization() {
-  if (!getTokenFromStorage()) {
+  if (!getEncryptedHealthTokenFromStorage()) {
+    await logout();
     return;
   }
 
   try {
-    // Google rejects revocation requests using an expired access token
     const accessToken = await getFreshAccessToken();
     const oauth2 = await loadGoogleOAuth2();
 
@@ -225,103 +416,98 @@ export async function revokeAuthorization() {
     console.error("error revoking token", e);
   }
 
-  clearToken();
+  await logout();
 }
 
-function getTokenFromStorage() {
-  if (typeof localStorage === "undefined") {
-    return null;
-  }
-
-  const tokenString = localStorage.getItem(GOOGLE_TOKEN_STORAGE_KEY);
-  const token: GoogleToken | null = tokenString
-    ? JSON.parse(tokenString)
-    : null;
-
-  return token;
-}
-
-export function isLoggedIn() {
-  return !!getTokenFromStorage();
-}
-
-function saveTokenToStorage(token: GoogleToken) {
-  localStorage.setItem(GOOGLE_TOKEN_STORAGE_KEY, JSON.stringify(token));
-
-  window.dispatchEvent(new CustomEvent(AUTH_TOKEN_UPDATE_EVENT_TYPE));
-}
-
-function clearToken() {
-  localStorage.removeItem(GOOGLE_TOKEN_STORAGE_KEY);
-
-  window.dispatchEvent(new CustomEvent(AUTH_TOKEN_UPDATE_EVENT_TYPE));
-}
-
-async function refreshStoredAccessToken() {
-  const token = getTokenFromStorage();
-
-  if (!token?.refreshToken) {
-    throw new Error("no refresh token available");
-  }
-
-  const response = await refreshGoogleToken(token.refreshToken);
-  const updatedToken = tokenFromResponse(response, token);
-
-  saveTokenToStorage(updatedToken);
-
-  return updatedToken.accessToken;
-}
-
-export const getFreshAccessToken = singleAsync(async () => {
-  const token = getTokenFromStorage();
-
-  if (!token) {
-    throw new Error("no access token available");
-  }
-
-  if (token.expiresAt && token.expiresAt > Date.now() + EXPIRING_SOON_MILLIS) {
-    return token.accessToken;
-  }
-
-  if (!token.refreshToken) {
-    clearToken();
-    throw new Error("no refresh token available");
+async function revokeSession(sessionToken: string | null) {
+  if (!sessionToken) {
+    return;
   }
 
   try {
-    return await refreshStoredAccessToken();
+    await fetch(SESSION_PATH, {
+      method: "DELETE",
+      mode: "same-origin",
+      headers: {
+        Authorization: `Bearer ${sessionToken}`,
+      },
+    });
+  } catch (e) {
+    console.error("error revoking session", e);
+  }
+}
+
+export function isLoggedIn() {
+  return isSessionTokenUnexpired() && !!getEncryptedHealthTokenFromStorage();
+}
+
+function clearToken() {
+  cachedAccessToken = null;
+  cachedGrantedScope = undefined;
+  localStorage.removeItem(SESSION_TOKEN_STORAGE_KEY);
+  localStorage.removeItem(ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY);
+  notifyAuthChanged();
+}
+
+export const getFreshAccessToken = singleAsync(async () => {
+  getSessionTokenOrThrow();
+
+  if (isCachedAccessTokenFresh() && cachedAccessToken) {
+    return cachedAccessToken.accessToken;
+  }
+
+  if (!getEncryptedHealthTokenFromStorage()) {
+    throw new Error("no encrypted token available");
+  }
+
+  try {
+    return await requestAccessToken();
   } catch (e) {
     console.error("error while refreshing token", e);
-    clearToken();
+    cachedAccessToken = null;
     throw e;
   }
 });
 
-/** Always exchange the stored refresh token for a new access token. */
-export async function forceTokenRefresh() {
-  return refreshStoredAccessToken();
+/**
+ * On page load, exchange a still-valid session for a Google Health access
+ * token. Access tokens are memory-only, so a reload has to fetch a new one.
+ */
+export async function restoreAccessToken() {
+  if (!isLoggedIn()) {
+    return;
+  }
+
+  try {
+    await getFreshAccessToken();
+  } catch (error) {
+    console.error("error restoring access token", error);
+  }
 }
 
-/**
- * This is a copy of the Google token wrapped in an atom, which allows us to
- * observe changes such as getting logged out.
- */
-const googleTokenAtom = atom<GoogleToken | null>(getTokenFromStorage());
+/** Always exchange the stored encrypted refresh token for a new access token. */
+export async function forceTokenRefresh() {
+  cachedAccessToken = null;
+  return requestAccessToken();
+}
 
-/** Watch for localStorage changes from other windows. */
+const authSessionAtom = atom<AuthSession>(getAuthSession());
+
+/** Watch for localStorage and in-memory auth changes. */
 export const syncAuthTokenEffect = atomEffect((get, set) => {
-  const storageListener = (event: StorageEvent) => {
-    if (event.key === GOOGLE_TOKEN_STORAGE_KEY) {
-      const token = getTokenFromStorage();
+  void restoreAccessToken();
 
-      set(googleTokenAtom, token);
+  const storageListener = (event: StorageEvent) => {
+    if (
+      event.key === SESSION_TOKEN_STORAGE_KEY ||
+      event.key === ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY
+    ) {
+      set(authSessionAtom, getAuthSession());
     }
   };
 
-  // Events fired from dispatchEvent
   const updateListener = () => {
-    const token = getTokenFromStorage();
-    set(googleTokenAtom, token);
+    set(authSessionAtom, getAuthSession());
   };
 
   window.addEventListener("storage", storageListener);
@@ -335,10 +521,8 @@ export const syncAuthTokenEffect = atomEffect((get, set) => {
 
 /** Get the full Google Health scope URLs granted for the current access token. */
 export function getAccessTokenScopes() {
-  const token = getTokenFromStorage();
-
   return new Set(
-    (token?.scope?.split(" ") ?? []).filter((scope) => scope.length > 0),
+    (cachedGrantedScope?.split(" ") ?? []).filter((scope) => scope.length > 0),
   );
 }
 
@@ -349,9 +533,9 @@ export function getMissingScopes(requiredScopes: Array<string>) {
 
 /** Reactive missing-scope check; updates after the user grants additional permissions. */
 export function useMissingScopes(requiredScopes: Array<string> = []) {
-  const token = useAtomValue(googleTokenAtom);
+  const session = useAtomValue(authSessionAtom);
   const currentScopes = new Set(
-    (token?.scope?.split(" ") ?? []).filter((scope) => scope.length > 0),
+    (session.scope?.split(" ") ?? []).filter((scope) => scope.length > 0),
   );
 
   return requiredScopes.filter((scope) => !currentScopes.has(scope));
@@ -361,7 +545,19 @@ export function hasTokenScope(scope: string) {
   return getAccessTokenScopes().has(scope);
 }
 
+export function useAuthSession() {
+  return useAtomValue(authSessionAtom);
+}
+
 export function useLoggedIn() {
-  const token = useAtomValue(googleTokenAtom);
-  return !!token;
+  const session = useAtomValue(authSessionAtom);
+  return (
+    isSessionTokenUnexpired(session.sessionToken) &&
+    !!session.encryptedHealthToken
+  );
+}
+
+export function useOpenIdSignedIn() {
+  const session = useAtomValue(authSessionAtom);
+  return isSessionTokenUnexpired(session.sessionToken);
 }

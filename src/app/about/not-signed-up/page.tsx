@@ -3,16 +3,14 @@
 import { Button, Container, Typography } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
 import { useConfirm } from "material-ui-confirm";
+import { useRouter } from "next/navigation";
 
-import { useGoogleLoginAndAuthorization } from "@/api/auth";
+import { logout } from "@/api/auth";
 
 export default function AccountNotLinkedPage() {
   const confirm = useConfirm();
   const queryClient = useQueryClient();
-  const { loginToGoogleAndAuthorize, ready } = useGoogleLoginAndAuthorization({
-    selectAccount: true,
-    includeGrantedScopes: false,
-  });
+  const router = useRouter();
 
   const switchAccounts = () => {
     confirm({
@@ -20,7 +18,8 @@ export default function AccountNotLinkedPage() {
     }).then(({ confirmed }) => {
       if (confirmed) {
         queryClient.clear();
-        loginToGoogleAndAuthorize();
+        logout();
+        router.replace("/");
       }
     });
   };
@@ -45,7 +44,7 @@ export default function AccountNotLinkedPage() {
         </Typography>
       </section>
       <div className="flex flex-col gap-4 sm:flex-row">
-        <Button variant="contained" onClick={switchAccounts} disabled={!ready}>
+        <Button variant="contained" onClick={switchAccounts}>
           Sign in with a different account
         </Button>
       </div>

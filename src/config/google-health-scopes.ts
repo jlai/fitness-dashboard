@@ -24,8 +24,9 @@ export const SETTINGS_WRITEONLY = `${SCOPE_PREFIX}.settings.writeonly`;
 export const SLEEP_READONLY = `${SCOPE_PREFIX}.sleep.readonly`;
 export const SLEEP_WRITEONLY = `${SCOPE_PREFIX}.sleep.writeonly`;
 
-/** Scopes requested at login — every Google Health API scope (read and write). */
+/** Scopes requested at login — OpenID plus every Google Health API scope (read and write). */
 export const REQUESTED_SCOPES = [
+  "openid",
   ACTIVITY_AND_FITNESS_READONLY,
   ACTIVITY_AND_FITNESS_WRITEONLY,
   HEALTH_METRICS_AND_MEASUREMENTS_READONLY,
@@ -39,4 +40,7 @@ export const REQUESTED_SCOPES = [
   SLEEP_WRITEONLY,
 ] as const;
 
-export type GoogleHealthScope = (typeof REQUESTED_SCOPES)[number];
+export type GoogleHealthScope = Exclude<
+  (typeof REQUESTED_SCOPES)[number],
+  "openid"
+>;

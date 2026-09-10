@@ -4,6 +4,7 @@ import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
+  Button,
   Container,
   Table,
   TableBody,
@@ -18,14 +19,18 @@ import { useAtom, useAtomValue } from "jotai";
 import { useRouter } from "next/navigation";
 import dayjs from "dayjs";
 
-import { hasTokenScope, useGoogleLoginAndAuthorization } from "@/api/auth";
+import {
+  hasTokenScope,
+  useGoogleLoginAndAuthorization,
+  useOpenIdSignedIn,
+} from "@/api/auth";
+import { formatAsDate } from "@/api/datetime";
 import { PRIVACY_POLICY_LINK, WEBSITE_NAME } from "@/config";
 import { SETTINGS_READONLY } from "@/config/google-health-scopes";
-import { allUnitsConfiguredAtom } from "@/storage/settings";
 import { firstLoginDateAtom } from "@/storage/analytics";
-import { formatAsDate } from "@/api/datetime";
+import { allUnitsConfiguredAtom } from "@/storage/settings";
 
-import { LoginButton } from "./login-button";
+import { GoogleSignInButton } from "./google-sign-in-button";
 
 function PermissionInfo({
   title,
@@ -83,9 +88,10 @@ export default function LoginBox() {
   const router = useRouter();
   const allUnitsConfigured = useAtomValue(allUnitsConfiguredAtom);
   const [firstLoginDate, setFirstLoginDate] = useAtom(firstLoginDateAtom);
+  const openIdSignedIn = useOpenIdSignedIn();
   const { loginToGoogleAndAuthorize, ready } = useGoogleLoginAndAuthorization();
 
-  const login = useCallback(() => {
+  const grantHealthAccess = useCallback(() => {
     loginToGoogleAndAuthorize()
       .then(() => {
         if (!firstLoginDate) {
@@ -155,11 +161,23 @@ export default function LoginBox() {
             )}
           </Typography>
           <Typography variant="body1">
-            Ready to get started? Click the button below.
+            {openIdSignedIn
+              ? "You're signed in with Google. Next, grant access to Google Health data."
+              : "Ready to get started? Sign in with Google below."}
           </Typography>
         </div>
         <div className="my-8 flex flex-col items-center">
-          <LoginButton onClick={login} disabled={!ready} />
+          {openIdSignedIn ? (
+            <Button
+              variant="contained"
+              onClick={grantHealthAccess}
+              disabled={!ready}
+            >
+              Grant access to Google Health
+            </Button>
+          ) : (
+            <GoogleSignInButton />
+          )}
         </div>
         <section>
           <Typography variant="h5" marginBottom="24px">

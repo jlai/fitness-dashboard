@@ -3,34 +3,32 @@
 const GSI_SCRIPT_URL = "https://accounts.google.com/gsi/client";
 const LOAD_TIMEOUT_MS = 15000;
 
-let loading: Promise<typeof google.accounts.oauth2> | undefined;
+let loadingOAuth2: Promise<typeof google.accounts.oauth2> | undefined;
 
-function getGoogleOAuth2() {
-  if (typeof google !== "undefined" && google.accounts?.oauth2) {
-    return google.accounts.oauth2;
-  }
-}
+function waitForGoogleApi<T>(
+  getApi: () => T | undefined,
+  loading: Promise<T> | undefined,
+  setLoading: (promise: Promise<T> | undefined) => void,
+): Promise<T> {
+  const api = getApi();
 
-/**
- * Return Google's Identity Services authorization API once the GSI script
- * (loaded by GoogleOAuthProvider) is available.
- */
-export function loadGoogleOAuth2() {
-  const oauth2 = getGoogleOAuth2();
-
-  if (oauth2) {
-    return Promise.resolve(oauth2);
+  if (api) {
+    return Promise.resolve(api);
   }
 
-  loading ??= new Promise<typeof google.accounts.oauth2>((resolve, reject) => {
+  if (loading) {
+    return loading;
+  }
+
+  const pending = new Promise<T>((resolve, reject) => {
     const timeout = window.setTimeout(() => {
       cleanup();
-      loading = undefined;
+      setLoading(undefined);
       reject(new Error("error loading Google Identity Services"));
     }, LOAD_TIMEOUT_MS);
 
     const interval = window.setInterval(() => {
-      const loaded = getGoogleOAuth2();
+      const loaded = getApi();
 
       if (loaded) {
         cleanup();
@@ -44,7 +42,7 @@ export function loadGoogleOAuth2() {
 
     const onError = () => {
       cleanup();
-      loading = undefined;
+      setLoading(undefined);
       reject(new Error("error loading Google Identity Services"));
     };
 
@@ -57,5 +55,22 @@ export function loadGoogleOAuth2() {
     }
   });
 
-  return loading;
+  setLoading(pending);
+  return pending;
+}
+
+function getGoogleOAuth2() {
+  if (typeof google !== "undefined" && google.accounts?.oauth2) {
+    return google.accounts.oauth2;
+  }
+}
+
+/**
+ * Return Google's Identity Services authorization API once the GSI script
+ * (loaded by GoogleOAuthProvider) is available.
+ */
+export function loadGoogleOAuth2() {
+  return waitForGoogleApi(getGoogleOAuth2, loadingOAuth2, (promise) => {
+    loadingOAuth2 = promise;
+  });
 }

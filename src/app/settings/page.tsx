@@ -32,7 +32,9 @@ import {
   revokeAuthorization,
   useLoggedIn,
   useGoogleLoginAndAuthorization,
+  useOpenIdSignedIn,
 } from "@/api/auth";
+import { GoogleSignInButton } from "@/components/login/google-sign-in-button";
 import {
   DistanceUnitSystem,
   SettingsDistanceUnit,
@@ -108,18 +110,28 @@ function LoginSettings() {
 }
 
 function LoggedOutAccountSettings() {
+  const openIdSignedIn = useOpenIdSignedIn();
   const { loginToGoogleAndAuthorize, ready } = useGoogleLoginAndAuthorization();
 
   return (
     <SettingsRow
       title="Google account"
       action={
-        <Button onClick={() => loginToGoogleAndAuthorize()} disabled={!ready}>
-          Login
-        </Button>
+        openIdSignedIn ? (
+          <Button
+            onClick={() => loginToGoogleAndAuthorize()}
+            disabled={!ready}
+          >
+            Grant Health access
+          </Button>
+        ) : (
+          <GoogleSignInButton />
+        )
       }
     >
-      You&apos;re not currently logged in.
+      {openIdSignedIn
+        ? "You're signed in with Google. Grant access to Google Health to continue."
+        : "You're not currently logged in."}
     </SettingsRow>
   );
 }
@@ -1102,11 +1114,8 @@ function DeveloperSettings() {
   const loggedIn = useLoggedIn();
   const confirm = useConfirm();
   const queryClient = useQueryClient();
+  const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
-  const { loginToGoogleAndAuthorize, ready } = useGoogleLoginAndAuthorization({
-    selectAccount: true,
-    includeGrantedScopes: false,
-  });
 
   const handleForceRefresh = withErrorToaster(async () => {
     setRefreshing(true);
@@ -1128,7 +1137,8 @@ function DeveloperSettings() {
     }).then(({ confirmed }) => {
       if (confirmed) {
         queryClient.clear();
-        loginToGoogleAndAuthorize();
+        logout();
+        router.replace("/");
       }
     });
   };
@@ -1147,13 +1157,13 @@ function DeveloperSettings() {
           </Button>
         }
       >
-        Force a Google OAuth access token refresh using the stored refresh
-        token. For debugging token expiry and refresh.
+        Force a Google OAuth access token refresh using the current session.
+        For debugging token expiry and refresh.
       </SettingsRow>
       <SettingsRow
         title="Switch accounts"
         action={
-          <Button onClick={switchAccounts} disabled={!loggedIn || !ready}>
+          <Button onClick={switchAccounts} disabled={!loggedIn}>
             Switch accounts
           </Button>
         }

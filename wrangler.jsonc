@@ -5,19 +5,27 @@
   "compatibility_date": "2026-08-04",
   "assets": {
     "directory": ".open-next/assets",
-    "binding": "ASSETS"
+    "binding": "ASSETS",
   },
   "services": [
     {
       "binding": "WORKER_SELF_REFERENCE",
-      "service": "fitness-dashboard-beta"
-    }
+      "service": "fitness-dashboard-beta",
+    },
   ],
   "images": {
-    "binding": "IMAGES"
+    "binding": "IMAGES",
   },
   "observability": {
-    "enabled": true
+    "enabled": true,
   },
-  "keep_vars": true
+  "keep_vars": true,
+  "upload_source_maps": true,
+  // Create with `npx wrangler kv namespace create SESSION_REVOCATION` and replace the id.
+  "kv_namespaces": [
+    {
+      "binding": "SESSION_REVOCATION",
+      "id": "62e61823e79a41ee8221759d6689b387",
+    },
+  ],
 }

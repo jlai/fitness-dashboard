@@ -55,6 +55,7 @@
     "husky": "^9.1.4",
     "immer": "^10.1.1",
     "immutable": "^4.3.6",
+    "jose": "^6.2.12",
     "jotai": "^2.20.2",
     "jotai-effect": "^1.0.0",
     "jotai-family": "^1.0.1",
