@@ -16,14 +16,10 @@ import {
 } from "@/api/auth";
 import { loadGoogleOAuth2 } from "@/api/google-identity";
 
-jest.mock("@react-oauth/google", () => ({
-  useGoogleOAuth: () => ({ scriptLoadedSuccessfully: true }),
-  useGoogleOneTapLogin: jest.fn(),
-  googleLogout: jest.fn(),
-}));
-
 jest.mock("@/api/google-identity", () => ({
   loadGoogleOAuth2: jest.fn(),
+  useGoogleIdentityReady: () => true,
+  disableGoogleAutoSelect: jest.fn(),
 }));
 
 const loadGoogleOAuth2Mock = loadGoogleOAuth2 as jest.MockedFunction<

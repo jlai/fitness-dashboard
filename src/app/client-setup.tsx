@@ -15,14 +15,13 @@ import { Toaster } from "mui-sonner";
 import { useAtom, Provider as JotaiProvider } from "jotai";
 import { queryClientAtom } from "jotai-tanstack-query";
 
-import { GoogleOAuthProvider } from "@react-oauth/google";
-
 import { syncAuthTokenEffect } from "@/api/auth";
 import { GoogleOpenIdAutomaticSignIn } from "@/api/google-openid-automatic-sign-in";
 import {
   redirectOnAccountNotLinkedEffect,
   warnOnRateLimitExceededEffect,
 } from "@/api/request";
+import { GoogleIdentityProvider } from "@/components/login/google-identity";
 import { GOOGLE_OAUTH_CLIENT_ID } from "@/config";
 import { analyticsPingEffect } from "@/storage/analytics";
 import {
@@ -77,7 +76,7 @@ export default function ClientSideSetup({
   const documentNonce = React.useRef(nonce).current;
 
   return (
-    <GoogleOAuthProvider
+    <GoogleIdentityProvider
       clientId={GOOGLE_OAUTH_CLIENT_ID}
       nonce={documentNonce}
     >
@@ -95,6 +94,6 @@ export default function ClientSideSetup({
           </LocalizationProvider>
         </JotaiProvider>
       </ThemeProvider>
-    </GoogleOAuthProvider>
+    </GoogleIdentityProvider>
   );
 }

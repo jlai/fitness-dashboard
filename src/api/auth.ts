@@ -4,14 +4,17 @@ import { useCallback, useRef } from "react";
 import { atom, useAtomValue } from "jotai";
 import { atomEffect } from "jotai-effect";
 import { toast } from "mui-sonner";
-import { googleLogout, useGoogleOAuth } from "@react-oauth/google";
 import { jwtDecode } from "jwt-decode";
 
 import { singleAsync } from "@/utils/async";
 import { GOOGLE_OAUTH_CLIENT_ID, withBasePath } from "@/config";
 import { REQUESTED_SCOPES } from "@/config/google-health-scopes";
 
-import { loadGoogleOAuth2 } from "./google-identity";
+import {
+  disableGoogleAutoSelect,
+  loadGoogleOAuth2,
+  useGoogleIdentityReady,
+} from "./google-identity";
 
 // Refresh when token is expiring soon
 const EXPIRING_SOON_MILLIS = 2 * 60 * 1000;
@@ -284,7 +287,7 @@ export function useGoogleLoginAndAuthorization({
   /** Extra scopes to request in addition to {@link REQUESTED_SCOPES}. */
   additionalScopes?: Array<string>;
 } = {}) {
-  const { scriptLoadedSuccessfully } = useGoogleOAuth();
+  const scriptLoadedSuccessfully = useGoogleIdentityReady();
   const pendingRef = useRef<{
     resolve: () => void;
     reject: (error: unknown) => void;
@@ -388,7 +391,7 @@ export function useGoogleLoginAndAuthorization({
 
 export async function logout() {
   const sessionToken = getSessionTokenFromStorage();
-  googleLogout();
+  disableGoogleAutoSelect();
   clearToken();
 
   if (!sessionToken) {
