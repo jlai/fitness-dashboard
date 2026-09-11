@@ -1,5 +1,5 @@
-import { atom } from "jotai";
-import { atomWithStorage, createJSONStorage } from "jotai/utils";
+import { atom, getDefaultStore } from "jotai";
+import { atomWithStorage, createJSONStorage, RESET } from "jotai/utils";
 import { atomEffect } from "jotai-effect";
 
 import { NutritionMacroGoals } from "@/api/nutrition";
@@ -232,3 +232,32 @@ export const numberFormatAtomEffect = atomEffect((get) => {
 
   setNumberFormatLocale(locale);
 });
+
+export const STAY_SIGNED_IN_STORAGE_KEY = "auth:stay-signed-in";
+
+export function getStaySignedIn() {
+  if (typeof localStorage === "undefined") {
+    return false;
+  }
+
+  try {
+    const stored = localStorage.getItem(STAY_SIGNED_IN_STORAGE_KEY);
+    return stored !== null && JSON.parse(stored) === true;
+  } catch {
+    return false;
+  }
+}
+
+export const staySignedInAtom = atomWithStorage<boolean>(
+  STAY_SIGNED_IN_STORAGE_KEY,
+  false,
+  undefined,
+  {
+    getOnInit: true,
+  },
+);
+
+/** Clear the stay-signed-in preference after a manual sign-out. */
+export function clearStaySignedIn() {
+  getDefaultStore().set(staySignedInAtom, RESET);
+}

@@ -1,7 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { toast } from "mui-sonner";
 
-import { useAtom } from "jotai";
+import { getDefaultStore, useAtom } from "jotai";
 
 import {
   createSession,
@@ -15,6 +15,10 @@ import {
   useGoogleLoginAndAuthorization,
 } from "@/api/auth";
 import { loadGoogleOAuth2 } from "@/api/google-identity";
+import {
+  STAY_SIGNED_IN_STORAGE_KEY,
+  staySignedInAtom,
+} from "@/storage/settings";
 
 jest.mock("@/api/google-identity", () => ({
   loadGoogleOAuth2: jest.fn(),
@@ -146,6 +150,15 @@ describe("logout", () => {
     );
     expect(localStorage.getItem(SESSION_TOKEN_STORAGE_KEY)).toBeNull();
     expect(localStorage.getItem(ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY)).toBeNull();
+  });
+
+  it("clears the stay-signed-in preference", async () => {
+    getDefaultStore().set(staySignedInAtom, true);
+
+    await logout();
+
+    expect(localStorage.getItem(STAY_SIGNED_IN_STORAGE_KEY)).toBeNull();
+    expect(getDefaultStore().get(staySignedInAtom)).toBe(false);
   });
 });
 

@@ -9,6 +9,7 @@ import { jwtDecode } from "jwt-decode";
 import { singleAsync } from "@/utils/async";
 import { GOOGLE_OAUTH_CLIENT_ID, withBasePath } from "@/config";
 import { REQUESTED_SCOPES } from "@/config/google-health-scopes";
+import { clearStaySignedIn } from "@/storage/settings";
 
 import {
   disableGoogleAutoSelect,
@@ -392,6 +393,7 @@ export function useGoogleLoginAndAuthorization({
 export async function logout() {
   const sessionToken = getSessionTokenFromStorage();
   disableGoogleAutoSelect();
+  clearStaySignedIn();
   clearToken();
 
   if (!sessionToken) {

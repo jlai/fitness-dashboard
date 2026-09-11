@@ -1,4 +1,5 @@
-import { createStore, type Atom } from "jotai";
+import { createStore, getDefaultStore, type Atom } from "jotai";
+import { RESET } from "jotai/utils";
 
 import {
   SettingsDistanceUnit,
@@ -13,6 +14,10 @@ import {
   temperatureUnitAtom,
   waterUnitAtom,
   weightUnitAtom,
+  staySignedInAtom,
+  getStaySignedIn,
+  clearStaySignedIn,
+  STAY_SIGNED_IN_STORAGE_KEY,
 } from "@/storage/settings";
 
 function readMounted<T>(atom: Atom<T>): T {
@@ -103,5 +108,36 @@ describe("unit storage key migration", () => {
     expect(localStorage.getItem("unit:weight")).toBe(
       JSON.stringify(SettingsWeightUnit.WEIGHT_UNIT_POUNDS),
     );
+  });
+});
+
+describe("stay signed in", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    getDefaultStore().set(staySignedInAtom, RESET);
+  });
+
+  it("defaults to false", () => {
+    expect(getStaySignedIn()).toBe(false);
+    expect(readMounted(staySignedInAtom)).toBe(false);
+  });
+
+  it("reads true from localStorage", () => {
+    localStorage.setItem(STAY_SIGNED_IN_STORAGE_KEY, JSON.stringify(true));
+    expect(getStaySignedIn()).toBe(true);
+    expect(readMounted(staySignedInAtom)).toBe(true);
+  });
+
+  it("clears the stored preference", () => {
+    getDefaultStore().set(staySignedInAtom, true);
+    expect(localStorage.getItem(STAY_SIGNED_IN_STORAGE_KEY)).toBe(
+      JSON.stringify(true),
+    );
+
+    clearStaySignedIn();
+
+    expect(getStaySignedIn()).toBe(false);
+    expect(getDefaultStore().get(staySignedInAtom)).toBe(false);
+    expect(localStorage.getItem(STAY_SIGNED_IN_STORAGE_KEY)).toBeNull();
   });
 });

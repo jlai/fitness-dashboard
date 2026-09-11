@@ -12,7 +12,7 @@ import { ConfirmProvider } from "material-ui-confirm";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useHydrateAtoms } from "jotai/utils";
 import { Toaster } from "mui-sonner";
-import { useAtom, Provider as JotaiProvider } from "jotai";
+import { getDefaultStore, useAtom, Provider as JotaiProvider } from "jotai";
 import { queryClientAtom } from "jotai-tanstack-query";
 
 import { syncAuthTokenEffect } from "@/api/auth";
@@ -81,7 +81,7 @@ export default function ClientSideSetup({
       nonce={documentNonce}
     >
       <ThemeProvider theme={theme}>
-        <JotaiProvider>
+        <JotaiProvider store={getDefaultStore()}>
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <StyledEngineProvider injectFirst>
               <QueryClientProvider client={queryClient}>

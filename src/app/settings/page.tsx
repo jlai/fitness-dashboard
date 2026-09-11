@@ -63,6 +63,7 @@ import {
   clockHourCycleAtom,
   numberFormatPatternAtom,
   dateFormatPatternAtom,
+  staySignedInAtom,
 } from "@/storage/settings";
 import { getGoalsAtom } from "@/storage/goals";
 import { NutritionalValues } from "@/api/nutrition/types";
@@ -103,46 +104,12 @@ function SettingsRow({
   );
 }
 
-function LoginSettings() {
-  const loggedIn = useLoggedIn();
-
-  return loggedIn ? <LoggedInAccountSettings /> : <LoggedOutAccountSettings />;
-}
-
-function LoggedOutAccountSettings() {
-  const openIdSignedIn = useOpenIdSignedIn();
-  const { loginToGoogleAndAuthorize, ready } = useGoogleLoginAndAuthorization();
-
-  return (
-    <SettingsRow
-      title="Google account"
-      action={
-        openIdSignedIn ? (
-          <Button
-            onClick={() => loginToGoogleAndAuthorize()}
-            disabled={!ready}
-          >
-            Grant Health access
-          </Button>
-        ) : (
-          <GoogleSignInButton />
-        )
-      }
-    >
-      {openIdSignedIn
-        ? "You're signed in with Google. Grant access to Google Health to continue."
-        : "You're not currently logged in."}
-    </SettingsRow>
-  );
-}
-
-function LoggedInAccountSettings() {
+function useSignOutFromSettings() {
   const confirm = useConfirm();
   const queryClient = useQueryClient();
   const router = useRouter();
-  const scopes = getAccessTokenScopes();
 
-  const handleLogout = () => {
+  return () => {
     confirm({
       title: "Sign out",
       description: "Sign out of your Google account on this website?",
@@ -155,6 +122,83 @@ function LoggedInAccountSettings() {
       }
     });
   };
+}
+
+function StaySignedInSetting() {
+  const [staySignedIn, setStaySignedIn] = useAtom(staySignedInAtom);
+
+  return (
+    <SettingsRow
+      title="Stay signed in"
+      action={
+        <Switch
+          checked={staySignedIn}
+          onChange={(_event, checked) => setStaySignedIn(checked)}
+        />
+      }
+    >
+      Automatically sign in with Google when you return to this site.
+    </SettingsRow>
+  );
+}
+
+function LoginSettings() {
+  const loggedIn = useLoggedIn();
+
+  return (
+    <>
+      {loggedIn ? <LoggedInAccountSettings /> : <LoggedOutAccountSettings />}
+      <StaySignedInSetting />
+    </>
+  );
+}
+
+function LoggedOutAccountSettings() {
+  const openIdSignedIn = useOpenIdSignedIn();
+  const { loginToGoogleAndAuthorize, ready } = useGoogleLoginAndAuthorization();
+  const handleLogout = useSignOutFromSettings();
+
+  return (
+    <>
+      <SettingsRow
+        title="Google account"
+        action={
+          openIdSignedIn ? (
+            <Button onClick={handleLogout}>Sign out</Button>
+          ) : (
+            <GoogleSignInButton />
+          )
+        }
+      >
+        {openIdSignedIn
+          ? "You're signed in with Google. Grant access to Google Health to continue."
+          : "You're not currently logged in."}
+      </SettingsRow>
+      {openIdSignedIn && (
+        <SettingsRow
+          title="Google Health access"
+          action={
+            <Button
+              onClick={() => loginToGoogleAndAuthorize()}
+              disabled={!ready}
+            >
+              Grant Health access
+            </Button>
+          }
+        >
+          Connect Google Health to view your fitness data on this site.
+        </SettingsRow>
+      )}
+    </>
+  );
+}
+
+function LoggedInAccountSettings() {
+  const confirm = useConfirm();
+  const queryClient = useQueryClient();
+  const router = useRouter();
+  const scopes = getAccessTokenScopes();
+  const handleLogout = useSignOutFromSettings();
 
   const unlinkAccount = () => {
     confirm({

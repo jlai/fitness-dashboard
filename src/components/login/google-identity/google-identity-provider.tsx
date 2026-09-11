@@ -10,6 +10,7 @@ import React, {
 } from "react";
 
 import { ensureGsiScript, initializeGoogleId } from "@/api/google-identity";
+import { getStaySignedIn } from "@/storage/settings";
 
 const GoogleIdentityContext = createContext<{ ready: boolean } | null>(null);
 
@@ -49,7 +50,7 @@ export function GoogleIdentityProvider({
 
     void initializeGoogleId({
       client_id: clientId,
-      auto_select: true,
+      auto_select: getStaySignedIn(),
       use_fedcm_for_prompt: true,
     })
       .then(() => {

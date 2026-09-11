@@ -6,6 +6,7 @@ import {
   GoogleLoginButton,
   GoogleOneTap,
 } from "@/components/login/google-identity";
+import { STAY_SIGNED_IN_STORAGE_KEY } from "@/storage/settings";
 
 function stubGoogleApis() {
   const id = {
@@ -46,6 +47,7 @@ describe("Google Identity components", () => {
   beforeEach(() => {
     resetGoogleIdentityState();
     removeGsiScripts();
+    localStorage.clear();
     delete (globalThis as { google?: typeof google }).google;
   });
 
@@ -74,7 +76,7 @@ describe("Google Identity components", () => {
     expect(id.initialize).toHaveBeenCalledWith(
       expect.objectContaining({
         client_id: "client-1",
-        auto_select: true,
+        auto_select: false,
         use_fedcm_for_prompt: true,
       }),
     );
@@ -94,5 +96,27 @@ describe("Google Identity components", () => {
       expect(id.cancel).toHaveBeenCalled();
     });
     expect(id.prompt).not.toHaveBeenCalled();
+  });
+
+  it("enables auto_select when stay signed in is set", async () => {
+    localStorage.setItem(STAY_SIGNED_IN_STORAGE_KEY, JSON.stringify(true));
+    const { id } = stubGoogleApis();
+
+    render(
+      <GoogleIdentityProvider clientId="client-1">
+        <GoogleOneTap />
+      </GoogleIdentityProvider>,
+    );
+
+    await waitFor(() => {
+      expect(id.initialize).toHaveBeenCalledTimes(1);
+    });
+
+    expect(id.initialize).toHaveBeenCalledWith(
+      expect.objectContaining({
+        client_id: "client-1",
+        auto_select: true,
+      }),
+    );
   });
 });
