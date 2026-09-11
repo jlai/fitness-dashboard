@@ -51,6 +51,10 @@ function PermissionsTable() {
   return (
     <Table size="small">
       <TableBody>
+        <PermissionInfo title="Name and email">
+          Automatically requested by the Sign In With Google button (we have no
+          ability to disable this), but not used or collected by this website.
+        </PermissionInfo>
         <PermissionInfo title="Activity and fitness">
           Display steps, activities, calories burned, and other stats, and log
           manual activities.

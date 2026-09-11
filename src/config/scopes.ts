@@ -19,7 +19,12 @@ import {
   SLEEP_WRITEONLY,
 } from "./google-health-scopes";
 
+const USERINFO_EMAIL = "https://www.googleapis.com/auth/userinfo.email";
+const USERINFO_PROFILE = "https://www.googleapis.com/auth/userinfo.profile";
+
 export const SCOPE_NAME_MAPPING: Record<string, string> = {
+  [USERINFO_EMAIL]: "email",
+  [USERINFO_PROFILE]: "name and profile picture",
   [ACTIVITY_AND_FITNESS_READONLY]: "activity and fitness (read)",
   [ACTIVITY_AND_FITNESS_WRITEONLY]: "activity and fitness (write)",
   [ECG_READONLY]: "ECG (read)",
