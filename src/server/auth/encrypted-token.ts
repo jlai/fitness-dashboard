@@ -19,6 +19,8 @@ export async function encryptRefreshToken(
   payload: EncryptedRefreshTokenPayload,
 ) {
   const tokenKey = getRefreshTokenKey();
+  const iat = Math.floor(Date.now() / 1000);
+  const jti = crypto.randomUUID();
   const jwt = new EncryptJWT({
     refresh_token: payload.refreshToken,
     ...(payload.scope ? { scope: payload.scope } : {}),
@@ -28,9 +30,11 @@ export async function encryptRefreshToken(
       enc: "A256GCM",
       typ: TOKEN_TYP,
       kid: tokenKey.kid,
+      jti,
+      iat,
     })
     .setSubject(payload.sub)
-    .setIssuedAt();
+    .setIssuedAt(iat);
 
   return jwt.encrypt(tokenKey.key);
 }

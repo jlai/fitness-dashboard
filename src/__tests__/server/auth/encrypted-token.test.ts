@@ -13,21 +13,47 @@ describe("encrypted refresh token", () => {
   });
 
   it("round-trips the refresh token and subject", async () => {
+    const before = Math.floor(Date.now() / 1000);
     const jwt = await encryptRefreshToken({
       sub: "user-123",
       refreshToken: "rtok",
       scope:
         "openid https://www.googleapis.com/auth/googlehealth.profile.readonly",
     });
+    const after = Math.floor(Date.now() / 1000);
+    const header = decodeProtectedHeader(jwt);
 
     expect(jwt.split(".")).toHaveLength(5);
-    expect(decodeProtectedHeader(jwt).kid).toBe("refresh-test-1");
+    expect(header.kid).toBe("refresh-test-1");
+    expect(header.jti).toEqual(expect.any(String));
+    expect(header.jti).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+    );
+    expect(header.iat).toBeGreaterThanOrEqual(before);
+    expect(header.iat).toBeLessThanOrEqual(after);
     await expect(decryptRefreshToken(jwt)).resolves.toEqual({
       sub: "user-123",
       refreshToken: "rtok",
       scope:
         "openid https://www.googleapis.com/auth/googlehealth.profile.readonly",
     });
+  });
+
+  it("gives each encrypted token a unique jti", async () => {
+    const first = decodeProtectedHeader(
+      await encryptRefreshToken({
+        sub: "user-123",
+        refreshToken: "rtok",
+      }),
+    );
+    const second = decodeProtectedHeader(
+      await encryptRefreshToken({
+        sub: "user-123",
+        refreshToken: "rtok",
+      }),
+    );
+
+    expect(first.jti).not.toBe(second.jti);
   });
 
   it("is opaque to the client (not a readable JWT payload)", async () => {
