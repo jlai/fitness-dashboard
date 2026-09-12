@@ -20,12 +20,12 @@ function SafeAttributionControl({
   const mapRef = useRef<MapLibreMap | null>(null);
 
   const update = useCallback(() => {
-    const sourceCaches = mapRef.current?.style.sourceCaches;
+    const tileManagers = mapRef.current?.style.tileManagers;
 
-    for (const id in sourceCaches) {
-      const sourceCache = sourceCaches[id];
-      if (sourceCache.used || sourceCache.usedForTerrain) {
-        const source = sourceCache.getSource();
+    for (const id in tileManagers) {
+      const tileManager = tileManagers[id];
+      if (tileManager.used || tileManager.usedForTerrain) {
+        const source = tileManager.getSource();
         if (source.attribution) {
           setAttribution(source.attribution);
         }

@@ -53,7 +53,9 @@ import {
 import { ActivityTcxCharts } from "./charts";
 import { highlightedXAtom, xScaleMeasureAtom } from "./atoms";
 
-const LazyActivityMap = dynamic(() => import("@/components/map/activity-map"));
+const LazyActivityMap = dynamic(() => import("@/components/map/activity-map"), {
+  ssr: false,
+});
 
 function ActivityOverview({
   dataPoint,

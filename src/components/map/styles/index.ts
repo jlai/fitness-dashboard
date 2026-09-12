@@ -1,4 +1,4 @@
-import { MapStyle } from "react-map-gl/maplibre";
+import { StyleSpecification } from "react-map-gl/maplibre";
 
 import { MAPLIBRE_STYLE_URL } from "@/config";
 
@@ -31,16 +31,16 @@ export const MAP_STYLE_OPTIONS: Array<{
   },
 ];
 
-export function getMapStyle(name: string): string | MapStyle {
+export function getMapStyle(name: string): string | StyleSpecification {
   switch (name) {
     case "light":
     case "white":
     case "dark":
       return MAPLIBRE_STYLE_URL?.replace("{STYLE}", name) ?? "";
     case "openstreetmap":
-      return openstreetmapStyle as MapStyle;
+      return openstreetmapStyle as StyleSpecification;
     case "opentopomap":
-      return opentopomapStyle as MapStyle;
+      return opentopomapStyle as StyleSpecification;
     default:
       return MAPLIBRE_STYLE_URL?.replace("{STYLE}", "white") ?? "";
   }

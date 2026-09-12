@@ -1,6 +1,9 @@
+"use client";
+
 import { useMemo } from "react";
+import * as maplibregl from "maplibre-gl";
 import {
-  LineLayer,
+  LineLayerSpecification,
   Layer,
   Map,
   Source,
@@ -20,12 +23,15 @@ import { SplitDatum } from "@/utils/distances";
 import MapStyleControl from "@/components/map/style-control";
 import SafeAttributionControl from "@/components/map/attribution-control";
 import { mapStyleAtom } from "@/storage/settings";
+import { withBasePath } from "@/config";
 
 import { getMapStyle } from "./styles";
 
 import "maplibre-gl/dist/maplibre-gl.css";
 
-const layerStyle: LineLayer = {
+const MAPLIBRE_WORKER_URL = withBasePath("/maplibre/maplibre-gl-worker.mjs");
+
+const layerStyle: LineLayerSpecification = {
   id: "track",
   type: "line",
   paint: {
@@ -84,8 +90,8 @@ export default function ActivityMap({
   tracePosition?: [number, number];
   splits?: Array<SplitDatum>;
 }) {
-  const feature = geojson!.features[0];
-  const boundingBox = feature && bbox(geojson!);
+  const feature = geojson?.features[0];
+  const boundingBox = geojson && bbox(geojson);
 
   const coords = feature && getCoords(feature as Feature<LineString>);
   const startCoords = coords?.[0];
@@ -98,9 +104,14 @@ export default function ActivityMap({
 
   const [mapStyleId, setMapStyleId] = useAtom(mapStyleAtom);
 
+  if (!geojson) {
+    return null;
+  }
+
   return (
     <Map
-      mapLib={import("maplibre-gl")}
+      mapLib={maplibregl}
+      workerUrl={MAPLIBRE_WORKER_URL}
       initialViewState={{
         bounds: boundingBox as LngLatBoundsLike,
         fitBoundsOptions: {

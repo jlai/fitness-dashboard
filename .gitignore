@@ -54,3 +54,6 @@ next-env.d.ts
 
 # other temporary files
 /.temp/
+
+# Copied from maplibre-gl on install/build
+/public/maplibre/
