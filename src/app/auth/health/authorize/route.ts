@@ -91,11 +91,6 @@ export async function POST(request: Request) {
       encrypted_health_token,
     });
   } catch (reason) {
-    const message =
-      reason instanceof Error ? reason.message : "token request failed";
-
-    console.error("error exchanging authorization code for token", reason);
-
-    return internalErrorResponse(message);
+    return internalErrorResponse("error exchanging authorization code for token");
   }
 }

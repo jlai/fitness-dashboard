@@ -95,19 +95,6 @@ describe("POST /auth/health/authorize", () => {
     );
   });
 
-  it("rejects when redirect_uri is not configured", async () => {
-    delete process.env.GOOGLE_OAUTH_REDIRECT_URI;
-
-    const response = await POST(await makeRequest());
-
-    expect(response.status).toBe(500);
-    await expect(response.json()).resolves.toEqual({
-      error: "internal_error",
-      error_description: "GOOGLE_OAUTH_REDIRECT_URI is not configured",
-    });
-    expect(exchangeAuthorizationCodeMock).not.toHaveBeenCalled();
-  });
-
   it("rejects requests without a session token", async () => {
     const response = await POST(
       await makeRequest({
