@@ -35,6 +35,7 @@ import {
   useOpenIdSignedIn,
 } from "@/api/auth";
 import { GoogleSignInButton } from "@/components/login/google-sign-in-button";
+import { useSignOut } from "@/components/login/use-sign-out";
 import {
   DistanceUnitSystem,
   SettingsDistanceUnit,
@@ -66,6 +67,7 @@ import {
   staySignedInAtom,
 } from "@/storage/settings";
 import { getGoalsAtom } from "@/storage/goals";
+import { wipeLocalData } from "@/storage/wipe-local-data";
 import { NutritionalValues } from "@/api/nutrition/types";
 import { PATTERN_TO_LOCALE } from "@/utils/number-formats";
 import { getScopeName } from "@/config/scopes";
@@ -104,26 +106,6 @@ function SettingsRow({
   );
 }
 
-function useSignOutFromSettings() {
-  const confirm = useConfirm();
-  const queryClient = useQueryClient();
-  const router = useRouter();
-
-  return () => {
-    confirm({
-      title: "Sign out",
-      description: "Sign out of your Google account on this website?",
-      confirmationText: "Sign out",
-    }).then(({ confirmed }) => {
-      if (confirmed) {
-        logout();
-        queryClient.clear();
-        router.replace("/");
-      }
-    });
-  };
-}
-
 function StaySignedInSetting() {
   const [staySignedIn, setStaySignedIn] = useAtom(staySignedInAtom);
 
@@ -156,7 +138,7 @@ function LoginSettings() {
 function LoggedOutAccountSettings() {
   const openIdSignedIn = useOpenIdSignedIn();
   const { loginToGoogleAndAuthorize, ready } = useGoogleLoginAndAuthorization();
-  const handleLogout = useSignOutFromSettings();
+  const handleLogout = useSignOut();
 
   return (
     <>
@@ -198,7 +180,7 @@ function LoggedInAccountSettings() {
   const queryClient = useQueryClient();
   const router = useRouter();
   const scopes = getAccessTokenScopes();
-  const handleLogout = useSignOutFromSettings();
+  const handleLogout = useSignOut();
 
   const unlinkAccount = () => {
     confirm({
@@ -247,7 +229,8 @@ function LoggedInAccountSettings() {
         }
       >
         Unlink this website from your Google account and remove all permissions.
-        You will need to sign in again to use the website.
+        Signs out of all browser sessions as well. You will need to sign in
+        again to use the website.
       </SettingsRow>
     </>
   );
@@ -1109,6 +1092,7 @@ function LanguageSettings() {
 
 function AdvancedSettings() {
   const confirm = useConfirm();
+  const queryClient = useQueryClient();
   const setUserTiles = useSetAtom(userTilesAtom);
   const [increasedTileLimits, setIncreasedTileLimits] = useAtom(
     increasedTileLimitsAtom,
@@ -1123,6 +1107,25 @@ function AdvancedSettings() {
       }
     });
   }, [confirm, setUserTiles]);
+
+  const wipeData = useCallback(() => {
+    confirm({
+      title: "Wipe local data",
+      description:
+        "Permanently remove any saved goals, meals, and settings from this browser? You will also be signed out.",
+      confirmationText: "Wipe data",
+      confirmationButtonProps: { color: "error" },
+    }).then(async ({ confirmed }) => {
+      if (!confirmed) {
+        return;
+      }
+
+      await logout();
+      await wipeLocalData();
+      queryClient.clear();
+      window.location.assign("/");
+    });
+  }, [confirm, queryClient]);
 
   return (
     <>
@@ -1149,6 +1152,17 @@ function AdvancedSettings() {
         }
       >
         Reset the dashboard grid to the default layout
+      </SettingsRow>
+      <SettingsRow
+        title="Wipe local data"
+        action={
+          <Button color="error" onClick={wipeData}>
+            Wipe data
+          </Button>
+        }
+      >
+        Erase all saved goals, meals, and settings stored in this browser. This
+        also signs you out.
       </SettingsRow>
     </>
   );
@@ -1201,8 +1215,8 @@ function DeveloperSettings() {
           </Button>
         }
       >
-        Force a Google OAuth access token refresh using the current session.
-        For debugging token expiry and refresh.
+        Force a Google OAuth access token refresh using the current session. For
+        debugging token expiry and refresh.
       </SettingsRow>
       <SettingsRow
         title="Switch accounts"

@@ -23,7 +23,8 @@ import {
 } from "material-ui-popup-state/hooks";
 import { useQueryClient } from "@tanstack/react-query";
 
-import { logout, useOpenIdSignedIn } from "@/api/auth";
+import { useOpenIdSignedIn } from "@/api/auth";
+import { useSignOut } from "@/components/login/use-sign-out";
 import { WHATS_NEW_LINK } from "@/config";
 
 export default function AccountMenu() {
@@ -33,10 +34,11 @@ export default function AccountMenu() {
     popupId: "account-popup-menu",
   });
   const queryClient = useQueryClient();
+  const signOut = useSignOut();
 
   const handleLogoutClicked = () => {
-    logout();
     popupState.close();
+    signOut();
   };
 
   const handleRefreshClicked = () => {
