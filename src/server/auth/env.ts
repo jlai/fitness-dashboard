@@ -1,4 +1,5 @@
 export const GOOGLE_TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token";
+export const GOOGLE_REVOKE_ENDPOINT = "https://oauth2.googleapis.com/revoke";
 
 const REQUIRED_ENV_NAMES = [
   "NEXT_PUBLIC_GOOGLE_OAUTH_CLIENT_ID",

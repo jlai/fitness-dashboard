@@ -4,11 +4,7 @@ import {
   jsonResponse,
   unauthorizedResponse,
 } from "@/server/auth/http";
-import {
-  isValidSession,
-  requireSameOrigin,
-} from "@/server/auth/require-session";
-import { getRevocationDatabase } from "@/server/auth/revocation-database";
+import { requireSameOrigin } from "@/server/auth/require-session";
 import { signSessionToken } from "@/server/auth/session-token";
 
 interface CreateSessionBody {
@@ -46,23 +42,4 @@ export async function POST(request: Request) {
   const session_token = await signSessionToken({ sub: claims.sub });
 
   return jsonResponse({ session_token });
-}
-
-export async function DELETE(request: Request) {
-  const origin = requireSameOrigin(request);
-
-  if (origin.error) {
-    return origin.error;
-  }
-
-  const auth = await isValidSession(request);
-
-  if (auth.error) {
-    return auth.error;
-  }
-
-  const revocationDatabase = await getRevocationDatabase();
-  await revocationDatabase.add(auth.session.jti, auth.session.exp);
-
-  return new Response(null, { status: 204 });
 }

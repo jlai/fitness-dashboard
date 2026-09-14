@@ -41,7 +41,13 @@ export async function isValidSession(
 
   const revocationDatabase = await getRevocationDatabase();
 
-  if (await revocationDatabase.isRevoked(session.jti)) {
+  if (
+    await revocationDatabase.isRevoked({
+      jti: session.jti,
+      sub: session.sub,
+      iat: session.iat,
+    })
+  ) {
     return { error: unauthorizedResponse("session token has been revoked") };
   }
 

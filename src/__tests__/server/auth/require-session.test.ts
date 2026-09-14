@@ -52,4 +52,43 @@ describe("isValidSession", () => {
       error_description: "session token has been revoked",
     });
   });
+
+  it("rejects a session token issued before a sub watermark", async () => {
+    const sessionToken = await signSessionToken({ sub: "user-1" });
+    const session = await verifySessionToken(sessionToken);
+    const revocationDatabase = await getRevocationDatabase();
+    await revocationDatabase.invalidateIssuedBefore(
+      session.sub,
+      session.iat + 1,
+    );
+
+    const result = await isValidSession(
+      new Request("http://localhost:3000/auth/health/access", {
+        headers: { Authorization: `Bearer ${sessionToken}` },
+      }),
+    );
+
+    expect(result.session).toBeUndefined();
+    expect(result.error?.status).toBe(401);
+    await expect(result.error?.json()).resolves.toEqual({
+      error: "unauthorized",
+      error_description: "session token has been revoked",
+    });
+  });
+
+  it("accepts a session token issued at or after a sub watermark", async () => {
+    const sessionToken = await signSessionToken({ sub: "user-1" });
+    const session = await verifySessionToken(sessionToken);
+    const revocationDatabase = await getRevocationDatabase();
+    await revocationDatabase.invalidateIssuedBefore(session.sub, session.iat);
+
+    const result = await isValidSession(
+      new Request("http://localhost:3000/auth/health/access", {
+        headers: { Authorization: `Bearer ${sessionToken}` },
+      }),
+    );
+
+    expect(result.error).toBeUndefined();
+    expect(result.session?.sub).toBe("user-1");
+  });
 });

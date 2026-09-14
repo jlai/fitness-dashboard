@@ -1,6 +1,7 @@
 import {
   getClientSecret,
   getConfiguredClientId,
+  GOOGLE_REVOKE_ENDPOINT,
   GOOGLE_TOKEN_ENDPOINT,
 } from "./env";
 
@@ -33,6 +34,21 @@ export async function refreshAccessToken(refreshToken: string) {
     refresh_token: refreshToken,
     client_id: getConfiguredClientId(),
   });
+}
+
+/** Revoke a Google access or refresh token. */
+export async function revokeGoogleToken(token: string) {
+  const body = new URLSearchParams({ token });
+
+  const googleResponse = await fetch(GOOGLE_REVOKE_ENDPOINT, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body,
+  });
+
+  return { status: googleResponse.status };
 }
 
 async function requestGoogleToken(params: Record<string, string>) {

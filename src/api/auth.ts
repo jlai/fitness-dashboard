@@ -25,6 +25,9 @@ const ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY = "auth:encrypted-health-token";
 const AUTH_TOKEN_UPDATE_EVENT_TYPE = "authtokenupdated";
 
 const SESSION_PATH = withBasePath("/auth/session");
+const SESSION_CURRENT_PATH = withBasePath("/auth/session/current");
+const SESSION_ALL_PATH = withBasePath("/auth/session/all");
+const HEALTH_PATH = withBasePath("/auth/health");
 const HEALTH_AUTHORIZE_PATH = withBasePath("/auth/health/authorize");
 const HEALTH_ACCESS_PATH = withBasePath("/auth/health/access");
 
@@ -403,25 +406,41 @@ export async function logout() {
   await revokeSession(sessionToken);
 }
 
-/** Revoke all access tokens for the developer application, and reset consent. */
+/** Revoke Google Health access and invalidate all site sessions for this user. */
 export async function revokeAuthorization() {
-  if (!getEncryptedHealthTokenFromStorage()) {
-    await logout();
-    return;
+  const sessionToken = getSessionTokenFromStorage();
+  const encryptedHealthToken = getEncryptedHealthTokenFromStorage();
+
+  disableGoogleAutoSelect();
+  clearStaySignedIn();
+  clearToken();
+
+  if (sessionToken && encryptedHealthToken) {
+    await revokeHealthToken(sessionToken, encryptedHealthToken);
   }
 
+  if (sessionToken) {
+    await revokeAllSessions(sessionToken);
+  }
+}
+
+async function revokeHealthToken(
+  sessionToken: string,
+  encryptedHealthToken: string,
+) {
   try {
-    const accessToken = await getFreshAccessToken();
-    const oauth2 = await loadGoogleOAuth2();
-
-    await new Promise<void>((resolve) =>
-      oauth2.revoke(accessToken, () => resolve()),
-    );
+    await fetch(HEALTH_PATH, {
+      method: "DELETE",
+      mode: "same-origin",
+      headers: {
+        Authorization: `Bearer ${sessionToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ encrypted_health_token: encryptedHealthToken }),
+    });
   } catch (e) {
-    console.error("error revoking token", e);
+    console.error("error revoking health token", e);
   }
-
-  await logout();
 }
 
 async function revokeSession(sessionToken: string | null) {
@@ -430,7 +449,7 @@ async function revokeSession(sessionToken: string | null) {
   }
 
   try {
-    await fetch(SESSION_PATH, {
+    await fetch(SESSION_CURRENT_PATH, {
       method: "DELETE",
       mode: "same-origin",
       headers: {
@@ -439,6 +458,20 @@ async function revokeSession(sessionToken: string | null) {
     });
   } catch (e) {
     console.error("error revoking session", e);
+  }
+}
+
+async function revokeAllSessions(sessionToken: string) {
+  try {
+    await fetch(SESSION_ALL_PATH, {
+      method: "DELETE",
+      mode: "same-origin",
+      headers: {
+        Authorization: `Bearer ${sessionToken}`,
+      },
+    });
+  } catch (e) {
+    console.error("error revoking all sessions", e);
   }
 }
 

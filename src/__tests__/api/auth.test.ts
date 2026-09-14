@@ -11,6 +11,7 @@ import {
   isLoggedIn,
   logout,
   restoreAccessToken,
+  revokeAuthorization,
   syncAuthTokenEffect,
   useGoogleLoginAndAuthorization,
 } from "@/api/auth";
@@ -32,6 +33,9 @@ const loadGoogleOAuth2Mock = loadGoogleOAuth2 as jest.MockedFunction<
 const toastError = toast.error as jest.Mock;
 
 const SESSION_PATH = "/auth/session";
+const SESSION_CURRENT_PATH = "/auth/session/current";
+const SESSION_ALL_PATH = "/auth/session/all";
+const HEALTH_PATH = "/auth/health";
 const HEALTH_AUTHORIZE_PATH = "/auth/health/authorize";
 const HEALTH_ACCESS_PATH = "/auth/health/access";
 const SESSION_TOKEN_STORAGE_KEY = "auth:session-token";
@@ -140,7 +144,7 @@ describe("logout", () => {
     await logout();
 
     expect(fetchMock).toHaveBeenCalledWith(
-      SESSION_PATH,
+      SESSION_CURRENT_PATH,
       expect.objectContaining({
         method: "DELETE",
         headers: expect.objectContaining({
@@ -159,6 +163,69 @@ describe("logout", () => {
 
     expect(localStorage.getItem(STAY_SIGNED_IN_STORAGE_KEY)).toBeNull();
     expect(getDefaultStore().get(staySignedInAtom)).toBe(false);
+  });
+});
+
+describe("revokeAuthorization", () => {
+  let fetchMock: jest.SpyInstance;
+
+  beforeEach(() => {
+    localStorage.clear();
+    fetchMock = jest
+      .spyOn(global, "fetch")
+      .mockResolvedValue(new Response(null, { status: 204 }));
+  });
+
+  afterEach(() => {
+    fetchMock.mockRestore();
+    localStorage.clear();
+  });
+
+  it("revokes the health token and all sessions then clears local auth state", async () => {
+    const sessionToken = fakeSessionToken();
+    setStoredSession({ sessionToken, encryptedHealthToken: "encrypted-jwt" });
+
+    await revokeAuthorization();
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      HEALTH_PATH,
+      expect.objectContaining({
+        method: "DELETE",
+        headers: expect.objectContaining({
+          Authorization: `Bearer ${sessionToken}`,
+        }),
+        body: JSON.stringify({ encrypted_health_token: "encrypted-jwt" }),
+      }),
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
+      SESSION_ALL_PATH,
+      expect.objectContaining({
+        method: "DELETE",
+        headers: expect.objectContaining({
+          Authorization: `Bearer ${sessionToken}`,
+        }),
+      }),
+    );
+    expect(localStorage.getItem(SESSION_TOKEN_STORAGE_KEY)).toBeNull();
+    expect(localStorage.getItem(ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY)).toBeNull();
+  });
+
+  it("skips health revoke when there is no encrypted health token", async () => {
+    const sessionToken = fakeSessionToken();
+    setStoredSession({ sessionToken, encryptedHealthToken: null });
+
+    await revokeAuthorization();
+
+    expect(fetchMock).not.toHaveBeenCalledWith(
+      HEALTH_PATH,
+      expect.anything(),
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
+      SESSION_ALL_PATH,
+      expect.objectContaining({
+        method: "DELETE",
+      }),
+    );
   });
 });
 
