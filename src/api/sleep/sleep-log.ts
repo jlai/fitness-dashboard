@@ -3,12 +3,12 @@ import { Dayjs } from "dayjs";
 import { infiniteQueryOptions, queryOptions } from "@tanstack/react-query";
 
 import { SleepType } from "@generated/orval/fetch/google-health-api/models";
-import { healthUsersDataTypesDataPointsCreate } from "@generated/orval/fetch/google-health-api/users/users";
-
 import {
-  buildOneDayDatapointsQuery,
-  listDataPointsPage,
-} from "../datapoints";
+  healthUsersDataTypesDataPointsBatchDelete,
+  healthUsersDataTypesDataPointsCreate,
+} from "@generated/orval/fetch/google-health-api/users/users";
+
+import { buildOneDayDatapointsQuery, listDataPointsPage } from "../datapoints";
 import { formatAsDate } from "../datetime";
 import mutationOptions from "../mutation-options";
 
@@ -49,25 +49,38 @@ export function buildCreateSleepLogMutation(queryClient: QueryClient) {
             },
             type: SleepType.CLASSIC,
           },
-        }
+        },
       );
 
       return response.data;
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
-        queryKey: [
-          "datapoints",
-          "sleep",
-          formatAsDate(variables.startTime),
-        ],
+        queryKey: ["datapoints", "sleep", formatAsDate(variables.startTime)],
       });
       queryClient.invalidateQueries({
-        queryKey: [
-          "datapoints",
-          "sleep",
-          formatAsDate(variables.endTime),
-        ],
+        queryKey: ["datapoints", "sleep", formatAsDate(variables.endTime)],
+      });
+      queryClient.resetQueries({
+        queryKey: ["sleep-log-list"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["timeseries", "sleep"],
+      });
+    },
+  });
+}
+
+export function buildDeleteSleepLogMutation(queryClient: QueryClient) {
+  return mutationOptions({
+    mutationFn: async (dataPointName: string) => {
+      await healthUsersDataTypesDataPointsBatchDelete("me", "sleep", {
+        names: [dataPointName],
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["datapoints", "sleep"],
       });
       queryClient.resetQueries({
         queryKey: ["sleep-log-list"],
@@ -88,7 +101,7 @@ export function buildGetSleepLogByDateQuery(day: Dayjs) {
 
 export function buildGetSleepLogListInfiniteQuery(
   initialDay: Dayjs,
-  pageSize: number
+  pageSize: number,
 ) {
   return infiniteQueryOptions({
     queryKey: ["sleep-log-list", formatAsDate(initialDay), pageSize],
@@ -101,7 +114,7 @@ export function buildGetSleepLogListInfiniteQuery(
           "sleep",
           sleepLogsEndingBeforeFilter(initialDay.endOf("day")),
           pageToken,
-          Math.min(pageSize - dataPoints.length, MAX_SLEEP_PAGE_SIZE)
+          Math.min(pageSize - dataPoints.length, MAX_SLEEP_PAGE_SIZE),
         );
 
         dataPoints.push(...page.dataPoints);

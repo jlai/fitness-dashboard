@@ -1,6 +1,9 @@
 import dayjs from "dayjs";
 
-import type { Sleep, SleepStage } from "@generated/orval/fetch/google-health-api/models";
+import type {
+  Sleep,
+  SleepStage,
+} from "@generated/orval/fetch/google-health-api/models";
 import {
   SleepStageType,
   SleepType,
@@ -22,6 +25,10 @@ export function getSleepDataPointId(dataPoint: SleepDataPoint) {
     dataPoint.name ??
     `${sleep.interval?.startTime ?? ""}-${sleep.interval?.endTime ?? ""}`
   );
+}
+
+export function getSleepDataPointName(dataPoint: SleepDataPoint) {
+  return dataPoint.name ?? "";
 }
 
 export function getSleepStartTime(sleep: Sleep) {
@@ -59,7 +66,7 @@ export function usesStagesLayout(sleep: Sleep) {
 
   return (
     sleep.summary?.stagesSummary?.some(
-      (summary) => summary.type === StageSummaryType.REM
+      (summary) => summary.type === StageSummaryType.REM,
     ) ?? false
   );
 }
@@ -74,7 +81,7 @@ export function stageDurationSeconds(stage: SleepStage) {
 
 export function stageLevelKey(
   type: SleepStageType | StageSummaryType | undefined,
-  sleep: Sleep
+  sleep: Sleep,
 ) {
   const stagesLayout = usesStagesLayout(sleep);
 

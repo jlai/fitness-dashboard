@@ -1,10 +1,11 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { sumBy } from "es-toolkit";
-import { Stack, Typography } from "@mui/material";
+import { DialogTitle, Stack, Typography } from "@mui/material";
 import Image from "next/image";
 
 import NumericStat from "@/components/numeric-stat";
 import { DateFormats } from "@/utils/date-formats";
+import { FlexSpacer } from "@/components/layout/flex";
 import { buildGetSleepLogByDateQuery } from "@/api/sleep";
 import {
   getSleepEndTime,
@@ -12,22 +13,24 @@ import {
   getSleepMinutesAsleep,
   getSleepStartTime,
   isMainSleep,
+  type SleepDataPoint,
 } from "@/api/sleep/helpers";
 import SleepDetailsDialogContent from "@/components/sleep/sleep-details-dialog";
+import { DeleteSleepLogButton } from "@/components/sleep/delete-sleep-log-button";
 
 import { useSelectedDay } from "../state";
 
 import sleepIconUrl from "./assets/icon-park-outline--sleep.svg";
-import { TileWithDialog } from "./tile-with-dialog";
+import { RenderDialogContentProps, TileWithDialog } from "./tile-with-dialog";
 
 export function SleepTileContent() {
   const selectedDay = useSelectedDay();
   const { data: sleepDataPoints = [] } = useSuspenseQuery(
-    buildGetSleepLogByDateQuery(selectedDay)
+    buildGetSleepLogByDateQuery(selectedDay),
   );
 
   const totalMinutes = sumBy(sleepDataPoints, (dataPoint) =>
-    getSleepMinutesAsleep(getSleepFromDataPoint(dataPoint))
+    getSleepMinutesAsleep(getSleepFromDataPoint(dataPoint)),
   );
 
   if (sleepDataPoints.length === 0) {
@@ -35,7 +38,7 @@ export function SleepTileContent() {
   }
 
   const mainSleepDataPoint = sleepDataPoints.find((dataPoint) =>
-    isMainSleep(getSleepFromDataPoint(dataPoint))
+    isMainSleep(getSleepFromDataPoint(dataPoint)),
   );
   const mainSleep = mainSleepDataPoint
     ? getSleepFromDataPoint(mainSleepDataPoint)
@@ -44,8 +47,13 @@ export function SleepTileContent() {
   return (
     <TileWithDialog
       disableDialog={!mainSleep}
-      dialogComponent={() =>
-        mainSleep && <SleepTileDialogContent sleep={mainSleep} />
+      dialogComponent={({ close }) =>
+        mainSleepDataPoint && (
+          <SleepTileDialogContent
+            dataPoint={mainSleepDataPoint}
+            close={close}
+          />
+        )
       }
       dialogProps={{ fullWidth: true, maxWidth: "lg" }}
     >
@@ -64,7 +72,7 @@ export function SleepTileContent() {
             >
               <span className="wrap">
                 {DateFormats.TIME.format(
-                  new Date(getSleepStartTime(mainSleep))
+                  new Date(getSleepStartTime(mainSleep)),
                 )}
               </span>
               <span> &ndash; </span>
@@ -117,9 +125,23 @@ function SleepDuration({ minutesAsleep }: { minutesAsleep: number }) {
 }
 
 function SleepTileDialogContent({
-  sleep,
+  dataPoint,
+  close,
 }: {
-  sleep: ReturnType<typeof getSleepFromDataPoint>;
-}) {
-  return <SleepDetailsDialogContent sleep={sleep} />;
+  dataPoint: SleepDataPoint;
+} & Pick<RenderDialogContentProps, "close">) {
+  const sleep = getSleepFromDataPoint(dataPoint);
+
+  return (
+    <>
+      <DialogTitle>
+        <Stack direction="row" alignItems="center">
+          Sleep
+          <FlexSpacer />
+          <DeleteSleepLogButton dataPoint={dataPoint} onDeleted={close} />
+        </Stack>
+      </DialogTitle>
+      <SleepDetailsDialogContent sleep={sleep} />
+    </>
+  );
 }

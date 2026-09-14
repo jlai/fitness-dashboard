@@ -22,9 +22,10 @@ import {
 } from "@/api/sleep/helpers";
 import { SleepLevelMiniSummary } from "@/components/sleep/sleep-levels-mini";
 import { ResponsiveDialog } from "@/components/dialogs/responsive-dialog";
+import { DeleteSleepLogButton } from "@/components/sleep/delete-sleep-log-button";
 
 const SleepDetailsDialogContent = lazy(
-  () => import("@/components/sleep/sleep-details-dialog")
+  () => import("@/components/sleep/sleep-details-dialog"),
 );
 
 function SleepDuration({ minutesAsleep }: { minutesAsleep: number }) {
@@ -94,8 +95,14 @@ function SleepLogRow({ logEntry: dataPoint }: { logEntry: SleepDataPoint }) {
           <ResponsiveDialog
             {...bindDialog(popupState)}
             title={`Sleep ending ${DateFormats.formatShortDateTime(
-              dayjs(endTime)
+              dayjs(endTime),
             )}`}
+            titleActions={
+              <DeleteSleepLogButton
+                dataPoint={dataPoint}
+                onDeleted={popupState.close}
+              />
+            }
             fullWidth
             fullScreenPreferenceId="sleep"
           >

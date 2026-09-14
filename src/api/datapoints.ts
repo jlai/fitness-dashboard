@@ -14,6 +14,8 @@ import {
   healthUsersDataTypesDataPointsRollUp,
 } from "@generated/orval/fetch/google-health-api/users/users";
 
+import { GOOGLE_OAUTH_CLIENT_ID } from "@/config";
+
 import { graduallyStale } from "./cache-settings";
 import { formatAsCivilDateTime, formatAsDate } from "./datetime";
 
@@ -301,6 +303,15 @@ function pageSizeFor(dataType: DataType) {
  */
 export function isValidDataPointId(dataPointId: string) {
   return /^[a-z0-9-]{4,63}$/.test(dataPointId);
+}
+
+export function isDataPointFromThisApp(
+  dataPoint: Pick<DataPoint, "dataSource">,
+) {
+  return (
+    dataPoint.dataSource?.application?.googleWebClientId ===
+    GOOGLE_OAUTH_CLIENT_ID
+  );
 }
 
 export async function getDataPoint<T extends DataType>(

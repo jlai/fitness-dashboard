@@ -14,6 +14,7 @@ import {
   buildDeleteExerciseMutation,
   buildGetExerciseQuery,
 } from "@/api/exercise/exercise";
+import { isDataPointFromThisApp } from "@/api/datapoints";
 import {
   getExerciseDataPointName,
   getExerciseDisplayName,
@@ -82,7 +83,9 @@ export function ActivityLogDetailsDialog({
             )}`
           : ""
       }
-      titleActions={deleteButton}
+      titleActions={
+        isDataPointFromThisApp(dataPoint) ? deleteButton : undefined
+      }
       open={open}
       onClose={onClose}
     >

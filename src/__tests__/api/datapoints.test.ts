@@ -1,6 +1,11 @@
 import dayjs from "dayjs";
 
-import { isValidDataPointId, rollupPageSize } from "@/api/datapoints";
+import {
+  isDataPointFromThisApp,
+  isValidDataPointId,
+  rollupPageSize,
+} from "@/api/datapoints";
+import { GOOGLE_OAUTH_CLIENT_ID } from "@/config";
 
 const FIFTEEN_MINUTES = 900;
 const FIVE_MINUTES = 300;
@@ -60,9 +65,9 @@ describe("isValidDataPointId", () => {
     expect(isValidDataPointId("abcd")).toBe(true);
     expect(isValidDataPointId("a1b2")).toBe(true);
     expect(isValidDataPointId("banana-split")).toBe(true);
-    expect(
-      isValidDataPointId("a1b2c3d4-e5f6-7890-1234-567890abcdef"),
-    ).toBe(true);
+    expect(isValidDataPointId("a1b2c3d4-e5f6-7890-1234-567890abcdef")).toBe(
+      true,
+    );
     expect(isValidDataPointId("a".repeat(63))).toBe(true);
   });
 
@@ -74,5 +79,26 @@ describe("isValidDataPointId", () => {
     expect(isValidDataPointId("ab_cd")).toBe(false);
     expect(isValidDataPointId("ab/cd")).toBe(false);
     expect(isValidDataPointId("ab cd")).toBe(false);
+  });
+});
+
+describe("isDataPointFromThisApp", () => {
+  it("is true when googleWebClientId matches this app's OAuth client id", () => {
+    expect(
+      isDataPointFromThisApp({
+        dataSource: {
+          application: { googleWebClientId: GOOGLE_OAUTH_CLIENT_ID },
+        },
+      }),
+    ).toBe(true);
+  });
+
+  it("is false when googleWebClientId is missing or from another app", () => {
+    expect(isDataPointFromThisApp({})).toBe(false);
+    expect(
+      isDataPointFromThisApp({
+        dataSource: { application: { googleWebClientId: "other-client" } },
+      }),
+    ).toBe(false);
   });
 });
