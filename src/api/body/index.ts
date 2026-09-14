@@ -41,15 +41,29 @@ function observationSampleTime(day: Dayjs) {
 }
 
 async function invalidateWeightQueries(queryClient: QueryClient) {
+  // Nested fetchQuery caches must be stale before timeseries/weight-logs refetch.
   await Promise.all([
     queryClient.invalidateQueries({
-      queryKey: ["weight-logs"],
-    }),
-    queryClient.invalidateQueries({
       queryKey: ["datapoints", "weight"],
+      refetchType: "none",
     }),
     queryClient.invalidateQueries({
       queryKey: ["datapoints", "body-fat"],
+      refetchType: "none",
+    }),
+    queryClient.invalidateQueries({
+      queryKey: ["datapoints", "daily-rollup", "weight"],
+      refetchType: "none",
+    }),
+    queryClient.invalidateQueries({
+      queryKey: ["datapoints", "daily-rollup", "body-fat"],
+      refetchType: "none",
+    }),
+  ]);
+
+  await Promise.all([
+    queryClient.invalidateQueries({
+      queryKey: ["weight-logs"],
     }),
     queryClient.invalidateQueries({
       queryKey: ["timeseries", "weight"],
