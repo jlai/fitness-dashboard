@@ -8,6 +8,11 @@
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
+    "types": [
+      "jest",
+      "node",
+      "google.accounts"
+    ],
     "noEmit": true,
     "esModuleInterop": true,
     "module": "esnext",
@@ -36,7 +41,8 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts"
+    ".next/dev/types/**/*.ts",
+    ".next/dev/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"
