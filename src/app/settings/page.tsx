@@ -27,9 +27,9 @@ import { useRouter } from "next/navigation";
 import { userTilesAtom } from "@/storage/tiles";
 import {
   forceTokenRefresh,
-  getAccessTokenScopes,
   logout,
   revokeAuthorization,
+  useAccessTokenScopes,
   useLoggedIn,
   useGoogleLoginAndAuthorization,
   useOpenIdSignedIn,
@@ -179,7 +179,7 @@ function LoggedInAccountSettings() {
   const confirm = useConfirm();
   const queryClient = useQueryClient();
   const router = useRouter();
-  const scopes = getAccessTokenScopes();
+  const scopes = useAccessTokenScopes();
   const handleLogout = useSignOut();
 
   const unlinkAccount = () => {

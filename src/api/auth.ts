@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef } from "react";
-import { atom, useAtomValue } from "jotai";
+import { atom, getDefaultStore, useAtomValue } from "jotai";
 import { atomEffect } from "jotai-effect";
 import { toast } from "mui-sonner";
 import { jwtDecode } from "jwt-decode";
@@ -53,7 +53,9 @@ interface CachedAccessToken {
 }
 
 let cachedAccessToken: CachedAccessToken | null = null;
-let cachedGrantedScope: string | undefined;
+
+/** Space-separated Google Health scopes from the latest access-token response. */
+const grantedScopesAtom = atom<string | undefined>(undefined);
 
 function getSessionTokenFromStorage() {
   if (typeof localStorage === "undefined") {
@@ -75,7 +77,6 @@ export interface AuthSession {
   sessionToken: string | null;
   encryptedHealthToken: string | null;
   sub?: string;
-  scope?: string;
 }
 
 function decodeSessionClaims(token: string) {
@@ -116,8 +117,15 @@ function getAuthSession(): AuthSession {
     sessionToken,
     encryptedHealthToken: getEncryptedHealthTokenFromStorage(),
     sub: claims?.sub,
-    scope: cachedGrantedScope,
   };
+}
+
+function getCachedGrantedScope() {
+  return getDefaultStore().get(grantedScopesAtom);
+}
+
+function setGrantedScope(scope: string | undefined) {
+  getDefaultStore().set(grantedScopesAtom, scope);
 }
 
 function notifyAuthChanged() {
@@ -149,7 +157,7 @@ function cacheGrantedScope(scope?: string) {
     return;
   }
 
-  cachedGrantedScope = scope;
+  setGrantedScope(scope);
 }
 
 function getSessionTokenOrThrow() {
@@ -237,7 +245,7 @@ export async function createSession(idToken: string) {
   }
 
   cachedAccessToken = null;
-  cachedGrantedScope = undefined;
+  setGrantedScope(undefined);
   saveSessionToken(payload.session_token);
 }
 
@@ -481,7 +489,7 @@ export function isLoggedIn() {
 
 function clearToken() {
   cachedAccessToken = null;
-  cachedGrantedScope = undefined;
+  setGrantedScope(undefined);
   localStorage.removeItem(SESSION_TOKEN_STORAGE_KEY);
   localStorage.removeItem(ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY);
   notifyAuthChanged();
@@ -557,11 +565,15 @@ export const syncAuthTokenEffect = atomEffect((get, set) => {
   };
 });
 
+function parseScopeSet(scope: string | undefined) {
+  return new Set(
+    (scope?.split(" ") ?? []).filter((entry) => entry.length > 0),
+  );
+}
+
 /** Get the full Google Health scope URLs granted for the current access token. */
 export function getAccessTokenScopes() {
-  return new Set(
-    (cachedGrantedScope?.split(" ") ?? []).filter((scope) => scope.length > 0),
-  );
+  return parseScopeSet(getCachedGrantedScope());
 }
 
 export function getMissingScopes(requiredScopes: Array<string>) {
@@ -569,13 +581,14 @@ export function getMissingScopes(requiredScopes: Array<string>) {
   return requiredScopes.filter((scope) => !currentScopes.has(scope));
 }
 
+/** Reactive scopes from the latest access token; updates after token exchange. */
+export function useAccessTokenScopes() {
+  return parseScopeSet(useAtomValue(grantedScopesAtom));
+}
+
 /** Reactive missing-scope check; updates after the user grants additional permissions. */
 export function useMissingScopes(requiredScopes: Array<string> = []) {
-  const session = useAtomValue(authSessionAtom);
-  const currentScopes = new Set(
-    (session.scope?.split(" ") ?? []).filter((scope) => scope.length > 0),
-  );
-
+  const currentScopes = useAccessTokenScopes();
   return requiredScopes.filter((scope) => !currentScopes.has(scope));
 }
 

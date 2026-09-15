@@ -13,7 +13,9 @@ import {
   restoreAccessToken,
   revokeAuthorization,
   syncAuthTokenEffect,
+  useAccessTokenScopes,
   useGoogleLoginAndAuthorization,
+  useMissingScopes,
 } from "@/api/auth";
 import { loadGoogleOAuth2 } from "@/api/google-identity";
 import {
@@ -442,6 +444,65 @@ describe("restoreAccessToken", () => {
     await restoreAccessToken();
 
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("granted scopes atom", () => {
+  let fetchMock: jest.SpyInstance;
+
+  beforeEach(() => {
+    localStorage.clear();
+    logout();
+    fetchMock = jest.spyOn(global, "fetch");
+  });
+
+  afterEach(() => {
+    fetchMock.mockRestore();
+  });
+
+  it("updates useAccessTokenScopes after an access token is fetched", async () => {
+    setStoredSession();
+    mockHealthAccessResponse(fetchMock);
+
+    const { result } = renderHook(() => useAccessTokenScopes());
+
+    expect(result.current.has("openid")).toBe(false);
+
+    await act(async () => {
+      await forceTokenRefresh();
+    });
+
+    expect(result.current.has("openid")).toBe(true);
+  });
+
+  it("updates useMissingScopes after scopes are granted", async () => {
+    setStoredSession();
+    mockHealthAccessResponse(fetchMock);
+
+    const { result } = renderHook(() => useMissingScopes(["openid"]));
+
+    expect(result.current).toEqual(["openid"]);
+
+    await act(async () => {
+      await forceTokenRefresh();
+    });
+
+    expect(result.current).toEqual([]);
+  });
+
+  it("clears scopes on logout", async () => {
+    setStoredSession();
+    mockHealthAccessResponse(fetchMock);
+
+    await forceTokenRefresh();
+    const { result } = renderHook(() => useAccessTokenScopes());
+    expect(result.current.has("openid")).toBe(true);
+
+    await act(async () => {
+      await logout();
+    });
+
+    expect(result.current.size).toBe(0);
   });
 });
 
