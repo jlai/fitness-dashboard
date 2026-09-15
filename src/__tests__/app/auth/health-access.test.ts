@@ -5,6 +5,11 @@ import {
 } from "@/server/auth/encrypted-token";
 import { signSessionToken } from "@/server/auth/session-token";
 import { refreshAccessToken } from "@/server/auth/google-oauth-token";
+import {
+  getRevocationDatabase,
+  resetRevocationDatabase,
+} from "@/server/auth/revocation-database";
+import { getSiteTokenDefaultExpirationSeconds } from "@/server/auth/env";
 
 jest.mock("@/server/auth/google-oauth-token", () => ({
   refreshAccessToken: jest.fn(),
@@ -48,9 +53,12 @@ async function makeRequest({
 
 describe("POST /auth/health/access", () => {
   const originalAllowedOrigin = process.env.GOOGLE_OAUTH_PROXY_ALLOWED_ORIGIN;
+  const originalRevocation = process.env.SESSION_REVOCATION_DATABASE;
 
   beforeEach(() => {
     process.env.GOOGLE_OAUTH_PROXY_ALLOWED_ORIGIN = ALLOWED_ORIGIN;
+    process.env.SESSION_REVOCATION_DATABASE = "memory://";
+    resetRevocationDatabase();
     refreshAccessTokenMock.mockResolvedValue({
       status: 200,
       payload: {
@@ -63,6 +71,8 @@ describe("POST /auth/health/access", () => {
 
   afterEach(() => {
     process.env.GOOGLE_OAUTH_PROXY_ALLOWED_ORIGIN = originalAllowedOrigin;
+    process.env.SESSION_REVOCATION_DATABASE = originalRevocation;
+    resetRevocationDatabase();
   });
 
   it("exchanges the encrypted refresh token for an access token", async () => {
@@ -77,13 +87,13 @@ describe("POST /auth/health/access", () => {
 
     await expect(
       decryptRefreshToken(payload.encrypted_health_token),
-    ).resolves.toEqual(
-      {
-        sub: "user-1",
-        refreshToken: "stored-refresh",
-        scope: "openid",
-      },
-    );
+    ).resolves.toEqual({
+      sub: "user-1",
+      refreshToken: "stored-refresh",
+      scope: "openid",
+      jti: expect.any(String),
+      iat: expect.any(Number),
+    });
   });
 
   it("rejects when the session is for a different user", async () => {
@@ -120,6 +130,78 @@ describe("POST /auth/health/access", () => {
     expect(refreshAccessTokenMock).not.toHaveBeenCalled();
   });
 
+  it("rejects a revoked encrypted health token jti", async () => {
+    const encrypted = await encryptRefreshToken({
+      sub: "user-1",
+      refreshToken: "stored-refresh",
+      scope: "openid",
+    });
+    const stored = await decryptRefreshToken(encrypted);
+    const revocationDatabase = await getRevocationDatabase();
+    await revocationDatabase.add(
+      stored.jti,
+      stored.iat + getSiteTokenDefaultExpirationSeconds(),
+    );
+
+    const response = await POST(
+      await makeRequest({ encryptedHealthToken: encrypted }),
+    );
+
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toEqual({
+      error: "unauthorized",
+      error_description: "encrypted health token has been revoked",
+    });
+    expect(refreshAccessTokenMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects an encrypted health token issued before a sub watermark", async () => {
+    const encrypted = await encryptRefreshToken({
+      sub: "user-1",
+      refreshToken: "stored-refresh",
+      scope: "openid",
+    });
+    const stored = await decryptRefreshToken(encrypted);
+    const sessionToken = await signSessionToken({
+      sub: "user-1",
+      iat: stored.iat + 10,
+    });
+    const revocationDatabase = await getRevocationDatabase();
+    await revocationDatabase.invalidateIssuedBefore(
+      stored.sub,
+      stored.iat + 1,
+    );
+
+    const response = await POST(
+      await makeRequest({ encryptedHealthToken: encrypted, sessionToken }),
+    );
+
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toEqual({
+      error: "unauthorized",
+      error_description: "encrypted health token has been revoked",
+    });
+    expect(refreshAccessTokenMock).not.toHaveBeenCalled();
+  });
+
+  it("accepts an encrypted health token issued at or after a sub watermark", async () => {
+    const encrypted = await encryptRefreshToken({
+      sub: "user-1",
+      refreshToken: "stored-refresh",
+      scope: "openid",
+    });
+    const stored = await decryptRefreshToken(encrypted);
+    const revocationDatabase = await getRevocationDatabase();
+    await revocationDatabase.invalidateIssuedBefore(stored.sub, stored.iat);
+
+    const response = await POST(
+      await makeRequest({ encryptedHealthToken: encrypted }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(refreshAccessTokenMock).toHaveBeenCalledWith("stored-refresh");
+  });
+
   it("returns a JSON error when the token refresh throws", async () => {
     refreshAccessTokenMock.mockRejectedValue(
       new Error("upstream token endpoint timed out"),
@@ -151,12 +233,12 @@ describe("POST /auth/health/access", () => {
     expect(payload.encrypted_health_token).toEqual(expect.any(String));
     await expect(
       decryptRefreshToken(payload.encrypted_health_token),
-    ).resolves.toEqual(
-      {
-        sub: "user-1",
-        refreshToken: "rotated-refresh",
-        scope: "openid",
-      },
-    );
+    ).resolves.toEqual({
+      sub: "user-1",
+      refreshToken: "rotated-refresh",
+      scope: "openid",
+      jti: expect.any(String),
+      iat: expect.any(Number),
+    });
   });
 });

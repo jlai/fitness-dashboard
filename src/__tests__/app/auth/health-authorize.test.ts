@@ -86,13 +86,13 @@ describe("POST /auth/health/authorize", () => {
 
     await expect(
       decryptRefreshToken(payload.encrypted_health_token),
-    ).resolves.toEqual(
-      {
-        sub: "user-1",
-        refreshToken: "refresh",
-        scope: "openid",
-      },
-    );
+    ).resolves.toEqual({
+      sub: "user-1",
+      refreshToken: "refresh",
+      scope: "openid",
+      jti: expect.any(String),
+      iat: expect.any(Number),
+    });
   });
 
   it("rejects requests without a session token", async () => {

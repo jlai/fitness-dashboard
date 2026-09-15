@@ -8,6 +8,11 @@ export interface EncryptedRefreshTokenPayload {
   scope?: string;
 }
 
+export interface DecryptedRefreshToken extends EncryptedRefreshTokenPayload {
+  jti: string;
+  iat: number;
+}
+
 const TOKEN_TYP = "refresh+jwt";
 
 interface RefreshTokenClaims {
@@ -34,6 +39,7 @@ export async function encryptRefreshToken(
       iat,
     })
     .setSubject(payload.sub)
+    .setJti(jti)
     .setIssuedAt(iat);
 
   return jwt.encrypt(tokenKey.key);
@@ -41,8 +47,8 @@ export async function encryptRefreshToken(
 
 export async function decryptRefreshToken(
   token: string,
-): Promise<EncryptedRefreshTokenPayload> {
-  const { payload } = await jwtDecrypt<RefreshTokenClaims>(
+): Promise<DecryptedRefreshToken> {
+  const { payload, protectedHeader } = await jwtDecrypt<RefreshTokenClaims>(
     token,
     (header) => resolveRefreshTokenKey(header.kid).key,
     {
@@ -64,9 +70,26 @@ export async function decryptRefreshToken(
     throw new Error("encrypted token is missing refresh_token");
   }
 
+  if (typeof payload.iat !== "number" || !Number.isFinite(payload.iat)) {
+    throw new Error("encrypted token is missing iat");
+  }
+
+  const jti =
+    typeof payload.jti === "string" && payload.jti.length > 0
+      ? payload.jti
+      : typeof protectedHeader.jti === "string" && protectedHeader.jti.length > 0
+        ? protectedHeader.jti
+        : undefined;
+
+  if (!jti) {
+    throw new Error("encrypted token is missing jti");
+  }
+
   return {
     sub: payload.sub,
     refreshToken: payload.refresh_token,
     scope: typeof payload.scope === "string" ? payload.scope : undefined,
+    jti,
+    iat: payload.iat,
   };
 }

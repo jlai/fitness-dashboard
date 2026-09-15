@@ -36,6 +36,8 @@ describe("encrypted refresh token", () => {
       refreshToken: "rtok",
       scope:
         "openid https://www.googleapis.com/auth/googlehealth.profile.readonly",
+      jti: header.jti,
+      iat: header.iat,
     });
   });
 
@@ -99,6 +101,8 @@ describe("encrypted refresh token", () => {
     await expect(decryptRefreshToken(jwt)).resolves.toEqual({
       sub: "user-123",
       refreshToken: "rtok",
+      jti: expect.any(String),
+      iat: expect.any(Number),
     });
 
     const rotated = await encryptRefreshToken({

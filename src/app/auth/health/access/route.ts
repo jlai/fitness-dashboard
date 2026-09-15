@@ -8,11 +8,13 @@ import {
   forbiddenResponse,
   internalErrorResponse,
   jsonResponse,
+  unauthorizedResponse,
 } from "@/server/auth/http";
 import {
   requireSameOrigin,
   isValidSession,
 } from "@/server/auth/require-session";
+import { getRevocationDatabase } from "@/server/auth/revocation-database";
 
 interface AccessBody {
   encrypted_health_token?: unknown;
@@ -56,6 +58,18 @@ export async function POST(request: Request) {
 
   if (stored.sub !== auth.session.sub) {
     return forbiddenResponse("session does not match encrypted token");
+  }
+
+  const revocationDatabase = await getRevocationDatabase();
+
+  if (
+    await revocationDatabase.isRevoked({
+      jti: stored.jti,
+      sub: stored.sub,
+      iat: stored.iat,
+    })
+  ) {
+    return unauthorizedResponse("encrypted health token has been revoked");
   }
 
   try {
