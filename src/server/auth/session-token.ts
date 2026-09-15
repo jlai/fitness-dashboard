@@ -1,10 +1,7 @@
 import { jwtVerify, SignJWT } from "jose";
 
-import {
-  getSessionTokenKey,
-  getSiteTokenDefaultExpirationSeconds,
-  resolveSessionTokenKey,
-} from "./env";
+import { getSiteTokenDefaultExpirationSeconds } from "./env";
+import { getSessionSecretStore } from "./get-secret-store";
 
 export const SESSION_TOKEN_TYP = "session+jwt";
 
@@ -25,7 +22,7 @@ export async function signSessionToken(params: {
   const exp = params.exp ?? iat + getSiteTokenDefaultExpirationSeconds();
   const jti = params.jti ?? crypto.randomUUID();
 
-  const tokenKey = getSessionTokenKey();
+  const tokenKey = await getSessionSecretStore().getActiveKey();
 
   return new SignJWT({})
     .setProtectedHeader({
@@ -43,9 +40,10 @@ export async function signSessionToken(params: {
 export async function verifySessionToken(
   token: string,
 ): Promise<SessionClaims> {
+  const store = getSessionSecretStore();
   const { payload } = await jwtVerify(
     token,
-    (header) => resolveSessionTokenKey(header.kid).key,
+    async (header) => (await store.getKeyById(header.kid)).key,
     {
       algorithms: ["HS256"],
       typ: SESSION_TOKEN_TYP,

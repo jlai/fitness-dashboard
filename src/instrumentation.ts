@@ -4,5 +4,5 @@ export async function register() {
   }
 
   const { assertServerEnv } = await import("./server/auth/env");
-  assertServerEnv();
+  await assertServerEnv();
 }

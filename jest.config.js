@@ -13,7 +13,7 @@ const createJestConfig = nextJest({
 
 /** @type {import('jest').Config} */
 const config = {
-  testPathIgnorePatterns: ['/node_modules/', 'e2e'],
+  testPathIgnorePatterns: ['/node_modules/', 'e2e', '/__tests__/helpers/'],
 
   // Automatically clear mock calls, instances, contexts and results before every test
   clearMocks: true,

@@ -4,11 +4,11 @@ import {
   getClientSecret,
   getConfiguredClientId,
   getConfiguredRedirectUri,
-  getRefreshTokenKey,
+  getHealthSecretStore,
   getRevocationDatabaseConfig,
-  getSessionTokenKey,
-  resolveRefreshTokenKey,
-  resolveSessionTokenKey,
+  getSessionSecretStore,
+  getTokenSecretStoreConfig,
+  resetSecretStores,
 } from "@/server/auth/env";
 
 const SESSION_JWK = {
@@ -18,42 +18,57 @@ const SESSION_JWK = {
   k: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
 };
 
-const REFRESH_JWK = {
+const HEALTH_JWK = {
   kty: "oct",
   kid: "refresh-test-1",
   alg: "A256GCM",
   k: "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE",
 };
 
-describe("token JWKs", () => {
-  const originalSession = process.env.SESSION_TOKEN_JWK;
-  const originalRefresh = process.env.REFRESH_TOKEN_JWK;
+describe("token secret stores", () => {
+  const originalSession = process.env.SESSION_ACTIVE_KEY;
+  const originalHealth = process.env.HEALTH_ACTIVE_KEY;
+  const originalSessionAccepted = process.env.SESSION_ACCEPTED_KEYS;
+  const originalHealthAccepted = process.env.HEALTH_ACCEPTED_KEYS;
+  const originalStore = process.env.TOKEN_SECRET_STORE;
 
   beforeEach(() => {
-    process.env.SESSION_TOKEN_JWK = JSON.stringify(SESSION_JWK);
-    process.env.REFRESH_TOKEN_JWK = JSON.stringify(REFRESH_JWK);
+    process.env.SESSION_ACTIVE_KEY = JSON.stringify(SESSION_JWK);
+    process.env.HEALTH_ACTIVE_KEY = JSON.stringify(HEALTH_JWK);
+    delete process.env.SESSION_ACCEPTED_KEYS;
+    delete process.env.HEALTH_ACCEPTED_KEYS;
+    process.env.TOKEN_SECRET_STORE = "env://";
+    resetSecretStores();
   });
 
   afterEach(() => {
-    process.env.SESSION_TOKEN_JWK = originalSession;
-    process.env.REFRESH_TOKEN_JWK = originalRefresh;
+    process.env.SESSION_ACTIVE_KEY = originalSession;
+    process.env.HEALTH_ACTIVE_KEY = originalHealth;
+    process.env.SESSION_ACCEPTED_KEYS = originalSessionAccepted;
+    process.env.HEALTH_ACCEPTED_KEYS = originalHealthAccepted;
+    process.env.TOKEN_SECRET_STORE = originalStore;
+    resetSecretStores();
   });
 
-  it("loads separate session and refresh keys by kid", () => {
-    const session = getSessionTokenKey();
-    const refresh = getRefreshTokenKey();
+  it("loads separate session and health keys by kid", async () => {
+    const session = await getSessionSecretStore().getActiveKey();
+    const health = await getHealthSecretStore().getActiveKey();
 
     expect(session.kid).toBe("session-test-1");
-    expect(refresh.kid).toBe("refresh-test-1");
+    expect(health.kid).toBe("refresh-test-1");
     expect(session.key).toHaveLength(32);
-    expect(refresh.key).toHaveLength(32);
-    expect(session.key).not.toEqual(refresh.key);
+    expect(health.key).toHaveLength(32);
+    expect(session.key).not.toEqual(health.key);
 
-    expect(resolveSessionTokenKey("session-test-1")).toEqual(session);
-    expect(resolveRefreshTokenKey("refresh-test-1")).toEqual(refresh);
+    await expect(
+      getSessionSecretStore().getKeyById("session-test-1"),
+    ).resolves.toEqual(session);
+    await expect(
+      getHealthSecretStore().getKeyById("refresh-test-1"),
+    ).resolves.toEqual(health);
   });
 
-  it("uses the first JWKS key for new tokens and keeps previous keys", () => {
+  it("uses ACTIVE_KEY for new tokens and ACCEPTED_KEYS for previous keys", async () => {
     const previous = { ...SESSION_JWK, kid: "session-test-0" };
     const current = {
       ...SESSION_JWK,
@@ -61,78 +76,120 @@ describe("token JWKs", () => {
       k: "AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI",
     };
 
-    process.env.SESSION_TOKEN_JWK = JSON.stringify({
+    process.env.SESSION_ACTIVE_KEY = JSON.stringify(current);
+    process.env.SESSION_ACCEPTED_KEYS = JSON.stringify({
       keys: [current, previous],
     });
+    resetSecretStores();
 
-    expect(getSessionTokenKey().kid).toBe("session-test-2");
-    expect(resolveSessionTokenKey("session-test-0").kid).toBe("session-test-0");
-    expect(resolveSessionTokenKey("session-test-2").kid).toBe("session-test-2");
-    expect(() => resolveSessionTokenKey("session-test-1")).toThrow(
-      "unknown session token key id",
+    await expect(getSessionSecretStore().getActiveKey()).resolves.toMatchObject(
+      { kid: "session-test-2" },
     );
+    await expect(
+      getSessionSecretStore().getKeyById("session-test-0"),
+    ).resolves.toMatchObject({ kid: "session-test-0" });
+    await expect(
+      getSessionSecretStore().getKeyById("session-test-2"),
+    ).resolves.toMatchObject({ kid: "session-test-2" });
+    await expect(
+      getSessionSecretStore().getKeyById("session-test-1"),
+    ).rejects.toThrow("unknown session token key id");
   });
 
-  it("rejects a missing, invalid, or incomplete JWK", () => {
-    delete process.env.SESSION_TOKEN_JWK;
-    expect(() => getSessionTokenKey()).toThrow(
-      "SESSION_TOKEN_JWK is not configured",
+  it("rejects a missing, invalid, or incomplete JWK", async () => {
+    delete process.env.SESSION_ACTIVE_KEY;
+    resetSecretStores();
+    await expect(getSessionSecretStore().getActiveKey()).rejects.toThrow(
+      "SESSION_ACTIVE_KEY is not configured",
     );
 
-    process.env.SESSION_TOKEN_JWK = "{";
-    expect(() => getSessionTokenKey()).toThrow(
-      "SESSION_TOKEN_JWK must be valid JSON",
+    process.env.SESSION_ACTIVE_KEY = "{";
+    resetSecretStores();
+    await expect(getSessionSecretStore().getActiveKey()).rejects.toThrow(
+      "SESSION_ACTIVE_KEY must be valid JSON",
     );
 
-    process.env.SESSION_TOKEN_JWK = JSON.stringify({
+    process.env.SESSION_ACTIVE_KEY = JSON.stringify({
       ...SESSION_JWK,
       kty: "RSA",
     });
-    expect(() => getSessionTokenKey()).toThrow(
-      "SESSION_TOKEN_JWK must be an oct JWK",
+    resetSecretStores();
+    await expect(getSessionSecretStore().getActiveKey()).rejects.toThrow(
+      "SESSION_ACTIVE_KEY must be an oct JWK",
     );
 
-    process.env.SESSION_TOKEN_JWK = JSON.stringify({
+    process.env.SESSION_ACTIVE_KEY = JSON.stringify({
       ...SESSION_JWK,
       kid: "",
     });
-    expect(() => getSessionTokenKey()).toThrow(
-      "SESSION_TOKEN_JWK must include a kid",
+    resetSecretStores();
+    await expect(getSessionSecretStore().getActiveKey()).rejects.toThrow(
+      "SESSION_ACTIVE_KEY must include a kid",
     );
 
-    process.env.SESSION_TOKEN_JWK = JSON.stringify({
+    process.env.SESSION_ACTIVE_KEY = JSON.stringify({
       ...SESSION_JWK,
       alg: "A256GCM",
     });
-    expect(() => getSessionTokenKey()).toThrow(
-      "SESSION_TOKEN_JWK alg must be HS256",
+    resetSecretStores();
+    await expect(getSessionSecretStore().getActiveKey()).rejects.toThrow(
+      "SESSION_ACTIVE_KEY alg must be HS256",
     );
 
-    process.env.REFRESH_TOKEN_JWK = JSON.stringify({
-      ...REFRESH_JWK,
+    process.env.HEALTH_ACTIVE_KEY = JSON.stringify({
+      ...HEALTH_JWK,
       use: "sig",
     });
-    expect(() => getRefreshTokenKey()).toThrow(
-      "REFRESH_TOKEN_JWK use must be enc",
+    resetSecretStores();
+    await expect(getHealthSecretStore().getActiveKey()).rejects.toThrow(
+      "HEALTH_ACTIVE_KEY use must be enc",
     );
 
-    process.env.SESSION_TOKEN_JWK = JSON.stringify({
+    process.env.SESSION_ACTIVE_KEY = JSON.stringify({
       ...SESSION_JWK,
       k: "AA",
     });
-    expect(() => getSessionTokenKey()).toThrow(
-      "SESSION_TOKEN_JWK must contain a 32-byte key",
+    resetSecretStores();
+    await expect(getSessionSecretStore().getActiveKey()).rejects.toThrow(
+      "SESSION_ACTIVE_KEY must contain a 32-byte key",
     );
   });
 
-  it("rejects duplicate kids in a JWKS", () => {
-    process.env.SESSION_TOKEN_JWK = JSON.stringify({
+  it("rejects duplicate kids in ACCEPTED_KEYS", async () => {
+    process.env.SESSION_ACCEPTED_KEYS = JSON.stringify({
       keys: [SESSION_JWK, SESSION_JWK],
     });
+    resetSecretStores();
 
-    expect(() => getSessionTokenKey()).toThrow(
-      "SESSION_TOKEN_JWK contains duplicate kid session-test-1",
+    await expect(
+      getSessionSecretStore().getKeyById("session-test-1"),
+    ).rejects.toThrow(
+      "SESSION_ACCEPTED_KEYS contains duplicate kid session-test-1",
     );
+  });
+
+  it("throws not implemented for EnvSecretStore.rotateKeys", async () => {
+    await expect(getSessionSecretStore().rotateKeys()).rejects.toThrow(
+      "EnvSecretStore.rotateKeys is not implemented",
+    );
+  });
+
+  it("defaults TOKEN_SECRET_STORE to env://", () => {
+    delete process.env.TOKEN_SECRET_STORE;
+    expect(getTokenSecretStoreConfig()).toEqual({ backend: "env" });
+  });
+
+  it("parses cloudflare-secrets://storeId", () => {
+    process.env.TOKEN_SECRET_STORE = "cloudflare-secrets://store-123";
+    process.env.CLOUDFLARE_ACCOUNT_ID = "account-123";
+
+    expect(getTokenSecretStoreConfig()).toEqual({
+      backend: "cloudflare-secrets",
+      storeId: "store-123",
+      accountId: "account-123",
+    });
+
+    delete process.env.CLOUDFLARE_ACCOUNT_ID;
   });
 });
 
@@ -191,8 +248,9 @@ describe("required server env", () => {
     GOOGLE_OAUTH_REDIRECT_URI: process.env.GOOGLE_OAUTH_REDIRECT_URI,
     GOOGLE_OAUTH_PROXY_ALLOWED_ORIGIN:
       process.env.GOOGLE_OAUTH_PROXY_ALLOWED_ORIGIN,
-    SESSION_TOKEN_JWK: process.env.SESSION_TOKEN_JWK,
-    REFRESH_TOKEN_JWK: process.env.REFRESH_TOKEN_JWK,
+    SESSION_ACTIVE_KEY: process.env.SESSION_ACTIVE_KEY,
+    HEALTH_ACTIVE_KEY: process.env.HEALTH_ACTIVE_KEY,
+    TOKEN_SECRET_STORE: process.env.TOKEN_SECRET_STORE,
     SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES:
       process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES,
     SESSION_REVOCATION_DATABASE: process.env.SESSION_REVOCATION_DATABASE,
@@ -206,6 +264,7 @@ describe("required server env", () => {
         process.env[name] = value;
       }
     }
+    resetSecretStores();
   });
 
   it("throws when a required variable is missing or blank", () => {
@@ -240,27 +299,33 @@ describe("required server env", () => {
     ]);
   });
 
-  it("fails startup when required variables are missing", () => {
+  it("fails startup when required variables are missing", async () => {
     delete process.env.GOOGLE_OAUTH_CLIENT_SECRET;
-    delete process.env.SESSION_TOKEN_JWK;
+    delete process.env.SESSION_ACTIVE_KEY;
+    process.env.TOKEN_SECRET_STORE = "env://";
+    resetSecretStores();
 
-    expect(() => assertServerEnv()).toThrow(
-      "Missing required environment variables: GOOGLE_OAUTH_CLIENT_SECRET, SESSION_TOKEN_JWK",
+    await expect(assertServerEnv()).rejects.toThrow(
+      "Missing required environment variables: GOOGLE_OAUTH_CLIENT_SECRET, SESSION_ACTIVE_KEY",
     );
   });
 
-  it("fails startup when a present variable is invalid", () => {
-    process.env.SESSION_TOKEN_JWK = "{";
+  it("fails startup when a present variable is invalid", async () => {
+    process.env.SESSION_ACTIVE_KEY = "{";
+    process.env.TOKEN_SECRET_STORE = "env://";
+    resetSecretStores();
 
-    expect(() => assertServerEnv()).toThrow(
-      "SESSION_TOKEN_JWK must be valid JSON",
+    await expect(assertServerEnv()).rejects.toThrow(
+      "SESSION_ACTIVE_KEY must be valid JSON",
     );
   });
 
-  it("accepts defaults for optional variables at startup", () => {
+  it("accepts defaults for optional variables at startup", async () => {
     delete process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES;
     delete process.env.SESSION_REVOCATION_DATABASE;
+    process.env.TOKEN_SECRET_STORE = "env://";
+    resetSecretStores();
 
-    expect(() => assertServerEnv()).not.toThrow();
+    await expect(assertServerEnv()).resolves.toBeUndefined();
   });
 });

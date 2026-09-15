@@ -1,15 +1,24 @@
 import { decodeProtectedHeader } from "jose";
 
+import { resetSecretStores } from "@/server/auth/env";
 import {
   decryptRefreshToken,
   encryptRefreshToken,
 } from "@/server/auth/encrypted-token";
 
 describe("encrypted refresh token", () => {
-  const originalKey = process.env.REFRESH_TOKEN_JWK;
+  const originalKey = process.env.HEALTH_ACTIVE_KEY;
+  const originalAccepted = process.env.HEALTH_ACCEPTED_KEYS;
+
+  beforeEach(() => {
+    delete process.env.HEALTH_ACCEPTED_KEYS;
+    resetSecretStores();
+  });
 
   afterEach(() => {
-    process.env.REFRESH_TOKEN_JWK = originalKey;
+    process.env.HEALTH_ACTIVE_KEY = originalKey;
+    process.env.HEALTH_ACCEPTED_KEYS = originalAccepted;
+    resetSecretStores();
   });
 
   it("round-trips the refresh token and subject", async () => {
@@ -80,23 +89,24 @@ describe("encrypted refresh token", () => {
       sub: "user-123",
       refreshToken: "rtok",
     });
+    const current = {
+      kty: "oct",
+      kid: "refresh-test-2",
+      alg: "A256GCM",
+      k: "AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI",
+    };
+    const previous = {
+      kty: "oct",
+      kid: "refresh-test-1",
+      alg: "A256GCM",
+      k: "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE",
+    };
 
-    process.env.REFRESH_TOKEN_JWK = JSON.stringify({
-      keys: [
-        {
-          kty: "oct",
-          kid: "refresh-test-2",
-          alg: "A256GCM",
-          k: "AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI",
-        },
-        {
-          kty: "oct",
-          kid: "refresh-test-1",
-          alg: "A256GCM",
-          k: "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE",
-        },
-      ],
+    process.env.HEALTH_ACTIVE_KEY = JSON.stringify(current);
+    process.env.HEALTH_ACCEPTED_KEYS = JSON.stringify({
+      keys: [current, previous],
     });
+    resetSecretStores();
 
     await expect(decryptRefreshToken(jwt)).resolves.toEqual({
       sub: "user-123",

@@ -1,6 +1,6 @@
 import { EncryptJWT, jwtDecrypt } from "jose";
 
-import { getRefreshTokenKey, resolveRefreshTokenKey } from "./env";
+import { getHealthSecretStore } from "./get-secret-store";
 
 export interface EncryptedRefreshTokenPayload {
   sub: string;
@@ -23,7 +23,7 @@ interface RefreshTokenClaims {
 export async function encryptRefreshToken(
   payload: EncryptedRefreshTokenPayload,
 ) {
-  const tokenKey = getRefreshTokenKey();
+  const tokenKey = await getHealthSecretStore().getActiveKey();
   const iat = Math.floor(Date.now() / 1000);
   const jti = crypto.randomUUID();
   const jwt = new EncryptJWT({
@@ -48,9 +48,10 @@ export async function encryptRefreshToken(
 export async function decryptRefreshToken(
   token: string,
 ): Promise<DecryptedRefreshToken> {
+  const store = getHealthSecretStore();
   const { payload, protectedHeader } = await jwtDecrypt<RefreshTokenClaims>(
     token,
-    (header) => resolveRefreshTokenKey(header.kid).key,
+    async (header) => (await store.getKeyById(header.kid)).key,
     {
       typ: TOKEN_TYP,
       keyManagementAlgorithms: ["dir"],

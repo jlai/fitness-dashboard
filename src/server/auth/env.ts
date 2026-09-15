@@ -1,13 +1,29 @@
+import {
+  getHealthSecretStore,
+  getSessionSecretStore,
+} from "./get-secret-store";
+import { getTokenSecretStoreConfig } from "./secret-store";
+
+export type { SymmetricTokenKey } from "./secret-store";
+export {
+  getHealthSecretStore,
+  getSessionSecretStore,
+  resetSecretStores,
+} from "./get-secret-store";
+export {
+  getTokenSecretStoreConfig,
+  type SecretStore,
+  type SecretStoreConfig,
+} from "./secret-store";
+
 export const GOOGLE_TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token";
 export const GOOGLE_REVOKE_ENDPOINT = "https://oauth2.googleapis.com/revoke";
 
-const REQUIRED_ENV_NAMES = [
+const REQUIRED_OAUTH_ENV_NAMES = [
   "NEXT_PUBLIC_GOOGLE_OAUTH_CLIENT_ID",
   "GOOGLE_OAUTH_CLIENT_SECRET",
   "GOOGLE_OAUTH_REDIRECT_URI",
   "GOOGLE_OAUTH_PROXY_ALLOWED_ORIGIN",
-  "SESSION_TOKEN_JWK",
-  "REFRESH_TOKEN_JWK",
 ] as const;
 
 function isEnvConfigured(name: string) {
@@ -123,157 +139,20 @@ function invalidRevocationDatabaseUrl() {
   );
 }
 
-const OCTET_KEY_BYTES = 32;
+export async function assertServerEnv() {
+  const missing: string[] = [...REQUIRED_OAUTH_ENV_NAMES].filter(
+    (name) => !isEnvConfigured(name),
+  );
 
-export interface SymmetricTokenKey {
-  kid: string;
-  key: Uint8Array;
-}
+  const secretStoreConfig = getTokenSecretStoreConfig();
 
-interface OctJwkOptions {
-  envName: string;
-  expectedAlgs: readonly string[];
-  expectedUse: "sig" | "enc";
-}
-
-function parseOctJwk(
-  value: unknown,
-  options: OctJwkOptions,
-): SymmetricTokenKey {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
-    throw new Error(`${options.envName} must be a JWK object`);
-  }
-
-  const jwk = value as Record<string, unknown>;
-
-  if (jwk.kty !== "oct") {
-    throw new Error(`${options.envName} must be an oct JWK`);
-  }
-
-  if (typeof jwk.kid !== "string" || jwk.kid.length === 0) {
-    throw new Error(`${options.envName} must include a kid`);
-  }
-
-  if (typeof jwk.alg !== "string" || !options.expectedAlgs.includes(jwk.alg)) {
-    throw new Error(
-      `${options.envName} alg must be ${options.expectedAlgs.join(" or ")}`,
-    );
-  }
-
-  if (typeof jwk.use === "string" && jwk.use !== options.expectedUse) {
-    throw new Error(`${options.envName} use must be ${options.expectedUse}`);
-  }
-
-  if (typeof jwk.k !== "string" || jwk.k.length === 0) {
-    throw new Error(`${options.envName} must include a k`);
-  }
-
-  const key = new Uint8Array(Buffer.from(jwk.k, "base64url"));
-
-  if (key.byteLength !== OCTET_KEY_BYTES) {
-    throw new Error(`${options.envName} must contain a 32-byte key`);
-  }
-
-  return { kid: jwk.kid, key };
-}
-
-function loadSymmetricTokenKeys(options: OctJwkOptions): SymmetricTokenKey[] {
-  const raw = requireEnv(options.envName);
-
-  let parsed: unknown;
-
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
-    throw new Error(`${options.envName} must be valid JSON`);
-  }
-
-  const jwks =
-    parsed &&
-    typeof parsed === "object" &&
-    "keys" in parsed &&
-    Array.isArray((parsed as { keys: unknown }).keys)
-      ? (parsed as { keys: unknown[] }).keys
-      : [parsed];
-
-  if (jwks.length === 0) {
-    throw new Error(`${options.envName} must include at least one key`);
-  }
-
-  const keys = jwks.map((jwk) => parseOctJwk(jwk, options));
-  const kids = new Set<string>();
-
-  for (const key of keys) {
-    if (kids.has(key.kid)) {
-      throw new Error(`${options.envName} contains duplicate kid ${key.kid}`);
+  if (secretStoreConfig.backend === "env") {
+    for (const name of ["SESSION_ACTIVE_KEY", "HEALTH_ACTIVE_KEY"] as const) {
+      if (!isEnvConfigured(name)) {
+        missing.push(name);
+      }
     }
-
-    kids.add(key.kid);
   }
-
-  return keys;
-}
-
-function resolveSymmetricTokenKey(
-  keys: SymmetricTokenKey[],
-  kid: string | undefined,
-  label: string,
-) {
-  if (!kid) {
-    throw new Error(`${label} is missing kid`);
-  }
-
-  const key = keys.find((candidate) => candidate.kid === kid);
-
-  if (!key) {
-    throw new Error(`unknown ${label} key id`);
-  }
-
-  return key;
-}
-
-function sessionTokenJwkOptions(): OctJwkOptions {
-  return {
-    envName: "SESSION_TOKEN_JWK",
-    expectedAlgs: ["HS256"],
-    expectedUse: "sig",
-  };
-}
-
-function refreshTokenJwkOptions(): OctJwkOptions {
-  return {
-    envName: "REFRESH_TOKEN_JWK",
-    expectedAlgs: ["A256GCM"],
-    expectedUse: "enc",
-  };
-}
-
-export function getSessionTokenKey() {
-  return loadSymmetricTokenKeys(sessionTokenJwkOptions())[0];
-}
-
-export function resolveSessionTokenKey(kid: string | undefined) {
-  return resolveSymmetricTokenKey(
-    loadSymmetricTokenKeys(sessionTokenJwkOptions()),
-    kid,
-    "session token",
-  );
-}
-
-export function getRefreshTokenKey() {
-  return loadSymmetricTokenKeys(refreshTokenJwkOptions())[0];
-}
-
-export function resolveRefreshTokenKey(kid: string | undefined) {
-  return resolveSymmetricTokenKey(
-    loadSymmetricTokenKeys(refreshTokenJwkOptions()),
-    kid,
-    "refresh token",
-  );
-}
-
-export function assertServerEnv() {
-  const missing = REQUIRED_ENV_NAMES.filter((name) => !isEnvConfigured(name));
 
   if (missing.length > 0) {
     throw new Error(
@@ -287,6 +166,6 @@ export function assertServerEnv() {
   getAllowedOrigins();
   getSiteTokenDefaultExpirationSeconds();
   getRevocationDatabaseConfig();
-  getSessionTokenKey();
-  getRefreshTokenKey();
+  await getSessionSecretStore().getActiveKey();
+  await getHealthSecretStore().getActiveKey();
 }

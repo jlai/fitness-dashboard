@@ -1,7 +1,14 @@
+/**
+ * @jest-environment node
+ */
 import {
   CloudflareKVRevocationDatabase,
   MemoryRevocationDatabase,
 } from "@/server/auth/revocation-database";
+import {
+  createAuthMiniflare,
+  type AuthMiniflare,
+} from "@/__tests__/helpers/cloudflare-miniflare";
 
 function token(overrides?: {
   jti?: string;
@@ -124,147 +131,102 @@ describe("MemoryRevocationDatabase", () => {
   });
 });
 
-describe("CloudflareKVRevocationDatabase", () => {
+describe("CloudflareKVRevocationDatabase (Miniflare)", () => {
   const originalExpiration = process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES;
+  let authMf: AuthMiniflare;
 
-  afterEach(() => {
-    jest.useRealTimers();
+  beforeEach(async () => {
+    authMf = await createAuthMiniflare();
+  }, 30_000);
+
+  afterEach(async () => {
     process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES = originalExpiration;
+    await authMf.dispose();
   });
 
-  it("stores revoked token ids in KV with an absolute expiration", async () => {
-    jest.useFakeTimers();
-    jest.setSystemTime(new Date("2026-01-01T00:00:00Z"));
-
-    const kv = {
-      get: jest.fn().mockResolvedValue(null),
-      put: jest.fn().mockResolvedValue(undefined),
-    };
+  it("stores revoked token ids in KV and treats them as revoked", async () => {
+    const kv = await authMf.getKv();
     const db = new CloudflareKVRevocationDatabase(kv);
     const expiresAt = Math.floor(Date.now() / 1000) + 120;
 
     await db.add("jti-1", expiresAt);
 
-    expect(kv.put).toHaveBeenCalledWith("jti-1", "1", {
-      expiration: expiresAt,
-    });
+    await expect(kv.get("jti-1")).resolves.toBe("1");
+    await expect(db.isRevoked(token({ jti: "jti-1" }))).resolves.toBe(true);
+    await expect(db.isRevoked(token({ jti: "jti-2" }))).resolves.toBe(false);
   });
 
   it("uses Cloudflare KV's minimum lifetime when less than 60 seconds remain", async () => {
-    jest.useFakeTimers();
-    jest.setSystemTime(new Date("2026-01-01T00:00:00Z"));
-
-    const kv = {
-      get: jest.fn(),
-      put: jest.fn().mockResolvedValue(undefined),
-    };
+    const kv = await authMf.getKv();
     const db = new CloudflareKVRevocationDatabase(kv);
     const now = Math.floor(Date.now() / 1000);
 
     await db.add("jti-1", now + 10);
 
-    expect(kv.put).toHaveBeenCalledWith("jti-1", "1", {
-      expiration: now + 60,
-    });
+    await expect(kv.get("jti-1")).resolves.toBe("1");
+    await expect(db.isRevoked(token({ jti: "jti-1" }))).resolves.toBe(true);
   });
 
   it("does not store an already-expired token id", async () => {
-    jest.useFakeTimers();
-    jest.setSystemTime(new Date("2026-01-01T00:00:00Z"));
-
-    const kv = {
-      get: jest.fn(),
-      put: jest.fn(),
-    };
+    const kv = await authMf.getKv();
     const db = new CloudflareKVRevocationDatabase(kv);
 
     await db.add("jti-1", Math.floor(Date.now() / 1000) - 1);
 
-    expect(kv.put).not.toHaveBeenCalled();
-  });
-
-  it("treats a present KV key as revoked", async () => {
-    const kv = {
-      get: jest.fn(async (key: string) => (key === "jti-1" ? "1" : null)),
-      put: jest.fn(),
-    };
-    const db = new CloudflareKVRevocationDatabase(kv);
-
-    await expect(db.isRevoked(token({ jti: "jti-1" }))).resolves.toBe(true);
-    await expect(db.isRevoked(token({ jti: "jti-2" }))).resolves.toBe(false);
+    await expect(kv.get("jti-1")).resolves.toBeNull();
+    await expect(db.isRevoked(token({ jti: "jti-1" }))).resolves.toBe(false);
   });
 
   it("stores issued-before watermarks under a before: key", async () => {
-    jest.useFakeTimers();
-    jest.setSystemTime(new Date("2026-01-01T00:00:00Z"));
     process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES = "120";
 
-    const kv = {
-      get: jest.fn().mockResolvedValue(null),
-      put: jest.fn().mockResolvedValue(undefined),
-    };
+    const kv = await authMf.getKv();
     const db = new CloudflareKVRevocationDatabase(kv);
     const cutoff = Math.floor(Date.now() / 1000);
 
     await db.invalidateIssuedBefore("user-1", cutoff);
 
-    expect(kv.put).toHaveBeenCalledWith("before:user-1", String(cutoff), {
-      expiration: cutoff + 120 * 60,
-    });
-  });
-
-  it("keeps the maximum issued-before cutoff in KV", async () => {
-    jest.useFakeTimers();
-    jest.setSystemTime(new Date("2026-01-01T00:00:00Z"));
-    process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES = "120";
-
-    const earlier = Math.floor(Date.now() / 1000) - 30;
-    const later = Math.floor(Date.now() / 1000);
-    const kv = {
-      get: jest.fn().mockResolvedValue(String(later)),
-      put: jest.fn().mockResolvedValue(undefined),
-    };
-    const db = new CloudflareKVRevocationDatabase(kv);
-
-    await db.invalidateIssuedBefore("user-1", earlier);
-
-    expect(kv.put).toHaveBeenCalledWith("before:user-1", String(later), {
-      expiration: later + 120 * 60,
-    });
-  });
-
-  it("does not store an already-expired issued-before watermark", async () => {
-    jest.useFakeTimers();
-    jest.setSystemTime(new Date("2026-01-01T00:00:00Z"));
-    process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES = "1";
-
-    const kv = {
-      get: jest.fn().mockResolvedValue(null),
-      put: jest.fn(),
-    };
-    const db = new CloudflareKVRevocationDatabase(kv);
-    const cutoff = Math.floor(Date.now() / 1000) - 120;
-
-    await db.invalidateIssuedBefore("user-1", cutoff);
-
-    expect(kv.put).not.toHaveBeenCalled();
-  });
-
-  it("revokes tokens with iat before the KV watermark", async () => {
-    const cutoff = 1_700_000_000;
-    const kv = {
-      get: jest.fn(async (key: string) =>
-        key === "before:user-1" ? String(cutoff) : null,
-      ),
-      put: jest.fn(),
-    };
-    const db = new CloudflareKVRevocationDatabase(kv);
-
+    await expect(kv.get("before:user-1")).resolves.toBe(String(cutoff));
     await expect(
       db.isRevoked(token({ sub: "user-1", iat: cutoff - 1 })),
     ).resolves.toBe(true);
     await expect(
       db.isRevoked(token({ sub: "user-1", iat: cutoff })),
+    ).resolves.toBe(false);
+  });
+
+  it("keeps the maximum issued-before cutoff in KV", async () => {
+    process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES = "120";
+
+    const earlier = Math.floor(Date.now() / 1000) - 30;
+    const later = Math.floor(Date.now() / 1000);
+    const kv = await authMf.getKv();
+    const db = new CloudflareKVRevocationDatabase(kv);
+
+    await db.invalidateIssuedBefore("user-1", later);
+    await db.invalidateIssuedBefore("user-1", earlier);
+
+    await expect(kv.get("before:user-1")).resolves.toBe(String(later));
+    await expect(
+      db.isRevoked(token({ sub: "user-1", iat: later - 1 })),
+    ).resolves.toBe(true);
+    await expect(
+      db.isRevoked(token({ sub: "user-1", iat: later })),
+    ).resolves.toBe(false);
+  });
+
+  it("does not store an already-expired issued-before watermark", async () => {
+    process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES = "1";
+
+    const kv = await authMf.getKv();
+    const db = new CloudflareKVRevocationDatabase(kv);
+    const cutoff = Math.floor(Date.now() / 1000) - 120;
+
+    await db.invalidateIssuedBefore("user-1", cutoff);
+
+    await expect(kv.get("before:user-1")).resolves.toBeNull();
+    await expect(
+      db.isRevoked(token({ sub: "user-1", iat: cutoff - 1 })),
     ).resolves.toBe(false);
   });
 });

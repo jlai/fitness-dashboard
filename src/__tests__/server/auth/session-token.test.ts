@@ -2,8 +2,9 @@ import { decodeProtectedHeader, SignJWT } from "jose";
 import { jwtDecode } from "jwt-decode";
 
 import {
-  getSessionTokenKey,
+  getSessionSecretStore,
   getSiteTokenDefaultExpirationSeconds,
+  resetSecretStores,
 } from "@/server/auth/env";
 import {
   SESSION_TOKEN_TYP,
@@ -12,16 +13,21 @@ import {
 } from "@/server/auth/session-token";
 
 describe("signed session token", () => {
-  const originalKey = process.env.SESSION_TOKEN_JWK;
+  const originalKey = process.env.SESSION_ACTIVE_KEY;
+  const originalAccepted = process.env.SESSION_ACCEPTED_KEYS;
   const originalExpiration = process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES;
 
   beforeEach(() => {
     delete process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES;
+    delete process.env.SESSION_ACCEPTED_KEYS;
+    resetSecretStores();
   });
 
   afterEach(() => {
-    process.env.SESSION_TOKEN_JWK = originalKey;
+    process.env.SESSION_ACTIVE_KEY = originalKey;
+    process.env.SESSION_ACCEPTED_KEYS = originalAccepted;
     process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES = originalExpiration;
+    resetSecretStores();
   });
 
   it("signs a JWT with sub, iat, exp, and a random jti", async () => {
@@ -89,7 +95,7 @@ describe("signed session token", () => {
   });
 
   it("rejects a session token without jti", async () => {
-    const tokenKey = getSessionTokenKey();
+    const tokenKey = await getSessionSecretStore().getActiveKey();
     const jwt = await new SignJWT({})
       .setProtectedHeader({
         alg: "HS256",
@@ -108,23 +114,24 @@ describe("signed session token", () => {
 
   it("verifies tokens minted with a previous key after rotation", async () => {
     const jwt = await signSessionToken({ sub: "user-123" });
+    const current = {
+      kty: "oct",
+      kid: "session-test-2",
+      alg: "HS256",
+      k: "AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI",
+    };
+    const previous = {
+      kty: "oct",
+      kid: "session-test-1",
+      alg: "HS256",
+      k: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    };
 
-    process.env.SESSION_TOKEN_JWK = JSON.stringify({
-      keys: [
-        {
-          kty: "oct",
-          kid: "session-test-2",
-          alg: "HS256",
-          k: "AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI",
-        },
-        {
-          kty: "oct",
-          kid: "session-test-1",
-          alg: "HS256",
-          k: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-        },
-      ],
+    process.env.SESSION_ACTIVE_KEY = JSON.stringify(current);
+    process.env.SESSION_ACCEPTED_KEYS = JSON.stringify({
+      keys: [current, previous],
     });
+    resetSecretStores();
 
     await expect(verifySessionToken(jwt)).resolves.toMatchObject({
       sub: "user-123",

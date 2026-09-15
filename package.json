@@ -110,6 +110,7 @@
     "google-discovery-to-swagger": "github:Cobalt0s/google-discovery-to-openapi",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^30.3.0",
+    "miniflare": "^5.20260915.0-alpha",
     "orval": "^8.24.0",
     "postcss": "^8.5.19",
     "prettier": "^3.9.6",
