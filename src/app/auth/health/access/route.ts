@@ -64,9 +64,8 @@ export async function POST(request: Request) {
     if (status !== 200 || payload.error || !payload.access_token) {
       return jsonResponse(
         {
-          error: payload.error ?? "token_refresh_failed",
-          error_description:
-            payload.error_description ?? "refresh token exchange failed",
+          error: "token_refresh_failed",
+          error_description: "refresh token exchange failed",
         },
         status === 200 ? 400 : status,
       );
@@ -86,10 +85,7 @@ export async function POST(request: Request) {
       scope,
       encrypted_health_token,
     });
-  } catch (reason) {
-    const message =
-      reason instanceof Error ? reason.message : "token request failed";
-
-    return internalErrorResponse(message);
+  } catch {
+    return internalErrorResponse("error refreshing access token");
   }
 }

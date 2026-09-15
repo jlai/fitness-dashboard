@@ -121,14 +121,16 @@ describe("POST /auth/health/access", () => {
   });
 
   it("returns a JSON error when the token refresh throws", async () => {
-    refreshAccessTokenMock.mockRejectedValue(new Error("token request failed"));
+    refreshAccessTokenMock.mockRejectedValue(
+      new Error("upstream token endpoint timed out"),
+    );
 
     const response = await POST(await makeRequest());
 
     expect(response.status).toBe(500);
     await expect(response.json()).resolves.toEqual({
       error: "internal_error",
-      error_description: "token request failed",
+      error_description: "error refreshing access token",
     });
   });
 

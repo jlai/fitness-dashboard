@@ -69,10 +69,7 @@ export async function DELETE(request: Request) {
     }
 
     return new Response(null, { status: 204 });
-  } catch (reason) {
-    const message =
-      reason instanceof Error ? reason.message : "token revoke failed";
-
-    return internalErrorResponse(message);
+  } catch {
+    return internalErrorResponse("error revoking health token");
   }
 }

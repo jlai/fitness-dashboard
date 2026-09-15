@@ -139,4 +139,18 @@ describe("DELETE /auth/health", () => {
       error_description: "refresh token revocation failed",
     });
   });
+
+  it("returns a JSON error when token revoke throws", async () => {
+    revokeGoogleTokenMock.mockRejectedValue(
+      new Error("upstream revoke endpoint timed out"),
+    );
+
+    const response = await DELETE(await makeRequest());
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toEqual({
+      error: "internal_error",
+      error_description: "error revoking health token",
+    });
+  });
 });
