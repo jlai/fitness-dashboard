@@ -113,6 +113,49 @@ describe("CloudflareSecretStore (Miniflare)", () => {
     expect(activeJwk.iat).toBeLessThanOrEqual(after);
   });
 
+  it("drops accepted keys older than 30 days during rotation", async () => {
+    const now = Math.floor(Date.now() / 1000);
+    const recent = {
+      ...SESSION_JWK,
+      kid: "session-recent",
+      iat: now - 7 * 24 * 60 * 60,
+    };
+    const stale = {
+      ...SESSION_JWK,
+      kid: "session-stale",
+      iat: now - 31 * 24 * 60 * 60,
+    };
+
+    await authMf.seedSecret("SESSION_ACTIVE_KEY", JSON.stringify(recent));
+    await authMf.seedSecret(
+      "SESSION_ACCEPTED_KEYS",
+      JSON.stringify({ keys: [recent, stale] }),
+    );
+
+    const env = await authMf.getEnv();
+    const store = new CloudflareSecretStore({
+      ...purposeOptions("session"),
+      storeId: TEST_SECRETS_STORE_ID,
+      accountId: TEST_ACCOUNT_ID,
+      readSecret: (name) => readSecretFromEnv(env, name),
+      client: authMf.createSecretsApiClient(),
+    });
+
+    const rotated = await store.rotateKeys();
+    const acceptedRaw = await readSecretFromEnv(env, "SESSION_ACCEPTED_KEYS");
+    const accepted = JSON.parse(acceptedRaw) as {
+      keys: Array<{ kid: string }>;
+    };
+
+    expect(accepted.keys.map((key) => key.kid)).toEqual([
+      rotated.kid,
+      "session-recent",
+    ]);
+    await expect(store.getKeyById("session-stale")).rejects.toThrow(
+      /unknown session token key id/,
+    );
+  });
+
   it("waits for ACCEPTED_KEYS to become active before replacing ACTIVE_KEY", async () => {
     await seedSessionSecrets();
 

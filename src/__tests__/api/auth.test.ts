@@ -345,6 +345,50 @@ describe("forceTokenRefresh", () => {
     );
     expect(fetchMock).not.toHaveBeenCalled();
   });
+
+  it("clears session and health tokens when health access returns 401", async () => {
+    const sessionToken = fakeSessionToken();
+    setStoredSession({ sessionToken, encryptedHealthToken: "encrypted-jwt" });
+    fetchMock.mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          error: "unauthorized",
+          error_description: "encrypted health token has expired",
+        }),
+        { status: 401, headers: { "Content-Type": "application/json" } },
+      ),
+    );
+
+    await expect(forceTokenRefresh()).rejects.toThrow(
+      "encrypted health token has expired",
+    );
+
+    expect(localStorage.getItem(SESSION_TOKEN_STORAGE_KEY)).toBeNull();
+    expect(localStorage.getItem(ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY)).toBeNull();
+    expect(isLoggedIn()).toBe(false);
+  });
+
+  it("clears session and health tokens when health access returns 403", async () => {
+    const sessionToken = fakeSessionToken();
+    setStoredSession({ sessionToken, encryptedHealthToken: "encrypted-jwt" });
+    fetchMock.mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          error: "forbidden",
+          error_description: "session does not match encrypted token",
+        }),
+        { status: 403, headers: { "Content-Type": "application/json" } },
+      ),
+    );
+
+    await expect(forceTokenRefresh()).rejects.toThrow(
+      "session does not match encrypted token",
+    );
+
+    expect(localStorage.getItem(SESSION_TOKEN_STORAGE_KEY)).toBeNull();
+    expect(localStorage.getItem(ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY)).toBeNull();
+    expect(isLoggedIn()).toBe(false);
+  });
 });
 
 describe("isLoggedIn", () => {

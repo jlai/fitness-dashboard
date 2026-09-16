@@ -1,4 +1,4 @@
-import { EncryptJWT, jwtDecrypt } from "jose";
+import { EncryptJWT, errors, jwtDecrypt } from "jose";
 
 import { getHealthSecretStore } from "./get-secret-store";
 
@@ -11,7 +11,11 @@ export interface EncryptedRefreshTokenPayload {
 export interface DecryptedRefreshToken extends EncryptedRefreshTokenPayload {
   jti: string;
   iat: number;
+  exp: number;
 }
+
+/** Encrypted health JWEs expire after 15 days and must be refreshed via /auth/health/access. */
+export const ENCRYPTED_HEALTH_TOKEN_EXPIRATION_SECONDS = 15 * 24 * 60 * 60;
 
 const TOKEN_TYP = "refresh+jwt";
 
@@ -25,6 +29,7 @@ export async function encryptRefreshToken(
 ) {
   const tokenKey = await getHealthSecretStore().getActiveKey();
   const iat = Math.floor(Date.now() / 1000);
+  const exp = iat + ENCRYPTED_HEALTH_TOKEN_EXPIRATION_SECONDS;
   const jti = crypto.randomUUID();
   const jwt = new EncryptJWT({
     refresh_token: payload.refreshToken,
@@ -40,9 +45,14 @@ export async function encryptRefreshToken(
     })
     .setSubject(payload.sub)
     .setJti(jti)
-    .setIssuedAt(iat);
+    .setIssuedAt(iat)
+    .setExpirationTime(exp);
 
   return jwt.encrypt(tokenKey.key);
+}
+
+export function isExpiredEncryptedTokenError(error: unknown) {
+  return error instanceof errors.JWTExpired;
 }
 
 export async function decryptRefreshToken(
@@ -56,7 +66,7 @@ export async function decryptRefreshToken(
       typ: TOKEN_TYP,
       keyManagementAlgorithms: ["dir"],
       contentEncryptionAlgorithms: ["A256GCM"],
-      requiredClaims: ["sub", "refresh_token"],
+      requiredClaims: ["sub", "refresh_token", "iat", "exp"],
     },
   );
 
@@ -73,6 +83,10 @@ export async function decryptRefreshToken(
 
   if (typeof payload.iat !== "number" || !Number.isFinite(payload.iat)) {
     throw new Error("encrypted token is missing iat");
+  }
+
+  if (typeof payload.exp !== "number" || !Number.isFinite(payload.exp)) {
+    throw new Error("encrypted token is missing exp");
   }
 
   const jti =
@@ -92,5 +106,6 @@ export async function decryptRefreshToken(
     scope: typeof payload.scope === "string" ? payload.scope : undefined,
     jti,
     iat: payload.iat,
+    exp: payload.exp,
   };
 }

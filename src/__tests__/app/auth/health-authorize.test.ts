@@ -92,6 +92,7 @@ describe("POST /auth/health/authorize", () => {
       scope: "openid",
       jti: expect.any(String),
       iat: expect.any(Number),
+      exp: expect.any(Number),
     });
   });
 

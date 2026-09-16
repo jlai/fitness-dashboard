@@ -1,6 +1,7 @@
 import {
   decryptRefreshToken,
   encryptRefreshToken,
+  isExpiredEncryptedTokenError,
 } from "@/server/auth/encrypted-token";
 import { refreshAccessToken } from "@/server/auth/google-oauth-token";
 import {
@@ -52,7 +53,11 @@ export async function POST(request: Request) {
 
   try {
     stored = await decryptRefreshToken(body.encrypted_health_token);
-  } catch {
+  } catch (error) {
+    if (isExpiredEncryptedTokenError(error)) {
+      return unauthorizedResponse("encrypted health token has expired");
+    }
+
     return forbiddenResponse("invalid encrypted token");
   }
 
@@ -87,6 +92,7 @@ export async function POST(request: Request) {
 
     const scope = payload.scope ?? stored.scope;
     const refreshToken = payload.refresh_token ?? stored.refreshToken;
+    // Re-encrypt so the client gets a refreshed iat/exp window.
     const encrypted_health_token = await encryptRefreshToken({
       sub: stored.sub,
       refreshToken,

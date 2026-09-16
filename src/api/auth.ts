@@ -193,6 +193,13 @@ function isCachedAccessTokenFresh() {
   );
 }
 
+/** Clear local session + health JWE when a session/health endpoint returns 401/403. */
+function forceSignOut() {
+  disableGoogleAutoSelect();
+  clearStaySignedIn();
+  clearToken();
+}
+
 async function postSessionJson(
   path: string,
   body?: Record<string, string>,
@@ -208,6 +215,22 @@ async function postSessionJson(
     },
     body: body ? JSON.stringify(body) : undefined,
   });
+
+  if (response.status === 401 || response.status === 403) {
+    forceSignOut();
+    let description =
+      response.status === 401 ? "unauthorized" : "forbidden";
+
+    try {
+      const payload = (await response.json()) as TokenEndpointResponse;
+      description =
+        payload.error_description || payload.error || description;
+    } catch {
+      // ignore JSON parse failures; still signed out locally
+    }
+
+    throw new Error(description);
+  }
 
   const payload: TokenEndpointResponse = await response.json();
 

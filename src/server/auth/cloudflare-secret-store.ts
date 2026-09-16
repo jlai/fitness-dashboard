@@ -4,6 +4,7 @@ import {
   parseAcceptedKeys,
   parseOctJwkValue,
   resolveKeyById,
+  retainAcceptedJwks,
   secretBindingName,
   type OctJwk,
   type SecretPurposeOptions,
@@ -99,7 +100,7 @@ export class CloudflareSecretStore implements SecretStore {
     const current = await this.loadAcceptedKeys();
     const next = await generateOctJwk(this.options);
     const accepted = {
-      keys: [next, ...current.jwks.keys],
+      keys: [next, ...retainAcceptedJwks(current.jwks.keys as OctJwk[])],
     };
 
     const client = this.getClient();

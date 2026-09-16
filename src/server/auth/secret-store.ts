@@ -133,6 +133,24 @@ function invalidTokenSecretStoreUrl() {
 
 const OCTET_KEY_BYTES = 32;
 
+/** Drop accepted keys older than this when rotating. */
+export const ACCEPTED_KEY_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
+
+/**
+ * Keep keys that are younger than {@link ACCEPTED_KEY_MAX_AGE_SECONDS}.
+ * Keys without `iat` are retained (legacy keys minted before iat was written).
+ */
+export function retainAcceptedJwks(
+  keys: OctJwk[],
+  nowSeconds = Math.floor(Date.now() / 1000),
+): OctJwk[] {
+  const cutoff = nowSeconds - ACCEPTED_KEY_MAX_AGE_SECONDS;
+
+  return keys.filter(
+    (key) => typeof key.iat !== "number" || key.iat >= cutoff,
+  );
+}
+
 function asOctJwk(
   value: unknown,
   label: string,

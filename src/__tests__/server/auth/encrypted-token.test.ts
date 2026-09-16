@@ -4,6 +4,7 @@ import { resetSecretStores } from "@/server/auth/env";
 import {
   decryptRefreshToken,
   encryptRefreshToken,
+  ENCRYPTED_HEALTH_TOKEN_EXPIRATION_SECONDS,
 } from "@/server/auth/encrypted-token";
 
 describe("encrypted refresh token", () => {
@@ -19,6 +20,7 @@ describe("encrypted refresh token", () => {
     process.env.HEALTH_ACTIVE_KEY = originalKey;
     process.env.HEALTH_ACCEPTED_KEYS = originalAccepted;
     resetSecretStores();
+    jest.useRealTimers();
   });
 
   it("round-trips the refresh token and subject", async () => {
@@ -47,7 +49,20 @@ describe("encrypted refresh token", () => {
         "openid https://www.googleapis.com/auth/googlehealth.profile.readonly",
       jti: header.jti,
       iat: header.iat,
+      exp: (header.iat as number) + ENCRYPTED_HEALTH_TOKEN_EXPIRATION_SECONDS,
     });
+  });
+
+  it("rejects an expired encrypted token", async () => {
+    jest.useFakeTimers({ now: new Date("2020-01-01T00:00:00Z") });
+    const jwt = await encryptRefreshToken({
+      sub: "user-123",
+      refreshToken: "rtok",
+    });
+
+    jest.setSystemTime(new Date("2020-01-20T00:00:00Z"));
+
+    await expect(decryptRefreshToken(jwt)).rejects.toThrow();
   });
 
   it("gives each encrypted token a unique jti", async () => {
@@ -113,6 +128,7 @@ describe("encrypted refresh token", () => {
       refreshToken: "rtok",
       jti: expect.any(String),
       iat: expect.any(Number),
+      exp: expect.any(Number),
     });
 
     const rotated = await encryptRefreshToken({

@@ -73,6 +73,7 @@ describe("POST /auth/health/access", () => {
     process.env.GOOGLE_OAUTH_PROXY_ALLOWED_ORIGIN = originalAllowedOrigin;
     process.env.SESSION_REVOCATION_DATABASE = originalRevocation;
     resetRevocationDatabase();
+    jest.useRealTimers();
   });
 
   it("exchanges the encrypted refresh token for an access token", async () => {
@@ -85,15 +86,58 @@ describe("POST /auth/health/access", () => {
     expect(payload.scope).toBe("openid");
     expect(payload.encrypted_health_token).toEqual(expect.any(String));
 
-    await expect(
-      decryptRefreshToken(payload.encrypted_health_token),
-    ).resolves.toEqual({
+    const refreshed = await decryptRefreshToken(payload.encrypted_health_token);
+    expect(refreshed).toEqual({
       sub: "user-1",
       refreshToken: "stored-refresh",
       scope: "openid",
       jti: expect.any(String),
       iat: expect.any(Number),
+      exp: expect.any(Number),
     });
+    expect(refreshed.exp).toBe(refreshed.iat + 15 * 24 * 60 * 60);
+  });
+
+  it("returns a refreshed encrypted health token with a newer iat", async () => {
+    jest.useFakeTimers({ now: new Date("2024-06-01T00:00:00Z") });
+    const original = await encryptRefreshToken({
+      sub: "user-1",
+      refreshToken: "stored-refresh",
+      scope: "openid",
+    });
+    const originalClaims = await decryptRefreshToken(original);
+
+    jest.setSystemTime(new Date("2024-06-01T01:00:00Z"));
+    const response = await POST(
+      await makeRequest({ encryptedHealthToken: original }),
+    );
+    const payload = await response.json();
+    const refreshed = await decryptRefreshToken(payload.encrypted_health_token);
+
+    expect(response.status).toBe(200);
+    expect(refreshed.iat).toBeGreaterThan(originalClaims.iat);
+    expect(refreshed.exp).toBe(refreshed.iat + 15 * 24 * 60 * 60);
+  });
+
+  it("rejects an expired encrypted health token", async () => {
+    jest.useFakeTimers({ now: new Date("2020-01-01T00:00:00Z") });
+    const encrypted = await encryptRefreshToken({
+      sub: "user-1",
+      refreshToken: "stored-refresh",
+      scope: "openid",
+    });
+    jest.setSystemTime(new Date("2020-01-20T00:00:00Z"));
+
+    const response = await POST(
+      await makeRequest({ encryptedHealthToken: encrypted }),
+    );
+
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toEqual({
+      error: "unauthorized",
+      error_description: "encrypted health token has expired",
+    });
+    expect(refreshAccessTokenMock).not.toHaveBeenCalled();
   });
 
   it("rejects when the session is for a different user", async () => {
@@ -239,6 +283,7 @@ describe("POST /auth/health/access", () => {
       scope: "openid",
       jti: expect.any(String),
       iat: expect.any(Number),
+      exp: expect.any(Number),
     });
   });
 });
