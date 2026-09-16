@@ -43,10 +43,16 @@ export function CalorieBalanceChart() {
     );
 
     for (const date of dates) {
+      const caloriesInRaw = Number(inByDate[date]?.value);
+      const caloriesBurnedRaw = Number(burnedByDate[date]?.value);
+
       data.push({
         dateTime: date,
-        caloriesIn: Number(inByDate[date]?.value) ?? null,
-        caloriesBurned: Number(burnedByDate[date]?.value) ?? null,
+        // Number(undefined) is NaN; ?? does not replace NaN.
+        caloriesIn: Number.isFinite(caloriesInRaw) ? caloriesInRaw : null,
+        caloriesBurned: Number.isFinite(caloriesBurnedRaw)
+          ? caloriesBurnedRaw
+          : null,
       });
     }
 

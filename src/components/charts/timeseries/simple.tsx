@@ -73,18 +73,21 @@ export function WaterChart() {
   );
 
   const props = useAggregation(data, seriesConfigs);
-  const waterGoalLine =
+  const waterGoalLineRaw =
     showGoals && waterGoal
       ? localizedWaterVolume(
           millilitersFromWaterGoal(waterGoal.value, waterGoal.unit),
         )
       : undefined;
+  const waterGoalLine = Number.isFinite(waterGoalLineRaw)
+    ? waterGoalLineRaw
+    : undefined;
 
   return (
     <SimpleBarChart
       {...props}
       referenceLine={
-        waterGoalLine
+        waterGoalLine != null
           ? {
               label: `Goal: ${NumberFormats.FRACTION_DIGITS_0.format(
                 waterGoalLine,

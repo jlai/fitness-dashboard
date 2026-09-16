@@ -100,8 +100,9 @@ function ActivityOverview({
         {calories && <Typography variant="h6">{calories} calories</Typography>}
         <Button
           disabled={!tcxDownloadUrl}
-          href={tcxDownloadUrl ?? ""}
-          download={tcxFilename}
+          {...(tcxDownloadUrl
+            ? { href: tcxDownloadUrl, download: tcxFilename }
+            : {})}
         >
           <Download />
           TCX

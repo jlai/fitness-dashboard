@@ -37,21 +37,25 @@ export function SleepLevelSummaryChart({ sleep }: { sleep: Sleep }) {
     bottom: 30,
   };
 
+  const chartHeight = Math.max(0, height - margin.bottom);
+  const chartWidth = Math.max(0, width - margin.left - margin.right);
+
   const xScale = scaleLinear({
     domain: [0, maxMins],
-    range: [margin.left, width - margin.left - margin.right],
+    range: [margin.left, margin.left + chartWidth],
   });
 
   const yScale = scaleBand({
     domain: levelIds,
-    range: [0, height - margin.bottom],
+    range: [0, chartHeight],
   });
 
-  const rectHeight = (height - margin.bottom) / 4;
-  const barHeight = (height - margin.bottom) / 5;
+  const rectHeight = chartHeight / 4;
+  const barHeight = chartHeight / 5;
 
   return (
     <div ref={parentRef} className="relative h-full">
+      {width > 0 && height > margin.bottom && (
       <svg ref={containerRef} width={width} height={height}>
         <AxisLeft
           left={margin.left}
@@ -62,7 +66,7 @@ export function SleepLevelSummaryChart({ sleep }: { sleep: Sleep }) {
           tickLabelProps={{ fill: "currentColor", fontSize: 14 }}
         />
         {data.map((datum) => {
-          const barWidth = xScale(datum.value) - margin.left;
+          const barWidth = Math.max(0, xScale(datum.value) - margin.left);
           const canFitPercent = barWidth > 24;
 
           return (
@@ -111,7 +115,7 @@ export function SleepLevelSummaryChart({ sleep }: { sleep: Sleep }) {
                     )})`}
               </Text>
               <rect
-                width={width - margin.left}
+                width={Math.max(0, width - margin.left)}
                 height={rectHeight}
                 fill="transparent"
                 onMouseMove={(event) => handleMouseMove(event, datum)}
@@ -121,6 +125,7 @@ export function SleepLevelSummaryChart({ sleep }: { sleep: Sleep }) {
           );
         })}
       </svg>
+      )}
       {tooltipOpen && tooltipData && (
         <TooltipInPortal
           top={tooltipTop}

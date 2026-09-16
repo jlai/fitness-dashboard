@@ -25,7 +25,11 @@ export function singleSeriesConfig<TDatum = StringValueDatum>({
       id: id ?? "default",
       label,
       yAccessor:
-        yAccessor ?? ((entry) => Number((entry as StringValueDatum).value)),
+        yAccessor ??
+        ((entry) => {
+          const value = Number((entry as StringValueDatum).value);
+          return Number.isFinite(value) ? value : null;
+        }),
     },
   ] as Array<ChartSeriesConfig<TDatum>>;
 }

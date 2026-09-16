@@ -45,14 +45,17 @@ export function DailyStepsChart() {
 
   const props = useAggregation(data, STEPS_SERIES_CONFIGS);
 
-  const stepGoal = showGoals ? stepsGoal?.value : undefined;
+  const stepGoal =
+    showGoals && stepsGoal != null && Number.isFinite(stepsGoal.value)
+      ? stepsGoal.value
+      : undefined;
 
   return (
     <>
       <SimpleBarChart
         {...props}
         referenceLine={
-          stepGoal
+          stepGoal != null
             ? {
                 label: `Goal: ${NumberFormats.FRACTION_DIGITS_0.format(
                   stepGoal,
@@ -91,7 +94,7 @@ export function DistanceChart() {
 
   const props = useAggregation(data, seriesConfigs);
 
-  const distanceGoal =
+  const distanceGoalRaw =
     showGoals && distanceGoalValue
       ? localizedKilometers(
           kilometersFromDistanceGoal(
@@ -100,13 +103,16 @@ export function DistanceChart() {
           ),
         )
       : undefined;
+  const distanceGoal = Number.isFinite(distanceGoalRaw)
+    ? distanceGoalRaw
+    : undefined;
 
   return (
     <>
       <SimpleBarChart
         {...props}
         referenceLine={
-          distanceGoal
+          distanceGoal != null
             ? {
                 label: `Goal: ${NumberFormats.FRACTION_DIGITS_0.format(
                   distanceGoal,
@@ -138,14 +144,17 @@ export function FloorsChart() {
 
   const props = useAggregation(data, FLOORS_SERIES_CONFIGS);
 
-  const floorsGoal = showGoals ? floorsGoalValue?.value : undefined;
+  const floorsGoal =
+    showGoals && floorsGoalValue != null && Number.isFinite(floorsGoalValue.value)
+      ? floorsGoalValue.value
+      : undefined;
 
   return (
     <>
       <SimpleBarChart
         {...props}
         referenceLine={
-          floorsGoal
+          floorsGoal != null
             ? {
                 label: `Goal: ${NumberFormats.FRACTION_DIGITS_0.format(
                   floorsGoal,

@@ -56,13 +56,18 @@ export function ActiveZoneMinutesChart() {
 
   const props = useAggregation(data, AZM_SERIES_CONFIGS);
 
-  const azmGoal = showGoals ? activeZoneMinutesGoal?.value : undefined;
+  const azmGoal =
+    showGoals &&
+    activeZoneMinutesGoal != null &&
+    Number.isFinite(activeZoneMinutesGoal.value)
+      ? activeZoneMinutesGoal.value
+      : undefined;
 
   return (
     <StackedBarChart
       {...props}
       referenceLine={
-        azmGoal
+        azmGoal != null
           ? {
               label: `Goal: ${NumberFormats.FRACTION_DIGITS_0.format(
                 azmGoal,

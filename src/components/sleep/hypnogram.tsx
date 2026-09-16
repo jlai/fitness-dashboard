@@ -255,6 +255,7 @@ export function Hypnogram({ sleep, height: containerHeight }: HypnogramProps) {
 
   const yAxisWidth = 70;
   const xAxisHeight = 40;
+  const plotHeight = Math.max(0, height - xAxisHeight);
 
   const xScale = scaleTime<number>({
     domain: [
@@ -270,7 +271,7 @@ export function Hypnogram({ sleep, height: containerHeight }: HypnogramProps) {
     domain: usesStagesLayout(sleep)
       ? ["wake", "rem", "light", "deep"]
       : ["awake", "restless", "asleep"],
-    range: [0, height - xAxisHeight],
+    range: [0, plotHeight],
     padding: 1,
   });
 
@@ -299,39 +300,41 @@ export function Hypnogram({ sleep, height: containerHeight }: HypnogramProps) {
       className="relative"
       style={{ height: containerHeight }}
     >
-      <svg ref={containerRef} width={width} height={height}>
-        <rect
-          x={0}
-          y={0}
-          width={width}
-          height={height}
-          fill="url(#area-background-gradient)"
-          rx={14}
-        />
-        <LinearGradient
-          id="area-background-gradient"
-          from="#3b6978"
-          to="#204051"
-        />
-        <SleepLevelPlot
-          data={data}
-          shortData={shortData}
-          sleep={sleep}
-          xScale={xScale}
-          yScale={yScale}
-          height={height}
-          onMouseOver={handleMouseOver}
-          onMouseOut={hideTooltip}
-        />
-        <HypnogramAxes
-          xScale={xScale}
-          yScale={yScale}
-          width={width}
-          height={height}
-          yAxisWidth={yAxisWidth}
-          xAxisHeight={xAxisHeight}
-        />
-      </svg>
+      {width > 0 && height > xAxisHeight && (
+        <svg ref={containerRef} width={width} height={height}>
+          <rect
+            x={0}
+            y={0}
+            width={width}
+            height={height}
+            fill="url(#area-background-gradient)"
+            rx={14}
+          />
+          <LinearGradient
+            id="area-background-gradient"
+            from="#3b6978"
+            to="#204051"
+          />
+          <SleepLevelPlot
+            data={data}
+            shortData={shortData}
+            sleep={sleep}
+            xScale={xScale}
+            yScale={yScale}
+            height={plotHeight}
+            onMouseOver={handleMouseOver}
+            onMouseOut={hideTooltip}
+          />
+          <HypnogramAxes
+            xScale={xScale}
+            yScale={yScale}
+            width={width}
+            height={height}
+            yAxisWidth={yAxisWidth}
+            xAxisHeight={xAxisHeight}
+          />
+        </svg>
+      )}
       {tooltipOpen && tooltipData && (
         <TooltipInPortal
           top={tooltipTop}
