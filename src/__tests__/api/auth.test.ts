@@ -1,15 +1,17 @@
 import { act, renderHook } from "@testing-library/react";
 import { toast } from "mui-sonner";
 
-import { getDefaultStore, useAtom } from "jotai";
+import { useAtom } from "jotai";
 
 import {
   createSession,
   forceTokenRefresh,
   getAccessTokenScopes,
   getFreshAccessToken,
+  getSessionSubject,
   isLoggedIn,
   logout,
+  persistAuthTokens,
   restoreAccessToken,
   revokeAuthorization,
   syncAuthTokenEffect,
@@ -18,10 +20,6 @@ import {
   useMissingScopes,
 } from "@/api/auth";
 import { loadGoogleOAuth2 } from "@/api/google-identity";
-import {
-  STAY_SIGNED_IN_STORAGE_KEY,
-  staySignedInAtom,
-} from "@/storage/settings";
 
 jest.mock("@/api/google-identity", () => ({
   loadGoogleOAuth2: jest.fn(),
@@ -101,7 +99,7 @@ describe("createSession", () => {
     fetchMock.mockRestore();
   });
 
-  it("posts the id_token and stores the session token", async () => {
+  it("posts the id_token and keeps the session token in memory", async () => {
     const sessionToken = fakeSessionToken();
     fetchMock.mockResolvedValue(
       new Response(JSON.stringify({ session_token: sessionToken }), {
@@ -119,7 +117,8 @@ describe("createSession", () => {
         body: JSON.stringify({ id_token: "google-id-token" }),
       }),
     );
-    expect(localStorage.getItem(SESSION_TOKEN_STORAGE_KEY)).toBe(sessionToken);
+    expect(localStorage.getItem(SESSION_TOKEN_STORAGE_KEY)).toBeNull();
+    expect(getSessionSubject()).toBe("user-1");
     expect(JSON.stringify(localStorage)).not.toContain("google-id-token");
   });
 
@@ -165,6 +164,70 @@ describe("createSession", () => {
     expect(localStorage.getItem(ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY)).toBe(
       "encrypted-jwt-rotated",
     );
+    expect(localStorage.getItem(SESSION_TOKEN_STORAGE_KEY)).toBe(sessionToken);
+  });
+});
+
+describe("persistAuthTokens", () => {
+  let fetchMock: jest.SpyInstance;
+
+  beforeEach(() => {
+    localStorage.clear();
+    logout();
+    fetchMock = jest.spyOn(global, "fetch");
+    loadGoogleOAuth2Mock.mockResolvedValue({
+      initCodeClient: jest.fn((options) => ({
+        requestCode: () => {
+          options.callback({ code: "auth-code" });
+        },
+      })),
+      revoke: jest.fn(),
+    } as unknown as Awaited<ReturnType<typeof loadGoogleOAuth2>>);
+  });
+
+  afterEach(() => {
+    fetchMock.mockRestore();
+    jest.clearAllMocks();
+  });
+
+  it("writes in-memory session and health tokens to localStorage", async () => {
+    const sessionToken = fakeSessionToken();
+    fetchMock
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ session_token: sessionToken }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            access_token: "access-token",
+            expires_in: 3600,
+            scope: "openid",
+            encrypted_health_token: "encrypted-jwt",
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
+      );
+
+    await createSession("google-id-token");
+
+    const { result } = renderHook(() => useGoogleLoginAndAuthorization());
+    await act(async () => {
+      await result.current.loginToGoogleAndAuthorize();
+    });
+
+    expect(localStorage.getItem(SESSION_TOKEN_STORAGE_KEY)).toBeNull();
+    expect(localStorage.getItem(ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY)).toBeNull();
+    expect(isLoggedIn()).toBe(true);
+
+    persistAuthTokens();
+
+    expect(localStorage.getItem(SESSION_TOKEN_STORAGE_KEY)).toBe(sessionToken);
+    expect(localStorage.getItem(ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY)).toBe(
+      "encrypted-jwt",
+    );
   });
 });
 
@@ -200,15 +263,6 @@ describe("logout", () => {
     );
     expect(localStorage.getItem(SESSION_TOKEN_STORAGE_KEY)).toBeNull();
     expect(localStorage.getItem(ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY)).toBeNull();
-  });
-
-  it("clears the stay-signed-in preference", async () => {
-    getDefaultStore().set(staySignedInAtom, true);
-
-    await logout();
-
-    expect(localStorage.getItem(STAY_SIGNED_IN_STORAGE_KEY)).toBeNull();
-    expect(getDefaultStore().get(staySignedInAtom)).toBe(false);
   });
 });
 
@@ -782,9 +836,8 @@ describe("useGoogleLoginAndAuthorization", () => {
         body: JSON.stringify({ code: "auth-code" }),
       }),
     );
-    expect(localStorage.getItem(ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY)).toBe(
-      "new-encrypted",
-    );
+    expect(localStorage.getItem(ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY)).toBeNull();
+    expect(isLoggedIn()).toBe(true);
     expect(JSON.stringify(localStorage)).not.toContain("openid");
     expect(getAccessTokenScopes().has("openid")).toBe(true);
     expect(localStorage.getItem("auth:google-token")).toBeNull();

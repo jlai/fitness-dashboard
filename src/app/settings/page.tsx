@@ -65,7 +65,6 @@ import {
   clockHourCycleAtom,
   numberFormatPatternAtom,
   dateFormatPatternAtom,
-  staySignedInAtom,
 } from "@/storage/settings";
 import { getGoalsAtom } from "@/storage/goals";
 import { wipeLocalData } from "@/storage/wipe-local-data";
@@ -107,33 +106,10 @@ function SettingsRow({
   );
 }
 
-function StaySignedInSetting() {
-  const [staySignedIn, setStaySignedIn] = useAtom(staySignedInAtom);
-
-  return (
-    <SettingsRow
-      title="Stay signed in"
-      action={
-        <Switch
-          checked={staySignedIn}
-          onChange={(_event, checked) => setStaySignedIn(checked)}
-        />
-      }
-    >
-      Automatically sign in with Google when you return to this site.
-    </SettingsRow>
-  );
-}
-
 function LoginSettings() {
   const loggedIn = useLoggedIn();
 
-  return (
-    <>
-      {loggedIn ? <LoggedInAccountSettings /> : <LoggedOutAccountSettings />}
-      <StaySignedInSetting />
-    </>
-  );
+  return loggedIn ? <LoggedInAccountSettings /> : <LoggedOutAccountSettings />;
 }
 
 function LoggedOutAccountSettings() {

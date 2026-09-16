@@ -6,22 +6,33 @@ import {
   AccordionSummary,
   Button,
   Container,
+  FormControlLabel,
+  Radio,
+  RadioGroup,
+  Step,
+  StepContent,
+  StepLabel,
+  Stepper,
   Table,
   TableBody,
   TableCell,
   TableRow,
   Typography,
 } from "@mui/material";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import Link from "next/link";
 import { ArrowDropDown } from "@mui/icons-material";
-import { useAtom, useAtomValue } from "jotai";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useRouter } from "next/navigation";
 import dayjs from "dayjs";
 
 import {
+  hasPersistedEncryptedHealthToken,
   hasTokenScope,
+  pendingRememberMeChoiceAtom,
+  persistAuthTokens,
   useGoogleLoginAndAuthorization,
+  useLoggedIn,
   useOpenIdSignedIn,
 } from "@/api/auth";
 import { formatAsDate } from "@/api/datetime";
@@ -88,33 +99,79 @@ function PermissionsTable() {
   );
 }
 
+function StaySignedInOption({
+  label,
+  description,
+  value,
+}: {
+  label: string;
+  description: string;
+  value: string;
+}) {
+  return (
+    <FormControlLabel
+      value={value}
+      control={<Radio />}
+      label={
+        <>
+          <Typography variant="body1">{label}</Typography>
+          <Typography variant="body2" color="text.secondary">
+            {description}
+          </Typography>
+        </>
+      }
+      sx={{ alignItems: "flex-start", mr: 0 }}
+    />
+  );
+}
+
 export default function LoginBox() {
   const router = useRouter();
   const allUnitsConfigured = useAtomValue(allUnitsConfiguredAtom);
   const [firstLoginDate, setFirstLoginDate] = useAtom(firstLoginDateAtom);
+  const setPendingRememberMeChoice = useSetAtom(pendingRememberMeChoiceAtom);
+  const pendingRememberMeChoice = useAtomValue(pendingRememberMeChoiceAtom);
   const openIdSignedIn = useOpenIdSignedIn();
+  const loggedIn = useLoggedIn();
   const { loginToGoogleAndAuthorize, ready } = useGoogleLoginAndAuthorization();
+  const [rememberMeChoice, setRememberMeChoice] = useState("dont-stay");
+
+  const awaitingRememberMe = pendingRememberMeChoice && loggedIn;
+  const showWelcomeBack =
+    hasPersistedEncryptedHealthToken() && !awaitingRememberMe;
+  const activeStep = awaitingRememberMe ? 2 : openIdSignedIn ? 1 : 0;
 
   const grantHealthAccess = useCallback(() => {
     loginToGoogleAndAuthorize()
       .then(() => {
-        if (!firstLoginDate) {
-          setFirstLoginDate(formatAsDate(dayjs()));
-        }
-
-        if (!hasTokenScope(SETTINGS_READONLY) && !allUnitsConfigured) {
-          router.replace("/settings");
-        }
+        setPendingRememberMeChoice(true);
       })
       .catch(() => {
         // loginToGoogleAndAuthorize already toasts on failure
       });
+  }, [loginToGoogleAndAuthorize, setPendingRememberMeChoice]);
+
+  const finishLogin = useCallback(() => {
+    if (rememberMeChoice === "remember") {
+      persistAuthTokens();
+    }
+
+    setPendingRememberMeChoice(false);
+
+    if (!firstLoginDate) {
+      setFirstLoginDate(formatAsDate(dayjs()));
+    }
+
+    if (!hasTokenScope(SETTINGS_READONLY) && !allUnitsConfigured) {
+      router.replace("/settings");
+    }
   }, [
     allUnitsConfigured,
     firstLoginDate,
-    loginToGoogleAndAuthorize,
+    rememberMeChoice,
     router,
     setFirstLoginDate,
+    setPendingRememberMeChoice,
   ]);
 
   return (
@@ -140,50 +197,107 @@ export default function LoginBox() {
         <Typography variant="h5" marginBottom="24px">
           Connect your Google account
         </Typography>
-        <div className="space-y-4">
-          <Typography variant="body1">
-            Sign in with your Google Account to view your daily stats from
-            Google Health, historical graphs and logs, and log new activities
-            and other data.
-          </Typography>
-          <Typography variant="body1">
-            This works entirely in your browser. No signups, no data collection,
-            no ads.{" "}
-            {PRIVACY_POLICY_LINK && (
-              <span>
-                View our{" "}
-                <Link
-                  href={PRIVACY_POLICY_LINK}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline"
-                >
-                  privacy policy
-                </Link>{" "}
-                for more details.
-              </span>
-            )}
-          </Typography>
-          <Typography variant="body1">
-            {openIdSignedIn
-              ? "You're signed in with Google. Next, grant access to Google Health data."
-              : "Ready to get started? Sign in with Google below."}
-          </Typography>
-        </div>
-        <div className="my-8 flex flex-col items-center">
-          {openIdSignedIn ? (
-            <Button
-              variant="contained"
-              onClick={grantHealthAccess}
-              disabled={!ready}
+        {showWelcomeBack ? (
+          <div className="space-y-4">
+            <Typography variant="body1">
+              Welcome back! Sign into your Google account to resume your
+              session.
+            </Typography>
+            <div className="my-8 flex flex-col items-center">
+              <GoogleSignInButton />
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="space-y-4">
+              <Typography variant="body1">
+                Sign in with your Google Account to view your daily stats from
+                Google Health, historical graphs and logs, and log new
+                activities and other data.
+              </Typography>
+              <Typography variant="body1">
+                This works entirely in your browser. No signups, no data
+                collection, no ads.{" "}
+                {PRIVACY_POLICY_LINK && (
+                  <span>
+                    View our{" "}
+                    <Link
+                      href={PRIVACY_POLICY_LINK}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline"
+                    >
+                      privacy policy
+                    </Link>{" "}
+                    for more details.
+                  </span>
+                )}
+              </Typography>
+            </div>
+            <Stepper
+              activeStep={activeStep}
+              orientation="vertical"
+              className="mt-8"
             >
-              Grant access to Google Health
-            </Button>
-          ) : (
-            <GoogleSignInButton />
-          )}
-        </div>
-        <section>
+              <Step>
+                <StepLabel>Sign into Google</StepLabel>
+                <StepContent>
+                  <Typography variant="body1" marginBottom={2}>
+                    Ready to get started? Sign in with Google below.
+                  </Typography>
+                  <GoogleSignInButton />
+                </StepContent>
+              </Step>
+              <Step>
+                <StepLabel>Authorize access to Google Health</StepLabel>
+                <StepContent>
+                  <Typography variant="body1" marginBottom={2}>
+                    You&apos;re signed in with Google. Next, grant access to
+                    Google Health data.
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    onClick={grantHealthAccess}
+                    disabled={!ready}
+                  >
+                    Grant access to Google Health
+                  </Button>
+                </StepContent>
+              </Step>
+              <Step>
+                <StepLabel>Remember me on this computer?</StepLabel>
+                <StepContent>
+                  <RadioGroup
+                    className="flex flex-col gap-y-3"
+                    value={rememberMeChoice}
+                    onChange={(event) =>
+                      setRememberMeChoice(event.target.value)
+                    }
+                  >
+                    <StaySignedInOption
+                      value="dont-stay"
+                      label="Don't stay signed in"
+                      description="Use this on a shared or public computer. You will need to sign in every time you open this page."
+                    />
+                    <StaySignedInOption
+                      value="remember"
+                      label="Remember me on this computer"
+                      description="Save local settings and quickly log in when returning to this page."
+                    />
+                  </RadioGroup>
+                  <Button
+                    variant="contained"
+                    onClick={finishLogin}
+                    className="mt-4"
+                  >
+                    Finish
+                  </Button>
+                </StepContent>
+              </Step>
+            </Stepper>
+          </>
+        )}
+        <section className="mt-8">
           <Typography variant="h5" marginBottom="24px">
             Q&amp;A
           </Typography>

@@ -6,7 +6,8 @@ import {
   GoogleLoginButton,
   GoogleOneTap,
 } from "@/components/login/google-identity";
-import { STAY_SIGNED_IN_STORAGE_KEY } from "@/storage/settings";
+
+const ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY = "auth:encrypted-health-token";
 
 function stubGoogleApis() {
   const id = {
@@ -98,8 +99,8 @@ describe("Google Identity components", () => {
     expect(id.prompt).not.toHaveBeenCalled();
   });
 
-  it("enables auto_select when stay signed in is set", async () => {
-    localStorage.setItem(STAY_SIGNED_IN_STORAGE_KEY, JSON.stringify(true));
+  it("enables auto_select when an encrypted health token is persisted", async () => {
+    localStorage.setItem(ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY, "encrypted-jwt");
     const { id } = stubGoogleApis();
 
     render(

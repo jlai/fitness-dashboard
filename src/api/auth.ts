@@ -9,7 +9,6 @@ import { jwtDecode } from "jwt-decode";
 import { singleAsync } from "@/utils/async";
 import { GOOGLE_OAUTH_CLIENT_ID, withBasePath } from "@/config";
 import { REQUESTED_SCOPES } from "@/config/google-health-scopes";
-import { clearStaySignedIn } from "@/storage/settings";
 
 import {
   disableGoogleAutoSelect,
@@ -22,6 +21,7 @@ const EXPIRING_SOON_MILLIS = 2 * 60 * 1000;
 
 const SESSION_TOKEN_STORAGE_KEY = "auth:session-token";
 const ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY = "auth:encrypted-health-token";
+const LEGACY_STAY_SIGNED_IN_STORAGE_KEY = "auth:stay-signed-in";
 const AUTH_TOKEN_UPDATE_EVENT_TYPE = "authtokenupdated";
 
 const SESSION_PATH = withBasePath("/auth/session");
@@ -53,11 +53,19 @@ interface CachedAccessToken {
 }
 
 let cachedAccessToken: CachedAccessToken | null = null;
+let memorySessionToken: string | null = null;
+let memoryEncryptedHealthToken: string | null = null;
+
+/**
+ * After Google Health access is granted during login, keep the login box
+ * visible until the user finishes the remember-me step.
+ */
+export const pendingRememberMeChoiceAtom = atom(false);
 
 /** Space-separated Google Health scopes from the latest access-token response. */
 const grantedScopesAtom = atom<string | undefined>(undefined);
 
-function getSessionTokenFromStorage() {
+function readSessionTokenFromLocalStorage() {
   if (typeof localStorage === "undefined") {
     return null;
   }
@@ -65,12 +73,48 @@ function getSessionTokenFromStorage() {
   return localStorage.getItem(SESSION_TOKEN_STORAGE_KEY);
 }
 
-function getEncryptedHealthTokenFromStorage() {
+function readEncryptedHealthTokenFromLocalStorage() {
   if (typeof localStorage === "undefined") {
     return null;
   }
 
   return localStorage.getItem(ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY);
+}
+
+/** True when an encrypted health token was saved for return visits. */
+export function hasPersistedEncryptedHealthToken() {
+  return !!readEncryptedHealthTokenFromLocalStorage();
+}
+
+/** Persist session + health tokens across visits when the user chose remember me. */
+function isPersistingAuthTokens() {
+  return hasPersistedEncryptedHealthToken();
+}
+
+function getSessionTokenFromStorage() {
+  if (memorySessionToken) {
+    return memorySessionToken;
+  }
+
+  const stored = readSessionTokenFromLocalStorage();
+  if (stored) {
+    memorySessionToken = stored;
+  }
+
+  return memorySessionToken;
+}
+
+function getEncryptedHealthTokenFromStorage() {
+  if (memoryEncryptedHealthToken) {
+    return memoryEncryptedHealthToken;
+  }
+
+  const stored = readEncryptedHealthTokenFromLocalStorage();
+  if (stored) {
+    memoryEncryptedHealthToken = stored;
+  }
+
+  return memoryEncryptedHealthToken;
 }
 
 export interface AuthSession {
@@ -136,12 +180,48 @@ export function getSessionSubject(token = getSessionTokenFromStorage()) {
   return getSessionClaims(token)?.sub;
 }
 
+/** Keep the session JWT in memory; also write to localStorage when remembering. */
 export function saveSessionToken(sessionToken: string) {
-  localStorage.setItem(SESSION_TOKEN_STORAGE_KEY, sessionToken);
+  memorySessionToken = sessionToken;
+
+  if (isPersistingAuthTokens()) {
+    localStorage.setItem(SESSION_TOKEN_STORAGE_KEY, sessionToken);
+  }
+
   notifyAuthChanged();
 }
 
 function saveEncryptedHealthToken(encryptedHealthToken?: string) {
+  if (!encryptedHealthToken) {
+    notifyAuthChanged();
+    return;
+  }
+
+  const shouldPersist = isPersistingAuthTokens();
+  memoryEncryptedHealthToken = encryptedHealthToken;
+
+  if (shouldPersist) {
+    localStorage.setItem(
+      ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY,
+      encryptedHealthToken,
+    );
+  }
+
+  notifyAuthChanged();
+}
+
+/**
+ * Save the current in-memory session and encrypted health tokens to
+ * localStorage so the user can resume on return visits.
+ */
+export function persistAuthTokens() {
+  const sessionToken = getSessionTokenFromStorage();
+  const encryptedHealthToken = getEncryptedHealthTokenFromStorage();
+
+  if (sessionToken) {
+    localStorage.setItem(SESSION_TOKEN_STORAGE_KEY, sessionToken);
+  }
+
   if (encryptedHealthToken) {
     localStorage.setItem(
       ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY,
@@ -149,6 +229,7 @@ function saveEncryptedHealthToken(encryptedHealthToken?: string) {
     );
   }
 
+  localStorage.removeItem(LEGACY_STAY_SIGNED_IN_STORAGE_KEY);
   notifyAuthChanged();
 }
 
@@ -196,7 +277,6 @@ function isCachedAccessTokenFresh() {
 /** Clear local session + health JWE when a session/health endpoint returns 401/403. */
 function forceSignOut() {
   disableGoogleAutoSelect();
-  clearStaySignedIn();
   clearToken();
 }
 
@@ -432,7 +512,6 @@ export function useGoogleLoginAndAuthorization({
 export async function logout() {
   const sessionToken = getSessionTokenFromStorage();
   disableGoogleAutoSelect();
-  clearStaySignedIn();
   clearToken();
 
   if (!sessionToken) {
@@ -448,7 +527,6 @@ export async function revokeAuthorization() {
   const encryptedHealthToken = getEncryptedHealthTokenFromStorage();
 
   disableGoogleAutoSelect();
-  clearStaySignedIn();
   clearToken();
 
   if (sessionToken && encryptedHealthToken) {
@@ -517,9 +595,17 @@ export function isLoggedIn() {
 
 function clearToken() {
   cachedAccessToken = null;
+  memorySessionToken = null;
+  memoryEncryptedHealthToken = null;
   setGrantedScope(undefined);
-  localStorage.removeItem(SESSION_TOKEN_STORAGE_KEY);
-  localStorage.removeItem(ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY);
+  getDefaultStore().set(pendingRememberMeChoiceAtom, false);
+
+  if (typeof localStorage !== "undefined") {
+    localStorage.removeItem(SESSION_TOKEN_STORAGE_KEY);
+    localStorage.removeItem(ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY);
+    localStorage.removeItem(LEGACY_STAY_SIGNED_IN_STORAGE_KEY);
+  }
+
   notifyAuthChanged();
 }
 
@@ -576,6 +662,9 @@ export const syncAuthTokenEffect = atomEffect((get, set) => {
       event.key === SESSION_TOKEN_STORAGE_KEY ||
       event.key === ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY
     ) {
+      // Another tab changed persisted tokens; refresh memory from storage.
+      memorySessionToken = null;
+      memoryEncryptedHealthToken = null;
       set(authSessionAtom, getAuthSession());
     }
   };

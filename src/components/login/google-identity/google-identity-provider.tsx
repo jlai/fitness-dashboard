@@ -10,7 +10,7 @@ import React, {
 } from "react";
 
 import { ensureGsiScript, initializeGoogleId } from "@/api/google-identity";
-import { getStaySignedIn } from "@/storage/settings";
+import { hasPersistedEncryptedHealthToken } from "@/api/auth";
 
 const GoogleIdentityContext = createContext<{ ready: boolean } | null>(null);
 
@@ -50,7 +50,7 @@ export function GoogleIdentityProvider({
 
     void initializeGoogleId({
       client_id: clientId,
-      auto_select: getStaySignedIn(),
+      auto_select: hasPersistedEncryptedHealthToken(),
       use_fedcm_for_prompt: true,
     })
       .then(() => {
