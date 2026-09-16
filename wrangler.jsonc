@@ -22,6 +22,9 @@
   },
   "keep_vars": true,
   "upload_source_maps": true,
+  "secrets": {
+    "required": ["GOOGLE_OAUTH_CLIENT_SECRET", "CLOUDFLARE_API_TOKEN"],
+  },
   // Rotate session/health Secrets Store keys every Wednesday at 00:00 UTC.
   "triggers": {
     "crons": ["0 0 * * WED"],
