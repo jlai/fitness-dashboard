@@ -20,6 +20,7 @@
     "prepare": "husky",
     "preview": "node scripts/copy-maplibre-worker.mjs && opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "node scripts/copy-maplibre-worker.mjs && opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "deploy:cf": "node scripts/generate-wrangler-config.mjs && npx wrangler deploy",
     "upload": "node scripts/copy-maplibre-worker.mjs && opennextjs-cloudflare build && opennextjs-cloudflare upload",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "generate:google-health-api": "node scripts/generate-google-health-api.mjs"
