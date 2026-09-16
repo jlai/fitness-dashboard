@@ -122,6 +122,50 @@ describe("createSession", () => {
     expect(localStorage.getItem(SESSION_TOKEN_STORAGE_KEY)).toBe(sessionToken);
     expect(JSON.stringify(localStorage)).not.toContain("google-id-token");
   });
+
+  it("restores an access token when an encrypted health token is already stored", async () => {
+    const sessionToken = fakeSessionToken();
+    localStorage.setItem(
+      ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY,
+      "encrypted-jwt",
+    );
+    fetchMock
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ session_token: sessionToken }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            access_token: "restored-access-token",
+            expires_in: 3600,
+            scope: "openid",
+            encrypted_health_token: "encrypted-jwt-rotated",
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
+      );
+
+    await createSession("google-id-token");
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      HEALTH_ACCESS_PATH,
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({
+          Authorization: `Bearer ${sessionToken}`,
+        }),
+        body: JSON.stringify({ encrypted_health_token: "encrypted-jwt" }),
+      }),
+    );
+    expect(getAccessTokenScopes().has("openid")).toBe(true);
+    expect(localStorage.getItem(ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY)).toBe(
+      "encrypted-jwt-rotated",
+    );
+  });
 });
 
 describe("logout", () => {

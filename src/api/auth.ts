@@ -270,6 +270,11 @@ export async function createSession(idToken: string) {
   cachedAccessToken = null;
   setGrantedScope(undefined);
   saveSessionToken(payload.session_token);
+
+  // Session JWTs can expire while the encrypted health refresh token remains.
+  // After Sign In With Google recreates the session, restore an access token
+  // (page-load restoreAccessToken already no-oped while the session was expired).
+  await restoreAccessToken();
 }
 
 async function exchangeCodeForHealthToken(code: string) {
