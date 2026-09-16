@@ -103,6 +103,14 @@ export class CloudflareSecretStore implements SecretStore {
       keys: [next, ...retainAcceptedJwks(current.jwks.keys as OctJwk[])],
     };
 
+    const keyInfo = accepted.keys.map((key) => ({
+      kid: key.kid,
+      iat: key.iat,
+    }));
+    console.log(
+      `Rotated ${this.options.purpose} token keys (${keyInfo.length}): ${JSON.stringify(keyInfo)}`,
+    );
+
     const client = this.getClient();
     const secretsByName = await this.listSecretsByName(client);
 
