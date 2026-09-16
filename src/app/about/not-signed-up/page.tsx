@@ -1,28 +1,11 @@
 "use client";
 
 import { Button, Container, Typography } from "@mui/material";
-import { useQueryClient } from "@tanstack/react-query";
-import { useConfirm } from "material-ui-confirm";
-import { useRouter } from "next/navigation";
 
-import { logout } from "@/api/auth";
+import { useSwitchAccounts } from "@/components/login/use-switch-accounts";
 
 export default function AccountNotLinkedPage() {
-  const confirm = useConfirm();
-  const queryClient = useQueryClient();
-  const router = useRouter();
-
-  const switchAccounts = () => {
-    confirm({
-      description: "Log out?",
-    }).then(({ confirmed }) => {
-      if (confirmed) {
-        queryClient.clear();
-        logout();
-        router.replace("/");
-      }
-    });
-  };
+  const switchAccounts = useSwitchAccounts();
 
   return (
     <Container maxWidth="md" className="space-y-8">

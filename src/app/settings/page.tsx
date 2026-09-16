@@ -36,6 +36,7 @@ import {
 } from "@/api/auth";
 import { GoogleSignInButton } from "@/components/login/google-sign-in-button";
 import { useSignOut } from "@/components/login/use-sign-out";
+import { useSwitchAccounts } from "@/components/login/use-switch-accounts";
 import {
   DistanceUnitSystem,
   SettingsDistanceUnit,
@@ -1170,9 +1171,7 @@ function AdvancedSettings() {
 
 function DeveloperSettings() {
   const loggedIn = useLoggedIn();
-  const confirm = useConfirm();
-  const queryClient = useQueryClient();
-  const router = useRouter();
+  const switchAccounts = useSwitchAccounts();
   const [refreshing, setRefreshing] = useState(false);
 
   const handleForceRefresh = withErrorToaster(async () => {
@@ -1185,21 +1184,6 @@ function DeveloperSettings() {
       setRefreshing(false);
     }
   }, "Failed to refresh OAuth token");
-
-  const switchAccounts = () => {
-    confirm({
-      title: "Switch accounts",
-      description:
-        "Sign out of your current account on this website and sign in again?",
-      confirmationText: "Sign out",
-    }).then(({ confirmed }) => {
-      if (confirmed) {
-        queryClient.clear();
-        logout();
-        router.replace("/");
-      }
-    });
-  };
 
   return (
     <>
