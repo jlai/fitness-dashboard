@@ -35,7 +35,10 @@ export async function POST(request: Request) {
   try {
     claims = await verifyGoogleIdToken(body.id_token);
   } catch (error) {
-    console.error("error verifying google id token", error instanceof Error ? error.message : String(error));
+    console.error({
+      message: "error verifying google id token",
+      error: error instanceof Error ? error.message : String(error),
+    });
     return unauthorizedResponse("invalid id_token");
   }
 

@@ -107,9 +107,14 @@ export class CloudflareSecretStore implements SecretStore {
       kid: key.kid,
       iat: key.iat,
     }));
-    console.log(
-      `Rotated ${this.options.purpose} token keys (${keyInfo.length}): ${JSON.stringify(keyInfo)}`,
-    );
+    // Structured object so Workers Logs indexes fields for filtering.
+    // https://developers.cloudflare.com/workers/observability/logs/workers-logs/#logging-structured-json-objects
+    console.log({
+      message: `Rotated ${this.options.purpose} token keys`,
+      purpose: this.options.purpose,
+      keyCount: keyInfo.length,
+      keys: keyInfo,
+    });
 
     const client = this.getClient();
     const secretsByName = await this.listSecretsByName(client);
