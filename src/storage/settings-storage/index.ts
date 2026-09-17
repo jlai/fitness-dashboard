@@ -14,6 +14,7 @@ export {
   settingsStorageEpochAtom,
   getMemorySettingsStorage,
   getGoogleDriveSettingsStorage,
+  resetGoogleDriveSettingsStorage,
   resetSettingsStorageSingletonsForTests,
 } from "./backend";
 export { createSettingsBlobAtom } from "./blob-atom";
@@ -23,7 +24,12 @@ export {
   type DriveEnableConflictChoice,
   type ReconcileOnDriveEnableResult,
 } from "./reconcile-on-drive-enable";
+export {
+  migrateFromDriveOnDisable,
+  bumpSettingsStorageEpoch,
+} from "./migrate-from-drive-on-disable";
 export { useEnableGoogleDriveSettings } from "./use-enable-google-drive-settings";
+export { useDisableGoogleDriveSettings } from "./use-disable-google-drive-settings";
 export {
   storedDataSchema,
   userTileSchema,

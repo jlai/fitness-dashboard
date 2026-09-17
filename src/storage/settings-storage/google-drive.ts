@@ -2,6 +2,7 @@
 
 import {
   createAppDataFile,
+  deleteAppDataFile,
   downloadAppDataFile,
   getAppDataFileByName,
   updateAppDataFile,
@@ -85,6 +86,24 @@ export class GoogleDriveSettingsStorage implements SettingsStorage {
       fileId,
     });
     return stored;
+  }
+
+  async delete(key: string): Promise<void> {
+    assertValidSettingsKey(key);
+
+    const cached = this.cache.get(key);
+    let fileId =
+      cached?.kind === "present" ? cached.fileId : undefined;
+
+    if (!fileId && cached?.kind !== "missing") {
+      fileId = (await getAppDataFileByName(settingsKeyToFileName(key)))?.id;
+    }
+
+    if (fileId) {
+      await deleteAppDataFile(fileId);
+    }
+
+    this.cache.set(key, { kind: "missing" });
   }
 
   private async getExistingForVersion(

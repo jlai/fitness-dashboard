@@ -31,16 +31,18 @@ import {
   logout,
   revokeAuthorization,
   useAccessTokenScopes,
+  useDriveAuthEnabled,
   useLoggedIn,
   useGoogleLoginAndAuthorization,
-  useMissingDriveScopes,
   useOpenIdSignedIn,
 } from "@/api/auth";
 import { GoogleSignInButton } from "@/components/login/google-sign-in-button";
 import { useSignOut } from "@/components/login/use-sign-out";
 import { useSwitchAccounts } from "@/components/login/use-switch-accounts";
-import { DRIVE_APPDATA } from "@/config/google-drive-scopes";
-import { useEnableGoogleDriveSettings } from "@/storage/settings-storage";
+import {
+  useDisableGoogleDriveSettings,
+  useEnableGoogleDriveSettings,
+} from "@/storage/settings-storage";
 import {
   DistanceUnitSystem,
   SettingsDistanceUnit,
@@ -162,10 +164,10 @@ function LoggedInAccountSettings() {
   const router = useRouter();
   const scopes = useAccessTokenScopes();
   const handleLogout = useSignOut();
-  const missingDriveScopes = useMissingDriveScopes([DRIVE_APPDATA]);
-  const driveEnabled = missingDriveScopes.length === 0;
+  const driveEnabled = useDriveAuthEnabled();
   const { enableGoogleDriveSettings, ready: driveAuthReady } =
     useEnableGoogleDriveSettings();
+  const { disableGoogleDriveSettings } = useDisableGoogleDriveSettings();
 
   const unlinkAccount = () => {
     confirm({
@@ -209,7 +211,12 @@ function LoggedInAccountSettings() {
         title="Save settings to Google Drive"
         action={
           driveEnabled ? (
-            <Button disabled>Enabled</Button>
+            <Button
+              color="error"
+              onClick={() => void disableGoogleDriveSettings()}
+            >
+              Disable
+            </Button>
           ) : (
             <Button
               onClick={() => void enableGoogleDriveSettings()}

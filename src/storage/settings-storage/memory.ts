@@ -35,4 +35,9 @@ export class MemorySettingsStorage implements SettingsStorage {
     this.store.set(key, stored);
     return stored;
   }
+
+  async delete(key: string): Promise<void> {
+    assertValidSettingsKey(key);
+    this.store.delete(key);
+  }
 }

@@ -9,6 +9,8 @@ export interface StoredData<T> {
 export interface SettingsStorage {
   get<T>(key: string): Promise<StoredData<T> | null>;
   set<T>(key: string, data: T, version?: number): Promise<StoredData<T>>;
+  /** Remove a key if present. No-op when missing. */
+  delete(key: string): Promise<void>;
 }
 
 const KEY_PATTERN = /^[a-z0-9-]+$/;

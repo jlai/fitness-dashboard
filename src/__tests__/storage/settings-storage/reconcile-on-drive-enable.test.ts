@@ -11,6 +11,7 @@ jest.mock("@/api/google-drive", () => ({
     id: `id-${fileName}`,
     name: fileName,
   })),
+  deleteAppDataFile: jest.fn(async () => undefined),
   downloadAppDataFile: jest.fn(),
   getAppDataFileByName: jest.fn(),
   updateAppDataFile: jest.fn(async (fileId: string) => ({

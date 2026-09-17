@@ -4,10 +4,12 @@ import { toast } from "mui-sonner";
 import { useAtom } from "jotai";
 
 import {
+  clearEncryptedDriveAuth,
   createSession,
   forceTokenRefresh,
   getAccessTokenScopes,
   getFreshAccessToken,
+  getFreshDriveAccessToken,
   getSessionSubject,
   isLoggedIn,
   logout,
@@ -362,6 +364,109 @@ describe("revokeAuthorization", () => {
         method: "DELETE",
       }),
     );
+  });
+});
+
+describe("clearEncryptedDriveAuth", () => {
+  let fetchMock: jest.SpyInstance;
+
+  beforeEach(() => {
+    localStorage.clear();
+    logout();
+    fetchMock = jest.spyOn(global, "fetch");
+  });
+
+  afterEach(() => {
+    fetchMock.mockRestore();
+    localStorage.clear();
+  });
+
+  it("clears local drive tokens without calling Google revoke endpoints", () => {
+    const sessionToken = fakeSessionToken();
+    setStoredSession({
+      sessionToken,
+      encryptedHealthToken: "encrypted-jwt",
+      encryptedDriveToken: "encrypted-drive-jwt",
+    });
+
+    expect(localStorage.getItem(ENCRYPTED_DRIVE_TOKEN_STORAGE_KEY)).toBe(
+      "encrypted-drive-jwt",
+    );
+
+    clearEncryptedDriveAuth();
+
+    expect(localStorage.getItem(ENCRYPTED_DRIVE_TOKEN_STORAGE_KEY)).toBeNull();
+    expect(localStorage.getItem(ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY)).toBe(
+      "encrypted-jwt",
+    );
+    expect(localStorage.getItem(SESSION_TOKEN_STORAGE_KEY)).toBe(sessionToken);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("removes the drive token before clearing scopes so no refresh is triggered", () => {
+    const sessionToken = fakeSessionToken();
+    setStoredSession({
+      sessionToken,
+      encryptedHealthToken: "encrypted-jwt",
+      encryptedDriveToken: "encrypted-drive-jwt",
+    });
+
+    const removeItem = jest.spyOn(Storage.prototype, "removeItem");
+    const setItem = jest.spyOn(Storage.prototype, "setItem");
+
+    clearEncryptedDriveAuth();
+
+    const driveRemoveOrder = removeItem.mock.invocationCallOrder.find(
+      (_, index) =>
+        removeItem.mock.calls[index]?.[0] === ENCRYPTED_DRIVE_TOKEN_STORAGE_KEY,
+    );
+    expect(driveRemoveOrder).toEqual(expect.any(Number));
+    expect(localStorage.getItem(ENCRYPTED_DRIVE_TOKEN_STORAGE_KEY)).toBeNull();
+    // No drive access refresh should have been attempted during clear.
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    removeItem.mockRestore();
+    setItem.mockRestore();
+  });
+
+  it("ignores in-flight drive token refreshes after clear so localStorage stays empty", async () => {
+    const sessionToken = fakeSessionToken();
+    setStoredSession({
+      sessionToken,
+      encryptedHealthToken: "encrypted-jwt",
+      encryptedDriveToken: "encrypted-drive-jwt",
+    });
+
+    let resolveRefresh: (value: Response) => void = () => undefined;
+    fetchMock.mockImplementationOnce(
+      () =>
+        new Promise<Response>((resolve) => {
+          resolveRefresh = resolve;
+        }),
+    );
+
+    const refreshPromise = getFreshDriveAccessToken().catch(
+      (error: unknown) => error,
+    );
+
+    clearEncryptedDriveAuth();
+    expect(localStorage.getItem(ENCRYPTED_DRIVE_TOKEN_STORAGE_KEY)).toBeNull();
+
+    resolveRefresh(
+      new Response(
+        JSON.stringify({
+          access_token: "late-access",
+          expires_in: 3600,
+          scope: "https://www.googleapis.com/auth/drive.appdata",
+          encrypted_drive_token: "late-encrypted-drive-jwt",
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    );
+
+    await refreshPromise;
+
+    expect(localStorage.getItem(ENCRYPTED_DRIVE_TOKEN_STORAGE_KEY)).toBeNull();
   });
 });
 

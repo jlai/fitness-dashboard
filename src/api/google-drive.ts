@@ -130,3 +130,11 @@ export async function updateAppDataFile(
 
   return (await response.json()) as DriveFileRef;
 }
+
+/** Permanently delete a file from Drive (used for app data settings files). */
+export async function deleteAppDataFile(fileId: string): Promise<void> {
+  await authorizedFetch(
+    `${DRIVE_API_BASE}/files/${encodeURIComponent(fileId)}`,
+    { method: "DELETE" },
+  );
+}

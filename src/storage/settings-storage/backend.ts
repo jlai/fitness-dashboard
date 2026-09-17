@@ -72,6 +72,11 @@ export function getGoogleDriveSettingsStorage(): GoogleDriveSettingsStorage {
   return googleDriveSettingsStorage;
 }
 
+/** Drop the Drive singleton so the next enable starts with a cold cache. */
+export function resetGoogleDriveSettingsStorage() {
+  googleDriveSettingsStorage = undefined;
+}
+
 /** Reset singletons — for unit tests only. */
 export function resetSettingsStorageSingletonsForTests() {
   memorySettingsStorage = undefined;

@@ -63,6 +63,8 @@ let cachedDriveAccessToken: CachedAccessToken | null = null;
 let memorySessionToken: string | null = null;
 let memoryEncryptedHealthToken: string | null = null;
 let memoryEncryptedDriveToken: string | null = null;
+/** Bumped when Drive auth is cleared so in-flight refreshes cannot re-persist tokens. */
+let driveAuthGeneration = 0;
 
 /**
  * After Google Health access is granted during login, keep the login box
@@ -231,6 +233,8 @@ function setGrantedDriveScope(scope: string | undefined) {
 
 function notifyAuthChanged() {
   window.dispatchEvent(new CustomEvent(AUTH_TOKEN_UPDATE_EVENT_TYPE));
+  // Keep the jotai snapshot in sync even if syncAuthTokenEffect isn't mounted yet.
+  getDefaultStore().set(authSessionAtom, getAuthSession());
 }
 
 export function getSessionSubject(token = getSessionTokenFromStorage()) {
@@ -438,7 +442,14 @@ function applyHealthTokenResponse(payload: TokenEndpointResponse) {
   saveEncryptedHealthToken(payload.encrypted_health_token);
 }
 
-function applyDriveTokenResponse(payload: TokenEndpointResponse) {
+function applyDriveTokenResponse(
+  payload: TokenEndpointResponse,
+  generation = driveAuthGeneration,
+) {
+  if (generation !== driveAuthGeneration) {
+    return;
+  }
+
   cacheDriveAccessToken(payload);
   cacheGrantedDriveScope(payload.scope);
   saveEncryptedDriveToken(payload.encrypted_drive_token);
@@ -519,6 +530,7 @@ async function requestAccessToken() {
 }
 
 async function requestDriveAccessToken() {
+  const generation = driveAuthGeneration;
   const encryptedDriveToken = getEncryptedDriveTokenFromStorage();
 
   if (!encryptedDriveToken) {
@@ -528,7 +540,12 @@ async function requestDriveAccessToken() {
   const payload = await postSessionJson(DRIVE_ACCESS_PATH, {
     encrypted_drive_token: encryptedDriveToken,
   });
-  applyDriveTokenResponse(payload);
+
+  if (generation !== driveAuthGeneration) {
+    throw new Error("drive authorization was cleared");
+  }
+
+  applyDriveTokenResponse(payload, generation);
 
   if (!payload.access_token) {
     throw new Error("no drive access token returned");
@@ -893,6 +910,27 @@ function clearToken() {
   notifyAuthChanged();
 }
 
+/**
+ * Drop the local encrypted Drive refresh token (memory and localStorage) and
+ * the in-memory Drive access token. Does not call Google's revoke endpoint or
+ * clear Health/session auth.
+ */
+export function clearEncryptedDriveAuth() {
+  // Invalidate in-flight refreshes first, then drop the token before clearing
+  // scopes. Clearing scopes while the token still exists makes settingsStorageAtom
+  // treat scopes as "unknown" and call getFreshDriveAccessToken().
+  driveAuthGeneration += 1;
+  cachedDriveAccessToken = null;
+  memoryEncryptedDriveToken = null;
+
+  if (typeof localStorage !== "undefined") {
+    localStorage.removeItem(ENCRYPTED_DRIVE_TOKEN_STORAGE_KEY);
+  }
+
+  setGrantedDriveScope(undefined);
+  notifyAuthChanged();
+}
+
 export const getFreshAccessToken = singleAsync(async () => {
   getSessionTokenOrThrow();
 
@@ -1073,6 +1111,14 @@ export function hasDriveTokenScope(scope: string) {
 
 export function useAuthSession() {
   return useAtomValue(authSessionAtom);
+}
+
+/** True when a Drive encrypted refresh token is present (live check). */
+export function useDriveAuthEnabled() {
+  // Re-render when auth session or drive scopes change; read live storage/memory.
+  useAtomValue(authSessionAtom);
+  useAtomValue(grantedDriveScopesAtom);
+  return hasEncryptedDriveToken();
 }
 
 export function useLoggedIn() {

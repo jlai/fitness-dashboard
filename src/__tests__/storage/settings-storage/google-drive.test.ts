@@ -1,5 +1,6 @@
 import {
   createAppDataFile,
+  deleteAppDataFile,
   downloadAppDataFile,
   getAppDataFileByName,
   updateAppDataFile,
@@ -8,6 +9,7 @@ import { GoogleDriveSettingsStorage } from "@/storage/settings-storage";
 
 jest.mock("@/api/google-drive", () => ({
   createAppDataFile: jest.fn(),
+  deleteAppDataFile: jest.fn(),
   downloadAppDataFile: jest.fn(),
   getAppDataFileByName: jest.fn(),
   updateAppDataFile: jest.fn(),
@@ -17,6 +19,7 @@ const mockedGetByName = jest.mocked(getAppDataFileByName);
 const mockedDownload = jest.mocked(downloadAppDataFile);
 const mockedCreate = jest.mocked(createAppDataFile);
 const mockedUpdate = jest.mocked(updateAppDataFile);
+const mockedDelete = jest.mocked(deleteAppDataFile);
 
 describe("GoogleDriveSettingsStorage", () => {
   beforeEach(() => {
@@ -98,10 +101,33 @@ describe("GoogleDriveSettingsStorage", () => {
     expect(mockedCreate).not.toHaveBeenCalled();
   });
 
+  it("deletes an existing appdata file and caches the miss", async () => {
+    mockedGetByName.mockResolvedValue({ id: "file-3", name: "meals.json" });
+    mockedDownload.mockResolvedValue(
+      JSON.stringify({
+        data: { meals: [] },
+        version: 1,
+        updateTime: "2026-01-01T00:00:00.000Z",
+      }),
+    );
+    mockedDelete.mockResolvedValue(undefined);
+
+    const storage = new GoogleDriveSettingsStorage();
+    await storage.get("meals");
+    await storage.delete("meals");
+
+    expect(mockedDelete).toHaveBeenCalledWith("file-3");
+    await expect(storage.get("meals")).resolves.toBeNull();
+    expect(mockedGetByName).toHaveBeenCalledTimes(1);
+  });
+
   it("rejects invalid keys", async () => {
     const storage = new GoogleDriveSettingsStorage();
     await expect(storage.get("Bad Key")).rejects.toThrow(/invalid settings key/);
     await expect(storage.set("foo/bar", {})).rejects.toThrow(
+      /invalid settings key/,
+    );
+    await expect(storage.delete("Bad Key")).rejects.toThrow(
       /invalid settings key/,
     );
     expect(mockedGetByName).not.toHaveBeenCalled();
