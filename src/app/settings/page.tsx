@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useState } from "react";
+import React, { Suspense, useCallback, useState } from "react";
 import {
   Button,
   Chip,
@@ -96,19 +96,21 @@ function SettingsRow({
   component?: React.ElementType;
 }) {
   return (
-    <TableRow>
-      <TableCell colSpan={action ? 1 : 2}>
-        <Typography variant="h5">{title}</Typography>
-        <Typography variant="body1" component={component}>
-          {children}
-        </Typography>
-      </TableCell>
-      {action && (
-        <TableCell align="right" className="min-w-[200px]">
-          {action}
+    <Suspense>
+      <TableRow>
+        <TableCell colSpan={action ? 1 : 2}>
+          <Typography variant="h5">{title}</Typography>
+          <Typography variant="body1" component={component}>
+            {children}
+          </Typography>
         </TableCell>
-      )}
-    </TableRow>
+        {action && (
+          <TableCell align="right" className="min-w-[200px]">
+            {action}
+          </TableCell>
+        )}
+      </TableRow>
+    </Suspense>
   );
 }
 
@@ -1242,7 +1244,9 @@ function SettingsTable({ children }: { children: React.ReactNode }) {
     <div className="my-8">
       <TableContainer component={Paper}>
         <Table>
-          <TableBody>{children}</TableBody>
+          <TableBody>
+            <Suspense>{children}</Suspense>
+          </TableBody>
         </Table>
       </TableContainer>
     </div>

@@ -115,18 +115,29 @@ export function createSettingsBlobAtom<TData>(opts: {
 
   return atom(
     (get) => {
-      get(settingsStorageEpochAtom);
+      const epoch = get(settingsStorageEpochAtom);
       const storageOrPromise = get(settingsStorageAtom);
       const cached = get(cacheAtom);
+
+      // Prefer a warm sync cache so writes don't push dependents back into a
+      // pending Promise (which remounts UI that holds local state, e.g. dialogs).
+      if (cached && cached.epoch === epoch && !isPromiseLike(cached.value)) {
+        if (
+          isPromiseLike(storageOrPromise) ||
+          cached.backend === storageOrPromise
+        ) {
+          return cached.value;
+        }
+      }
 
       if (isPromiseLike(storageOrPromise)) {
         return storageOrPromise.then(async (storage) => {
           const latest = get(cacheAtom);
-          const epoch = get(settingsStorageEpochAtom);
+          const latestEpoch = get(settingsStorageEpochAtom);
           if (
             latest &&
             latest.backend === storage &&
-            latest.epoch === epoch
+            latest.epoch === latestEpoch
           ) {
             return latest.value;
           }
@@ -134,7 +145,6 @@ export function createSettingsBlobAtom<TData>(opts: {
         });
       }
 
-      const epoch = get(settingsStorageEpochAtom);
       if (
         cached &&
         cached.backend === storageOrPromise &&

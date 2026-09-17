@@ -6,7 +6,8 @@ import {
   MenuItem,
 } from "@mui/material";
 import { bindMenu, usePopupState } from "material-ui-popup-state/hooks";
-import { useAtom, useAtomValue } from "jotai";
+import { useAtomValue, useSetAtom } from "jotai";
+import { unwrap } from "jotai/utils";
 import { useCallback, useMemo } from "react";
 import { Add, Check } from "@mui/icons-material";
 
@@ -15,9 +16,20 @@ import { increasedTileLimitsAtom } from "@/storage/settings";
 
 import { TILE_TYPES, TileDefinition } from "./tiles";
 
+/** Sync read of async tile layout; keep prior tiles while a refresh is pending. */
+const userTilesValueAtom = unwrap(userTilesAtom, (prev) => prev);
+const increasedTileLimitsValueAtom = unwrap(
+  increasedTileLimitsAtom,
+  () => false,
+);
+
 export default function AddTileButton() {
-  const [userTiles, setUserTiles] = useAtom(userTilesAtom);
-  const increasedTileLimits = useAtomValue(increasedTileLimitsAtom);
+  const userTiles = useAtomValue(userTilesValueAtom);
+  const setUserTiles = useSetAtom(userTilesAtom);
+  const increasedTileLimits = useAtomValue(increasedTileLimitsValueAtom);
+
+  const tilesReady = userTiles !== undefined;
+  const resolvedTiles = userTiles ?? [];
 
   const popupState = usePopupState({
     variant: "popover",
@@ -26,11 +38,11 @@ export default function AddTileButton() {
 
   const tileCountByType = useMemo(() => {
     const countByType = new Map<string, number>();
-    for (const { type } of userTiles) {
+    for (const { type } of resolvedTiles) {
       countByType.set(type, (countByType.get(type) ?? 0) + 1);
     }
     return countByType;
-  }, [userTiles]);
+  }, [resolvedTiles]);
 
   const availableTileDefs = useMemo(() => {
     return [...Object.entries(TILE_TYPES)].filter(([type, tileDef]) => {
@@ -46,6 +58,10 @@ export default function AddTileButton() {
 
   const addTile = useCallback(
     (type: string, tileDef: TileDefinition) => {
+      if (!userTiles) {
+        return;
+      }
+
       const newTile: UserTile = {
         id: `${type}-${Date.now()}`,
         type,
@@ -66,6 +82,7 @@ export default function AddTileButton() {
         color="inherit"
         onClick={popupState.open}
         startIcon={<Add />}
+        disabled={!tilesReady}
       >
         Add tile
       </Button>

@@ -86,13 +86,14 @@ export function TileClickableArea({
 }) {
   const isEditingGrid = useAtomValue(editingGridAtom);
 
+  // GridStack skips drag when mousedown lands on a <button>. While editing, render a
+  // non-button host so DnD can start on the first edit-mode entry.
+  if (isEditingGrid) {
+    return <div className="block size-full">{children}</div>;
+  }
+
   return (
-    <button
-      onClick={onClick}
-      className={`block size-full ${
-        isEditingGrid ? "pointer-events-none" : ""
-      }`}
-    >
+    <button onClick={onClick} type="button" className="block size-full">
       {children}
     </button>
   );

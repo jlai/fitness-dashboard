@@ -1,13 +1,14 @@
 "use client";
 
-import { useAtom, useAtomValue } from "jotai";
+import { useAtomValue, useSetAtom } from "jotai";
+import { unwrap } from "jotai/utils";
 import { useCallback, useMemo } from "react";
 import {
   GridStackNode,
   GridStackNodesHandler,
   GridStackOptions,
 } from "gridstack";
-import { Typography } from "@mui/material";
+import { Box, CircularProgress, Typography } from "@mui/material";
 import { DeleteOutlineOutlined as TrashIcon } from "@mui/icons-material";
 
 import { userTilesAtom } from "@/storage/tiles";
@@ -22,8 +23,10 @@ type GridData = {
   settings: unknown;
 };
 
+/** Sync read of async tile layout; keep prior tiles while a refresh is pending. */
+const userTilesValueAtom = unwrap(userTilesAtom, (prev) => prev);
+
 const GRID_OPTIONS: GridStackOptions = {
-  auto: false,
   margin: 6,
   float: true,
   cellHeight: 150,
@@ -50,12 +53,13 @@ function renderTile({ id, data, w, h }: GridStackReactWidget<GridData>) {
 }
 
 export default function TileGrid() {
-  const [userTiles, setUserTiles] = useAtom(userTilesAtom);
+  const userTiles = useAtomValue(userTilesValueAtom);
+  const setUserTiles = useSetAtom(userTilesAtom);
   const editingGrid = useAtomValue(editingGridAtom);
 
   const layout = useMemo(
     () =>
-      userTiles.map((tile) => ({
+      (userTiles ?? []).map((tile) => ({
         id: tile.id,
         x: tile.x,
         y: tile.y,
@@ -71,6 +75,18 @@ export default function TileGrid() {
 
   const updateTiles = useCallback(
     (event: Event, nodes: GridStackNode[]) => {
+      if (!userTiles) {
+        return;
+      }
+
+      // Skip column/responsive relayouts (e.g. trash zone toggling scrollbar width).
+      const gridEl = event.target as HTMLElement & {
+        gridstack?: { isIgnoreChangeCB?: () => boolean };
+      };
+      if (gridEl.gridstack?.isIgnoreChangeCB?.()) {
+        return;
+      }
+
       const changesById = nodes.reduce(
         (acc, node) => (node.id !== undefined ? acc.set(node.id, node) : acc),
         new Map<string, GridStackNode>(),
@@ -100,6 +116,10 @@ export default function TileGrid() {
 
   const removeTiles = useCallback(
     (event, nodes) => {
+      if (!userTiles) {
+        return;
+      }
+
       const removedIds = new Set(nodes.map((node) => node.id));
       const updatedTiles = userTiles.filter((tile) => !removedIds.has(tile.id));
 
@@ -107,6 +127,14 @@ export default function TileGrid() {
     },
     [userTiles, setUserTiles],
   ) as GridStackNodesHandler;
+
+  if (userTiles === undefined) {
+    return (
+      <Box className="flex justify-center py-16">
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <>
