@@ -1,6 +1,7 @@
 /**
  * @jest-environment node
  */
+import { ENCRYPTED_REFRESH_TOKEN_EXPIRATION_SECONDS } from "@/server/auth/encrypted-token";
 import {
   CloudflareKVRevocationDatabase,
   MemoryRevocationDatabase,
@@ -23,11 +24,8 @@ function token(overrides?: {
 }
 
 describe("MemoryRevocationDatabase", () => {
-  const originalExpiration = process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES;
-
   afterEach(() => {
     jest.useRealTimers();
-    process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES = originalExpiration;
   });
 
   it("revokes a token id until it expires", async () => {
@@ -60,7 +58,6 @@ describe("MemoryRevocationDatabase", () => {
   it("invalidates tokens issued before a cutoff for a sub", async () => {
     jest.useFakeTimers();
     jest.setSystemTime(new Date("2026-01-01T00:00:00Z"));
-    process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES = "120";
 
     const db = new MemoryRevocationDatabase();
     const cutoff = Math.floor(Date.now() / 1000);
@@ -81,7 +78,6 @@ describe("MemoryRevocationDatabase", () => {
   it("keeps the maximum issued-before cutoff", async () => {
     jest.useFakeTimers();
     jest.setSystemTime(new Date("2026-01-01T00:00:00Z"));
-    process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES = "120";
 
     const db = new MemoryRevocationDatabase();
     const earlier = Math.floor(Date.now() / 1000) - 30;
@@ -101,14 +97,17 @@ describe("MemoryRevocationDatabase", () => {
   it("drops an expired issued-before watermark", async () => {
     jest.useFakeTimers();
     jest.setSystemTime(new Date("2026-01-01T00:00:00Z"));
-    process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES = "1";
 
     const db = new MemoryRevocationDatabase();
     const cutoff = Math.floor(Date.now() / 1000);
 
     await db.invalidateIssuedBefore("user-1", cutoff);
 
-    jest.setSystemTime(new Date("2026-01-01T00:01:01Z"));
+    jest.setSystemTime(
+      new Date(
+        (cutoff + ENCRYPTED_REFRESH_TOKEN_EXPIRATION_SECONDS + 1) * 1000,
+      ),
+    );
 
     await expect(
       db.isRevoked(token({ sub: "user-1", iat: cutoff - 1 })),
@@ -118,10 +117,12 @@ describe("MemoryRevocationDatabase", () => {
   it("does not store an already-expired issued-before watermark", async () => {
     jest.useFakeTimers();
     jest.setSystemTime(new Date("2026-01-01T00:00:00Z"));
-    process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES = "1";
 
     const db = new MemoryRevocationDatabase();
-    const cutoff = Math.floor(Date.now() / 1000) - 120;
+    const cutoff =
+      Math.floor(Date.now() / 1000) -
+      ENCRYPTED_REFRESH_TOKEN_EXPIRATION_SECONDS -
+      1;
 
     await db.invalidateIssuedBefore("user-1", cutoff);
 
@@ -132,7 +133,6 @@ describe("MemoryRevocationDatabase", () => {
 });
 
 describe("CloudflareKVRevocationDatabase (Miniflare)", () => {
-  const originalExpiration = process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES;
   let authMf: AuthMiniflare;
 
   beforeEach(async () => {
@@ -140,7 +140,6 @@ describe("CloudflareKVRevocationDatabase (Miniflare)", () => {
   }, 30_000);
 
   afterEach(async () => {
-    process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES = originalExpiration;
     await authMf.dispose();
   });
 
@@ -178,8 +177,6 @@ describe("CloudflareKVRevocationDatabase (Miniflare)", () => {
   });
 
   it("stores issued-before watermarks under a before: key", async () => {
-    process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES = "120";
-
     const kv = await authMf.getKv();
     const db = new CloudflareKVRevocationDatabase(kv);
     const cutoff = Math.floor(Date.now() / 1000);
@@ -196,8 +193,6 @@ describe("CloudflareKVRevocationDatabase (Miniflare)", () => {
   });
 
   it("keeps the maximum issued-before cutoff in KV", async () => {
-    process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES = "120";
-
     const earlier = Math.floor(Date.now() / 1000) - 30;
     const later = Math.floor(Date.now() / 1000);
     const kv = await authMf.getKv();
@@ -216,11 +211,12 @@ describe("CloudflareKVRevocationDatabase (Miniflare)", () => {
   });
 
   it("does not store an already-expired issued-before watermark", async () => {
-    process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES = "1";
-
     const kv = await authMf.getKv();
     const db = new CloudflareKVRevocationDatabase(kv);
-    const cutoff = Math.floor(Date.now() / 1000) - 120;
+    const cutoff =
+      Math.floor(Date.now() / 1000) -
+      ENCRYPTED_REFRESH_TOKEN_EXPIRATION_SECONDS -
+      1;
 
     await db.invalidateIssuedBefore("user-1", cutoff);
 

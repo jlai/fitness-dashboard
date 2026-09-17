@@ -1,6 +1,6 @@
+import { ENCRYPTED_REFRESH_TOKEN_EXPIRATION_SECONDS } from "./encrypted-token";
 import {
   getRevocationDatabaseConfig,
-  getSiteTokenDefaultExpirationSeconds,
   type RevocationDatabaseConfig,
 } from "./env";
 
@@ -171,7 +171,7 @@ function beforeKey(sub: string) {
 }
 
 function issuedBeforeExpiresAt(issuedBefore: number) {
-  return issuedBefore + getSiteTokenDefaultExpirationSeconds();
+  return issuedBefore + ENCRYPTED_REFRESH_TOKEN_EXPIRATION_SECONDS;
 }
 
 function parseIssuedBefore(raw: string | null): number | undefined {
