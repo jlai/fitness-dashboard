@@ -557,21 +557,16 @@ async function requestDriveAccessToken() {
 /**
  * Prompt the user to authorize Google Health via GIS CodeClient, then send the
  * code to the server to encrypt the refresh token.
+ *
+ * Always requests {@link REQUESTED_SCOPES} (openid + all Health permissions)
+ * and never includes previously granted scopes. Google Health rejects mixed
+ * scope sets (e.g. Drive) even when those were granted earlier.
  */
 export function useGoogleLoginAndAuthorization({
   selectAccount = false,
-  includeGrantedScopes = true,
-  additionalScopes = [],
 }: {
   /** Also prompt the user to pick which Google account to use. */
   selectAccount?: boolean;
-  /**
-   * When false, the new token covers only the scopes requested in this
-   * authorization (Google default is true / incremental auth).
-   */
-  includeGrantedScopes?: boolean;
-  /** Extra scopes to request in addition to {@link REQUESTED_SCOPES}. */
-  additionalScopes?: Array<string>;
 } = {}) {
   const scriptLoadedSuccessfully = useGoogleIdentityReady();
   const pendingRef = useRef<{
@@ -630,13 +625,11 @@ export function useGoogleLoginAndAuthorization({
           const hint = selectAccount ? undefined : getSessionSubject();
           const client = oauth2.initCodeClient({
             client_id: GOOGLE_OAUTH_CLIENT_ID,
-            scope: [
-              ...new Set([...REQUESTED_SCOPES, ...additionalScopes]),
-            ].join(" "),
+            scope: REQUESTED_SCOPES.join(" "),
             ux_mode: "popup",
             redirect_uri: window.location.origin,
             hint,
-            include_granted_scopes: includeGrantedScopes,
+            include_granted_scopes: false,
             select_account: selectAccount,
             callback: (codeResponse) => {
               if (codeResponse.error) {
@@ -664,13 +657,7 @@ export function useGoogleLoginAndAuthorization({
         }
       })();
     });
-  }, [
-    additionalScopes,
-    completeLogin,
-    failPending,
-    includeGrantedScopes,
-    selectAccount,
-  ]);
+  }, [completeLogin, failPending, selectAccount]);
 
   return { loginToGoogleAndAuthorize, ready: scriptLoadedSuccessfully };
 }

@@ -18,7 +18,16 @@ the secrets to the Secrets Store in the Cloudflare dashboard.
 ```sh
 node -e "const {randomBytes}=require('crypto'); console.log(JSON.stringify({kty:'oct',kid:'session-1',alg:'HS256',k:randomBytes(32).toString('base64url'),iat:Math.floor(Date.now()/1000)}))"
 node -e "const {randomBytes}=require('crypto'); console.log(JSON.stringify({kty:'oct',kid:'health-1',alg:'A256GCM',k:randomBytes(32).toString('base64url'),iat:Math.floor(Date.now()/1000)}))"
+node -e "const {randomBytes}=require('crypto'); console.log(JSON.stringify({kty:'oct',kid:'drive-1',alg:'A256GCM',k:randomBytes(32).toString('base64url'),iat:Math.floor(Date.now()/1000)}))"
 ```
+
+Secrets should be:
+- `SESSION_ACTIVE_KEY`
+- `SESSION_ACCEPTED_KEYS`: `{"keys": [<new-key-goes-here>]}
+- `HEALTH_ACTIVE_KEY`
+- `HEALTH_ACCEPTED_KEYS`: `{"keys": [<new-key-goes-here>]}
+- `DRIVE_ACTIVE_KEY`
+- `HEALTH_ACCEPTED_KEYS`: `{"keys": [<new-key-goes-here>]}
 
 Copy the ID of the Secrets Store (there's only one per account) to the build-time variable `CF_BINDING_SECRETS_STORE_ID`.
 

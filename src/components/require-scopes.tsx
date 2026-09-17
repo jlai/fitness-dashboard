@@ -40,9 +40,7 @@ export function MissingScopesAlert({
   message?: string;
 }) {
   const missingScopes = useMissingScopes(requiredScopes);
-  const { loginToGoogleAndAuthorize } = useGoogleLoginAndAuthorization({
-    additionalScopes: missingScopes,
-  });
+  const { loginToGoogleAndAuthorize } = useGoogleLoginAndAuthorization();
   const disabled = missingScopes.length > 0;
 
   return (
@@ -86,9 +84,7 @@ function CompactMissingScopes({
   scopes: Array<string>;
 }) {
   const confirm = useConfirm();
-  const { loginToGoogleAndAuthorize } = useGoogleLoginAndAuthorization({
-    additionalScopes: scopes,
-  });
+  const { loginToGoogleAndAuthorize } = useGoogleLoginAndAuthorization();
 
   const handleReconsentClicked = () => {
     confirm({
@@ -129,9 +125,7 @@ function MissingScopes({
   name?: string;
   scopes: Array<string>;
 }) {
-  const { loginToGoogleAndAuthorize } = useGoogleLoginAndAuthorization({
-    additionalScopes: scopes,
-  });
+  const { loginToGoogleAndAuthorize } = useGoogleLoginAndAuthorization();
 
   return (
     <div className="flex-grow flex flex-col items-center place-items-center p-2">

@@ -22,6 +22,7 @@ import {
   useMissingScopes,
 } from "@/api/auth";
 import { loadGoogleOAuth2 } from "@/api/google-identity";
+import { REQUESTED_SCOPES } from "@/config/google-health-scopes";
 
 jest.mock("@/api/google-identity", () => ({
   loadGoogleOAuth2: jest.fn(),
@@ -899,7 +900,8 @@ describe("useGoogleLoginAndAuthorization", () => {
     expect(oauth2.initCodeClient).toHaveBeenCalledWith(
       expect.objectContaining({
         hint: "hint-user",
-        scope: expect.stringMatching(/(^|\s)openid(\s|$)/),
+        scope: REQUESTED_SCOPES.join(" "),
+        include_granted_scopes: false,
       }),
     );
 
