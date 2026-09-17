@@ -86,7 +86,7 @@ function PermissionsTable() {
         <PermissionInfo title="Settings">
           Get distance/weight/water unit settings. If you turn off this
           permission, go to the{" "}
-          <Link href="/settings" className="underline">
+          <Link href="/settings/locale" className="underline">
             Settings
           </Link>{" "}
           page to manually set your units.
@@ -163,7 +163,7 @@ export default function LoginBox() {
     }
 
     if (!hasTokenScope(SETTINGS_READONLY) && !allUnitsConfigured) {
-      router.replace("/settings");
+      router.replace("/settings/locale");
     }
   }, [
     allUnitsConfigured,

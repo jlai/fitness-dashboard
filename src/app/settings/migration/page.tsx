@@ -1,14 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Alert,
-  Button,
-  Container,
-  Paper,
-  Typography,
-} from "@mui/material";
-import NextLink from "next/link";
+import { Alert, Button, Paper, Typography } from "@mui/material";
 
 import { useDriveAuthEnabled } from "@/api/auth";
 import RequireLogin from "@/components/require-login";
@@ -33,50 +26,44 @@ function MigrationContent() {
   }, "Failed to import settings");
 
   return (
-    <Container maxWidth="md" className="py-8">
-      <Button component={NextLink} href="/settings" className="mb-4">
-        Back to settings
-      </Button>
+    <Paper className="flex flex-col gap-4 p-6">
+      <Typography variant="h5" component="h1">
+        Migrate settings
+      </Typography>
+      <Typography>
+        Import dashboard layout, preferences, goals, meals, and custom foods
+        that were previously stored in this browser (localStorage and IndexedDB)
+        into Settings storage. Legacy data is not deleted; you can wipe it later
+        from Advanced settings.
+      </Typography>
 
-      <Paper className="p-6 flex flex-col gap-4">
-        <Typography variant="h5" component="h1">
-          Migrate settings
-        </Typography>
-        <Typography>
-          Import dashboard layout, preferences, goals, meals, and custom foods
-          that were previously stored in this browser (localStorage and IndexedDB)
-          into Settings storage. Legacy data is not deleted; you can wipe it later
-          from Advanced settings.
-        </Typography>
+      {!driveEnabled && (
+        <Alert severity="info">
+          Google Drive app data is not enabled. Enable Drive so imported
+          settings sync across devices; otherwise they stay in this browser
+          session only.
+        </Alert>
+      )}
 
+      <div className="flex flex-wrap gap-2">
         {!driveEnabled && (
-          <Alert severity="info">
-            Google Drive app data is not enabled. Enable Drive so imported
-            settings sync across devices; otherwise they stay in this browser
-            session only.
-          </Alert>
-        )}
-
-        <div className="flex flex-wrap gap-2">
-          {!driveEnabled && (
-            <Button
-              variant="outlined"
-              onClick={() => void enableGoogleDriveSettings()}
-              disabled={!driveAuthReady}
-            >
-              Enable Google Drive
-            </Button>
-          )}
           <Button
-            variant="contained"
-            onClick={() => void handleImport()}
-            disabled={importing || !driveEnabled}
+            variant="outlined"
+            onClick={() => void enableGoogleDriveSettings()}
+            disabled={!driveAuthReady}
           >
-            {importing ? "Importing…" : "Import old settings"}
+            Enable Google Drive
           </Button>
-        </div>
-      </Paper>
-    </Container>
+        )}
+        <Button
+          variant="contained"
+          onClick={() => void handleImport()}
+          disabled={importing || !driveEnabled}
+        >
+          {importing ? "Importing…" : "Import old settings"}
+        </Button>
+      </div>
+    </Paper>
   );
 }
 
