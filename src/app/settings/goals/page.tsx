@@ -75,9 +75,9 @@ function ActivityGoalsSettings() {
   return (
     <>
       <SettingsRow title="Goals">
-        Set goals displayed on the dashboard. This does NOT affect your Fitbit
-        account or app. The Google Health API currently does not allow us to get
-        goals from your account, so you have to set them here.
+        Set goals displayed on the dashboard. This does NOT affect your Google
+        Health account or app. The Google Health API currently does not allow us
+        to get goals from your account, so you have to set them here.
       </SettingsRow>
       <SettingsRow
         title="Daily steps"

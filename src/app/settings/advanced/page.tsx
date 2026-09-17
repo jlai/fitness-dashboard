@@ -5,25 +5,18 @@ import { Button, Switch } from "@mui/material";
 import { useAtom, useSetAtom } from "jotai";
 import { RESET } from "jotai/utils";
 import { useConfirm } from "material-ui-confirm";
-import { useQueryClient } from "@tanstack/react-query";
 import NextLink from "next/link";
 
 import { userTilesAtom } from "@/storage/tiles";
-import {
-  forceTokenRefresh,
-  logout,
-  useLoggedIn,
-} from "@/api/auth";
+import { forceTokenRefresh, useLoggedIn } from "@/api/auth";
 import { useSwitchAccounts } from "@/components/login/use-switch-accounts";
 import { increasedTileLimitsAtom } from "@/storage/settings";
-import { wipeLocalData } from "@/storage/wipe-local-data";
 import { showSuccessToast, withErrorToaster } from "@/components/toast";
 
 import { SettingsRow, SettingsTable } from "../common";
 
 function AdvancedSettings() {
   const confirm = useConfirm();
-  const queryClient = useQueryClient();
   const setUserTiles = useSetAtom(userTilesAtom);
   const [increasedTileLimits, setIncreasedTileLimits] = useAtom(
     increasedTileLimitsAtom,
@@ -38,25 +31,6 @@ function AdvancedSettings() {
       }
     });
   }, [confirm, setUserTiles]);
-
-  const wipeData = useCallback(() => {
-    confirm({
-      title: "Wipe local data",
-      description:
-        "Permanently remove any saved goals, meals, and settings from this browser? You will also be signed out.",
-      confirmationText: "Wipe data",
-      confirmationButtonProps: { color: "error" },
-    }).then(async ({ confirmed }) => {
-      if (!confirmed) {
-        return;
-      }
-
-      await logout();
-      await wipeLocalData();
-      queryClient.clear();
-      window.location.assign("/");
-    });
-  }, [confirm, queryClient]);
 
   return (
     <>
@@ -83,17 +57,6 @@ function AdvancedSettings() {
         }
       >
         Reset the dashboard grid to the default layout
-      </SettingsRow>
-      <SettingsRow
-        title="Wipe local data"
-        action={
-          <Button color="error" onClick={wipeData}>
-            Wipe data
-          </Button>
-        }
-      >
-        Erase all saved goals, meals, and settings stored in this browser. This
-        also signs you out.
       </SettingsRow>
       <SettingsRow
         title="Migrate settings"

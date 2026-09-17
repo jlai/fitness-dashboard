@@ -12,10 +12,8 @@ import {
   useAccessTokenScopes,
   useDriveAuthEnabled,
   useLoggedIn,
-  useGoogleLoginAndAuthorization,
   useOpenIdSignedIn,
 } from "@/api/auth";
-import { GoogleSignInButton } from "@/components/login/google-sign-in-button";
 import { useSignOut } from "@/components/login/use-sign-out";
 import {
   useDisableGoogleDriveSettings,
@@ -33,41 +31,25 @@ function LoginSettings() {
 
 function LoggedOutAccountSettings() {
   const openIdSignedIn = useOpenIdSignedIn();
-  const { loginToGoogleAndAuthorize, ready } = useGoogleLoginAndAuthorization();
   const handleLogout = useSignOut();
 
   return (
-    <>
-      <SettingsRow
-        title="Google account"
-        action={
-          openIdSignedIn ? (
-            <Button onClick={handleLogout}>Sign out</Button>
-          ) : (
-            <GoogleSignInButton />
-          )
-        }
-      >
-        {openIdSignedIn
-          ? "You're signed in with Google. Grant access to Google Health to continue."
-          : "You're not currently logged in."}
-      </SettingsRow>
-      {openIdSignedIn && (
-        <SettingsRow
-          title="Google Health access"
-          action={
-            <Button
-              onClick={() => loginToGoogleAndAuthorize()}
-              disabled={!ready}
-            >
-              Grant Health access
-            </Button>
-          }
-        >
-          Connect Google Health to view your fitness data on this site.
-        </SettingsRow>
-      )}
-    </>
+    <SettingsRow
+      title="Google account"
+      action={
+        openIdSignedIn ? (
+          <Button onClick={handleLogout}>Sign out</Button>
+        ) : (
+          <Button component={Link} href="/">
+            Sign in
+          </Button>
+        )
+      }
+    >
+      {openIdSignedIn
+        ? "You're signed in with Google. Grant access to Google Health from the home page to continue."
+        : "You're not currently logged in."}
+    </SettingsRow>
   );
 }
 
