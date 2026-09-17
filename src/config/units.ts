@@ -1,5 +1,9 @@
-import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { useAtom } from "jotai";
+import {
+  useQuery,
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
+import { useAtomValue } from "jotai";
 
 import {
   distanceUnitAtom,
@@ -164,119 +168,94 @@ const DEFAULT_UNITS = {
   waterUnitSystem: SettingsWaterUnit.WATER_UNIT_ML,
 } as const;
 
+export type ApiUnitDefaults = {
+  distanceUnit?: DistanceUnitSystem;
+  swimUnit?: SwimUnitSystem;
+  temperatureUnit?: TemperatureUnitSystem;
+  weightUnit?: WeightUnitSystem;
+  waterUnit?: WaterUnitSystem;
+};
+
+/** Parsed Google Health unit settings for use as unsaved UI defaults. */
+export function useApiUnitDefaults(): ApiUnitDefaults | undefined {
+  const enabled = hasTokenScope(SETTINGS_READONLY);
+  const { data } = useQuery({
+    ...buildUserSettingsQuery(),
+    enabled,
+  });
+
+  if (!enabled || !data) {
+    return undefined;
+  }
+
+  return {
+    distanceUnit: parseDistanceUnit(data.distanceUnit),
+    swimUnit: parseSwimUnit(data.swimUnit),
+    temperatureUnit: parseTemperatureUnit(data.temperatureUnit),
+    weightUnit: parseWeightUnit(data.weightUnit),
+    waterUnit: parseWaterUnit(data.waterUnit),
+  };
+}
+
 export function useUnits() {
-  const [storedDistanceUnitSystem, setDistanceUnitSystem] =
-    useAtom(distanceUnitAtom);
-  const [storedSwimUnitSystem, setSwimUnitSystem] = useAtom(swimUnitAtom);
-  const [storedTemperatureUnitSystem, setTemperatureUnitSystem] =
-    useAtom(temperatureUnitAtom);
-  const [storedWeightUnitSystem, setWeightUnitSystem] = useAtom(weightUnitAtom);
-  const [storedWaterUnitSystem, setWaterUnitSystem] = useAtom(waterUnitAtom);
+  const storedDistanceUnitSystem = useAtomValue(distanceUnitAtom);
+  const storedSwimUnitSystem = useAtomValue(swimUnitAtom);
+  const storedTemperatureUnitSystem = useAtomValue(temperatureUnitAtom);
+  const storedWeightUnitSystem = useAtomValue(weightUnitAtom);
+  const storedWaterUnitSystem = useAtomValue(waterUnitAtom);
 
   const queryClient = useQueryClient();
 
+  // Defaults from the Settings API (or metric hardcodes). Never written to atoms.
   // NOTE: this will only run once due to caching
-  const { data: settingsUnits } = useSuspenseQuery({
+  const { data: defaultUnits } = useSuspenseQuery({
     queryKey: ["units"],
     queryFn: async () => {
-      let distanceUnitSystem = storedDistanceUnitSystem;
-      let swimUnitSystem = storedSwimUnitSystem;
-      let temperatureUnitSystem = storedTemperatureUnitSystem;
-
-      let weightUnitSystem = storedWeightUnitSystem;
-      let waterUnitSystem = storedWaterUnitSystem;
-
-      if (
-        !distanceUnitSystem ||
-        !swimUnitSystem ||
-        !weightUnitSystem ||
-        !waterUnitSystem ||
-        !temperatureUnitSystem
-      ) {
-        if (!hasTokenScope(SETTINGS_READONLY)) {
-          return {
-            distanceUnitSystem:
-              distanceUnitSystem ?? DEFAULT_UNITS.distanceUnitSystem,
-            swimUnitSystem: swimUnitSystem ?? DEFAULT_UNITS.swimUnitSystem,
-            temperatureUnitSystem:
-              temperatureUnitSystem ?? DEFAULT_UNITS.temperatureUnitSystem,
-            weightUnitSystem:
-              weightUnitSystem ?? DEFAULT_UNITS.weightUnitSystem,
-            waterUnitSystem: waterUnitSystem ?? DEFAULT_UNITS.waterUnitSystem,
-          };
-        }
-
-        const settings = await queryClient.fetchQuery(buildUserSettingsQuery());
-
-        if (!distanceUnitSystem) {
-          distanceUnitSystem = parseDistanceUnit(settings.distanceUnit);
-          if (distanceUnitSystem) {
-            setDistanceUnitSystem(distanceUnitSystem);
-          }
-        }
-
-        if (!swimUnitSystem) {
-          swimUnitSystem = parseSwimUnit(settings.swimUnit);
-          if (swimUnitSystem) {
-            setSwimUnitSystem(swimUnitSystem);
-          }
-        }
-
-        if (!temperatureUnitSystem) {
-          temperatureUnitSystem = parseTemperatureUnit(
-            settings.temperatureUnit,
-          );
-          if (temperatureUnitSystem) {
-            setTemperatureUnitSystem(temperatureUnitSystem);
-          }
-        }
-
-        if (!weightUnitSystem) {
-          weightUnitSystem = parseWeightUnit(settings.weightUnit);
-          if (weightUnitSystem) {
-            setWeightUnitSystem(weightUnitSystem);
-          }
-        }
-
-        if (!waterUnitSystem) {
-          waterUnitSystem = parseWaterUnit(settings.waterUnit);
-          if (waterUnitSystem) {
-            setWaterUnitSystem(waterUnitSystem);
-          }
-        }
+      if (!hasTokenScope(SETTINGS_READONLY)) {
+        return DEFAULT_UNITS;
       }
 
+      const settings = await queryClient.fetchQuery(buildUserSettingsQuery());
+
       return {
-        distanceUnitSystem,
-        swimUnitSystem,
-        temperatureUnitSystem,
-        weightUnitSystem,
-        waterUnitSystem,
+        distanceUnitSystem:
+          parseDistanceUnit(settings.distanceUnit) ??
+          DEFAULT_UNITS.distanceUnitSystem,
+        swimUnitSystem:
+          parseSwimUnit(settings.swimUnit) ?? DEFAULT_UNITS.swimUnitSystem,
+        temperatureUnitSystem:
+          parseTemperatureUnit(settings.temperatureUnit) ??
+          DEFAULT_UNITS.temperatureUnitSystem,
+        weightUnitSystem:
+          parseWeightUnit(settings.weightUnit) ??
+          DEFAULT_UNITS.weightUnitSystem,
+        waterUnitSystem:
+          parseWaterUnit(settings.waterUnit) ?? DEFAULT_UNITS.waterUnitSystem,
       };
     },
   });
 
   const distanceUnitConfig =
-    (storedDistanceUnitSystem ?? settingsUnits.distanceUnitSystem) ===
+    (storedDistanceUnitSystem ?? defaultUnits.distanceUnitSystem) ===
     SettingsDistanceUnit.DISTANCE_UNIT_MILES
       ? US_DISTANCE_UNIT_CONFIG
       : METRIC_DISTANCE_UNIT_CONFIG;
 
   const swimUnitConfig =
-    (storedSwimUnitSystem ?? settingsUnits.swimUnitSystem) ===
+    (storedSwimUnitSystem ?? defaultUnits.swimUnitSystem) ===
     SettingsSwimUnit.SWIM_UNIT_YARDS
       ? US_SWIM_UNIT_CONFIG
       : METRIC_SWIM_UNIT_CONFIG;
 
   const temperatureUnitConfig =
-    (storedTemperatureUnitSystem ?? settingsUnits.temperatureUnitSystem) ===
+    (storedTemperatureUnitSystem ?? defaultUnits.temperatureUnitSystem) ===
     SettingsTemperatureUnit.TEMPERATURE_UNIT_FAHRENHEIT
       ? US_TEMPERATURE_UNIT_CONFIG
       : METRIC_TEMPERATURE_UNIT_CONFIG;
 
   let weightUnitConfig: WeightUnitConfig;
 
-  switch (storedWeightUnitSystem ?? settingsUnits.weightUnitSystem) {
+  switch (storedWeightUnitSystem ?? defaultUnits.weightUnitSystem) {
     case SettingsWeightUnit.WEIGHT_UNIT_POUNDS:
       weightUnitConfig = US_WEIGHT_UNIT_CONFIG;
       break;
@@ -290,7 +269,7 @@ export function useUnits() {
 
   let waterUnitConfig: WaterUnitConfig;
 
-  switch (storedWaterUnitSystem ?? settingsUnits.waterUnitSystem) {
+  switch (storedWaterUnitSystem ?? defaultUnits.waterUnitSystem) {
     case SettingsWaterUnit.WATER_UNIT_FL_OZ:
       waterUnitConfig = US_WATER_UNIT_CONFIG;
       break;

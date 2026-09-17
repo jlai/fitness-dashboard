@@ -1,8 +1,19 @@
 import { createStore, type Atom } from "jotai";
 
-import { SettingsWeightUnit } from "@/api/user";
 import {
+  SettingsDistanceUnit,
+  SettingsSwimUnit,
+  SettingsTemperatureUnit,
+  SettingsWaterUnit,
+  SettingsWeightUnit,
+} from "@/api/user";
+import {
+  clearUnitSettingsAtom,
+  distanceUnitAtom,
   settingsBlobAtom,
+  swimUnitAtom,
+  temperatureUnitAtom,
+  waterUnitAtom,
   weightUnitAtom,
 } from "@/storage/settings";
 import { resetSettingsStorageSingletonsForTests } from "@/storage/settings-storage";
@@ -45,5 +56,27 @@ describe("settings field atoms", () => {
     expect(blob.settings.weightUnit).toBe(
       SettingsWeightUnit.WEIGHT_UNIT_KILOGRAMS,
     );
+  });
+
+  it("clears all unit overrides in a single write", async () => {
+    const store = createStore();
+
+    await store.set(distanceUnitAtom, SettingsDistanceUnit.DISTANCE_UNIT_MILES);
+    await store.set(swimUnitAtom, SettingsSwimUnit.SWIM_UNIT_YARDS);
+    await store.set(
+      temperatureUnitAtom,
+      SettingsTemperatureUnit.TEMPERATURE_UNIT_FAHRENHEIT,
+    );
+    await store.set(weightUnitAtom, SettingsWeightUnit.WEIGHT_UNIT_POUNDS);
+    await store.set(waterUnitAtom, SettingsWaterUnit.WATER_UNIT_FL_OZ);
+
+    await store.set(clearUnitSettingsAtom);
+
+    const blob = await store.get(settingsBlobAtom);
+    expect(blob.settings.distanceUnit).toBeUndefined();
+    expect(blob.settings.swimUnit).toBeUndefined();
+    expect(blob.settings.temperatureUnit).toBeUndefined();
+    expect(blob.settings.weightUnit).toBeUndefined();
+    expect(blob.settings.waterUnit).toBeUndefined();
   });
 });

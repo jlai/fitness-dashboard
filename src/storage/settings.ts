@@ -144,6 +144,26 @@ export const swimUnitAtom =
 export const temperatureUnitAtom =
   createOptionalSettingsFieldAtom<TemperatureUnitSystem>("temperatureUnit");
 
+const UNIT_SETTING_KEYS = [
+  "weightUnit",
+  "waterUnit",
+  "distanceUnit",
+  "swimUnit",
+  "temperatureUnit",
+] as const satisfies ReadonlyArray<keyof SettingsPrefs>;
+
+/** Clear all local unit overrides in a single blob write (avoids RMW races). */
+export const clearUnitSettingsAtom = atom(null, async (get, set) => {
+  const data = await get(settingsBlobAtom);
+  const settings = { ...data.settings };
+
+  for (const key of UNIT_SETTING_KEYS) {
+    delete settings[key];
+  }
+
+  await set(settingsBlobAtom, { settings });
+});
+
 export const allUnitsConfiguredAtom = atom((get) => {
   const weight = get(weightUnitAtom);
   const water = get(waterUnitAtom);

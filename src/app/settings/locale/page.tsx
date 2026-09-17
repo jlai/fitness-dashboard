@@ -1,9 +1,10 @@
 "use client";
 
-import { MenuItem, Select } from "@mui/material";
-import { useAtom } from "jotai";
+import { Button, MenuItem, Select, SelectChangeEvent } from "@mui/material";
+import { useAtom, useSetAtom } from "jotai";
 import { useQueryClient } from "@tanstack/react-query";
 
+import { hasTokenScope } from "@/api/auth";
 import {
   DistanceUnitSystem,
   SettingsDistanceUnit,
@@ -16,7 +17,10 @@ import {
   WaterUnitSystem,
   WeightUnitSystem,
 } from "@/api/user";
+import { SETTINGS_READONLY } from "@/config/google-health-scopes";
+import { useApiUnitDefaults } from "@/config/units";
 import {
+  clearUnitSettingsAtom,
   clockHourCycleAtom,
   dateFormatPatternAtom,
   distanceUnitAtom,
@@ -30,6 +34,22 @@ import { PATTERN_TO_LOCALE } from "@/utils/number-formats";
 
 import { SettingsRow, SettingsTable } from "../common";
 
+/**
+ * Persist a unit only when it differs from the Google Health default.
+ * Selecting the API default clears any local override.
+ */
+function setUnitOverride<T>(
+  setValue: (next: T | undefined) => void,
+  apiDefault: T | undefined,
+  next: T,
+) {
+  if (apiDefault !== undefined && next === apiDefault) {
+    setValue(undefined);
+  } else {
+    setValue(next);
+  }
+}
+
 function UnitSettings() {
   const [distanceUnit, setDistanceUnit] = useAtom(distanceUnitAtom);
   const [swimUnit, setSwimUnit] = useAtom(swimUnitAtom);
@@ -37,19 +57,45 @@ function UnitSettings() {
 
   const [weightUnit, setWeightUnit] = useAtom(weightUnitAtom);
   const [waterUnit, setWaterUnit] = useAtom(waterUnitAtom);
+  const clearUnitSettings = useSetAtom(clearUnitSettingsAtom);
+
+  const apiDefaults = useApiUnitDefaults();
+  const hasSettingsScope = hasTokenScope(SETTINGS_READONLY);
+  const hasUnitOverrides = Boolean(
+    distanceUnit || swimUnit || temperatureUnit || weightUnit || waterUnit,
+  );
 
   return (
     <>
-      <SettingsRow title="Unit settings">
+      <SettingsRow
+        title="Unit settings"
+        action={
+          hasSettingsScope ? (
+            <Button
+              onClick={() => void clearUnitSettings()}
+              disabled={!hasUnitOverrides}
+            >
+              Reset to defaults
+            </Button>
+          ) : undefined
+        }
+      >
         This will not affect your Google Health account, only the units used on
         this website.
       </SettingsRow>
       <SettingsRow
         title="Distance unit"
         action={
-          <Select<DistanceUnitSystem>
-            value={distanceUnit}
-            onChange={(event) => setDistanceUnit(event.target.value as any)}
+          <Select
+            displayEmpty
+            value={distanceUnit ?? apiDefaults?.distanceUnit ?? ""}
+            onChange={(event: SelectChangeEvent<string>) =>
+              setUnitOverride(
+                setDistanceUnit,
+                apiDefaults?.distanceUnit,
+                event.target.value as DistanceUnitSystem,
+              )
+            }
           >
             <MenuItem value={SettingsDistanceUnit.DISTANCE_UNIT_MILES}>
               Miles
@@ -63,9 +109,16 @@ function UnitSettings() {
       <SettingsRow
         title="Swim distance unit"
         action={
-          <Select<SwimUnitSystem>
-            value={swimUnit}
-            onChange={(event) => setSwimUnit(event.target.value as any)}
+          <Select
+            displayEmpty
+            value={swimUnit ?? apiDefaults?.swimUnit ?? ""}
+            onChange={(event: SelectChangeEvent<string>) =>
+              setUnitOverride(
+                setSwimUnit,
+                apiDefaults?.swimUnit,
+                event.target.value as SwimUnitSystem,
+              )
+            }
           >
             <MenuItem value={SettingsSwimUnit.SWIM_UNIT_YARDS}>Yards</MenuItem>
             <MenuItem value={SettingsSwimUnit.SWIM_UNIT_METERS}>
@@ -77,9 +130,16 @@ function UnitSettings() {
       <SettingsRow
         title="Temperature unit"
         action={
-          <Select<TemperatureUnitSystem>
-            value={temperatureUnit}
-            onChange={(event) => setTemperatureUnit(event.target.value as any)}
+          <Select
+            displayEmpty
+            value={temperatureUnit ?? apiDefaults?.temperatureUnit ?? ""}
+            onChange={(event: SelectChangeEvent<string>) =>
+              setUnitOverride(
+                setTemperatureUnit,
+                apiDefaults?.temperatureUnit,
+                event.target.value as TemperatureUnitSystem,
+              )
+            }
           >
             <MenuItem
               value={SettingsTemperatureUnit.TEMPERATURE_UNIT_FAHRENHEIT}
@@ -95,9 +155,16 @@ function UnitSettings() {
       <SettingsRow
         title="Weight unit"
         action={
-          <Select<WeightUnitSystem>
-            value={weightUnit}
-            onChange={(event) => setWeightUnit(event.target.value as any)}
+          <Select
+            displayEmpty
+            value={weightUnit ?? apiDefaults?.weightUnit ?? ""}
+            onChange={(event: SelectChangeEvent<string>) =>
+              setUnitOverride(
+                setWeightUnit,
+                apiDefaults?.weightUnit,
+                event.target.value as WeightUnitSystem,
+              )
+            }
           >
             <MenuItem value={SettingsWeightUnit.WEIGHT_UNIT_POUNDS}>
               Pounds
@@ -114,9 +181,16 @@ function UnitSettings() {
       <SettingsRow
         title="Water unit"
         action={
-          <Select<WaterUnitSystem>
-            value={waterUnit}
-            onChange={(event) => setWaterUnit(event.target.value as any)}
+          <Select
+            displayEmpty
+            value={waterUnit ?? apiDefaults?.waterUnit ?? ""}
+            onChange={(event: SelectChangeEvent<string>) =>
+              setUnitOverride(
+                setWaterUnit,
+                apiDefaults?.waterUnit,
+                event.target.value as WaterUnitSystem,
+              )
+            }
           >
             <MenuItem value={SettingsWaterUnit.WATER_UNIT_FL_OZ}>
               Fluid ounces
