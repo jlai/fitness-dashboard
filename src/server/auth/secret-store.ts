@@ -6,7 +6,7 @@ import {
   type JSONWebKeySet,
 } from "jose";
 
-export type SecretStorePurpose = "session" | "health";
+export type SecretStorePurpose = "session" | "health" | "drive";
 
 export interface SymmetricTokenKey {
   kid: string;
@@ -56,6 +56,7 @@ export function purposeOptions(
     };
   }
 
+  // health and drive both encrypt refresh tokens with A256GCM
   return {
     purpose,
     expectedAlgs: ["A256GCM"],

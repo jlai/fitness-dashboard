@@ -28,6 +28,14 @@ const HEALTH_JWK = {
   k: "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE",
 };
 
+const DRIVE_JWK = {
+  kty: "oct" as const,
+  kid: "drive-1",
+  alg: "A256GCM",
+  use: "enc" as const,
+  k: "AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI",
+};
+
 async function readSecretFromEnv(env: AuthMiniflareEnv, name: string) {
   const binding = env[name as keyof AuthMiniflareEnv];
   if (!binding || typeof (binding as { get?: unknown }).get !== "function") {
@@ -270,7 +278,7 @@ describe("CloudflareSecretStore (Miniflare)", () => {
     );
   });
 
-  it("rotateTokenSecrets rotates session and health keys", async () => {
+  it("rotateTokenSecrets rotates session, health, and drive keys", async () => {
     await authMf.seedSecret("SESSION_ACTIVE_KEY", JSON.stringify(SESSION_JWK));
     await authMf.seedSecret(
       "SESSION_ACCEPTED_KEYS",
@@ -280,6 +288,11 @@ describe("CloudflareSecretStore (Miniflare)", () => {
     await authMf.seedSecret(
       "HEALTH_ACCEPTED_KEYS",
       JSON.stringify({ keys: [HEALTH_JWK] }),
+    );
+    await authMf.seedSecret("DRIVE_ACTIVE_KEY", JSON.stringify(DRIVE_JWK));
+    await authMf.seedSecret(
+      "DRIVE_ACCEPTED_KEYS",
+      JSON.stringify({ keys: [DRIVE_JWK] }),
     );
 
     const originalStore = process.env.TOKEN_SECRET_STORE;
@@ -304,6 +317,7 @@ describe("CloudflareSecretStore (Miniflare)", () => {
 
       expect(result.session.kid).not.toBe("session-1");
       expect(result.health.kid).not.toBe("health-1");
+      expect(result.drive.kid).not.toBe("drive-1");
 
       const sessionStore = new CloudflareSecretStore({
         ...purposeOptions("session"),
@@ -317,6 +331,12 @@ describe("CloudflareSecretStore (Miniflare)", () => {
         accountId: TEST_ACCOUNT_ID,
         readSecret: (name) => readSecretFromEnv(env, name),
       });
+      const driveStore = new CloudflareSecretStore({
+        ...purposeOptions("drive"),
+        storeId: TEST_SECRETS_STORE_ID,
+        accountId: TEST_ACCOUNT_ID,
+        readSecret: (name) => readSecretFromEnv(env, name),
+      });
 
       await expect(sessionStore.getActiveKey()).resolves.toMatchObject({
         kid: result.session.kid,
@@ -324,11 +344,17 @@ describe("CloudflareSecretStore (Miniflare)", () => {
       await expect(healthStore.getActiveKey()).resolves.toMatchObject({
         kid: result.health.kid,
       });
+      await expect(driveStore.getActiveKey()).resolves.toMatchObject({
+        kid: result.drive.kid,
+      });
       await expect(sessionStore.getKeyById("session-1")).resolves.toMatchObject({
         kid: "session-1",
       });
       await expect(healthStore.getKeyById("health-1")).resolves.toMatchObject({
         kid: "health-1",
+      });
+      await expect(driveStore.getKeyById("drive-1")).resolves.toMatchObject({
+        kid: "drive-1",
       });
     } finally {
       process.env.TOKEN_SECRET_STORE = originalStore;

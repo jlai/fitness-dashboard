@@ -25,6 +25,7 @@ function createSecretStore(purpose: SecretStorePurpose): SecretStore {
 
 let sessionStore: SecretStore | undefined;
 let healthStore: SecretStore | undefined;
+let driveStore: SecretStore | undefined;
 let cachedConfigKey: string | undefined;
 
 function secretStoreCacheKey(config: SecretStoreConfig) {
@@ -39,6 +40,7 @@ function ensureStoreCache() {
   if (cachedConfigKey !== key) {
     sessionStore = undefined;
     healthStore = undefined;
+    driveStore = undefined;
     cachedConfigKey = key;
   }
 }
@@ -53,8 +55,14 @@ export function getHealthSecretStore(): SecretStore {
   return (healthStore ??= createSecretStore("health"));
 }
 
+export function getDriveSecretStore(): SecretStore {
+  ensureStoreCache();
+  return (driveStore ??= createSecretStore("drive"));
+}
+
 export function resetSecretStores() {
   sessionStore = undefined;
   healthStore = undefined;
+  driveStore = undefined;
   cachedConfigKey = undefined;
 }

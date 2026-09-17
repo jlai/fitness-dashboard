@@ -5,3 +5,6 @@
 
 export const DRIVE_APPDATA =
   "https://www.googleapis.com/auth/drive.appdata";
+
+/** Scopes requested for the separate Google Drive auth token. */
+export const REQUESTED_DRIVE_SCOPES = [DRIVE_APPDATA] as const;

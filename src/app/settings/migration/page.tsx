@@ -10,7 +10,7 @@ import {
 } from "@mui/material";
 import NextLink from "next/link";
 
-import { useMissingScopes } from "@/api/auth";
+import { useMissingDriveScopes } from "@/api/auth";
 import RequireLogin from "@/components/require-login";
 import { DRIVE_APPDATA } from "@/config/google-drive-scopes";
 import { importLegacySettings } from "@/storage/settings-storage/migrate-from-legacy";
@@ -18,7 +18,7 @@ import { useEnableGoogleDriveSettings } from "@/storage/settings-storage";
 import { showSuccessToast, withErrorToaster } from "@/components/toast";
 
 function MigrationContent() {
-  const missingDriveScopes = useMissingScopes([DRIVE_APPDATA]);
+  const missingDriveScopes = useMissingDriveScopes([DRIVE_APPDATA]);
   const driveEnabled = missingDriveScopes.length === 0;
   const { enableGoogleDriveSettings, ready: driveAuthReady } =
     useEnableGoogleDriveSettings();

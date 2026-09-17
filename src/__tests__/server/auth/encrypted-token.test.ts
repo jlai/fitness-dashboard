@@ -2,8 +2,11 @@ import { decodeProtectedHeader } from "jose";
 
 import { resetSecretStores } from "@/server/auth/env";
 import {
+  decryptDriveRefreshToken,
   decryptRefreshToken,
+  encryptDriveRefreshToken,
   encryptRefreshToken,
+  ENCRYPTED_DRIVE_TOKEN_EXPIRATION_SECONDS,
   ENCRYPTED_HEALTH_TOKEN_EXPIRATION_SECONDS,
 } from "@/server/auth/encrypted-token";
 
@@ -136,5 +139,59 @@ describe("encrypted refresh token", () => {
       refreshToken: "rtok",
     });
     expect(decodeProtectedHeader(rotated).kid).toBe("refresh-test-2");
+  });
+});
+
+describe("encrypted drive refresh token", () => {
+  const originalKey = process.env.DRIVE_ACTIVE_KEY;
+  const originalAccepted = process.env.DRIVE_ACCEPTED_KEYS;
+
+  beforeEach(() => {
+    delete process.env.DRIVE_ACCEPTED_KEYS;
+    resetSecretStores();
+  });
+
+  afterEach(() => {
+    process.env.DRIVE_ACTIVE_KEY = originalKey;
+    process.env.DRIVE_ACCEPTED_KEYS = originalAccepted;
+    resetSecretStores();
+  });
+
+  it("round-trips with drive-refresh+jwt typ and drive keys", async () => {
+    const jwt = await encryptDriveRefreshToken({
+      sub: "user-123",
+      refreshToken: "drive-rtok",
+      scope: "https://www.googleapis.com/auth/drive.appdata",
+    });
+    const header = decodeProtectedHeader(jwt);
+
+    expect(header.typ).toBe("drive-refresh+jwt");
+    expect(header.kid).toBe("drive-test-1");
+    await expect(decryptDriveRefreshToken(jwt)).resolves.toEqual({
+      sub: "user-123",
+      refreshToken: "drive-rtok",
+      scope: "https://www.googleapis.com/auth/drive.appdata",
+      jti: header.jti,
+      iat: header.iat,
+      exp: (header.iat as number) + ENCRYPTED_DRIVE_TOKEN_EXPIRATION_SECONDS,
+    });
+  });
+
+  it("rejects health tokens on the drive decrypt path", async () => {
+    const healthJwt = await encryptRefreshToken({
+      sub: "user-123",
+      refreshToken: "rtok",
+    });
+
+    await expect(decryptDriveRefreshToken(healthJwt)).rejects.toThrow();
+  });
+
+  it("rejects drive tokens on the health decrypt path", async () => {
+    const driveJwt = await encryptDriveRefreshToken({
+      sub: "user-123",
+      refreshToken: "drive-rtok",
+    });
+
+    await expect(decryptRefreshToken(driveJwt)).rejects.toThrow();
   });
 });

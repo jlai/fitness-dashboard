@@ -1,6 +1,10 @@
 import { EncryptJWT, errors, jwtDecrypt } from "jose";
 
-import { getHealthSecretStore } from "./get-secret-store";
+import {
+  getDriveSecretStore,
+  getHealthSecretStore,
+} from "./get-secret-store";
+import type { SecretStore } from "./secret-store";
 
 export interface EncryptedRefreshTokenPayload {
   sub: string;
@@ -17,19 +21,44 @@ export interface DecryptedRefreshToken extends EncryptedRefreshTokenPayload {
 /** Encrypted health JWEs expire after 15 days and must be refreshed via /auth/health/access. */
 export const ENCRYPTED_HEALTH_TOKEN_EXPIRATION_SECONDS = 15 * 24 * 60 * 60;
 
-const TOKEN_TYP = "refresh+jwt";
+/** Encrypted drive JWEs expire after 15 days and must be refreshed via /auth/drive/access. */
+export const ENCRYPTED_DRIVE_TOKEN_EXPIRATION_SECONDS = 15 * 24 * 60 * 60;
+
+type RefreshTokenKind = "health" | "drive";
+
+const TOKEN_KIND_CONFIG: Record<
+  RefreshTokenKind,
+  {
+    typ: string;
+    expirationSeconds: number;
+    getStore: () => SecretStore;
+  }
+> = {
+  health: {
+    typ: "refresh+jwt",
+    expirationSeconds: ENCRYPTED_HEALTH_TOKEN_EXPIRATION_SECONDS,
+    getStore: getHealthSecretStore,
+  },
+  drive: {
+    typ: "drive-refresh+jwt",
+    expirationSeconds: ENCRYPTED_DRIVE_TOKEN_EXPIRATION_SECONDS,
+    getStore: getDriveSecretStore,
+  },
+};
 
 interface RefreshTokenClaims {
   refresh_token?: unknown;
   scope?: unknown;
 }
 
-export async function encryptRefreshToken(
+async function encryptRefreshTokenFor(
+  kind: RefreshTokenKind,
   payload: EncryptedRefreshTokenPayload,
 ) {
-  const tokenKey = await getHealthSecretStore().getActiveKey();
+  const config = TOKEN_KIND_CONFIG[kind];
+  const tokenKey = await config.getStore().getActiveKey();
   const iat = Math.floor(Date.now() / 1000);
-  const exp = iat + ENCRYPTED_HEALTH_TOKEN_EXPIRATION_SECONDS;
+  const exp = iat + config.expirationSeconds;
   const jti = crypto.randomUUID();
   const jwt = new EncryptJWT({
     refresh_token: payload.refreshToken,
@@ -38,7 +67,7 @@ export async function encryptRefreshToken(
     .setProtectedHeader({
       alg: "dir",
       enc: "A256GCM",
-      typ: TOKEN_TYP,
+      typ: config.typ,
       kid: tokenKey.kid,
       jti,
       iat,
@@ -51,19 +80,33 @@ export async function encryptRefreshToken(
   return jwt.encrypt(tokenKey.key);
 }
 
+export async function encryptRefreshToken(
+  payload: EncryptedRefreshTokenPayload,
+) {
+  return encryptRefreshTokenFor("health", payload);
+}
+
+export async function encryptDriveRefreshToken(
+  payload: EncryptedRefreshTokenPayload,
+) {
+  return encryptRefreshTokenFor("drive", payload);
+}
+
 export function isExpiredEncryptedTokenError(error: unknown) {
   return error instanceof errors.JWTExpired;
 }
 
-export async function decryptRefreshToken(
+async function decryptRefreshTokenFor(
+  kind: RefreshTokenKind,
   token: string,
 ): Promise<DecryptedRefreshToken> {
-  const store = getHealthSecretStore();
+  const config = TOKEN_KIND_CONFIG[kind];
+  const store = config.getStore();
   const { payload, protectedHeader } = await jwtDecrypt<RefreshTokenClaims>(
     token,
     async (header) => (await store.getKeyById(header.kid)).key,
     {
-      typ: TOKEN_TYP,
+      typ: config.typ,
       keyManagementAlgorithms: ["dir"],
       contentEncryptionAlgorithms: ["A256GCM"],
       requiredClaims: ["sub", "refresh_token", "iat", "exp"],
@@ -108,4 +151,16 @@ export async function decryptRefreshToken(
     iat: payload.iat,
     exp: payload.exp,
   };
+}
+
+export async function decryptRefreshToken(
+  token: string,
+): Promise<DecryptedRefreshToken> {
+  return decryptRefreshTokenFor("health", token);
+}
+
+export async function decryptDriveRefreshToken(
+  token: string,
+): Promise<DecryptedRefreshToken> {
+  return decryptRefreshTokenFor("drive", token);
 }

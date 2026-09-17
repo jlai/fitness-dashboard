@@ -33,7 +33,7 @@ import {
   useAccessTokenScopes,
   useLoggedIn,
   useGoogleLoginAndAuthorization,
-  useMissingScopes,
+  useMissingDriveScopes,
   useOpenIdSignedIn,
 } from "@/api/auth";
 import { GoogleSignInButton } from "@/components/login/google-sign-in-button";
@@ -162,7 +162,7 @@ function LoggedInAccountSettings() {
   const router = useRouter();
   const scopes = useAccessTokenScopes();
   const handleLogout = useSignOut();
-  const missingDriveScopes = useMissingScopes([DRIVE_APPDATA]);
+  const missingDriveScopes = useMissingDriveScopes([DRIVE_APPDATA]);
   const driveEnabled = missingDriveScopes.length === 0;
   const { enableGoogleDriveSettings, ready: driveAuthReady } =
     useEnableGoogleDriveSettings();

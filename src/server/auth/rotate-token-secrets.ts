@@ -10,7 +10,11 @@ import {
   type SymmetricTokenKey,
 } from "./secret-store";
 
-const PURPOSES: readonly SecretStorePurpose[] = ["session", "health"];
+const PURPOSES: readonly SecretStorePurpose[] = [
+  "session",
+  "health",
+  "drive",
+];
 
 export interface RotateTokenSecretsOptions {
   /** Injected for tests (e.g. Miniflare Secrets Store admin API). */
@@ -48,13 +52,17 @@ function readBindingSecret(
 }
 
 /**
- * Rotate session and health token keys in Cloudflare Secrets Store.
+ * Rotate session, health, and drive token keys in Cloudflare Secrets Store.
  * Intended for the Worker `scheduled` cron handler.
  */
 export async function rotateTokenSecrets(
   env: Record<string, unknown>,
   options: RotateTokenSecretsOptions = {},
-): Promise<{ session: SymmetricTokenKey; health: SymmetricTokenKey }> {
+): Promise<{
+  session: SymmetricTokenKey;
+  health: SymmetricTokenKey;
+  drive: SymmetricTokenKey;
+}> {
   syncEnvString(env, "TOKEN_SECRET_STORE");
   syncEnvString(env, "CLOUDFLARE_ACCOUNT_ID");
   syncEnvString(env, "CLOUDFLARE_API_TOKEN");
@@ -90,5 +98,6 @@ export async function rotateTokenSecrets(
   return {
     session: rotated.session!,
     health: rotated.health!,
+    drive: rotated.drive!,
   };
 }

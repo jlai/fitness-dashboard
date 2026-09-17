@@ -41,6 +41,8 @@
     { "binding": "SESSION_ACTIVE_KEY", "store_id": "<CF_BINDING_SECRETS_STORE_ID>", "secret_name": "SESSION_ACTIVE_KEY" },
     { "binding": "SESSION_ACCEPTED_KEYS", "store_id": "<CF_BINDING_SECRETS_STORE_ID>", "secret_name": "SESSION_ACCEPTED_KEYS" },
     { "binding": "HEALTH_ACTIVE_KEY", "store_id": "<CF_BINDING_SECRETS_STORE_ID>", "secret_name": "HEALTH_ACTIVE_KEY" },
-    { "binding": "HEALTH_ACCEPTED_KEYS", "store_id": "<CF_BINDING_SECRETS_STORE_ID>", "secret_name": "HEALTH_ACCEPTED_KEYS" }
+    { "binding": "HEALTH_ACCEPTED_KEYS", "store_id": "<CF_BINDING_SECRETS_STORE_ID>", "secret_name": "HEALTH_ACCEPTED_KEYS" },
+    { "binding": "DRIVE_ACTIVE_KEY", "store_id": "<CF_BINDING_SECRETS_STORE_ID>", "secret_name": "DRIVE_ACTIVE_KEY" },
+    { "binding": "DRIVE_ACCEPTED_KEYS", "store_id": "<CF_BINDING_SECRETS_STORE_ID>", "secret_name": "DRIVE_ACCEPTED_KEYS" }
   ],
 }

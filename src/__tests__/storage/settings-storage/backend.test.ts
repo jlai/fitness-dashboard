@@ -2,7 +2,7 @@ import { createStore, getDefaultStore } from "jotai";
 
 import {
   authSessionAtom,
-  grantedScopesAtom,
+  grantedDriveScopesAtom,
 } from "@/api/auth";
 import { DRIVE_APPDATA } from "@/config/google-drive-scopes";
 import {
@@ -22,26 +22,30 @@ jest.mock("@/api/auth", () => {
   return {
     ...actual,
     isLoggedIn: jest.fn(() => false),
-    getFreshAccessToken: jest.fn(async () => "token"),
-    getGrantedScopesRaw: jest.fn(() => undefined),
+    getFreshDriveAccessToken: jest.fn(async () => "token"),
+    getGrantedDriveScopesRaw: jest.fn(() => undefined),
+    hasEncryptedDriveToken: jest.fn(() => false),
   };
 });
 
 const auth = jest.requireMock("@/api/auth") as {
   isLoggedIn: jest.Mock;
-  getFreshAccessToken: jest.Mock;
-  getGrantedScopesRaw: jest.Mock;
+  getFreshDriveAccessToken: jest.Mock;
+  getGrantedDriveScopesRaw: jest.Mock;
+  hasEncryptedDriveToken: jest.Mock;
 };
 
 describe("settingsStorageAtom backend selection", () => {
   beforeEach(() => {
     resetSettingsStorageSingletonsForTests();
     auth.isLoggedIn.mockReturnValue(false);
-    auth.getGrantedScopesRaw.mockReturnValue(undefined);
-    getDefaultStore().set(grantedScopesAtom, undefined);
+    auth.hasEncryptedDriveToken.mockReturnValue(false);
+    auth.getGrantedDriveScopesRaw.mockReturnValue(undefined);
+    getDefaultStore().set(grantedDriveScopesAtom, undefined);
     getDefaultStore().set(authSessionAtom, {
       sessionToken: null,
       encryptedHealthToken: null,
+      encryptedDriveToken: null,
     });
   });
 
@@ -52,39 +56,37 @@ describe("settingsStorageAtom backend selection", () => {
     expect(storage).toBeInstanceOf(MemorySettingsStorage);
   });
 
-  it("uses Memory when logged in without Drive scope", async () => {
+  it("uses Memory when logged in without a Drive token", async () => {
     auth.isLoggedIn.mockReturnValue(true);
-    auth.getGrantedScopesRaw.mockReturnValue("https://www.googleapis.com/auth/fitness.activity.read");
-    getDefaultStore().set(
-      grantedScopesAtom,
-      "https://www.googleapis.com/auth/fitness.activity.read",
-    );
+    auth.hasEncryptedDriveToken.mockReturnValue(false);
 
     const store = createStore();
     const storage = await store.get(settingsStorageAtom);
     expect(storage).toBe(getMemorySettingsStorage());
   });
 
-  it("uses Google Drive when logged in with drive.appdata", async () => {
+  it("uses Google Drive when logged in with a Drive token and drive.appdata", async () => {
     auth.isLoggedIn.mockReturnValue(true);
-    auth.getGrantedScopesRaw.mockReturnValue(DRIVE_APPDATA);
-    getDefaultStore().set(grantedScopesAtom, DRIVE_APPDATA);
+    auth.hasEncryptedDriveToken.mockReturnValue(true);
+    auth.getGrantedDriveScopesRaw.mockReturnValue(DRIVE_APPDATA);
+    getDefaultStore().set(grantedDriveScopesAtom, DRIVE_APPDATA);
 
     const store = createStore();
     const storage = await store.get(settingsStorageAtom);
     expect(storage).toBe(getGoogleDriveSettingsStorage());
   });
 
-  it("awaits token refresh when logged in and scopes are unknown", async () => {
+  it("awaits drive token refresh when scopes are unknown", async () => {
     auth.isLoggedIn.mockReturnValue(true);
-    auth.getGrantedScopesRaw
+    auth.hasEncryptedDriveToken.mockReturnValue(true);
+    auth.getGrantedDriveScopesRaw
       .mockReturnValueOnce(undefined)
       .mockReturnValueOnce(DRIVE_APPDATA);
-    auth.getFreshAccessToken.mockResolvedValue("token");
+    auth.getFreshDriveAccessToken.mockResolvedValue("token");
 
     const store = createStore();
     const storage = await store.get(settingsStorageAtom);
-    expect(auth.getFreshAccessToken).toHaveBeenCalled();
+    expect(auth.getFreshDriveAccessToken).toHaveBeenCalled();
     expect(storage).toBe(getGoogleDriveSettingsStorage());
   });
 });

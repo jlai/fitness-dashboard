@@ -19,6 +19,8 @@ export const SECRET_BINDING_NAMES = [
   "SESSION_ACCEPTED_KEYS",
   "HEALTH_ACTIVE_KEY",
   "HEALTH_ACCEPTED_KEYS",
+  "DRIVE_ACTIVE_KEY",
+  "DRIVE_ACCEPTED_KEYS",
 ] as const;
 
 export type SecretBindingName = (typeof SECRET_BINDING_NAMES)[number];

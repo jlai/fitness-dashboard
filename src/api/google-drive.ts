@@ -1,6 +1,6 @@
 "use client";
 
-import { getFreshAccessToken } from "./auth";
+import { getFreshDriveAccessToken } from "./auth";
 
 const DRIVE_API_BASE = "https://www.googleapis.com/drive/v3";
 const DRIVE_UPLOAD_BASE = "https://www.googleapis.com/upload/drive/v3";
@@ -24,7 +24,7 @@ async function authorizedFetch(
   url: string,
   options: RequestInit = {},
 ): Promise<Response> {
-  const accessToken = await getFreshAccessToken();
+  const accessToken = await getFreshDriveAccessToken();
   const response = await fetch(url, {
     ...options,
     headers: {

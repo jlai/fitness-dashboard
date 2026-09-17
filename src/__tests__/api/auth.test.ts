@@ -38,8 +38,10 @@ const SESSION_ALL_PATH = "/auth/session/all";
 const HEALTH_PATH = "/auth/health";
 const HEALTH_AUTHORIZE_PATH = "/auth/health/authorize";
 const HEALTH_ACCESS_PATH = "/auth/health/access";
+const DRIVE_PATH = "/auth/drive";
 const SESSION_TOKEN_STORAGE_KEY = "auth:session-token";
 const ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY = "auth:encrypted-health-token";
+const ENCRYPTED_DRIVE_TOKEN_STORAGE_KEY = "auth:encrypted-drive-token";
 
 function toBase64Url(value: object) {
   return Buffer.from(JSON.stringify(value))
@@ -66,9 +68,11 @@ function fakeSessionToken({
 function setStoredSession({
   sessionToken = fakeSessionToken(),
   encryptedHealthToken = "encrypted-jwt",
+  encryptedDriveToken = null as string | null,
 }: {
   sessionToken?: string | null;
   encryptedHealthToken?: string | null;
+  encryptedDriveToken?: string | null;
 } = {}) {
   if (sessionToken) {
     localStorage.setItem(SESSION_TOKEN_STORAGE_KEY, sessionToken);
@@ -83,6 +87,15 @@ function setStoredSession({
     );
   } else {
     localStorage.removeItem(ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY);
+  }
+
+  if (encryptedDriveToken) {
+    localStorage.setItem(
+      ENCRYPTED_DRIVE_TOKEN_STORAGE_KEY,
+      encryptedDriveToken,
+    );
+  } else {
+    localStorage.removeItem(ENCRYPTED_DRIVE_TOKEN_STORAGE_KEY);
   }
 }
 
@@ -297,6 +310,7 @@ describe("revokeAuthorization", () => {
         body: JSON.stringify({ encrypted_health_token: "encrypted-jwt" }),
       }),
     );
+    expect(fetchMock).not.toHaveBeenCalledWith(DRIVE_PATH, expect.anything());
     expect(fetchMock).toHaveBeenCalledWith(
       SESSION_ALL_PATH,
       expect.objectContaining({
@@ -308,6 +322,28 @@ describe("revokeAuthorization", () => {
     );
     expect(localStorage.getItem(SESSION_TOKEN_STORAGE_KEY)).toBeNull();
     expect(localStorage.getItem(ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY)).toBeNull();
+  });
+
+  it("also revokes the drive token when one is stored", async () => {
+    const sessionToken = fakeSessionToken();
+    setStoredSession({
+      sessionToken,
+      encryptedHealthToken: "encrypted-jwt",
+      encryptedDriveToken: "encrypted-drive-jwt",
+    });
+
+    await revokeAuthorization();
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      DRIVE_PATH,
+      expect.objectContaining({
+        method: "DELETE",
+        body: JSON.stringify({
+          encrypted_drive_token: "encrypted-drive-jwt",
+        }),
+      }),
+    );
+    expect(localStorage.getItem(ENCRYPTED_DRIVE_TOKEN_STORAGE_KEY)).toBeNull();
   });
 
   it("skips health revoke when there is no encrypted health token", async () => {

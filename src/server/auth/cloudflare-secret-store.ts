@@ -22,6 +22,8 @@ declare global {
     SESSION_ACCEPTED_KEYS?: SecretsStoreSecretBinding;
     HEALTH_ACTIVE_KEY?: SecretsStoreSecretBinding;
     HEALTH_ACCEPTED_KEYS?: SecretsStoreSecretBinding;
+    DRIVE_ACTIVE_KEY?: SecretsStoreSecretBinding;
+    DRIVE_ACCEPTED_KEYS?: SecretsStoreSecretBinding;
   }
 }
 

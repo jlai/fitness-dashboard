@@ -1,4 +1,5 @@
 import {
+  getDriveSecretStore,
   getHealthSecretStore,
   getSessionSecretStore,
 } from "./get-secret-store";
@@ -6,6 +7,7 @@ import { getTokenSecretStoreConfig } from "./secret-store";
 
 export type { SymmetricTokenKey } from "./secret-store";
 export {
+  getDriveSecretStore,
   getHealthSecretStore,
   getSessionSecretStore,
   resetSecretStores,
@@ -147,7 +149,11 @@ export async function assertServerEnv() {
   const secretStoreConfig = getTokenSecretStoreConfig();
 
   if (secretStoreConfig.backend === "env") {
-    for (const name of ["SESSION_ACTIVE_KEY", "HEALTH_ACTIVE_KEY"] as const) {
+    for (const name of [
+      "SESSION_ACTIVE_KEY",
+      "HEALTH_ACTIVE_KEY",
+      "DRIVE_ACTIVE_KEY",
+    ] as const) {
       if (!isEnvConfigured(name)) {
         missing.push(name);
       }
@@ -168,4 +174,5 @@ export async function assertServerEnv() {
   getRevocationDatabaseConfig();
   await getSessionSecretStore().getActiveKey();
   await getHealthSecretStore().getActiveKey();
+  await getDriveSecretStore().getActiveKey();
 }

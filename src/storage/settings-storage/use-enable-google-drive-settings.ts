@@ -3,8 +3,7 @@
 import { useCallback } from "react";
 import { useConfirm } from "material-ui-confirm";
 
-import { useGoogleLoginAndAuthorization } from "@/api/auth";
-import { DRIVE_APPDATA } from "@/config/google-drive-scopes";
+import { useGoogleDriveAuthorization } from "@/api/auth";
 import { withErrorToaster } from "@/components/toast";
 import type { SettingsStorageKey } from "./keys";
 import {
@@ -13,18 +12,16 @@ import {
 } from "./reconcile-on-drive-enable";
 
 /**
- * Authorize drive.appdata, then merge Memory ↔ Drive settings.
- * One conflict dialog covers every key that exists on both sides.
+ * Authorize Drive (separate encrypted refresh token), then merge Memory ↔ Drive
+ * settings. One conflict dialog covers every key that exists on both sides.
  */
 export function useEnableGoogleDriveSettings() {
   const confirm = useConfirm();
-  const { loginToGoogleAndAuthorize, ready } = useGoogleLoginAndAuthorization({
-    additionalScopes: [DRIVE_APPDATA],
-  });
+  const { authorizeGoogleDrive, ready } = useGoogleDriveAuthorization();
 
   const enableGoogleDriveSettings = useCallback(
     withErrorToaster(async () => {
-      await loginToGoogleAndAuthorize();
+      await authorizeGoogleDrive();
 
       await reconcileMemoryAndDriveOnEnable({
         resolveConflicts: async (conflictingKeys: SettingsStorageKey[]) => {
@@ -43,7 +40,7 @@ export function useEnableGoogleDriveSettings() {
         },
       });
     }, "Failed to enable Google Drive settings"),
-    [confirm, loginToGoogleAndAuthorize],
+    [confirm, authorizeGoogleDrive],
   );
 
   return { enableGoogleDriveSettings, ready };

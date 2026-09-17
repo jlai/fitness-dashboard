@@ -4,6 +4,7 @@ import {
   getClientSecret,
   getConfiguredClientId,
   getConfiguredRedirectUri,
+  getDriveSecretStore,
   getHealthSecretStore,
   getRevocationDatabaseConfig,
   getSessionSecretStore,
@@ -28,15 +29,23 @@ const HEALTH_JWK = {
 describe("token secret stores", () => {
   const originalSession = process.env.SESSION_ACTIVE_KEY;
   const originalHealth = process.env.HEALTH_ACTIVE_KEY;
+  const originalDrive = process.env.DRIVE_ACTIVE_KEY;
   const originalSessionAccepted = process.env.SESSION_ACCEPTED_KEYS;
   const originalHealthAccepted = process.env.HEALTH_ACCEPTED_KEYS;
+  const originalDriveAccepted = process.env.DRIVE_ACCEPTED_KEYS;
   const originalStore = process.env.TOKEN_SECRET_STORE;
 
   beforeEach(() => {
     process.env.SESSION_ACTIVE_KEY = JSON.stringify(SESSION_JWK);
     process.env.HEALTH_ACTIVE_KEY = JSON.stringify(HEALTH_JWK);
+    process.env.DRIVE_ACTIVE_KEY = JSON.stringify({
+      ...HEALTH_JWK,
+      kid: "drive-test-1",
+      k: "AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI",
+    });
     delete process.env.SESSION_ACCEPTED_KEYS;
     delete process.env.HEALTH_ACCEPTED_KEYS;
+    delete process.env.DRIVE_ACCEPTED_KEYS;
     process.env.TOKEN_SECRET_STORE = "env://";
     resetSecretStores();
   });
@@ -44,21 +53,27 @@ describe("token secret stores", () => {
   afterEach(() => {
     process.env.SESSION_ACTIVE_KEY = originalSession;
     process.env.HEALTH_ACTIVE_KEY = originalHealth;
+    process.env.DRIVE_ACTIVE_KEY = originalDrive;
     process.env.SESSION_ACCEPTED_KEYS = originalSessionAccepted;
     process.env.HEALTH_ACCEPTED_KEYS = originalHealthAccepted;
+    process.env.DRIVE_ACCEPTED_KEYS = originalDriveAccepted;
     process.env.TOKEN_SECRET_STORE = originalStore;
     resetSecretStores();
   });
 
-  it("loads separate session and health keys by kid", async () => {
+  it("loads separate session, health, and drive keys by kid", async () => {
     const session = await getSessionSecretStore().getActiveKey();
     const health = await getHealthSecretStore().getActiveKey();
+    const drive = await getDriveSecretStore().getActiveKey();
 
     expect(session.kid).toBe("session-test-1");
     expect(health.kid).toBe("refresh-test-1");
+    expect(drive.kid).toBe("drive-test-1");
     expect(session.key).toHaveLength(32);
     expect(health.key).toHaveLength(32);
+    expect(drive.key).toHaveLength(32);
     expect(session.key).not.toEqual(health.key);
+    expect(health.key).not.toEqual(drive.key);
 
     await expect(
       getSessionSecretStore().getKeyById("session-test-1"),
@@ -66,6 +81,9 @@ describe("token secret stores", () => {
     await expect(
       getHealthSecretStore().getKeyById("refresh-test-1"),
     ).resolves.toEqual(health);
+    await expect(
+      getDriveSecretStore().getKeyById("drive-test-1"),
+    ).resolves.toEqual(drive);
   });
 
   it("uses ACTIVE_KEY for new tokens and ACCEPTED_KEYS for previous keys", async () => {
@@ -250,6 +268,7 @@ describe("required server env", () => {
       process.env.GOOGLE_OAUTH_PROXY_ALLOWED_ORIGIN,
     SESSION_ACTIVE_KEY: process.env.SESSION_ACTIVE_KEY,
     HEALTH_ACTIVE_KEY: process.env.HEALTH_ACTIVE_KEY,
+    DRIVE_ACTIVE_KEY: process.env.DRIVE_ACTIVE_KEY,
     TOKEN_SECRET_STORE: process.env.TOKEN_SECRET_STORE,
     SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES:
       process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES,
