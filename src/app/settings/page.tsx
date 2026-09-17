@@ -83,6 +83,7 @@ import {
   useUnits,
 } from "@/config/units";
 import { showSuccessToast, withErrorToaster } from "@/components/toast";
+import Link from "next/link";
 
 function SettingsRow({
   title,
@@ -228,10 +229,19 @@ function LoggedInAccountSettings() {
             </Button>
           )
         }
+        component="div"
       >
-        Store dashboard layouts, settings, goals, meals, and custom foods in
-        your Google Drive app data folder so that they don&apos;t get lost when
-        you sign out.
+        <div className="space-y-4">
+          <p>
+            Allow this website to store settings in your Google Drive. This
+            allows you to customize your dashboard and have the settings backed
+            up to the cloud. See the{" "}
+            <Link href="/about" className="underline">
+              FAQ
+            </Link>{" "}
+            for more details.
+          </p>
+        </div>
       </SettingsRow>
       <SettingsRow
         title="Unlink Google account"

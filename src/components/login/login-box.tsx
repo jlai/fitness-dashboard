@@ -63,8 +63,8 @@ function PermissionsTable() {
     <Table size="small">
       <TableBody>
         <PermissionInfo title="Name and email">
-          Automatically requested by the Sign In With Google button (we have no
-          ability to disable this), but not used or collected by this website.
+          Used by the Sign In With Google button to show which account
+          you&apos;re signing in with.
         </PermissionInfo>
         <PermissionInfo title="Activity and fitness">
           Display steps, activities, calories burned, and other stats, and log
@@ -216,8 +216,8 @@ export default function LoginBox() {
                 activities and other data.
               </Typography>
               <Typography variant="body1">
-                This works entirely in your browser. No signups, no data
-                collection, no ads.{" "}
+                Your health data stays entirely in your browser. No signups, no
+                data collection, no ads.{" "}
                 {PRIVACY_POLICY_LINK && (
                   <span>
                     View our{" "}
@@ -252,8 +252,8 @@ export default function LoginBox() {
                 <StepLabel>Authorize access to Google Health</StepLabel>
                 <StepContent>
                   <Typography variant="body1" marginBottom={2}>
-                    You&apos;re signed in with Google. Next, grant access to
-                    Google Health data.
+                    You&apos;re signed in with Google. Next, grant access to view your
+                    Google Health data and log new activities and other data.
                   </Typography>
                   <Button
                     variant="contained"
@@ -277,12 +277,12 @@ export default function LoginBox() {
                     <StaySignedInOption
                       value="dont-stay"
                       label="Don't stay signed in"
-                      description="Use this on a shared or public computer. You will need to sign in every time you open this page."
+                      description="Select this option if you&apos;re using a shared or public computer. You will need to sign in every time you open this page."
                     />
                     <StaySignedInOption
                       value="remember"
                       label="Remember me on this computer"
-                      description="Save local settings and quickly log in when returning to this page."
+                      description="Stay logged in and quickly log in again when returning to this page in the future."
                     />
                   </RadioGroup>
                   <Button

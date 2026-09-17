@@ -16,10 +16,10 @@ export default function AboutPage() {
       <section className="space-y-4">
         <Typography variant="h4">Introduction</Typography>
         <Typography variant="body2">
-          A dashboard for viewing stats from your Google Health account, managing and
-          logging meals, viewing maps of your runs, and more. This is an early
-          preview. There are likely to be bugs and some data may not be
-          displayed accurately.
+          A dashboard for viewing stats from your Google Health account,
+          managing and logging meals, viewing maps of your runs, and more. This
+          is an early preview. There are likely to be bugs and some data may not
+          be displayed accurately.
         </Typography>
         <Typography variant="body2">
           This is a volunteer effort created by Fitbit users, for Fitbit users.
@@ -68,11 +68,11 @@ export default function AboutPage() {
           When you connect with Google, we will open a new window to log into
           your Google Account. You&apos;ll be asked to grant permission to this
           website for your Google Health data, and you can choose what types of
-          data you would like to authorize access for. Google then redirects
-          back to this site with an access token, which is stored locally in
-          your browser. This token allows your browser to request data from
-          Google&apos;s servers without syncing it to another account or server
-          like some other 3rd party services.
+          data you would like to authorize access for. The authentication token
+          is sent to our server and encrypted, and sent back to your browser
+          where it is stored locally. This ensures that our server does not have
+          access to your authentication token or health data except briefly when you
+          visit the website, while keeping your authentication token secure.
         </Typography>
         <Typography variant="body2">
           Some features, such as displaying maps of runs, may send coordinates
@@ -126,6 +126,38 @@ export default function AboutPage() {
                 Contact
               </Button>
             )}
+          </AccordionDetails>
+        </Accordion>
+        <Accordion>
+          <AccordionSummary expandIcon={<ArrowDropDown />}>
+            How does this website use Google Drive permissions?
+          </AccordionSummary>
+          <AccordionDetails>
+            <div className="space-y-2">
+              <p>
+                In order to make sure that settings don't get lost when you sign
+                out, we store your settings (dashboard layout, meals, etc.) in a
+                hidden folder in your Google Drive.
+              </p>
+              <p>
+                The permission you grant when you enable the Google Drive
+                integration will only allow this website to read and write to
+                this folder, and will not be able to access any other data in
+                your Google Drive.
+              </p>
+              <p>
+                To delete this folder, you can go to your{" "}
+                <a
+                  href="https://drive.google.com/drive/settings"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline"
+                >
+                  Google Drive settings
+                </a>{" "}
+                and select "Manage apps".
+              </p>
+            </div>
           </AccordionDetails>
         </Accordion>
       </section>
