@@ -23,6 +23,7 @@ import { RESET } from "jotai/utils";
 import { useConfirm } from "material-ui-confirm";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
+import NextLink from "next/link";
 
 import { userTilesAtom } from "@/storage/tiles";
 import {
@@ -39,6 +40,7 @@ import { GoogleSignInButton } from "@/components/login/google-sign-in-button";
 import { useSignOut } from "@/components/login/use-sign-out";
 import { useSwitchAccounts } from "@/components/login/use-switch-accounts";
 import { DRIVE_APPDATA } from "@/config/google-drive-scopes";
+import { useEnableGoogleDriveSettings } from "@/storage/settings-storage";
 import {
   DistanceUnitSystem,
   SettingsDistanceUnit,
@@ -162,10 +164,8 @@ function LoggedInAccountSettings() {
   const handleLogout = useSignOut();
   const missingDriveScopes = useMissingScopes([DRIVE_APPDATA]);
   const driveEnabled = missingDriveScopes.length === 0;
-  const { loginToGoogleAndAuthorize, ready: driveAuthReady } =
-    useGoogleLoginAndAuthorization({
-      additionalScopes: [DRIVE_APPDATA],
-    });
+  const { enableGoogleDriveSettings, ready: driveAuthReady } =
+    useEnableGoogleDriveSettings();
 
   const unlinkAccount = () => {
     confirm({
@@ -212,7 +212,7 @@ function LoggedInAccountSettings() {
             <Button disabled>Enabled</Button>
           ) : (
             <Button
-              onClick={() => loginToGoogleAndAuthorize()}
+              onClick={() => void enableGoogleDriveSettings()}
               disabled={!driveAuthReady}
             >
               Enable
@@ -221,7 +221,8 @@ function LoggedInAccountSettings() {
         }
       >
         Store dashboard layouts, settings, goals, meals, and custom foods in
-        your Google Drive app data folder so they sync across devices.
+        your Google Drive app data folder so that they don&apos;t get lost when
+        you sign out.
       </SettingsRow>
       <SettingsRow
         title="Unlink Google account"
@@ -1166,6 +1167,17 @@ function AdvancedSettings() {
       >
         Erase all saved goals, meals, and settings stored in this browser. This
         also signs you out.
+      </SettingsRow>
+      <SettingsRow
+        title="Migrate settings"
+        action={
+          <Button href="/settings/migration" LinkComponent={NextLink}>
+            Open
+          </Button>
+        }
+      >
+        Import dashboard layout, preferences, goals, meals, and custom foods
+        previously stored in this browser into Google Drive or session storage.
       </SettingsRow>
     </>
   );

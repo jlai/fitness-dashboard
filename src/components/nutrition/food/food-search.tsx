@@ -25,8 +25,8 @@ import { buildSearchFoodsQuery } from "@/api/nutrition/search";
 import { Food } from "@/api/nutrition";
 import { mapFoodDataPoint } from "@/api/nutrition/helpers";
 import { formatFoodName } from "@/utils/other-formats";
-import { db as dashDb } from "@/storage/db/dashdb";
-import { importFromFitbitMigrationDb } from "@/storage/db/import-from-fitbit-migration";
+import { customFoodsAtom } from "@/storage/custom-foods";
+import { getDefaultStore } from "jotai";
 
 type FoodOption = Food & {
   recent?: boolean;
@@ -52,9 +52,9 @@ function buildSavedFoodsQuery() {
   return queryOptions({
     queryKey: ["saved-foods"],
     queryFn: async (): Promise<FoodOption[]> => {
-      await importFromFitbitMigrationDb();
-      const dataPoints = await dashDb.clientOnlyFoods.toArray();
-      return dataPoints.map((dataPoint) => mapFoodDataPoint(dataPoint));
+      const store = getDefaultStore();
+      const { customFoods } = await store.get(customFoodsAtom);
+      return customFoods.map((dataPoint) => mapFoodDataPoint(dataPoint));
     },
   });
 }

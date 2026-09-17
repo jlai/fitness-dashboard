@@ -1,11 +1,17 @@
 import { queryOptions } from "@tanstack/react-query";
 import { queryClientAtom } from "jotai-tanstack-query";
-import { atom } from "jotai";
+import { atom, getDefaultStore } from "jotai";
+
+import { customFoodsAtom } from "@/storage/custom-foods";
 
 import { ONE_HOUR_IN_MILLIS } from "../cache-settings";
 import { listDataPoints, listDataPointsPage } from "../datapoints";
 
-import { mapFoodDataPoints, mapFoodMeasurementUnit } from "./helpers";
+import {
+  mapFoodDataPoint,
+  mapFoodDataPoints,
+  mapFoodMeasurementUnit,
+} from "./helpers";
 import { Food, FoodUnit, SearchFoodsResponse } from "./types";
 
 type FoodList = Array<Food>;
@@ -63,8 +69,21 @@ export function buildCustomFoodsQuery() {
   return queryOptions({
     queryKey: ["custom-foods"],
     queryFn: async () => {
-      const foods = await listAvailableFoods();
-      return foods.filter((food) => food.accessLevel === "PRIVATE");
+      const store = getDefaultStore();
+      const { customFoods } = await store.get(customFoodsAtom);
+      const fromStorage = customFoods.map((dataPoint) =>
+        mapFoodDataPoint(dataPoint),
+      );
+
+      if (!ENABLE_LIST_AVAILABLE_FOODS) {
+        return fromStorage;
+      }
+
+      const remote = await listAvailableFoods();
+      const privateRemote = remote.filter(
+        (food) => food.accessLevel === "PRIVATE",
+      );
+      return [...fromStorage, ...privateRemote];
     },
     staleTime: ONE_HOUR_IN_MILLIS,
   });

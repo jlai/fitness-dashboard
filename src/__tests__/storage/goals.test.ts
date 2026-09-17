@@ -8,7 +8,8 @@ import {
   migrationGoalToClientGoal,
   resetImportFromFitbitMigrationDb,
 } from "@/storage/db/import-from-fitbit-migration";
-import { getGoalsAtom } from "@/storage/goals";
+import { getGoalsAtom, goalsAtom } from "@/storage/goals";
+import { resetSettingsStorageSingletonsForTests } from "@/storage/settings-storage";
 
 async function resetDatabases() {
   resetImportFromFitbitMigrationDb();
@@ -112,12 +113,12 @@ describe("importFromFitbitMigrationDb goals", () => {
 });
 
 describe("getGoalsAtom", () => {
-  beforeEach(async () => {
+  beforeEach(() => {
     localStorage.clear();
-    await resetDatabases();
+    resetSettingsStorageSingletonsForTests();
   });
 
-  it("returns undefined when no goal is stored and ignores localStorage", () => {
+  it("returns undefined when no goal is stored and ignores localStorage", async () => {
     localStorage.setItem("goals:steps", "99999");
     localStorage.setItem(
       "goals:distance",
@@ -129,46 +130,29 @@ describe("getGoalsAtom", () => {
 
     const store = createStore();
     const stepsAtom = getGoalsAtom("steps", "daily");
-    const unsub = store.sub(stepsAtom, () => {});
 
-    expect(store.get(stepsAtom)).toBeUndefined();
-    expect(store.get(getGoalsAtom("distance", "daily"))).toBeUndefined();
-    expect(store.get(getGoalsAtom("waterVolume", "weekly"))).toBeUndefined();
-
-    unsub();
+    expect(await store.get(stepsAtom)).toBeUndefined();
+    expect(await store.get(getGoalsAtom("distance", "daily"))).toBeUndefined();
+    expect(
+      await store.get(getGoalsAtom("waterVolume", "weekly")),
+    ).toBeUndefined();
   });
 
-  it("reads a stored ClientGoal from dashdb", async () => {
-    await dashDb.clientOnlyGoals.put({
+  it("reads and writes a ClientGoal through the goals blob", async () => {
+    const store = createStore();
+    const stepsAtom = getGoalsAtom("steps", "daily");
+
+    await store.set(stepsAtom, { value: 7500, unit: "" });
+
+    expect(await store.get(stepsAtom)).toEqual({
       metric: "steps",
       period: "daily",
       value: 7500,
       unit: "",
     });
 
-    const store = createStore();
-    const stepsAtom = getGoalsAtom("steps", "daily");
-
-    await new Promise<void>((resolve, reject) => {
-      const timeout = setTimeout(
-        () => reject(new Error("timed out waiting for stored goal")),
-        1000,
-      );
-      const unsub = store.sub(stepsAtom, () => {
-        if (store.get(stepsAtom)?.value === 7500) {
-          clearTimeout(timeout);
-          unsub();
-          resolve();
-        }
-      });
-      if (store.get(stepsAtom)?.value === 7500) {
-        clearTimeout(timeout);
-        unsub();
-        resolve();
-      }
-    });
-
-    expect(store.get(stepsAtom)).toEqual({
+    const blob = await store.get(goalsAtom);
+    expect(blob.goals).toContainEqual({
       metric: "steps",
       period: "daily",
       value: 7500,

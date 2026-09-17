@@ -88,7 +88,8 @@
     "react-use": "^17.5.0",
     "svg-plant": "^2.0.5",
     "usehooks-ts": "^3.1.0",
-    "wonka": "^6.3.4"
+    "wonka": "^6.3.4",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.24.7",

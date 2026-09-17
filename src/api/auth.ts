@@ -63,7 +63,7 @@ let memoryEncryptedHealthToken: string | null = null;
 export const pendingRememberMeChoiceAtom = atom(false);
 
 /** Space-separated Google Health scopes from the latest access-token response. */
-const grantedScopesAtom = atom<string | undefined>(undefined);
+export const grantedScopesAtom = atom<string | undefined>(undefined);
 
 function readSessionTokenFromLocalStorage() {
   if (typeof localStorage === "undefined") {
@@ -166,6 +166,11 @@ function getAuthSession(): AuthSession {
 
 function getCachedGrantedScope() {
   return getDefaultStore().get(grantedScopesAtom);
+}
+
+/** Raw space-separated scope string from the latest access-token response. */
+export function getGrantedScopesRaw(): string | undefined {
+  return getCachedGrantedScope();
 }
 
 function setGrantedScope(scope: string | undefined) {
@@ -651,7 +656,7 @@ export async function forceTokenRefresh() {
   return requestAccessToken();
 }
 
-const authSessionAtom = atom<AuthSession>(getAuthSession());
+export const authSessionAtom = atom<AuthSession>(getAuthSession());
 
 /** Watch for localStorage and in-memory auth changes. */
 export const syncAuthTokenEffect = atomEffect((get, set) => {

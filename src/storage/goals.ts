@@ -1,9 +1,16 @@
+"use client";
+
 import { atom } from "jotai";
 import { atomFamily } from "jotai-family";
-import { liveQuery } from "dexie";
 
-import { db, type ClientGoal, type GoalPeriod } from "@/storage/db/dashdb";
-import { importFromFitbitMigrationDb } from "@/storage/db/import-from-fitbit-migration";
+import {
+  createDefaultGoalsData,
+  createSettingsBlobAtom,
+  goalsStoredSchema,
+  SETTINGS_STORAGE_KEYS,
+  type GoalsData,
+} from "@/storage/settings-storage";
+import type { ClientGoal, GoalPeriod } from "@/storage/db/dashdb";
 
 export type { ClientGoal, GoalPeriod };
 
@@ -20,38 +27,60 @@ export type GoalMetric =
 
 export type GoalWrite = Pick<ClientGoal, "value" | "unit">;
 
+export const goalsAtom = createSettingsBlobAtom({
+  key: SETTINGS_STORAGE_KEYS.goals,
+  schema: goalsStoredSchema,
+  defaultData: createDefaultGoalsData,
+});
+
 interface GoalAtomParam {
   metric: GoalMetric;
   period: GoalPeriod;
 }
 
+function findGoal(
+  data: GoalsData,
+  metric: GoalMetric,
+  period: GoalPeriod,
+): ClientGoal | undefined {
+  return data.goals.find(
+    (goal) => goal.metric === metric && goal.period === period,
+  );
+}
+
 const goalsAtomFamily = atomFamily(
   ({ metric, period }: GoalAtomParam) => {
-    const storedGoalAtom = atom<ClientGoal | undefined>(undefined);
-
-    storedGoalAtom.onMount = (setStoredGoal) => {
-      void importFromFitbitMigrationDb();
-
-      const subscription = liveQuery(() =>
-        db.clientOnlyGoals.get([metric, period]),
-      ).subscribe({
-        next: (goal) => setStoredGoal(goal),
-      });
-
-      return () => subscription.unsubscribe();
-    };
-
     return atom(
-      (get) => get(storedGoalAtom),
-      (_get, set, update: GoalWrite) => {
-        const next: ClientGoal = {
-          metric,
-          period,
-          value: update.value,
-          unit: update.unit,
-        };
-        set(storedGoalAtom, next);
-        void db.clientOnlyGoals.put(next);
+      (get) => {
+        const dataOrPromise = get(goalsAtom);
+
+        if (dataOrPromise instanceof Promise) {
+          return dataOrPromise.then((data) => findGoal(data, metric, period));
+        }
+
+        return findGoal(dataOrPromise, metric, period);
+      },
+      async (_get, set, update: GoalWrite) => {
+        await set(goalsAtom, (prev) => {
+          const goals = [...prev.goals];
+          const index = goals.findIndex(
+            (goal) => goal.metric === metric && goal.period === period,
+          );
+          const next: ClientGoal = {
+            metric,
+            period,
+            value: update.value,
+            unit: update.unit,
+          };
+
+          if (index >= 0) {
+            goals[index] = next;
+          } else {
+            goals.push(next);
+          }
+
+          return { goals };
+        });
       },
     );
   },

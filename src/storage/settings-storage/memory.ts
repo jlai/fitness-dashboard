@@ -9,6 +9,14 @@ import {
 export class MemorySettingsStorage implements SettingsStorage {
   private readonly store = new Map<string, StoredData<unknown>>();
 
+  /** Synchronously seed a key (tests / e2e init). */
+  seedSync<T>(key: string, data: T, version = 1): StoredData<T> {
+    assertValidSettingsKey(key);
+    const stored = wrapStoredData(data, version);
+    this.store.set(key, stored);
+    return stored;
+  }
+
   async get<T>(key: string): Promise<StoredData<T> | null> {
     assertValidSettingsKey(key);
     const value = this.store.get(key);

@@ -1,107 +1,49 @@
 import { createStore, type Atom } from "jotai";
 
+import { SettingsWeightUnit } from "@/api/user";
 import {
-  SettingsDistanceUnit,
-  SettingsSwimUnit,
-  SettingsTemperatureUnit,
-  SettingsWaterUnit,
-  SettingsWeightUnit,
-} from "@/api/user";
-import {
-  distanceUnitAtom,
-  swimUnitAtom,
-  temperatureUnitAtom,
-  waterUnitAtom,
+  settingsBlobAtom,
   weightUnitAtom,
 } from "@/storage/settings";
+import { resetSettingsStorageSingletonsForTests } from "@/storage/settings-storage";
 
-function readMounted<T>(atom: Atom<T>): T {
+async function readAsync<T>(atom: Atom<T | Promise<T>>): Promise<T> {
   const store = createStore();
   const unsub = store.sub(atom, () => {});
   try {
-    return store.get(atom);
+    return await store.get(atom);
   } finally {
     unsub();
   }
 }
 
-describe("unit storage key migration", () => {
+describe("settings field atoms", () => {
   beforeEach(() => {
+    resetSettingsStorageSingletonsForTests();
     localStorage.clear();
   });
 
-  it("copies Fitbit locale values from unit:* to units:*", () => {
+  it("defaults unit prefs to undefined (no localStorage migration)", async () => {
     localStorage.setItem("unit:weight", JSON.stringify("en_US"));
-    localStorage.setItem("unit:water", JSON.stringify("METRIC"));
-    localStorage.setItem("unit:distance", JSON.stringify("en_US"));
-    localStorage.setItem("unit:swim", JSON.stringify("METRIC"));
-    localStorage.setItem("unit:temperature", JSON.stringify("en_US"));
-
-    expect(readMounted(weightUnitAtom)).toBe(
-      SettingsWeightUnit.WEIGHT_UNIT_POUNDS,
-    );
-    expect(readMounted(waterUnitAtom)).toBe(SettingsWaterUnit.WATER_UNIT_ML);
-    expect(readMounted(distanceUnitAtom)).toBe(
-      SettingsDistanceUnit.DISTANCE_UNIT_MILES,
-    );
-    expect(readMounted(swimUnitAtom)).toBe(SettingsSwimUnit.SWIM_UNIT_METERS);
-    expect(readMounted(temperatureUnitAtom)).toBe(
-      SettingsTemperatureUnit.TEMPERATURE_UNIT_FAHRENHEIT,
-    );
-
-    expect(localStorage.getItem("units:weight")).toBe(
-      JSON.stringify(SettingsWeightUnit.WEIGHT_UNIT_POUNDS),
-    );
-    expect(localStorage.getItem("units:water")).toBe(
-      JSON.stringify(SettingsWaterUnit.WATER_UNIT_ML),
-    );
-    expect(localStorage.getItem("units:distance")).toBe(
-      JSON.stringify(SettingsDistanceUnit.DISTANCE_UNIT_MILES),
-    );
-    expect(localStorage.getItem("units:swim")).toBe(
-      JSON.stringify(SettingsSwimUnit.SWIM_UNIT_METERS),
-    );
-    expect(localStorage.getItem("units:temperature")).toBe(
-      JSON.stringify(SettingsTemperatureUnit.TEMPERATURE_UNIT_FAHRENHEIT),
-    );
-
-    expect(localStorage.getItem("unit:weight")).toBeNull();
-    expect(localStorage.getItem("unit:water")).toBeNull();
-    expect(localStorage.getItem("unit:distance")).toBeNull();
-    expect(localStorage.getItem("unit:swim")).toBeNull();
-    expect(localStorage.getItem("unit:temperature")).toBeNull();
-  });
-
-  it("copies already-canonical values from unit:* to units:*", () => {
-    localStorage.setItem(
-      "unit:weight",
-      JSON.stringify(SettingsWeightUnit.WEIGHT_UNIT_STONE),
-    );
-
-    expect(readMounted(weightUnitAtom)).toBe(
-      SettingsWeightUnit.WEIGHT_UNIT_STONE,
-    );
-    expect(localStorage.getItem("units:weight")).toBe(
-      JSON.stringify(SettingsWeightUnit.WEIGHT_UNIT_STONE),
-    );
-    expect(localStorage.getItem("unit:weight")).toBeNull();
-  });
-
-  it("prefers units:* when both keys exist", () => {
     localStorage.setItem(
       "units:weight",
-      JSON.stringify(SettingsWeightUnit.WEIGHT_UNIT_KILOGRAMS),
-    );
-    localStorage.setItem(
-      "unit:weight",
       JSON.stringify(SettingsWeightUnit.WEIGHT_UNIT_POUNDS),
     );
 
-    expect(readMounted(weightUnitAtom)).toBe(
+    expect(await readAsync(weightUnitAtom)).toBeUndefined();
+  });
+
+  it("reads and writes weight unit through the settings blob", async () => {
+    const store = createStore();
+    await store.set(weightUnitAtom, SettingsWeightUnit.WEIGHT_UNIT_KILOGRAMS);
+
+    expect(await store.get(weightUnitAtom)).toBe(
       SettingsWeightUnit.WEIGHT_UNIT_KILOGRAMS,
     );
-    expect(localStorage.getItem("unit:weight")).toBe(
-      JSON.stringify(SettingsWeightUnit.WEIGHT_UNIT_POUNDS),
+
+    const blob = await store.get(settingsBlobAtom);
+    expect(blob.settings.weightUnit).toBe(
+      SettingsWeightUnit.WEIGHT_UNIT_KILOGRAMS,
     );
   });
 });

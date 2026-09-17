@@ -1,12 +1,13 @@
 import { queryOptions, QueryClient } from "@tanstack/react-query";
+import { getDefaultStore } from "jotai";
 
-import { db as dashDb } from "@/storage/db/dashdb";
 import type { ClientOnlyMeal, ClientOnlyMealFood } from "@/storage/db/dashdb";
 import {
   mealFoodFromResolvedFood,
   mealToClientOnlyMeal,
 } from "@/storage/db/fitbit-to-health";
-import { importFromFitbitMigrationDb } from "@/storage/db/import-from-fitbit-migration";
+import { customFoodsAtom } from "@/storage/custom-foods";
+import { mealsAtom } from "@/storage/meals";
 
 import { isValidDataPointId, getDataPoint } from "../datapoints";
 import mutationOptions from "../mutation-options";
@@ -17,6 +18,7 @@ import {
   foodToDataPoint,
   mapFoodDataPoint,
   mapFoodDataPoints,
+  type FoodDataPoint,
 } from "./helpers";
 import { Meal, MealFood } from "./types";
 
@@ -31,10 +33,20 @@ function placeholderFood(foodId: string): MealFood {
   };
 }
 
-async function resolveMealFood(item: ClientOnlyMealFood): Promise<MealFood> {
+function findLocalFood(
+  customFoods: FoodDataPoint[],
+  foodName: string,
+): FoodDataPoint | undefined {
+  return customFoods.find((food) => food.name === foodName);
+}
+
+async function resolveMealFood(
+  item: ClientOnlyMealFood,
+  customFoods: FoodDataPoint[],
+): Promise<MealFood> {
   const foodId = item.foodId;
   const foodName = foodResourceName(foodId);
-  const local = await dashDb.clientOnlyFoods.get(foodName);
+  const local = findLocalFood(customFoods, foodName);
 
   if (local) {
     return mealFoodFromResolvedFood(mapFoodDataPoint(local), item);
@@ -53,33 +65,48 @@ async function resolveMealFood(item: ClientOnlyMealFood): Promise<MealFood> {
   return mealFoodFromResolvedFood(placeholderFood(foodId), item);
 }
 
-async function hydrateMeal(meal: ClientOnlyMeal): Promise<Meal> {
+async function hydrateMeal(
+  meal: ClientOnlyMeal,
+  customFoods: FoodDataPoint[],
+): Promise<Meal> {
   return {
     id: meal.id,
     name: meal.name,
     description: meal.description,
-    mealFoods: await Promise.all(meal.foods.map(resolveMealFood)),
+    mealFoods: await Promise.all(
+      meal.foods.map((item) => resolveMealFood(item, customFoods)),
+    ),
   };
 }
 
 async function listMeals(): Promise<Meal[]> {
-  await importFromFitbitMigrationDb();
-  const meals = await dashDb.clientOnlyMeals.toArray();
-  return Promise.all(meals.map(hydrateMeal));
+  const store = getDefaultStore();
+  const [{ meals }, { customFoods }] = await Promise.all([
+    store.get(mealsAtom),
+    store.get(customFoodsAtom),
+  ]);
+  return Promise.all(meals.map((meal) => hydrateMeal(meal, customFoods)));
 }
 
-async function savePrivateMealFoods(meal: Meal) {
-  const privateFoods = meal.mealFoods.filter(
-    (food) => food.accessLevel === "PRIVATE",
-  );
+function privateFoodDataPoints(meal: Meal): FoodDataPoint[] {
+  return meal.mealFoods
+    .filter((food) => food.accessLevel === "PRIVATE")
+    .map((food) => foodToDataPoint(food));
+}
 
-  if (privateFoods.length === 0) {
-    return;
+function mergeCustomFoods(
+  existing: FoodDataPoint[],
+  additions: FoodDataPoint[],
+): FoodDataPoint[] {
+  if (additions.length === 0) {
+    return existing;
   }
 
-  await dashDb.clientOnlyFoods.bulkPut(
-    privateFoods.map((food) => foodToDataPoint(food)),
-  );
+  const byName = new Map(existing.map((food) => [food.name, food]));
+  for (const food of additions) {
+    byName.set(food.name, food);
+  }
+  return [...byName.values()];
 }
 
 function newMealId() {
@@ -87,20 +114,28 @@ function newMealId() {
 }
 
 async function saveMeal(meal: Meal): Promise<Meal> {
-  await importFromFitbitMigrationDb();
-
+  const store = getDefaultStore();
   const id = meal.id || newMealId();
   const stored = mealToClientOnlyMeal({ ...meal, id });
+  const privateFoods = privateFoodDataPoints({ ...meal, id });
 
-  await dashDb.transaction(
-    "rw",
-    dashDb.clientOnlyMeals,
-    dashDb.clientOnlyFoods,
-    async () => {
-      await dashDb.clientOnlyMeals.put(stored);
-      await savePrivateMealFoods({ ...meal, id });
-    },
-  );
+  const [{ meals }, { customFoods }] = await Promise.all([
+    store.get(mealsAtom),
+    store.get(customFoodsAtom),
+  ]);
+
+  const mealIndex = meals.findIndex((entry) => entry.id === id);
+  const nextMeals =
+    mealIndex >= 0
+      ? meals.map((entry, index) => (index === mealIndex ? stored : entry))
+      : [...meals, stored];
+
+  await store.set(mealsAtom, { meals: nextMeals });
+  if (privateFoods.length > 0) {
+    await store.set(customFoodsAtom, {
+      customFoods: mergeCustomFoods(customFoods, privateFoods),
+    });
+  }
 
   return { ...meal, id };
 }
@@ -116,6 +151,7 @@ export function buildMealsQuery() {
 function invalidateMealQueries(queryClient: QueryClient) {
   queryClient.invalidateQueries({ queryKey: ["meals"] });
   queryClient.invalidateQueries({ queryKey: ["saved-foods"] });
+  queryClient.invalidateQueries({ queryKey: ["custom-foods"] });
   queryClient.invalidateQueries({ queryKey: ["client-only-foods"] });
 }
 
@@ -157,7 +193,11 @@ export function buildUpdateMealMutation(queryClient: QueryClient) {
 export function buildDeleteMealMutation(queryClient: QueryClient) {
   return mutationOptions({
     mutationFn: async (mealId: string) => {
-      await dashDb.clientOnlyMeals.delete(mealId);
+      const store = getDefaultStore();
+      const { meals } = await store.get(mealsAtom);
+      await store.set(mealsAtom, {
+        meals: meals.filter((meal) => meal.id !== mealId),
+      });
     },
     onSuccess: (_data, mealId) => {
       const meals = queryClient.getQueryData<Array<Meal>>(["meals"]);

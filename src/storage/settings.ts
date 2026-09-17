@@ -1,139 +1,172 @@
-import { atom } from "jotai";
-import { atomWithStorage, createJSONStorage } from "jotai/utils";
+"use client";
+
+import { atom, type WritableAtom } from "jotai";
+import { RESET } from "jotai/utils";
 import { atomEffect } from "jotai-effect";
 
 import { NutritionMacroGoals } from "@/api/nutrition";
 import {
   DistanceUnitSystem,
-  parseDistanceUnit,
-  parseSwimUnit,
-  parseTemperatureUnit,
-  parseWaterUnit,
-  parseWeightUnit,
   SwimUnitSystem,
   TemperatureUnitSystem,
   WaterUnitSystem,
   WeightUnitSystem,
 } from "@/api/user";
 import {
+  createDefaultSettingsData,
+  createSettingsBlobAtom,
+  SETTINGS_STORAGE_KEYS,
+  settingsStoredSchema,
+  type SettingsPrefs,
+} from "@/storage/settings-storage";
+import {
   PATTERN_TO_LOCALE,
   setNumberFormatLocale,
 } from "@/utils/number-formats";
 import { setDateFormatLocale } from "@/utils/date-formats";
 
-/**
- * Reads canonical unit values from `units:*`. If missing, copies from the
- * legacy `unit:*` key (Fitbit locale codes or already-migrated enums), writes
- * the canonical value to `units:*`, and removes the old key.
- */
-function createMigratingUnitStorage<T>(
-  migrate: (value: unknown) => T | undefined,
-) {
-  const storage = createJSONStorage<T | undefined>();
+export type { SettingsPrefs };
 
-  return {
-    ...storage,
-    getItem(key: string, initialValue: T | undefined) {
-      try {
-        if (localStorage.getItem(key) !== null) {
-          return storage.getItem(key, initialValue);
-        }
+export const settingsBlobAtom = createSettingsBlobAtom({
+  key: SETTINGS_STORAGE_KEYS.settings,
+  schema: settingsStoredSchema,
+  defaultData: createDefaultSettingsData,
+});
 
-        const legacyKey = key.replace(/^units:/, "unit:");
-        if (legacyKey === key) {
-          return initialValue;
-        }
+type FieldUpdate<T> = T | ((prev: T) => T) | typeof RESET;
 
-        const legacyStored = localStorage.getItem(legacyKey);
-        if (legacyStored === null) {
-          return initialValue;
-        }
-
-        let parsed: unknown;
-        try {
-          parsed = JSON.parse(legacyStored);
-        } catch {
-          parsed = legacyStored;
-        }
-
-        const migrated = migrate(parsed);
-        localStorage.removeItem(legacyKey);
-
-        if (migrated === undefined) {
-          return initialValue;
-        }
-
-        localStorage.setItem(key, JSON.stringify(migrated));
-        return migrated;
-      } catch {
-        return initialValue;
-      }
-    },
-  };
+function isPromise<T>(value: T | Promise<T>): value is Promise<T> {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    typeof (value as Promise<T>).then === "function"
+  );
 }
 
-export const weightUnitAtom = atomWithStorage<WeightUnitSystem | undefined>(
-  "units:weight",
-  undefined,
-  createMigratingUnitStorage(parseWeightUnit),
-  {
-    getOnInit: true,
-  },
-);
+function createSettingsFieldAtom<K extends keyof SettingsPrefs>(
+  field: K,
+  defaultValue: NonNullable<SettingsPrefs[K]>,
+): WritableAtom<
+  NonNullable<SettingsPrefs[K]> | Promise<NonNullable<SettingsPrefs[K]>>,
+  [FieldUpdate<NonNullable<SettingsPrefs[K]>>],
+  Promise<void>
+> {
+  return atom(
+    (get) => {
+      const dataOrPromise = get(settingsBlobAtom);
 
-export const waterUnitAtom = atomWithStorage<WaterUnitSystem | undefined>(
-  "units:water",
-  undefined,
-  createMigratingUnitStorage(parseWaterUnit),
-  {
-    getOnInit: true,
-  },
-);
+      if (isPromise(dataOrPromise)) {
+        return dataOrPromise.then(
+          (data) =>
+            (data.settings[field] ?? defaultValue) as NonNullable<
+              SettingsPrefs[K]
+            >,
+        );
+      }
 
-export const distanceUnitAtom = atomWithStorage<DistanceUnitSystem | undefined>(
-  "units:distance",
-  undefined,
-  createMigratingUnitStorage(parseDistanceUnit),
-  {
-    getOnInit: true,
-  },
-);
+      return (dataOrPromise.settings[field] ?? defaultValue) as NonNullable<
+        SettingsPrefs[K]
+      >;
+    },
+    async (get, set, update: FieldUpdate<NonNullable<SettingsPrefs[K]>>) => {
+      const data = await get(settingsBlobAtom);
+      const prev = (data.settings[field] ?? defaultValue) as NonNullable<
+        SettingsPrefs[K]
+      >;
+      const next =
+        update === RESET
+          ? defaultValue
+          : typeof update === "function"
+            ? (update as (prev: NonNullable<SettingsPrefs[K]>) => NonNullable<
+                SettingsPrefs[K]
+              >)(prev)
+            : update;
 
-export const swimUnitAtom = atomWithStorage<SwimUnitSystem | undefined>(
-  "units:swim",
-  undefined,
-  createMigratingUnitStorage(parseSwimUnit),
-  {
-    getOnInit: true,
-  },
-);
+      await set(settingsBlobAtom, {
+        settings: {
+          ...data.settings,
+          [field]: next,
+        },
+      });
+    },
+  );
+}
 
-export const temperatureUnitAtom = atomWithStorage<
-  TemperatureUnitSystem | undefined
->(
-  "units:temperature",
-  undefined,
-  createMigratingUnitStorage(parseTemperatureUnit),
-  {
-    getOnInit: true,
-  },
-);
+function createOptionalSettingsFieldAtom<T>(
+  field: keyof SettingsPrefs,
+): WritableAtom<T | undefined | Promise<T | undefined>, [FieldUpdate<T | undefined>], Promise<void>> {
+  return atom(
+    (get) => {
+      const dataOrPromise = get(settingsBlobAtom);
 
-export const allUnitsConfiguredAtom = atom(
-  (get) => get(weightUnitAtom) && get(waterUnitAtom) && get(distanceUnitAtom),
-);
+      if (isPromise(dataOrPromise)) {
+        return dataOrPromise.then(
+          (data) => data.settings[field] as T | undefined,
+        );
+      }
 
-export const foodLogTotalsPositionAtom = atomWithStorage<
-  "top" | "bottom" | "both"
->("food-log:totals-position", "bottom", undefined, {
-  getOnInit: true,
+      return dataOrPromise.settings[field] as T | undefined;
+    },
+    async (get, set, update: FieldUpdate<T | undefined>) => {
+      const data = await get(settingsBlobAtom);
+      const prev = data.settings[field] as T | undefined;
+      const next =
+        update === RESET
+          ? undefined
+          : typeof update === "function"
+            ? (update as (prev: T | undefined) => T | undefined)(prev)
+            : update;
+
+      const settings = { ...data.settings };
+      if (next === undefined) {
+        delete settings[field];
+      } else {
+        (settings as Record<string, unknown>)[field] = next;
+      }
+
+      await set(settingsBlobAtom, { settings });
+    },
+  );
+}
+
+export const weightUnitAtom =
+  createOptionalSettingsFieldAtom<WeightUnitSystem>("weightUnit");
+
+export const waterUnitAtom =
+  createOptionalSettingsFieldAtom<WaterUnitSystem>("waterUnit");
+
+export const distanceUnitAtom =
+  createOptionalSettingsFieldAtom<DistanceUnitSystem>("distanceUnit");
+
+export const swimUnitAtom =
+  createOptionalSettingsFieldAtom<SwimUnitSystem>("swimUnit");
+
+export const temperatureUnitAtom =
+  createOptionalSettingsFieldAtom<TemperatureUnitSystem>("temperatureUnit");
+
+export const allUnitsConfiguredAtom = atom((get) => {
+  const weight = get(weightUnitAtom);
+  const water = get(waterUnitAtom);
+  const distance = get(distanceUnitAtom);
+
+  if (isPromise(weight) || isPromise(water) || isPromise(distance)) {
+    return Promise.all([weight, water, distance]).then(
+      ([w, wa, d]) => Boolean(w && wa && d),
+    );
+  }
+
+  return Boolean(weight && water && distance);
 });
 
-export const foodLogGoalsPositionAtom = atomWithStorage<
-  "hidden" | "top" | "bottom" | "both"
->("macro-goals:position", "hidden", undefined, {
-  getOnInit: true,
-});
+export const foodLogTotalsPositionAtom = createSettingsFieldAtom(
+  "foodLogTotalsPosition",
+  "bottom",
+);
+
+export const foodLogGoalsPositionAtom = createSettingsFieldAtom(
+  "foodLogGoalsPosition",
+  "hidden",
+);
 
 export const DEFAULT_FDA_MACRO_GOALS: NutritionMacroGoals = {
   calories: 2000,
@@ -144,91 +177,70 @@ export const DEFAULT_FDA_MACRO_GOALS: NutritionMacroGoals = {
   fat: 78,
 };
 
-export const macroGoalsAtom = atomWithStorage<NutritionMacroGoals>(
-  "nutrition-goals:macros",
+export const macroGoalsAtom = createSettingsFieldAtom(
+  "macroGoals",
   DEFAULT_FDA_MACRO_GOALS,
-  undefined,
-  { getOnInit: true },
 );
 
-export const showNutritionLabelAtom = atomWithStorage<boolean>(
-  "nutrition-facts:show-label",
+export const showNutritionLabelAtom = createSettingsFieldAtom(
+  "showNutritionLabel",
   false,
-  undefined,
-  {
-    getOnInit: true,
-  },
 );
 
-export const useNutritionGoalsForLabelAtom = atomWithStorage<boolean>(
-  "macro-goals:use-for-label",
+export const useNutritionGoalsForLabelAtom = createSettingsFieldAtom(
+  "useNutritionGoalsForLabel",
   false,
-  undefined,
-  {
-    getOnInit: true,
-  },
 );
 
-export const foodLogShowCopyIndividualButtonAtom = atomWithStorage<boolean>(
-  "food-log:show-copy-individual-button",
+export const foodLogShowCopyIndividualButtonAtom = createSettingsFieldAtom(
+  "foodLogShowCopyIndividualButton",
   false,
-  undefined,
-  {
-    getOnInit: true,
-  },
 );
 
-export const mapStyleAtom = atomWithStorage<string>(
-  "map:style",
-  "white",
-  undefined,
-  {
-    getOnInit: true,
-  },
-);
+export const mapStyleAtom = createSettingsFieldAtom("mapStyle", "white");
 
-export const increasedTileLimitsAtom = atomWithStorage<boolean>(
-  "dashboard:increased-tile-limits",
+export const increasedTileLimitsAtom = createSettingsFieldAtom(
+  "increasedTileLimits",
   false,
-  undefined,
-  {
-    getOnInit: true,
-  },
 );
 
-export const clockHourCycleAtom = atomWithStorage<
-  Intl.DateTimeFormatOptions["hourCycle"]
->("locale:clock-hour-cycle", undefined, undefined, {
-  getOnInit: true,
-});
+export const clockHourCycleAtom =
+  createOptionalSettingsFieldAtom<Intl.DateTimeFormatOptions["hourCycle"]>(
+    "clockHourCycle",
+  );
 
-export const dateFormatPatternAtom = atomWithStorage<string | undefined>(
-  "locale:date-format-pattern",
-  undefined,
-  undefined,
-  {
-    getOnInit: true,
-  },
-);
+export const dateFormatPatternAtom =
+  createOptionalSettingsFieldAtom<string>("dateFormatPattern");
 
 export const dateFormatAtomEffect = atomEffect((get) => {
-  const hourCycle = get(clockHourCycleAtom);
+  const hourCycleOrPromise = get(clockHourCycleAtom);
 
-  setDateFormatLocale(undefined, hourCycle);
+  if (isPromise(hourCycleOrPromise)) {
+    void hourCycleOrPromise.then((hourCycle) => {
+      setDateFormatLocale(undefined, hourCycle);
+    });
+    return;
+  }
+
+  setDateFormatLocale(undefined, hourCycleOrPromise);
 });
 
-export const numberFormatPatternAtom = atomWithStorage<string | undefined>(
-  "locale:number-format-pattern",
-  undefined,
-  undefined,
-  {
-    getOnInit: true,
-  },
-);
+export const numberFormatPatternAtom =
+  createOptionalSettingsFieldAtom<string>("numberFormatPattern");
 
 export const numberFormatAtomEffect = atomEffect((get) => {
-  const pattern = get(numberFormatPatternAtom);
-  const locale = pattern ? PATTERN_TO_LOCALE[pattern] : undefined;
+  const patternOrPromise = get(numberFormatPatternAtom);
 
+  if (isPromise(patternOrPromise)) {
+    void patternOrPromise.then((pattern) => {
+      const locale = pattern ? PATTERN_TO_LOCALE[pattern] : undefined;
+      setNumberFormatLocale(locale);
+    });
+    return;
+  }
+
+  const locale = patternOrPromise
+    ? PATTERN_TO_LOCALE[patternOrPromise]
+    : undefined;
   setNumberFormatLocale(locale);
 });
