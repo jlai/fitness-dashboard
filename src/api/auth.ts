@@ -36,9 +36,11 @@ const SESSION_PATH = withBasePath("/auth/session");
 const SESSION_CURRENT_PATH = withBasePath("/auth/session/current");
 const SESSION_ALL_PATH = withBasePath("/auth/session/all");
 const HEALTH_PATH = withBasePath("/auth/health");
+const HEALTH_CURRENT_PATH = withBasePath("/auth/health/current");
 const HEALTH_AUTHORIZE_PATH = withBasePath("/auth/health/authorize");
 const HEALTH_ACCESS_PATH = withBasePath("/auth/health/access");
 const DRIVE_PATH = withBasePath("/auth/drive");
+const DRIVE_CURRENT_PATH = withBasePath("/auth/drive/current");
 const DRIVE_AUTHORIZE_PATH = withBasePath("/auth/drive/authorize");
 const DRIVE_ACCESS_PATH = withBasePath("/auth/drive/access");
 
@@ -813,11 +815,22 @@ export function useGoogleDriveAuthorization({
 
 export async function logout() {
   const sessionToken = getSessionTokenFromStorage();
+  const encryptedHealthToken = getEncryptedHealthTokenFromStorage();
+  const encryptedDriveToken = getEncryptedDriveTokenFromStorage();
+
   disableGoogleAutoSelect();
   clearToken();
 
   if (!sessionToken) {
     return;
+  }
+
+  if (encryptedHealthToken) {
+    await revokeCurrentHealthToken(sessionToken, encryptedHealthToken);
+  }
+
+  if (encryptedDriveToken) {
+    await revokeCurrentDriveToken(sessionToken, encryptedDriveToken);
   }
 
   await revokeSession(sessionToken);
@@ -842,6 +855,44 @@ export async function revokeAuthorization() {
 
   if (sessionToken) {
     await revokeAllSessions(sessionToken);
+  }
+}
+
+async function revokeCurrentHealthToken(
+  sessionToken: string,
+  encryptedHealthToken: string,
+) {
+  try {
+    await fetch(HEALTH_CURRENT_PATH, {
+      method: "DELETE",
+      mode: "same-origin",
+      headers: {
+        Authorization: `Bearer ${sessionToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ encrypted_health_token: encryptedHealthToken }),
+    });
+  } catch (e) {
+    console.error("error revoking current health token", e);
+  }
+}
+
+async function revokeCurrentDriveToken(
+  sessionToken: string,
+  encryptedDriveToken: string,
+) {
+  try {
+    await fetch(DRIVE_CURRENT_PATH, {
+      method: "DELETE",
+      mode: "same-origin",
+      headers: {
+        Authorization: `Bearer ${sessionToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ encrypted_drive_token: encryptedDriveToken }),
+    });
+  } catch (e) {
+    console.error("error revoking current drive token", e);
   }
 }
 

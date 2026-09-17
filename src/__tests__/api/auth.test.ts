@@ -39,9 +39,11 @@ const SESSION_PATH = "/auth/session";
 const SESSION_CURRENT_PATH = "/auth/session/current";
 const SESSION_ALL_PATH = "/auth/session/all";
 const HEALTH_PATH = "/auth/health";
+const HEALTH_CURRENT_PATH = "/auth/health/current";
 const HEALTH_AUTHORIZE_PATH = "/auth/health/authorize";
 const HEALTH_ACCESS_PATH = "/auth/health/access";
 const DRIVE_PATH = "/auth/drive";
+const DRIVE_CURRENT_PATH = "/auth/drive/current";
 const SESSION_TOKEN_STORAGE_KEY = "auth:session-token";
 const ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY = "auth:encrypted-health-token";
 const ENCRYPTED_DRIVE_TOKEN_STORAGE_KEY = "auth:encrypted-drive-token";
@@ -104,12 +106,24 @@ function setStoredSession({
   }
 }
 
+/** Clear in-memory and persisted auth; await server revoke calls under a fetch mock. */
+async function resetAuthState() {
+  localStorage.clear();
+  const fetchMock = jest
+    .spyOn(global, "fetch")
+    .mockResolvedValue(new Response(null, { status: 204 }));
+  try {
+    await logout();
+  } finally {
+    fetchMock.mockRestore();
+  }
+}
+
 describe("createSession", () => {
   let fetchMock: jest.SpyInstance;
 
-  beforeEach(() => {
-    localStorage.clear();
-    logout();
+  beforeEach(async () => {
+    await resetAuthState();
     fetchMock = jest.spyOn(global, "fetch");
   });
 
@@ -189,9 +203,8 @@ describe("createSession", () => {
 describe("persistAuthTokens", () => {
   let fetchMock: jest.SpyInstance;
 
-  beforeEach(() => {
-    localStorage.clear();
-    logout();
+  beforeEach(async () => {
+    await resetAuthState();
     fetchMock = jest.spyOn(global, "fetch");
     loadGoogleOAuth2Mock.mockResolvedValue({
       initCodeClient: jest.fn((options) => ({
@@ -252,8 +265,8 @@ describe("persistAuthTokens", () => {
 describe("logout", () => {
   let fetchMock: jest.SpyInstance;
 
-  beforeEach(() => {
-    localStorage.clear();
+  beforeEach(async () => {
+    await resetAuthState();
     fetchMock = jest
       .spyOn(global, "fetch")
       .mockResolvedValue(new Response(null, { status: 204 }));
@@ -264,12 +277,36 @@ describe("logout", () => {
     localStorage.clear();
   });
 
-  it("revokes the session token then clears local auth state", async () => {
+  it("revokes current health/drive tokens and the session then clears local auth state", async () => {
     const sessionToken = fakeSessionToken();
-    setStoredSession({ sessionToken, encryptedHealthToken: "encrypted-jwt" });
+    setStoredSession({
+      sessionToken,
+      encryptedHealthToken: "encrypted-jwt",
+      encryptedDriveToken: "encrypted-drive-jwt",
+    });
 
     await logout();
 
+    expect(fetchMock).toHaveBeenCalledWith(
+      HEALTH_CURRENT_PATH,
+      expect.objectContaining({
+        method: "DELETE",
+        headers: expect.objectContaining({
+          Authorization: `Bearer ${sessionToken}`,
+        }),
+        body: JSON.stringify({ encrypted_health_token: "encrypted-jwt" }),
+      }),
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
+      DRIVE_CURRENT_PATH,
+      expect.objectContaining({
+        method: "DELETE",
+        headers: expect.objectContaining({
+          Authorization: `Bearer ${sessionToken}`,
+        }),
+        body: JSON.stringify({ encrypted_drive_token: "encrypted-drive-jwt" }),
+      }),
+    );
     expect(fetchMock).toHaveBeenCalledWith(
       SESSION_CURRENT_PATH,
       expect.objectContaining({
@@ -279,16 +316,41 @@ describe("logout", () => {
         }),
       }),
     );
+    expect(fetchMock).not.toHaveBeenCalledWith(HEALTH_PATH, expect.anything());
+    expect(fetchMock).not.toHaveBeenCalledWith(DRIVE_PATH, expect.anything());
     expect(localStorage.getItem(SESSION_TOKEN_STORAGE_KEY)).toBeNull();
     expect(localStorage.getItem(ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY)).toBeNull();
+    expect(localStorage.getItem(ENCRYPTED_DRIVE_TOKEN_STORAGE_KEY)).toBeNull();
+  });
+
+  it("skips current health/drive revoke when those tokens are absent", async () => {
+    const sessionToken = fakeSessionToken();
+    setStoredSession({ sessionToken, encryptedHealthToken: null });
+
+    await logout();
+
+    expect(fetchMock).not.toHaveBeenCalledWith(
+      HEALTH_CURRENT_PATH,
+      expect.anything(),
+    );
+    expect(fetchMock).not.toHaveBeenCalledWith(
+      DRIVE_CURRENT_PATH,
+      expect.anything(),
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
+      SESSION_CURRENT_PATH,
+      expect.objectContaining({
+        method: "DELETE",
+      }),
+    );
   });
 });
 
 describe("revokeAuthorization", () => {
   let fetchMock: jest.SpyInstance;
 
-  beforeEach(() => {
-    localStorage.clear();
+  beforeEach(async () => {
+    await resetAuthState();
     fetchMock = jest
       .spyOn(global, "fetch")
       .mockResolvedValue(new Response(null, { status: 204 }));
@@ -373,9 +435,8 @@ describe("revokeAuthorization", () => {
 describe("clearEncryptedDriveAuth", () => {
   let fetchMock: jest.SpyInstance;
 
-  beforeEach(() => {
-    localStorage.clear();
-    logout();
+  beforeEach(async () => {
+    await resetAuthState();
     fetchMock = jest.spyOn(global, "fetch");
   });
 
@@ -476,9 +537,8 @@ describe("clearEncryptedDriveAuth", () => {
 describe("forceTokenRefresh", () => {
   let fetchMock: jest.SpyInstance;
 
-  beforeEach(() => {
-    localStorage.clear();
-    logout();
+  beforeEach(async () => {
+    await resetAuthState();
     fetchMock = jest.spyOn(global, "fetch");
   });
 
@@ -634,9 +694,8 @@ describe("forceTokenRefresh", () => {
 });
 
 describe("isLoggedIn", () => {
-  beforeEach(() => {
-    localStorage.clear();
-    logout();
+  beforeEach(async () => {
+    await resetAuthState();
   });
 
   it("requires an unexpired session token and an encrypted token", () => {
@@ -706,9 +765,8 @@ function mockHealthAccessResponse(
 describe("restoreAccessToken", () => {
   let fetchMock: jest.SpyInstance;
 
-  beforeEach(() => {
-    localStorage.clear();
-    logout();
+  beforeEach(async () => {
+    await resetAuthState();
     fetchMock = jest.spyOn(global, "fetch");
   });
 
@@ -769,9 +827,8 @@ describe("restoreAccessToken", () => {
 describe("granted scopes atom", () => {
   let fetchMock: jest.SpyInstance;
 
-  beforeEach(() => {
-    localStorage.clear();
-    logout();
+  beforeEach(async () => {
+    await resetAuthState();
     fetchMock = jest.spyOn(global, "fetch");
   });
 
@@ -828,9 +885,8 @@ describe("granted scopes atom", () => {
 describe("syncAuthTokenEffect", () => {
   let fetchMock: jest.SpyInstance;
 
-  beforeEach(() => {
-    localStorage.clear();
-    logout();
+  beforeEach(async () => {
+    await resetAuthState();
     fetchMock = jest.spyOn(global, "fetch");
   });
 
@@ -891,10 +947,9 @@ describe("useGoogleLoginAndAuthorization", () => {
     error_callback?: (error: { type: string }) => void;
   };
 
-  beforeEach(() => {
+  beforeEach(async () => {
     toastError.mockClear();
-    localStorage.clear();
-    logout();
+    await resetAuthState();
     jest.spyOn(console, "error").mockImplementation(() => {});
     codeClient = { requestCode: jest.fn() };
     loadGoogleOAuth2Mock.mockResolvedValue({
