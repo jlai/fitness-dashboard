@@ -20,6 +20,12 @@ import {
 // Refresh when token is expiring soon
 const EXPIRING_SOON_MILLIS = 2 * 60 * 1000;
 
+/**
+ * When restoring a stored session on page load, require at least this fraction
+ * of the session lifetime remaining so the user is not signed out shortly after.
+ */
+const MIN_SESSION_LIFETIME_REMAINING = 0.1;
+
 const SESSION_TOKEN_STORAGE_KEY = "auth:session-token";
 const ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY = "auth:encrypted-health-token";
 const ENCRYPTED_DRIVE_TOKEN_STORAGE_KEY = "auth:encrypted-drive-token";
@@ -112,6 +118,35 @@ function isPersistingAuthTokens() {
   return hasPersistedEncryptedHealthToken();
 }
 
+/**
+ * True when a stored session still has enough lifetime left to restore on
+ * page load (unexpired and at least {@link MIN_SESSION_LIFETIME_REMAINING}
+ * of its total lifetime remaining).
+ */
+function isSessionTokenWorthRestoring(token: string) {
+  const claims = decodeSessionClaims(token);
+
+  if (!claims?.sub || typeof claims.exp !== "number") {
+    return false;
+  }
+
+  const nowSeconds = Math.floor(Date.now() / 1000);
+
+  if (claims.exp <= nowSeconds) {
+    return false;
+  }
+
+  if (typeof claims.iat !== "number" || claims.iat >= claims.exp) {
+    // Lifetime unknown; allow restore based on absolute expiry only.
+    return true;
+  }
+
+  const lifetime = claims.exp - claims.iat;
+  const remaining = claims.exp - nowSeconds;
+
+  return remaining / lifetime >= MIN_SESSION_LIFETIME_REMAINING;
+}
+
 function getSessionTokenFromStorage() {
   if (memorySessionToken) {
     return memorySessionToken;
@@ -119,7 +154,14 @@ function getSessionTokenFromStorage() {
 
   const stored = readSessionTokenFromLocalStorage();
   if (stored) {
-    memorySessionToken = stored;
+    if (isSessionTokenWorthRestoring(stored)) {
+      memorySessionToken = stored;
+    } else if (typeof localStorage !== "undefined") {
+      // Near expiry or expired — drop the session so the user re-auths with a
+      // fresh token instead of being signed out mid-visit. Keep the encrypted
+      // health token so remember-me / One Tap can recreate the session.
+      localStorage.removeItem(SESSION_TOKEN_STORAGE_KEY);
+    }
   }
 
   return memorySessionToken;

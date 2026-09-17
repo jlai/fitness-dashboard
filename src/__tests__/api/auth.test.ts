@@ -56,14 +56,16 @@ function toBase64Url(value: object) {
 
 function fakeSessionToken({
   sub = "user-1",
+  iat = Math.floor(Date.now() / 1000) - 60,
   exp = Math.floor(Date.now() / 1000) + 60 * 60,
 }: {
   sub?: string;
+  iat?: number;
   exp?: number;
 } = {}) {
   return `${toBase64Url({ alg: "HS256", typ: "session+jwt" })}.${toBase64Url({
     sub,
-    iat: Math.floor(Date.now() / 1000) - 60,
+    iat,
     exp,
   })}.sig`;
 }
@@ -645,6 +647,39 @@ describe("isLoggedIn", () => {
 
     localStorage.setItem(ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY, "encrypted-jwt");
     expect(isLoggedIn()).toBe(true);
+  });
+
+  it("treats a stored session with less than 10% lifetime remaining as logged out", () => {
+    const now = Math.floor(Date.now() / 1000);
+    // 120-minute lifetime with ~5% remaining
+    const sessionToken = fakeSessionToken({
+      iat: now - 114 * 60,
+      exp: now + 6 * 60,
+    });
+
+    localStorage.setItem(SESSION_TOKEN_STORAGE_KEY, sessionToken);
+    localStorage.setItem(ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY, "encrypted-jwt");
+
+    expect(isLoggedIn()).toBe(false);
+    expect(localStorage.getItem(SESSION_TOKEN_STORAGE_KEY)).toBeNull();
+    expect(localStorage.getItem(ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY)).toBe(
+      "encrypted-jwt",
+    );
+  });
+
+  it("still accepts a stored session with at least 10% lifetime remaining", () => {
+    const now = Math.floor(Date.now() / 1000);
+    // 120-minute lifetime with exactly 10% remaining
+    const sessionToken = fakeSessionToken({
+      iat: now - 108 * 60,
+      exp: now + 12 * 60,
+    });
+
+    localStorage.setItem(SESSION_TOKEN_STORAGE_KEY, sessionToken);
+    localStorage.setItem(ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY, "encrypted-jwt");
+
+    expect(isLoggedIn()).toBe(true);
+    expect(localStorage.getItem(SESSION_TOKEN_STORAGE_KEY)).toBe(sessionToken);
   });
 });
 
