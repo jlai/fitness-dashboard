@@ -107,6 +107,9 @@ export async function reconcileMemoryAndDriveOnEnable(options: {
     }
   }
 
+  // Debounced Drive writes must land before this flow returns.
+  await drive.flush();
+
   getDefaultStore().set(settingsStorageEpochAtom, (epoch) => epoch + 1);
 
   return { memoryOnly, driveOnly, conflicts, conflictChoice };

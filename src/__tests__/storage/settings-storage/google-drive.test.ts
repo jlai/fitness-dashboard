@@ -5,7 +5,10 @@ import {
   getAppDataFileByName,
   updateAppDataFile,
 } from "@/api/google-drive";
-import { GoogleDriveSettingsStorage } from "@/storage/settings-storage";
+import {
+  DRIVE_SETTINGS_WRITE_DEBOUNCE_MS,
+  GoogleDriveSettingsStorage,
+} from "@/storage/settings-storage";
 
 jest.mock("@/api/google-drive", () => ({
   createAppDataFile: jest.fn(),
@@ -24,6 +27,11 @@ const mockedDelete = jest.mocked(deleteAppDataFile);
 describe("GoogleDriveSettingsStorage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   it("returns null for missing files and caches the miss", async () => {
@@ -60,7 +68,7 @@ describe("GoogleDriveSettingsStorage", () => {
     expect(mockedDownload).toHaveBeenCalledTimes(1);
   });
 
-  it("creates a new appdata file on first write", async () => {
+  it("updates the cache immediately but debounces Drive create", async () => {
     mockedGetByName.mockResolvedValue(null);
     mockedCreate.mockResolvedValue({ id: "file-new", name: "meals.json" });
 
@@ -69,17 +77,41 @@ describe("GoogleDriveSettingsStorage", () => {
 
     expect(written.data).toEqual([{ name: "lunch" }]);
     expect(written.version).toBe(1);
+    expect(mockedCreate).not.toHaveBeenCalled();
+    await expect(storage.get("meals")).resolves.toEqual(written);
+
+    await jest.advanceTimersByTimeAsync(DRIVE_SETTINGS_WRITE_DEBOUNCE_MS);
+    await storage.waitForInflightWrites();
+
     expect(mockedCreate).toHaveBeenCalledWith(
       "meals.json",
       expect.stringContaining('"name":"lunch"'),
     );
     expect(mockedUpdate).not.toHaveBeenCalled();
-
-    await expect(storage.get("meals")).resolves.toEqual(written);
-    expect(mockedGetByName).toHaveBeenCalledTimes(1);
   });
 
-  it("updates an existing appdata file on write", async () => {
+  it("coalesces rapid writes into a single Drive update", async () => {
+    mockedGetByName.mockResolvedValue(null);
+    mockedCreate.mockResolvedValue({ id: "file-new", name: "meals.json" });
+
+    const storage = new GoogleDriveSettingsStorage();
+    await storage.set("meals", [{ name: "a" }]);
+    await storage.set("meals", [{ name: "b" }]);
+    await storage.set("meals", [{ name: "c" }]);
+
+    expect(mockedCreate).not.toHaveBeenCalled();
+
+    await jest.advanceTimersByTimeAsync(DRIVE_SETTINGS_WRITE_DEBOUNCE_MS);
+    await storage.waitForInflightWrites();
+
+    expect(mockedCreate).toHaveBeenCalledTimes(1);
+    expect(mockedCreate).toHaveBeenCalledWith(
+      "meals.json",
+      expect.stringContaining('"name":"c"'),
+    );
+  });
+
+  it("updates an existing appdata file after the debounce", async () => {
     const existing = {
       data: { steps: 5000 },
       version: 2,
@@ -94,11 +126,43 @@ describe("GoogleDriveSettingsStorage", () => {
     const written = await storage.set("goals", { steps: 8000 });
 
     expect(written.version).toBe(2);
+    expect(mockedUpdate).not.toHaveBeenCalled();
+
+    await jest.advanceTimersByTimeAsync(DRIVE_SETTINGS_WRITE_DEBOUNCE_MS);
+    await storage.waitForInflightWrites();
+
     expect(mockedUpdate).toHaveBeenCalledWith(
       "file-2",
       expect.stringContaining('"steps":8000'),
     );
     expect(mockedCreate).not.toHaveBeenCalled();
+  });
+
+  it("flush persists dirty keys immediately", async () => {
+    mockedGetByName.mockResolvedValue(null);
+    mockedCreate.mockResolvedValue({ id: "file-new", name: "meals.json" });
+
+    const storage = new GoogleDriveSettingsStorage();
+    await storage.set("meals", [{ name: "lunch" }]);
+    await storage.flush();
+
+    expect(mockedCreate).toHaveBeenCalledTimes(1);
+  });
+
+  it("cancels a pending write when deleting a key", async () => {
+    mockedGetByName.mockResolvedValue(null);
+    mockedCreate.mockResolvedValue({ id: "file-new", name: "meals.json" });
+
+    const storage = new GoogleDriveSettingsStorage();
+    await storage.set("meals", [{ name: "lunch" }]);
+    await storage.delete("meals");
+
+    await jest.advanceTimersByTimeAsync(DRIVE_SETTINGS_WRITE_DEBOUNCE_MS);
+    await storage.waitForInflightWrites();
+
+    expect(mockedCreate).not.toHaveBeenCalled();
+    expect(mockedDelete).not.toHaveBeenCalled();
+    await expect(storage.get("meals")).resolves.toBeNull();
   });
 
   it("deletes an existing appdata file and caches the miss", async () => {

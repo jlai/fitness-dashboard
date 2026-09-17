@@ -28,6 +28,10 @@ export async function migrateFromDriveOnDisable(): Promise<MigrateFromDriveOnDis
   const drive = getGoogleDriveSettingsStorage();
   const movedKeys: SettingsStorageKey[] = [];
 
+  // Drop scheduled uploads; cache still has the latest values for the copy below.
+  drive.invalidatePendingWrites();
+  await drive.waitForInflightWrites();
+
   for (const key of ALL_KEYS) {
     const stored = await drive.get(key);
     if (!stored) {
