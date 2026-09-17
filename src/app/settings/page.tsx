@@ -32,11 +32,13 @@ import {
   useAccessTokenScopes,
   useLoggedIn,
   useGoogleLoginAndAuthorization,
+  useMissingScopes,
   useOpenIdSignedIn,
 } from "@/api/auth";
 import { GoogleSignInButton } from "@/components/login/google-sign-in-button";
 import { useSignOut } from "@/components/login/use-sign-out";
 import { useSwitchAccounts } from "@/components/login/use-switch-accounts";
+import { DRIVE_APPDATA } from "@/config/google-drive-scopes";
 import {
   DistanceUnitSystem,
   SettingsDistanceUnit,
@@ -158,6 +160,12 @@ function LoggedInAccountSettings() {
   const router = useRouter();
   const scopes = useAccessTokenScopes();
   const handleLogout = useSignOut();
+  const missingDriveScopes = useMissingScopes([DRIVE_APPDATA]);
+  const driveEnabled = missingDriveScopes.length === 0;
+  const { loginToGoogleAndAuthorize, ready: driveAuthReady } =
+    useGoogleLoginAndAuthorization({
+      additionalScopes: [DRIVE_APPDATA],
+    });
 
   const unlinkAccount = () => {
     confirm({
@@ -197,6 +205,24 @@ function LoggedInAccountSettings() {
           </div>
         </SettingsRow>
       )}
+      <SettingsRow
+        title="Save settings to Google Drive"
+        action={
+          driveEnabled ? (
+            <Button disabled>Enabled</Button>
+          ) : (
+            <Button
+              onClick={() => loginToGoogleAndAuthorize()}
+              disabled={!driveAuthReady}
+            >
+              Enable
+            </Button>
+          )
+        }
+      >
+        Store dashboard layouts, settings, goals, meals, and custom foods in
+        your Google Drive app data folder so they sync across devices.
+      </SettingsRow>
       <SettingsRow
         title="Unlink Google account"
         action={

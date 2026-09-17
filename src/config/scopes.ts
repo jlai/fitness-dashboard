@@ -1,3 +1,4 @@
+import { DRIVE_APPDATA } from "./google-drive-scopes";
 import {
   ACTIVITY_AND_FITNESS_READONLY,
   ACTIVITY_AND_FITNESS_WRITEONLY,
@@ -25,6 +26,7 @@ const USERINFO_PROFILE = "https://www.googleapis.com/auth/userinfo.profile";
 export const SCOPE_NAME_MAPPING: Record<string, string> = {
   [USERINFO_EMAIL]: "email",
   [USERINFO_PROFILE]: "name and profile picture",
+  [DRIVE_APPDATA]: "Google Drive app data",
   [ACTIVITY_AND_FITNESS_READONLY]: "activity and fitness (read)",
   [ACTIVITY_AND_FITNESS_WRITEONLY]: "activity and fitness (write)",
   [ECG_READONLY]: "ECG (read)",

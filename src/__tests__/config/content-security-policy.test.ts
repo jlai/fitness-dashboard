@@ -37,6 +37,7 @@ describe("buildContentSecurityPolicy", () => {
     expect(csp).toContain("https://accounts.google.com/gsi/style");
     expect(csp).toContain("worker-src 'self' blob:");
     expect(csp).toContain("https://health.googleapis.com");
+    expect(csp).toContain("https://www.googleapis.com");
     expect(csp).toContain("https://oauth2.googleapis.com");
   });
 
