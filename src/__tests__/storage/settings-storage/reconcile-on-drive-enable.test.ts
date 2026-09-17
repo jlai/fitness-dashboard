@@ -13,7 +13,7 @@ jest.mock("@/api/google-drive", () => ({
   })),
   deleteAppDataFile: jest.fn(async () => undefined),
   downloadAppDataFile: jest.fn(),
-  getAppDataFileByName: jest.fn(),
+  listAppDataFiles: jest.fn(),
   updateAppDataFile: jest.fn(async (fileId: string) => ({
     id: fileId,
     name: "updated.json",
@@ -23,12 +23,12 @@ jest.mock("@/api/google-drive", () => ({
 const {
   createAppDataFile,
   downloadAppDataFile,
-  getAppDataFileByName,
+  listAppDataFiles,
   updateAppDataFile,
 } = jest.requireMock("@/api/google-drive") as {
   createAppDataFile: jest.Mock;
   downloadAppDataFile: jest.Mock;
-  getAppDataFileByName: jest.Mock;
+  listAppDataFiles: jest.Mock;
   updateAppDataFile: jest.Mock;
 };
 
@@ -36,19 +36,16 @@ describe("reconcileMemoryAndDriveOnEnable", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     resetSettingsStorageSingletonsForTests();
-    getAppDataFileByName.mockResolvedValue(null);
+    listAppDataFiles.mockResolvedValue([]);
   });
 
   it("copies memory-only keys to Drive and drive-only keys to Memory", async () => {
     const memory = getMemorySettingsStorage();
     await memory.set(SETTINGS_STORAGE_KEYS.goals, { goals: [{ metric: "steps", period: "daily", value: 1, unit: "" }] });
 
-    getAppDataFileByName.mockImplementation(async (fileName: string) => {
-      if (fileName === "meals.json") {
-        return { id: "meals-id", name: fileName };
-      }
-      return null;
-    });
+    listAppDataFiles.mockResolvedValue([
+      { id: "meals-id", name: "meals.json" },
+    ]);
     downloadAppDataFile.mockResolvedValue(
       JSON.stringify({
         data: { meals: [{ id: "m1", name: "Lunch", description: "", foods: [] }] },
@@ -68,6 +65,7 @@ describe("reconcileMemoryAndDriveOnEnable", () => {
       "goals.json",
       expect.stringContaining('"metric":"steps"'),
     );
+    expect(listAppDataFiles).toHaveBeenCalledTimes(1);
 
     const mealsInMemory = await memory.get(SETTINGS_STORAGE_KEYS.meals);
     expect(mealsInMemory?.data).toEqual({
@@ -84,12 +82,10 @@ describe("reconcileMemoryAndDriveOnEnable", () => {
       goals: [{ metric: "steps", period: "daily", value: 100, unit: "" }],
     });
 
-    getAppDataFileByName.mockImplementation(async (fileName: string) => {
-      if (fileName === "settings.json" || fileName === "goals.json") {
-        return { id: `id-${fileName}`, name: fileName };
-      }
-      return null;
-    });
+    listAppDataFiles.mockResolvedValue([
+      { id: "id-settings.json", name: "settings.json" },
+      { id: "id-goals.json", name: "goals.json" },
+    ]);
     downloadAppDataFile.mockImplementation(async (fileId: string) => {
       if (fileId === "id-settings.json") {
         return JSON.stringify({
@@ -128,6 +124,7 @@ describe("reconcileMemoryAndDriveOnEnable", () => {
       "id-goals.json",
       expect.stringContaining('"value":100'),
     );
+    expect(listAppDataFiles).toHaveBeenCalledTimes(1);
   });
 
   it("keeps Drive versions for all conflicts when chosen", async () => {
@@ -136,12 +133,9 @@ describe("reconcileMemoryAndDriveOnEnable", () => {
       settings: { mapStyle: "memory-style" },
     });
 
-    getAppDataFileByName.mockImplementation(async (fileName: string) => {
-      if (fileName === "settings.json") {
-        return { id: "id-settings.json", name: fileName };
-      }
-      return null;
-    });
+    listAppDataFiles.mockResolvedValue([
+      { id: "id-settings.json", name: "settings.json" },
+    ]);
     downloadAppDataFile.mockResolvedValue(
       JSON.stringify({
         data: { settings: { mapStyle: "drive-style" } },
@@ -156,6 +150,7 @@ describe("reconcileMemoryAndDriveOnEnable", () => {
 
     expect(updateAppDataFile).not.toHaveBeenCalled();
     expect(createAppDataFile).not.toHaveBeenCalled();
+    expect(listAppDataFiles).toHaveBeenCalledTimes(1);
 
     const settingsInMemory = await memory.get(SETTINGS_STORAGE_KEYS.settings);
     expect(settingsInMemory?.data).toEqual({

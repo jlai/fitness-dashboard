@@ -6,7 +6,7 @@ import {
   createAppDataFile,
   deleteAppDataFile,
   downloadAppDataFile,
-  getAppDataFileByName,
+  listAppDataFiles,
   updateAppDataFile,
 } from "@/api/google-drive";
 
@@ -29,11 +29,14 @@ type CacheEntry =
 /**
  * SettingsStorage backed by the Google Drive application data folder.
  * Each key maps to `{key}.json`; invalid keys throw.
- * Caches each key on first read and updates the cache on write.
- * Drive API writes are debounced per key to avoid repeated uploads.
+ * Builds a name→fileId index from a single folder list, then caches content
+ * per key on first read. Drive API writes are debounced per key.
  */
 export class GoogleDriveSettingsStorage implements SettingsStorage {
   private readonly cache = new Map<string, CacheEntry>();
+  /** Filename → Drive file id; built once via listAppDataFiles. */
+  private fileIndex: Map<string, string> | null = null;
+  private fileIndexPromise: Promise<Map<string, string>> | null = null;
   private readonly dirtyKeys = new Set<string>();
   private readonly debouncers = new Map<string, DebouncedFunction<() => void>>();
   private readonly inflightPersists = new Map<string, Promise<void>>();
@@ -50,18 +53,18 @@ export class GoogleDriveSettingsStorage implements SettingsStorage {
         : null;
     }
 
-    const file = await getAppDataFileByName(settingsKeyToFileName(key));
-    if (!file) {
+    const fileId = await this.lookupFileId(settingsKeyToFileName(key));
+    if (!fileId) {
       this.cache.set(key, { kind: "missing" });
       return null;
     }
 
-    const raw = await downloadAppDataFile(file.id);
+    const raw = await downloadAppDataFile(fileId);
     const parsed = parseStoredData<T>(JSON.parse(raw));
     this.cache.set(key, {
       kind: "present",
       value: parsed,
-      fileId: file.id,
+      fileId,
     });
     return parsed;
   }
@@ -80,7 +83,7 @@ export class GoogleDriveSettingsStorage implements SettingsStorage {
 
     let fileId = existing?.fileId;
     if (!fileId && this.cache.get(key)?.kind !== "missing") {
-      fileId = (await getAppDataFileByName(fileName))?.id;
+      fileId = await this.lookupFileId(fileName);
     }
 
     this.cache.set(key, {
@@ -107,14 +110,16 @@ export class GoogleDriveSettingsStorage implements SettingsStorage {
     let fileId =
       cached?.kind === "present" ? cached.fileId : undefined;
 
+    const fileName = settingsKeyToFileName(key);
     if (!fileId && cached?.kind !== "missing") {
-      fileId = (await getAppDataFileByName(settingsKeyToFileName(key)))?.id;
+      fileId = await this.lookupFileId(fileName);
     }
 
     if (fileId) {
       await deleteAppDataFile(fileId);
     }
 
+    this.removeFromIndex(fileName);
     this.cache.set(key, { kind: "missing" });
   }
 
@@ -146,6 +151,44 @@ export class GoogleDriveSettingsStorage implements SettingsStorage {
   /** Wait for any in-flight Drive requests to settle. */
   async waitForInflightWrites(): Promise<void> {
     await Promise.allSettled([...this.inflightPersists.values()]);
+  }
+
+  private async ensureFileIndex(): Promise<Map<string, string>> {
+    if (this.fileIndex) {
+      return this.fileIndex;
+    }
+
+    if (!this.fileIndexPromise) {
+      this.fileIndexPromise = (async () => {
+        const files = await listAppDataFiles();
+        const index = new Map<string, string>();
+        for (const file of files) {
+          index.set(file.name, file.id);
+        }
+        this.fileIndex = index;
+        return index;
+      })().finally(() => {
+        this.fileIndexPromise = null;
+      });
+    }
+
+    return this.fileIndexPromise;
+  }
+
+  private async lookupFileId(fileName: string): Promise<string | undefined> {
+    const index = await this.ensureFileIndex();
+    return index.get(fileName);
+  }
+
+  private setIndexEntry(fileName: string, fileId: string): void {
+    if (!this.fileIndex) {
+      this.fileIndex = new Map();
+    }
+    this.fileIndex.set(fileName, fileId);
+  }
+
+  private removeFromIndex(fileName: string): void {
+    this.fileIndex?.delete(fileName);
   }
 
   private schedulePersist(key: string): void {
@@ -209,7 +252,7 @@ export class GoogleDriveSettingsStorage implements SettingsStorage {
     if (cached?.kind === "present" && cached.fileId) {
       fileId = cached.fileId;
     } else if (cached?.kind !== "missing") {
-      fileId = (await getAppDataFileByName(fileName))?.id;
+      fileId = await this.lookupFileId(fileName);
     }
 
     if (generation !== this.writeGeneration) {
@@ -222,6 +265,7 @@ export class GoogleDriveSettingsStorage implements SettingsStorage {
       } else {
         const created = await createAppDataFile(fileName, content);
         fileId = created.id;
+        this.setIndexEntry(fileName, fileId);
       }
     } catch (error) {
       console.error(`Failed to persist settings key "${key}" to Drive`, error);

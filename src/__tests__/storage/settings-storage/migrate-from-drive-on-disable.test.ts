@@ -10,34 +10,32 @@ jest.mock("@/api/google-drive", () => ({
   createAppDataFile: jest.fn(),
   deleteAppDataFile: jest.fn(async () => undefined),
   downloadAppDataFile: jest.fn(),
-  getAppDataFileByName: jest.fn(),
+  listAppDataFiles: jest.fn(),
   updateAppDataFile: jest.fn(),
 }));
 
 const {
   deleteAppDataFile,
   downloadAppDataFile,
-  getAppDataFileByName,
+  listAppDataFiles,
 } = jest.requireMock("@/api/google-drive") as {
   deleteAppDataFile: jest.Mock;
   downloadAppDataFile: jest.Mock;
-  getAppDataFileByName: jest.Mock;
+  listAppDataFiles: jest.Mock;
 };
 
 describe("migrateFromDriveOnDisable", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     resetSettingsStorageSingletonsForTests();
-    getAppDataFileByName.mockResolvedValue(null);
+    listAppDataFiles.mockResolvedValue([]);
   });
 
   it("copies Drive keys into Memory then deletes the Drive files", async () => {
-    getAppDataFileByName.mockImplementation(async (fileName: string) => {
-      if (fileName === "meals.json" || fileName === "settings.json") {
-        return { id: `id-${fileName}`, name: fileName };
-      }
-      return null;
-    });
+    listAppDataFiles.mockResolvedValue([
+      { id: "id-meals.json", name: "meals.json" },
+      { id: "id-settings.json", name: "settings.json" },
+    ]);
     downloadAppDataFile.mockImplementation(async (fileId: string) => {
       if (fileId === "id-meals.json") {
         return JSON.stringify({
@@ -74,6 +72,7 @@ describe("migrateFromDriveOnDisable", () => {
     });
     expect(deleteAppDataFile).toHaveBeenCalledWith("id-meals.json");
     expect(deleteAppDataFile).toHaveBeenCalledWith("id-settings.json");
+    expect(listAppDataFiles).toHaveBeenCalledTimes(1);
   });
 
   it("overwrites Memory with Drive values for keys present on both sides", async () => {
@@ -82,12 +81,9 @@ describe("migrateFromDriveOnDisable", () => {
       settings: { mapStyle: "memory-style" },
     });
 
-    getAppDataFileByName.mockImplementation(async (fileName: string) => {
-      if (fileName === "settings.json") {
-        return { id: "id-settings.json", name: fileName };
-      }
-      return null;
-    });
+    listAppDataFiles.mockResolvedValue([
+      { id: "id-settings.json", name: "settings.json" },
+    ]);
     downloadAppDataFile.mockResolvedValue(
       JSON.stringify({
         data: { settings: { mapStyle: "drive-style" } },
@@ -102,6 +98,7 @@ describe("migrateFromDriveOnDisable", () => {
       data: { settings: { mapStyle: "drive-style" } },
       version: 3,
     });
+    expect(listAppDataFiles).toHaveBeenCalledTimes(1);
   });
 
   it("resets the Drive storage singleton after migrate", async () => {

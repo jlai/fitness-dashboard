@@ -45,6 +45,44 @@ async function authorizedFetch(
 }
 
 /**
+ * List all files in the application data folder (paginated).
+ * Used to build a name→id index for settings storage.
+ */
+export async function listAppDataFiles(): Promise<DriveFileRef[]> {
+  const files: DriveFileRef[] = [];
+  let pageToken: string | undefined;
+
+  do {
+    const params = new URLSearchParams({
+      spaces: "appDataFolder",
+      fields: "nextPageToken,files(id,name)",
+      pageSize: "100",
+    });
+    if (pageToken) {
+      params.set("pageToken", pageToken);
+    }
+
+    const response = await authorizedFetch(
+      `${DRIVE_API_BASE}/files?${params.toString()}`,
+    );
+    const body = (await response.json()) as {
+      files?: DriveFileRef[];
+      nextPageToken?: string;
+    };
+
+    for (const file of body.files ?? []) {
+      if (file.id && file.name) {
+        files.push(file);
+      }
+    }
+
+    pageToken = body.nextPageToken;
+  } while (pageToken);
+
+  return files;
+}
+
+/**
  * Look up a file in the application data folder by exact filename.
  * Filenames must come from validated settings keys (e.g. `meals.json`).
  */

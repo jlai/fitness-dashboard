@@ -2,7 +2,7 @@ import {
   createAppDataFile,
   deleteAppDataFile,
   downloadAppDataFile,
-  getAppDataFileByName,
+  listAppDataFiles,
   updateAppDataFile,
 } from "@/api/google-drive";
 import {
@@ -14,11 +14,11 @@ jest.mock("@/api/google-drive", () => ({
   createAppDataFile: jest.fn(),
   deleteAppDataFile: jest.fn(),
   downloadAppDataFile: jest.fn(),
-  getAppDataFileByName: jest.fn(),
+  listAppDataFiles: jest.fn(),
   updateAppDataFile: jest.fn(),
 }));
 
-const mockedGetByName = jest.mocked(getAppDataFileByName);
+const mockedList = jest.mocked(listAppDataFiles);
 const mockedDownload = jest.mocked(downloadAppDataFile);
 const mockedCreate = jest.mocked(createAppDataFile);
 const mockedUpdate = jest.mocked(updateAppDataFile);
@@ -28,6 +28,7 @@ describe("GoogleDriveSettingsStorage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useFakeTimers();
+    mockedList.mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -35,14 +36,42 @@ describe("GoogleDriveSettingsStorage", () => {
   });
 
   it("returns null for missing files and caches the miss", async () => {
-    mockedGetByName.mockResolvedValue(null);
     const storage = new GoogleDriveSettingsStorage();
 
     await expect(storage.get("meals")).resolves.toBeNull();
     await expect(storage.get("meals")).resolves.toBeNull();
 
-    expect(mockedGetByName).toHaveBeenCalledTimes(1);
-    expect(mockedGetByName).toHaveBeenCalledWith("meals.json");
+    expect(mockedList).toHaveBeenCalledTimes(1);
+    expect(mockedDownload).not.toHaveBeenCalled();
+  });
+
+  it("lists appdata once and reuses the index across keys", async () => {
+    mockedList.mockResolvedValue([
+      { id: "file-meals", name: "meals.json" },
+      { id: "file-goals", name: "goals.json" },
+    ]);
+    mockedDownload.mockImplementation(async (fileId: string) => {
+      if (fileId === "file-meals") {
+        return JSON.stringify({
+          data: { meals: [] },
+          version: 1,
+          updateTime: "2026-01-01T00:00:00.000Z",
+        });
+      }
+      return JSON.stringify({
+        data: { steps: 1000 },
+        version: 1,
+        updateTime: "2026-01-01T00:00:00.000Z",
+      });
+    });
+
+    const storage = new GoogleDriveSettingsStorage();
+    await storage.get("meals");
+    await storage.get("goals");
+    await expect(storage.get("settings")).resolves.toBeNull();
+
+    expect(mockedList).toHaveBeenCalledTimes(1);
+    expect(mockedDownload).toHaveBeenCalledTimes(2);
   });
 
   it("loads by filename and caches StoredData on first read", async () => {
@@ -51,10 +80,9 @@ describe("GoogleDriveSettingsStorage", () => {
       version: 1,
       updateTime: "2026-01-01T00:00:00.000Z",
     };
-    mockedGetByName.mockResolvedValue({
-      id: "file-1",
-      name: "dashboard-tiles.json",
-    });
+    mockedList.mockResolvedValue([
+      { id: "file-1", name: "dashboard-tiles.json" },
+    ]);
     mockedDownload.mockResolvedValue(JSON.stringify(envelope));
 
     const storage = new GoogleDriveSettingsStorage();
@@ -63,13 +91,12 @@ describe("GoogleDriveSettingsStorage", () => {
 
     expect(first).toEqual(envelope);
     expect(second).toEqual(envelope);
-    expect(mockedGetByName).toHaveBeenCalledTimes(1);
-    expect(mockedGetByName).toHaveBeenCalledWith("dashboard-tiles.json");
+    expect(mockedList).toHaveBeenCalledTimes(1);
     expect(mockedDownload).toHaveBeenCalledTimes(1);
+    expect(mockedDownload).toHaveBeenCalledWith("file-1");
   });
 
   it("updates the cache immediately but debounces Drive create", async () => {
-    mockedGetByName.mockResolvedValue(null);
     mockedCreate.mockResolvedValue({ id: "file-new", name: "meals.json" });
 
     const storage = new GoogleDriveSettingsStorage();
@@ -91,7 +118,6 @@ describe("GoogleDriveSettingsStorage", () => {
   });
 
   it("coalesces rapid writes into a single Drive update", async () => {
-    mockedGetByName.mockResolvedValue(null);
     mockedCreate.mockResolvedValue({ id: "file-new", name: "meals.json" });
 
     const storage = new GoogleDriveSettingsStorage();
@@ -117,7 +143,7 @@ describe("GoogleDriveSettingsStorage", () => {
       version: 2,
       updateTime: "2026-01-01T00:00:00.000Z",
     };
-    mockedGetByName.mockResolvedValue({ id: "file-2", name: "goals.json" });
+    mockedList.mockResolvedValue([{ id: "file-2", name: "goals.json" }]);
     mockedDownload.mockResolvedValue(JSON.stringify(existing));
     mockedUpdate.mockResolvedValue({ id: "file-2", name: "goals.json" });
 
@@ -139,7 +165,6 @@ describe("GoogleDriveSettingsStorage", () => {
   });
 
   it("flush persists dirty keys immediately", async () => {
-    mockedGetByName.mockResolvedValue(null);
     mockedCreate.mockResolvedValue({ id: "file-new", name: "meals.json" });
 
     const storage = new GoogleDriveSettingsStorage();
@@ -150,7 +175,6 @@ describe("GoogleDriveSettingsStorage", () => {
   });
 
   it("cancels a pending write when deleting a key", async () => {
-    mockedGetByName.mockResolvedValue(null);
     mockedCreate.mockResolvedValue({ id: "file-new", name: "meals.json" });
 
     const storage = new GoogleDriveSettingsStorage();
@@ -166,7 +190,7 @@ describe("GoogleDriveSettingsStorage", () => {
   });
 
   it("deletes an existing appdata file and caches the miss", async () => {
-    mockedGetByName.mockResolvedValue({ id: "file-3", name: "meals.json" });
+    mockedList.mockResolvedValue([{ id: "file-3", name: "meals.json" }]);
     mockedDownload.mockResolvedValue(
       JSON.stringify({
         data: { meals: [] },
@@ -182,7 +206,7 @@ describe("GoogleDriveSettingsStorage", () => {
 
     expect(mockedDelete).toHaveBeenCalledWith("file-3");
     await expect(storage.get("meals")).resolves.toBeNull();
-    expect(mockedGetByName).toHaveBeenCalledTimes(1);
+    expect(mockedList).toHaveBeenCalledTimes(1);
   });
 
   it("rejects invalid keys", async () => {
@@ -194,6 +218,6 @@ describe("GoogleDriveSettingsStorage", () => {
     await expect(storage.delete("Bad Key")).rejects.toThrow(
       /invalid settings key/,
     );
-    expect(mockedGetByName).not.toHaveBeenCalled();
+    expect(mockedList).not.toHaveBeenCalled();
   });
 });
