@@ -1,5 +1,4 @@
 import { AppBar, Container, Chip, Link } from "@mui/material";
-import { Poppins } from "next/font/google";
 import React from "react";
 import NextLink from "next/link";
 import {
@@ -9,8 +8,6 @@ import {
   Timeline as HistoryIcon,
 } from "@mui/icons-material";
 
-export const poppins = Poppins({ weight: "400", subsets: ["latin"] });
-
 import {
   HOST_WEBSITE_LINK,
   HOST_WEBSITE_NAME,
@@ -18,6 +15,9 @@ import {
   WEBSITE_NAME,
 } from "@/config";
 import { SurveyButton } from "@/components/survey";
+import { poppins } from "@/fonts";
+
+export { poppins };
 
 import AccountMenu from "./account-menu";
 import { MigrationNotice } from "./migration-notice";

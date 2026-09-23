@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Roboto, Poppins } from "next/font/google";
 import { HydrationProvider } from "react-hydration-provider";
 import dynamic from "next/dynamic";
 import { Container } from "@mui/material";
@@ -8,13 +7,13 @@ import { Suspense } from "react";
 
 import { CONTENT_SECURITY_POLICY } from "@/config/content-security-policy";
 import { ErrorBoundary } from "@/components/error";
+import { roboto } from "@/fonts";
 
 import Header from "./header";
 
 import "./globals.css";
 
-export const roboto = Roboto({ weight: ["400", "500"], subsets: ["latin"] });
-export const poppins = Poppins({ weight: ["400", "500"], subsets: ["latin"] });
+export { roboto, poppins } from "@/fonts";
 
 export const metadata: Metadata = {
   title: "Dashboard",
