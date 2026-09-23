@@ -40,7 +40,7 @@ export default function AboutMigrationPage() {
           >
             here
           </a>
-          .
+          . Thank your for your patience as we prepare for the transition.
         </Typography>
       </section>
 
@@ -48,11 +48,11 @@ export default function AboutMigrationPage() {
         <Typography variant="h4">Timeline</Typography>
 
         <div className="space-y-2">
-          <Typography variant="h6">Now through September 29th</Typography>
+          <Typography variant="h6">Before September 29th</Typography>
           <Typography variant="body2">
             The website will remain available until September 29th. If you want
             to keep using your existing custom foods, meals, and goals on the
-            new site, back them up before the September 29th.
+            new site, back them up before the Fitbit API goes offline.
           </Typography>
           <Button
             variant="contained"
@@ -66,20 +66,22 @@ export default function AboutMigrationPage() {
         <div className="space-y-2">
           <Typography variant="h6">After September 29th</Typography>
           <Typography variant="body2">
-            The website will be unavailable while we prepare the new version of
+            The website will be <b>unavailable</b> while we prepare the new version of
             the dashboard. Unfortunately, this process will take some time while
-            we work with Google and undergo a security assessment, which is a
-            new requirement for all third-party apps to validate that we are
-            handling your Google Health data securely.
+            we undergo an independent security assessment, which is a new
+            requirement for all third-party apps that integrate with Google
+            Health to validate that we are handling your Google Health data
+            securely.
           </Typography>
         </div>
 
         <div className="space-y-2">
-          <Typography variant="h6">Mid-October (exactly date TBD)</Typography>
+          <Typography variant="h6">Mid-October (exact date TBD)</Typography>
           <Typography variant="body2">
             Once the website returns, you will sign in with your Google account
             and authorize access to Google Health. If you previously saved a
-            backup of custom meals, you should be able to import them.
+            backup of custom meals and other data, you should be able to import
+            them.
           </Typography>
         </div>
       </section>
