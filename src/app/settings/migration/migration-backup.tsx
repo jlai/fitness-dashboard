@@ -11,13 +11,16 @@ import { buildGetBodyWeightGoalQuery } from "@/api/body";
 import {
   Food,
   Meal,
+  NutritionalValues,
   buildCustomFoodsQuery,
   buildFoodUnitsQuery,
   buildMealsQuery,
   buildWaterGoalQuery,
+  getDefaultServingSize,
 } from "@/api/nutrition";
 import { buildGetFoodQuery } from "@/api/nutrition/foods";
 import { buildGetSleepGoalQuery } from "@/api/sleep";
+import { NUTRITION_FIELDS } from "@/components/nutrition/food/custom-food";
 import { showSuccessToast, withErrorToaster } from "@/components/toast";
 import {
   saveCustomFoods,
@@ -25,6 +28,7 @@ import {
   saveMeals,
   type MigrationGoal,
 } from "@/storage/db/fitbitmigrationdb";
+import { formatServing } from "@/utils/food-amounts";
 import { formatFoodName } from "@/utils/other-formats";
 
 import { buildMigrationGoals, goalRowId } from "./goals";
@@ -35,10 +39,56 @@ import {
   stringifyMigrationBackup,
 } from "./json";
 
+const NUTRIENT_DISPLAY: Record<string, { label: string; unit: string }> = {
+  calories: { label: "Calories", unit: "kcal" },
+  carbs: { label: "Carbs", unit: "g" },
+  fat: { label: "Fat", unit: "g" },
+  fiber: { label: "Fiber", unit: "g" },
+  ...NUTRITION_FIELDS,
+};
+
+function formatNutrientKey(key: string) {
+  return key
+    .replace(/([A-Z])/g, " $1")
+    .replace(/^./, (char) => char.toUpperCase());
+}
+
+function formatNonZeroNutrients(values?: NutritionalValues) {
+  if (!values) {
+    return "";
+  }
+
+  const parts: Array<string> = [];
+  const remaining = { ...values };
+
+  for (const [key, meta] of Object.entries(NUTRIENT_DISPLAY)) {
+    const value = remaining[key as keyof NutritionalValues];
+    delete remaining[key as keyof NutritionalValues];
+
+    if (value) {
+      parts.push(`${meta.label} ${value}${meta.unit}`);
+    }
+  }
+
+  for (const [key, value] of Object.entries(remaining)) {
+    if (value) {
+      parts.push(`${formatNutrientKey(key)} ${value}`);
+    }
+  }
+
+  return parts.join(", ");
+}
+
 const customFoodColumns: Array<GridColDef<Food>> = [
   { field: "name", headerName: "Food", flex: 2 },
   { field: "brand", headerName: "Brand", flex: 1 },
   { field: "calories", headerName: "Calories", type: "number", width: 110 },
+  {
+    field: "nutritionalValues",
+    headerName: "Nutrients",
+    flex: 3,
+    valueGetter: (_value, row) => formatNonZeroNutrients(row.nutritionalValues),
+  },
 ];
 
 const mealColumns: Array<GridColDef<Meal>> = [
@@ -50,7 +100,13 @@ const mealColumns: Array<GridColDef<Meal>> = [
     flex: 3,
     valueGetter: (_value, row) =>
       row.mealFoods
-        .map((food) => formatFoodName(food.name, food.brand))
+        .map(
+          (food) =>
+            `${formatServing(getDefaultServingSize(food))} ${formatFoodName(
+              food.name,
+              food.brand
+            )}`
+        )
         .join(", "),
   },
 ];
@@ -266,13 +322,16 @@ export default function MigrationBackup() {
         </Typography>
         <Typography variant="body1" component="p" className="space-y-4">
           <p>
-          Google Health does not support meals or custom foods created on this
-          website the same way Fitbit does. Back up a local copy of meals,
-          custom foods, and goals so you can keep using them here (on this
-          website) after you migrate. Backed-up data will only be available on
-          this website, not in the Google Health app.
+            Google Health does not support meals or custom foods created on this
+            website the same way Fitbit does. Back up a local copy of meals,
+            custom foods, and goals so you can keep using them here (on this
+            website) after you migrate. Backed-up data will only be available on
+            this website, not in the Google Health app.
           </p>
-          <p>You can also download a copy in .json format for your own records.</p>
+          <p>
+            You can also download a copy in .json format for your own records or
+            in case something goes wrong with the migration.
+          </p>
         </Typography>
 
         <div className="mt-4 flex justify-end gap-2">

@@ -8,10 +8,12 @@ import {
   SCRAMBLED_EGGS,
 } from "@/e2e/data/nutrition/food-log-list";
 import { expect, test } from "@/e2e/fixtures";
-import type {
-  MigrationFood,
-  MigrationGoal,
-  MigrationMeal,
+import {
+  MIGRATION_BACKUP_STORAGE_KEY,
+  type MigrationBackup,
+  type MigrationFood,
+  type MigrationGoal,
+  type MigrationMeal,
 } from "@/storage/db/fitbitmigrationdb";
 
 const FOOD_UNITS: Array<FoodUnit> = [
@@ -149,21 +151,13 @@ function byGoalKey(a: MigrationGoal, b: MigrationGoal) {
   return `${a.metric}:${a.period}`.localeCompare(`${b.metric}:${b.period}`);
 }
 
-async function readStore<T>(page: Page, storeName: string) {
-  return page.evaluate((name) => {
-    return new Promise<Array<T>>((resolve, reject) => {
-      const request = indexedDB.open("FitbitMigrationDB");
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => {
-        const db = request.result;
-        const tx = db.transaction(name, "readonly");
-        const store = tx.objectStore(name);
-        const getAll = store.getAll();
-        getAll.onsuccess = () => resolve(getAll.result);
-        getAll.onerror = () => reject(getAll.error);
-      };
-    });
-  }, storeName);
+async function readBackup(page: Page): Promise<MigrationBackup> {
+  return page.evaluate((key) => {
+    const raw = localStorage.getItem(key);
+    return raw
+      ? JSON.parse(raw)
+      : { meals: [], customFoods: [], goals: [] };
+  }, MIGRATION_BACKUP_STORAGE_KEY);
 }
 
 test("can backup selected meals and custom foods", async ({
@@ -205,10 +199,9 @@ test("can backup selected meals and custom foods", async ({
     /Saved 1 custom food and 1 meal/
   );
 
-  expect(await readStore<MigrationFood>(page, "customFoods")).toEqual(
-    EXPECTED_CUSTOM_FOODS
-  );
-  expect(await readStore<MigrationMeal>(page, "meals")).toEqual(EXPECTED_MEALS);
+  const backup = await readBackup(page);
+  expect(backup.customFoods).toEqual(EXPECTED_CUSTOM_FOODS);
+  expect(backup.meals).toEqual(EXPECTED_MEALS);
 });
 
 test("can backup only checked rows", async ({
@@ -234,7 +227,7 @@ test("can backup only checked rows", async ({
 
   await expect(toasts.successToasts).toHaveText(/Saved 1 meal/);
 
-  expect(await readStore<MigrationMeal>(page, "meals")).toEqual(EXPECTED_MEALS);
+  expect((await readBackup(page)).meals).toEqual(EXPECTED_MEALS);
 });
 
 test("can backup goals with daily, weekly, and target periods", async ({
@@ -263,7 +256,7 @@ test("can backup goals with daily, weekly, and target periods", async ({
 
   await expect(toasts.successToasts).toHaveText(/Saved 13 goals/);
 
-  const storedGoals = await readStore<MigrationGoal>(page, "goals");
+  const storedGoals = (await readBackup(page)).goals;
   expect([...storedGoals].sort(byGoalKey)).toEqual(
     [...EXPECTED_GOALS].sort(byGoalKey)
   );

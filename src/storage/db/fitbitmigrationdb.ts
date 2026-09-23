@@ -1,6 +1,6 @@
-import { Dexie, type EntityTable, type Table } from "dexie";
-
 import type { Food, FoodUnit } from "@/api/nutrition/types";
+
+export const MIGRATION_BACKUP_STORAGE_KEY = "migration:fitbit-to-google";
 
 export type GoalPeriod = "daily" | "weekly" | "target";
 
@@ -26,35 +26,43 @@ export interface MigrationMeal {
   mealFoods: Array<MigrationMealFood>;
 }
 
-export const db = new Dexie("FitbitMigrationDB") as Dexie & {
-  meals: EntityTable<MigrationMeal, "id">;
-  customFoods: EntityTable<MigrationFood, "foodId">;
-  goals: Table<MigrationGoal, [string, string]>;
+export interface MigrationBackup {
+  meals: Array<MigrationMeal>;
+  customFoods: Array<MigrationFood>;
+  goals: Array<MigrationGoal>;
+}
+
+const EMPTY_BACKUP: MigrationBackup = {
+  meals: [],
+  customFoods: [],
+  goals: [],
 };
 
-db.version(1).stores({
-  meals: "id",
-  customFoods: "foodId",
-  goals: "[metric+period]",
-});
+function readBackup(): MigrationBackup {
+  if (typeof localStorage === "undefined") {
+    return { ...EMPTY_BACKUP };
+  }
 
-export async function saveMeals(meals: Array<MigrationMeal>) {
-  await db.transaction("rw", db.meals, async () => {
-    await db.meals.clear();
-    await db.meals.bulkPut(meals);
-  });
+  const raw = localStorage.getItem(MIGRATION_BACKUP_STORAGE_KEY);
+  if (!raw) {
+    return { ...EMPTY_BACKUP };
+  }
+
+  return { ...EMPTY_BACKUP, ...JSON.parse(raw) };
 }
 
-export async function saveCustomFoods(customFoods: Array<MigrationFood>) {
-  await db.transaction("rw", db.customFoods, async () => {
-    await db.customFoods.clear();
-    await db.customFoods.bulkPut(customFoods);
-  });
+function writeBackup(backup: MigrationBackup) {
+  localStorage.setItem(MIGRATION_BACKUP_STORAGE_KEY, JSON.stringify(backup));
 }
 
-export async function saveGoals(goals: Array<MigrationGoal>) {
-  await db.transaction("rw", db.goals, async () => {
-    await db.goals.clear();
-    await db.goals.bulkPut(goals);
-  });
+export function saveMeals(meals: Array<MigrationMeal>) {
+  writeBackup({ ...readBackup(), meals });
+}
+
+export function saveCustomFoods(customFoods: Array<MigrationFood>) {
+  writeBackup({ ...readBackup(), customFoods });
+}
+
+export function saveGoals(goals: Array<MigrationGoal>) {
+  writeBackup({ ...readBackup(), goals });
 }
