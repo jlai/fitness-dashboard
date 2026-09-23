@@ -20,6 +20,7 @@ import {
 import { SurveyButton } from "@/components/survey";
 
 import AccountMenu from "./account-menu";
+import { MigrationNotice } from "./migration-notice";
 import { SiteNotice } from "./site-notice";
 import { ProxyNotice } from "./proxy-notice";
 
@@ -105,6 +106,7 @@ export default function Header() {
         </Container>
       </AppBar>
       <ProxyNotice />
+      <MigrationNotice />
       {SITE_NOTICE_HTML && <SiteNotice />}
     </>
   );
