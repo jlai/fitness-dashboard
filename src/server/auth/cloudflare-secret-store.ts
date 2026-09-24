@@ -40,7 +40,7 @@ export interface CloudflareSecretsApiClient {
   getSecret(secretId: string): Promise<CloudflareSecretInfo>;
   editSecret(
     secretId: string,
-    params: { name: string; value: string },
+    params: { value: string },
   ): Promise<CloudflareSecretInfo>;
 }
 
@@ -239,7 +239,7 @@ export class CloudflareSecretStore implements SecretStore {
       );
     }
 
-    const edited = await client.editSecret(secretId, { name, value });
+    const edited = await client.editSecret(secretId, { value });
     await this.waitUntilSecretActive(client, secretId, name, edited.status);
   }
 
@@ -382,18 +382,14 @@ export function createCloudflareSecretsApiClient(params: {
       );
     },
 
-    async editSecret(secretId, { name, value }) {
+    async editSecret(secretId, { value }) {
       const response = await fetchImpl(`${basePath}/${secretId}`, {
         method: "PATCH",
         headers: {
           ...authHeaders,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          name,
-          value,
-          scopes: ["workers"],
-        }),
+        body: JSON.stringify({ value }),
       });
       const body = (await response.json()) as {
         success: boolean;
@@ -404,13 +400,13 @@ export function createCloudflareSecretsApiClient(params: {
       if (!response.ok) {
         throw new Error(
           body.errors?.[0]?.message ??
-            `Failed to update Cloudflare secret ${name} (${response.status})`,
+            `Failed to update Cloudflare secret ${secretId}: (${response.status})`,
         );
       }
 
       return parseSecretInfo(
         body,
-        `Failed to update Cloudflare secret ${name} (${response.status})`,
+        `Failed to update Cloudflare secret ${secretId}: (${response.status})`,
       );
     },
   };

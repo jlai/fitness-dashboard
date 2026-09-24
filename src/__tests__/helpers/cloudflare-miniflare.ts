@@ -88,12 +88,13 @@ export async function createAuthMiniflare(): Promise<AuthMiniflare> {
           const name = await admin.get(secretId);
           return { id: secretId, name, status: "active" as const };
         },
-        async editSecret(secretId, { name, value }) {
+        async editSecret(secretId, { value }) {
+          const admin = await getAdmin("SESSION_ACTIVE_KEY");
+          const name = await admin.get(secretId);
           if (!isSecretBindingName(name)) {
             throw new Error(`Unknown secret binding ${name}`);
           }
-          const admin = await getAdmin(name);
-          await admin.update(value, secretId);
+          await (await getAdmin(name)).update(value, secretId);
           return { id: secretId, name, status: "active" as const };
         },
       };

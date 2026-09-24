@@ -198,15 +198,16 @@ describe("CloudflareSecretStore (Miniflare)", () => {
       },
       async editSecret(
         secretId: string,
-        params: { name: string; value: string },
+        params: { value: string },
       ) {
-        writeOrder.push(params.name);
-        if (params.name === "SESSION_ACCEPTED_KEYS") {
+        const existing = await baseClient.getSecret(secretId);
+        writeOrder.push(existing.name);
+        if (existing.name === "SESSION_ACCEPTED_KEYS") {
           statusById.set(secretId, "pending");
           await baseClient.editSecret(secretId, params);
           return {
             id: secretId,
-            name: params.name,
+            name: existing.name,
             status: "pending" as const,
           };
         }
@@ -215,7 +216,7 @@ describe("CloudflareSecretStore (Miniflare)", () => {
         expect(statusById.get(acceptedSecretId!)).toBe("active");
         await baseClient.editSecret(secretId, params);
         statusById.set(secretId, "active");
-        return { id: secretId, name: params.name, status: "active" as const };
+        return { id: secretId, name: existing.name, status: "active" as const };
       },
     };
 
@@ -255,10 +256,11 @@ describe("CloudflareSecretStore (Miniflare)", () => {
       },
       async editSecret(
         secretId: string,
-        params: { name: string; value: string },
+        params: { value: string },
       ) {
+        const existing = await baseClient.getSecret(secretId);
         await baseClient.editSecret(secretId, params);
-        return { id: secretId, name: params.name, status: "pending" as const };
+        return { id: secretId, name: existing.name, status: "pending" as const };
       },
     };
 
