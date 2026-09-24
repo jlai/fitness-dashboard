@@ -1,9 +1,9 @@
 import type { UserTile } from "@/storage/tiles";
 
 import type {
-  CustomFoodsData,
+  ClientOnlyFoodsData,
+  ClientOnlyGoalsData,
   DashboardsData,
-  GoalsData,
   MealsData,
   SettingsData,
 } from "./schemas";
@@ -135,16 +135,16 @@ export function createDefaultDashboardsData(): DashboardsData {
   };
 }
 
-export function createDefaultGoalsData(): GoalsData {
-  return { goals: [] };
+export function createDefaultClientOnlyGoalsData(): ClientOnlyGoalsData {
+  return { clientOnlyGoals: [] };
 }
 
 export function createDefaultMealsData(): MealsData {
   return { meals: [] };
 }
 
-export function createDefaultCustomFoodsData(): CustomFoodsData {
-  return { customFoods: [] };
+export function createDefaultClientOnlyFoodsData(): ClientOnlyFoodsData {
+  return { clientOnlyFoods: [] };
 }
 
 export function createDefaultSettingsData(): SettingsData {

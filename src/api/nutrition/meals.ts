@@ -1,12 +1,12 @@
 import { queryOptions, QueryClient } from "@tanstack/react-query";
 import { getDefaultStore } from "jotai";
 
-import type { ClientOnlyMeal, ClientOnlyMealFood } from "@/storage/db/dashdb";
+import type { ClientOnlyMeal, ClientOnlyMealFood } from "@/storage/meals";
 import {
   mealFoodFromResolvedFood,
   mealToClientOnlyMeal,
 } from "@/storage/db/fitbit-to-health";
-import { customFoodsAtom } from "@/storage/custom-foods";
+import { clientOnlyFoodsAtom } from "@/storage/client-only-foods";
 import { mealsAtom } from "@/storage/meals";
 
 import { isValidDataPointId, getDataPoint } from "../datapoints";
@@ -34,19 +34,19 @@ function placeholderFood(foodId: string): MealFood {
 }
 
 function findLocalFood(
-  customFoods: FoodDataPoint[],
+  clientOnlyFoods: FoodDataPoint[],
   foodName: string,
 ): FoodDataPoint | undefined {
-  return customFoods.find((food) => food.name === foodName);
+  return clientOnlyFoods.find((food) => food.name === foodName);
 }
 
 async function resolveMealFood(
   item: ClientOnlyMealFood,
-  customFoods: FoodDataPoint[],
+  clientOnlyFoods: FoodDataPoint[],
 ): Promise<MealFood> {
   const foodId = item.foodId;
   const foodName = foodResourceName(foodId);
-  const local = findLocalFood(customFoods, foodName);
+  const local = findLocalFood(clientOnlyFoods, foodName);
 
   if (local) {
     return mealFoodFromResolvedFood(mapFoodDataPoint(local), item);
@@ -67,25 +67,25 @@ async function resolveMealFood(
 
 async function hydrateMeal(
   meal: ClientOnlyMeal,
-  customFoods: FoodDataPoint[],
+  clientOnlyFoods: FoodDataPoint[],
 ): Promise<Meal> {
   return {
     id: meal.id,
     name: meal.name,
     description: meal.description,
     mealFoods: await Promise.all(
-      meal.foods.map((item) => resolveMealFood(item, customFoods)),
+      meal.foods.map((item) => resolveMealFood(item, clientOnlyFoods)),
     ),
   };
 }
 
 async function listMeals(): Promise<Meal[]> {
   const store = getDefaultStore();
-  const [{ meals }, { customFoods }] = await Promise.all([
+  const [{ meals }, { clientOnlyFoods }] = await Promise.all([
     store.get(mealsAtom),
-    store.get(customFoodsAtom),
+    store.get(clientOnlyFoodsAtom),
   ]);
-  return Promise.all(meals.map((meal) => hydrateMeal(meal, customFoods)));
+  return Promise.all(meals.map((meal) => hydrateMeal(meal, clientOnlyFoods)));
 }
 
 function privateFoodDataPoints(meal: Meal): FoodDataPoint[] {
@@ -94,7 +94,7 @@ function privateFoodDataPoints(meal: Meal): FoodDataPoint[] {
     .map((food) => foodToDataPoint(food));
 }
 
-function mergeCustomFoods(
+function mergeClientOnlyFoods(
   existing: FoodDataPoint[],
   additions: FoodDataPoint[],
 ): FoodDataPoint[] {
@@ -119,9 +119,9 @@ async function saveMeal(meal: Meal): Promise<Meal> {
   const stored = mealToClientOnlyMeal({ ...meal, id });
   const privateFoods = privateFoodDataPoints({ ...meal, id });
 
-  const [{ meals }, { customFoods }] = await Promise.all([
+  const [{ meals }, { clientOnlyFoods }] = await Promise.all([
     store.get(mealsAtom),
-    store.get(customFoodsAtom),
+    store.get(clientOnlyFoodsAtom),
   ]);
 
   const mealIndex = meals.findIndex((entry) => entry.id === id);
@@ -132,8 +132,8 @@ async function saveMeal(meal: Meal): Promise<Meal> {
 
   await store.set(mealsAtom, { meals: nextMeals });
   if (privateFoods.length > 0) {
-    await store.set(customFoodsAtom, {
-      customFoods: mergeCustomFoods(customFoods, privateFoods),
+    await store.set(clientOnlyFoodsAtom, {
+      clientOnlyFoods: mergeClientOnlyFoods(clientOnlyFoods, privateFoods),
     });
   }
 
@@ -151,7 +151,6 @@ export function buildMealsQuery() {
 function invalidateMealQueries(queryClient: QueryClient) {
   queryClient.invalidateQueries({ queryKey: ["meals"] });
   queryClient.invalidateQueries({ queryKey: ["saved-foods"] });
-  queryClient.invalidateQueries({ queryKey: ["custom-foods"] });
   queryClient.invalidateQueries({ queryKey: ["client-only-foods"] });
 }
 

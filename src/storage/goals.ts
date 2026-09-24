@@ -4,15 +4,16 @@ import { atom } from "jotai";
 import { atomFamily } from "jotai-family";
 
 import {
-  createDefaultGoalsData,
+  createDefaultClientOnlyGoalsData,
   createSettingsBlobAtom,
-  goalsStoredSchema,
+  clientOnlyGoalsStoredSchema,
   SETTINGS_STORAGE_KEYS,
-  type GoalsData,
+  type ClientGoal,
+  type ClientOnlyGoalsData,
+  type GoalPeriod,
 } from "@/storage/settings-storage";
-import type { ClientGoal, GoalPeriod } from "@/storage/db/dashdb";
 
-export type { ClientGoal, GoalPeriod };
+export type { ClientGoal, ClientOnlyGoalsData, GoalPeriod };
 
 export type GoalMetric =
   | "steps"
@@ -27,10 +28,10 @@ export type GoalMetric =
 
 export type GoalWrite = Pick<ClientGoal, "value" | "unit">;
 
-export const goalsAtom = createSettingsBlobAtom({
-  key: SETTINGS_STORAGE_KEYS.goals,
-  schema: goalsStoredSchema,
-  defaultData: createDefaultGoalsData,
+export const clientOnlyGoalsAtom = createSettingsBlobAtom({
+  key: SETTINGS_STORAGE_KEYS.clientOnlyGoals,
+  schema: clientOnlyGoalsStoredSchema,
+  defaultData: createDefaultClientOnlyGoalsData,
 });
 
 interface GoalAtomParam {
@@ -39,11 +40,11 @@ interface GoalAtomParam {
 }
 
 function findGoal(
-  data: GoalsData,
+  data: ClientOnlyGoalsData,
   metric: GoalMetric,
   period: GoalPeriod,
 ): ClientGoal | undefined {
-  return data.goals.find(
+  return data.clientOnlyGoals.find(
     (goal) => goal.metric === metric && goal.period === period,
   );
 }
@@ -52,7 +53,7 @@ const goalsAtomFamily = atomFamily(
   ({ metric, period }: GoalAtomParam) => {
     return atom(
       (get) => {
-        const dataOrPromise = get(goalsAtom);
+        const dataOrPromise = get(clientOnlyGoalsAtom);
 
         if (dataOrPromise instanceof Promise) {
           return dataOrPromise.then((data) => findGoal(data, metric, period));
@@ -61,9 +62,9 @@ const goalsAtomFamily = atomFamily(
         return findGoal(dataOrPromise, metric, period);
       },
       async (_get, set, update: GoalWrite) => {
-        await set(goalsAtom, (prev) => {
-          const goals = [...prev.goals];
-          const index = goals.findIndex(
+        await set(clientOnlyGoalsAtom, (prev) => {
+          const clientOnlyGoals = [...prev.clientOnlyGoals];
+          const index = clientOnlyGoals.findIndex(
             (goal) => goal.metric === metric && goal.period === period,
           );
           const next: ClientGoal = {
@@ -74,12 +75,12 @@ const goalsAtomFamily = atomFamily(
           };
 
           if (index >= 0) {
-            goals[index] = next;
+            clientOnlyGoals[index] = next;
           } else {
-            goals.push(next);
+            clientOnlyGoals.push(next);
           }
 
-          return { goals };
+          return { clientOnlyGoals };
         });
       },
     );

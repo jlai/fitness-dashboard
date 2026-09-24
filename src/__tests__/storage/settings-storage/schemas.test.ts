@@ -1,12 +1,12 @@
 import {
   createDefaultDashboardsData,
-  createDefaultGoalsData,
+  createDefaultClientOnlyGoalsData,
   createDefaultMealsData,
-  createDefaultCustomFoodsData,
+  createDefaultClientOnlyFoodsData,
   createDefaultSettingsData,
-  customFoodsStoredSchema,
+  clientOnlyFoodsStoredSchema,
   dashboardsStoredSchema,
-  goalsStoredSchema,
+  clientOnlyGoalsStoredSchema,
   mealsStoredSchema,
   settingsStoredSchema,
   storedDataSchema,
@@ -67,11 +67,11 @@ describe("per-key stored schemas", () => {
     ).toBe(false);
   });
 
-  it("parses empty goals/meals/custom-foods/settings defaults", () => {
+  it("parses empty client-only-goals/meals/client-only-foods/settings defaults", () => {
     const updateTime = "2026-01-01T00:00:00.000Z";
     expect(
-      goalsStoredSchema.safeParse({
-        data: createDefaultGoalsData(),
+      clientOnlyGoalsStoredSchema.safeParse({
+        data: createDefaultClientOnlyGoalsData(),
         version: 1,
         updateTime,
       }).success,
@@ -84,8 +84,8 @@ describe("per-key stored schemas", () => {
       }).success,
     ).toBe(true);
     expect(
-      customFoodsStoredSchema.safeParse({
-        data: createDefaultCustomFoodsData(),
+      clientOnlyFoodsStoredSchema.safeParse({
+        data: createDefaultClientOnlyFoodsData(),
         version: 1,
         updateTime,
       }).success,
@@ -100,9 +100,9 @@ describe("per-key stored schemas", () => {
   });
 
   it("accepts food datapoints with passthrough fields", () => {
-    const result = customFoodsStoredSchema.safeParse({
+    const result = clientOnlyFoodsStoredSchema.safeParse({
       data: {
-        customFoods: [
+        clientOnlyFoods: [
           {
             name: "users/me/dataTypes/food/dataPoints/abc",
             food: { displayName: "Oats" },
@@ -117,8 +117,8 @@ describe("per-key stored schemas", () => {
 
   it("rejects food datapoints without name", () => {
     expect(
-      customFoodsStoredSchema.safeParse({
-        data: { customFoods: [{ food: { displayName: "Oats" } }] },
+      clientOnlyFoodsStoredSchema.safeParse({
+        data: { clientOnlyFoods: [{ food: { displayName: "Oats" } }] },
         version: 1,
         updateTime: "2026-01-01T00:00:00.000Z",
       }).success,

@@ -1,6 +1,7 @@
-import { Dexie, Table, type EntityTable } from "dexie";
-
 import type { NutritionalValues } from "@/api/nutrition/types";
+
+/** localStorage key written by the Fitbit app's migration backup. */
+export const MIGRATION_BACKUP_STORAGE_KEY = "migration:fitbit-to-google";
 
 export type GoalPeriod = "daily" | "weekly" | "target";
 
@@ -11,7 +12,7 @@ export interface MigrationGoal {
   units?: string;
 }
 
-/** Fitbit food unit as stored in the Fitbit Migration DB. */
+/** Fitbit food unit as stored in the Fitbit migration backup. */
 export interface FitbitFoodUnit {
   id: number;
   name: string;
@@ -25,8 +26,8 @@ export type FitbitServing = {
 };
 
 /**
- * Custom food as stored in FitbitMigrationDB.customFoods.
- * @see fitbit-api-migration commit 6cc890555cd5920d8f8a4a08770ef7161ccdc55b
+ * Custom food as stored in the Fitbit migration backup.
+ * @see fitbit-api-migration commit 4bdfa6097ca74d9be9025359794bc69502b12052
  */
 export interface MigrationFood {
   accessLevel: "PUBLIC" | "PRIVATE";
@@ -48,8 +49,8 @@ export type MigrationMealFood = MigrationFood & {
 };
 
 /**
- * Meal as stored in FitbitMigrationDB.meals.
- * @see fitbit-api-migration commit 6cc890555cd5920d8f8a4a08770ef7161ccdc55b
+ * Meal as stored in the Fitbit migration backup.
+ * @see fitbit-api-migration commit 4bdfa6097ca74d9be9025359794bc69502b12052
  */
 export interface MigrationMeal {
   id: string;
@@ -58,14 +59,61 @@ export interface MigrationMeal {
   mealFoods: Array<MigrationMealFood>;
 }
 
-export const db = new Dexie("FitbitMigrationDB") as Dexie & {
-  meals: EntityTable<MigrationMeal, "id">;
-  customFoods: EntityTable<MigrationFood, "foodId">;
-  goals: Table<MigrationGoal, [string, string]>;
+export interface MigrationBackup {
+  meals: Array<MigrationMeal>;
+  customFoods: Array<MigrationFood>;
+  goals: Array<MigrationGoal>;
+}
+
+const EMPTY_BACKUP: MigrationBackup = {
+  meals: [],
+  customFoods: [],
+  goals: [],
 };
 
-db.version(1).stores({
-  meals: "id",
-  customFoods: "foodId",
-  goals: "[metric+period]",
-});
+function asArray<T>(value: unknown): Array<T> {
+  return Array.isArray(value) ? value : [];
+}
+
+export function readMigrationBackup(): MigrationBackup {
+  if (typeof localStorage === "undefined") {
+    return { ...EMPTY_BACKUP };
+  }
+
+  const raw = localStorage.getItem(MIGRATION_BACKUP_STORAGE_KEY);
+  if (!raw) {
+    return { ...EMPTY_BACKUP };
+  }
+
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") {
+      return { ...EMPTY_BACKUP };
+    }
+
+    const backup = parsed as Partial<MigrationBackup>;
+    return {
+      meals: asArray(backup.meals),
+      customFoods: asArray(backup.customFoods),
+      goals: asArray(backup.goals),
+    };
+  } catch {
+    return { ...EMPTY_BACKUP };
+  }
+}
+
+function writeBackup(backup: MigrationBackup) {
+  localStorage.setItem(MIGRATION_BACKUP_STORAGE_KEY, JSON.stringify(backup));
+}
+
+export function saveMeals(meals: Array<MigrationMeal>) {
+  writeBackup({ ...readMigrationBackup(), meals });
+}
+
+export function saveCustomFoods(customFoods: Array<MigrationFood>) {
+  writeBackup({ ...readMigrationBackup(), customFoods });
+}
+
+export function saveGoals(goals: Array<MigrationGoal>) {
+  writeBackup({ ...readMigrationBackup(), goals });
+}

@@ -1,9 +1,9 @@
 /** SettingsStorage keys for persisted app data blobs. */
 export const SETTINGS_STORAGE_KEYS = {
   dashboards: "dashboards",
-  goals: "goals",
+  clientOnlyGoals: "client-only-goals",
   meals: "meals",
-  customFoods: "custom-foods",
+  clientOnlyFoods: "client-only-foods",
   settings: "settings",
 } as const;
 

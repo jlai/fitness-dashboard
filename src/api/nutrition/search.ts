@@ -2,7 +2,7 @@ import { queryOptions } from "@tanstack/react-query";
 import { queryClientAtom } from "jotai-tanstack-query";
 import { atom, getDefaultStore } from "jotai";
 
-import { customFoodsAtom } from "@/storage/custom-foods";
+import { clientOnlyFoodsAtom } from "@/storage/client-only-foods";
 
 import { ONE_HOUR_IN_MILLIS } from "../cache-settings";
 import { listDataPoints, listDataPointsPage } from "../datapoints";
@@ -65,13 +65,13 @@ export function buildSearchFoodsQuery(query: string) {
   });
 }
 
-export function buildCustomFoodsQuery() {
+export function buildClientOnlyFoodsQuery() {
   return queryOptions({
-    queryKey: ["custom-foods"],
+    queryKey: ["client-only-foods"],
     queryFn: async () => {
       const store = getDefaultStore();
-      const { customFoods } = await store.get(customFoodsAtom);
-      const fromStorage = customFoods.map((dataPoint) =>
+      const { clientOnlyFoods } = await store.get(clientOnlyFoodsAtom);
+      const fromStorage = clientOnlyFoods.map((dataPoint) =>
         mapFoodDataPoint(dataPoint),
       );
 

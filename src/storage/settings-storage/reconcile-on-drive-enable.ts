@@ -120,11 +120,11 @@ export function settingsStorageKeyLabel(key: SettingsStorageKey): string {
   switch (key) {
     case "dashboards":
       return "dashboards";
-    case "goals":
+    case "client-only-goals":
       return "goals";
     case "meals":
       return "meals";
-    case "custom-foods":
+    case "client-only-foods":
       return "custom foods";
     case "settings":
       return "settings";

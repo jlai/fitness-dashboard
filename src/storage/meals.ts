@@ -5,11 +5,12 @@ import {
   createSettingsBlobAtom,
   mealsStoredSchema,
   SETTINGS_STORAGE_KEYS,
+  type ClientOnlyMeal,
+  type ClientOnlyMealFood,
   type MealsData,
 } from "@/storage/settings-storage";
-import type { ClientOnlyMeal } from "@/storage/db/dashdb";
 
-export type { ClientOnlyMeal, MealsData };
+export type { ClientOnlyMeal, ClientOnlyMealFood, MealsData };
 
 export const mealsAtom = createSettingsBlobAtom({
   key: SETTINGS_STORAGE_KEYS.meals,

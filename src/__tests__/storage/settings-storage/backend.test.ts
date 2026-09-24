@@ -9,13 +9,13 @@ import {
   createSettingsBlobAtom,
   getGoogleDriveSettingsStorage,
   getMemorySettingsStorage,
-  goalsStoredSchema,
+  clientOnlyGoalsStoredSchema,
   MemorySettingsStorage,
   resetSettingsStorageSingletonsForTests,
   settingsStorageAtom,
   SETTINGS_STORAGE_KEYS,
 } from "@/storage/settings-storage";
-import { createDefaultGoalsData } from "@/storage/settings-storage/defaults";
+import { createDefaultClientOnlyGoalsData } from "@/storage/settings-storage/defaults";
 
 jest.mock("@/api/auth", () => {
   const actual = jest.requireActual("@/api/auth");
@@ -99,49 +99,53 @@ describe("createSettingsBlobAtom validation", () => {
 
   it("falls back to defaults on invalid stored data", async () => {
     const memory = getMemorySettingsStorage();
-    memory.seedSync(SETTINGS_STORAGE_KEYS.goals, { notGoals: true });
+    memory.seedSync(SETTINGS_STORAGE_KEYS.clientOnlyGoals, { notGoals: true });
 
     const goalsAtom = createSettingsBlobAtom({
-      key: SETTINGS_STORAGE_KEYS.goals,
-      schema: goalsStoredSchema,
-      defaultData: createDefaultGoalsData,
+      key: SETTINGS_STORAGE_KEYS.clientOnlyGoals,
+      schema: clientOnlyGoalsStoredSchema,
+      defaultData: createDefaultClientOnlyGoalsData,
     });
 
     const store = createStore();
     const value = await store.get(goalsAtom);
-    expect(value).toEqual({ goals: [] });
+    expect(value).toEqual({ clientOnlyGoals: [] });
   });
 
   it("rejects invalid payloads on write", async () => {
     const goalsAtom = createSettingsBlobAtom({
-      key: SETTINGS_STORAGE_KEYS.goals,
-      schema: goalsStoredSchema,
-      defaultData: createDefaultGoalsData,
+      key: SETTINGS_STORAGE_KEYS.clientOnlyGoals,
+      schema: clientOnlyGoalsStoredSchema,
+      defaultData: createDefaultClientOnlyGoalsData,
     });
 
     const store = createStore();
     await expect(
-      store.set(goalsAtom, { goals: [{ metric: "steps" }] } as never),
+      store.set(goalsAtom, { clientOnlyGoals: [{ metric: "steps" }] } as never),
     ).rejects.toThrow();
   });
 
   it("persists valid writes to Memory storage", async () => {
     const goalsAtom = createSettingsBlobAtom({
-      key: SETTINGS_STORAGE_KEYS.goals,
-      schema: goalsStoredSchema,
-      defaultData: createDefaultGoalsData,
+      key: SETTINGS_STORAGE_KEYS.clientOnlyGoals,
+      schema: clientOnlyGoalsStoredSchema,
+      defaultData: createDefaultClientOnlyGoalsData,
     });
 
     const store = createStore();
     await store.set(goalsAtom, {
-      goals: [{ metric: "steps", period: "daily", value: 8000, unit: "" }],
+      clientOnlyGoals: [
+        { metric: "steps", period: "daily", value: 8000, unit: "" },
+      ],
     });
 
     const stored = await getMemorySettingsStorage().get(
-      SETTINGS_STORAGE_KEYS.goals,
+      SETTINGS_STORAGE_KEYS.clientOnlyGoals,
     );
     expect(stored?.data).toEqual({
-      goals: [{ metric: "steps", period: "daily", value: 8000, unit: "" }],
+      clientOnlyGoals: [
+        { metric: "steps", period: "daily", value: 8000, unit: "" },
+      ],
     });
   });
 });

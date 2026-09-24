@@ -1,7 +1,6 @@
 import { TextDecoder, TextEncoder } from "node:util";
 import { webcrypto } from "node:crypto";
 import "whatwg-fetch";
-import "fake-indexeddb/auto";
 
 if (typeof globalThis.structuredClone !== "function") {
   globalThis.structuredClone = <T>(value: T): T =>

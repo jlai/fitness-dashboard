@@ -32,9 +32,9 @@ function MigrationContent() {
       </Typography>
       <Typography>
         Import dashboard layout, preferences, goals, meals, and custom foods
-        that were previously stored in this browser (localStorage and IndexedDB)
-        into Settings storage. Legacy data is not deleted; you can wipe it later
-        from Advanced settings.
+        that were previously stored in this browser (including the Fitbit
+        migration backup in localStorage) into Settings storage. Legacy data is
+        not deleted; you can wipe it later from Advanced settings.
       </Typography>
 
       {!driveEnabled && (

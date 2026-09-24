@@ -12,7 +12,10 @@ import type {
   MigrationMeal,
   MigrationMealFood,
 } from "@/storage/db/fitbitmigrationdb";
-import type { ClientOnlyMeal, ClientOnlyMealFood } from "@/storage/db/dashdb";
+import type {
+  ClientOnlyMeal,
+  ClientOnlyMealFood,
+} from "@/storage/settings-storage/schemas";
 
 function asUnit(unit: FitbitFoodUnit): FoodUnit {
   return {

@@ -1,3 +1,4 @@
+import type { Serving } from "@generated/orval/fetch/google-health-api/models";
 import { z } from "zod";
 
 import type { FoodDataPoint } from "@/api/nutrition/helpers";
@@ -9,10 +10,30 @@ import type {
   WaterUnitSystem,
   WeightUnitSystem,
 } from "@/api/user";
-import type { ClientGoal, ClientOnlyMeal } from "@/storage/db/dashdb";
 import type { UserTile } from "@/storage/tiles";
 
 import type { StoredData } from "./types";
+
+export type GoalPeriod = "daily" | "weekly" | "target";
+
+export interface ClientGoal {
+  metric: string;
+  period: GoalPeriod;
+  value: number;
+  unit: string;
+}
+
+export interface ClientOnlyMealFood {
+  foodId: string;
+  serving: Serving;
+}
+
+export interface ClientOnlyMeal {
+  id: string;
+  name: string;
+  description: string;
+  foods: Array<ClientOnlyMealFood>;
+}
 
 /** Wrap a data schema in the StoredData envelope. */
 export function storedDataSchema<T extends z.ZodType>(dataSchema: T) {
@@ -60,13 +81,13 @@ export const clientGoalSchema = z.object({
   unit: z.string(),
 }) as z.ZodType<ClientGoal>;
 
-export type GoalsData = {
-  goals: ClientGoal[];
+export type ClientOnlyGoalsData = {
+  clientOnlyGoals: ClientGoal[];
 };
 
-export const goalsDataSchema = z.object({
-  goals: z.array(clientGoalSchema),
-}) as z.ZodType<GoalsData>;
+export const clientOnlyGoalsDataSchema = z.object({
+  clientOnlyGoals: z.array(clientGoalSchema),
+}) as z.ZodType<ClientOnlyGoalsData>;
 
 export const mealServingSchema = z
   .object({
@@ -101,13 +122,13 @@ export const foodDataPointSchema = z
   .object({ name: z.string() })
   .passthrough() as unknown as z.ZodType<FoodDataPoint>;
 
-export type CustomFoodsData = {
-  customFoods: FoodDataPoint[];
+export type ClientOnlyFoodsData = {
+  clientOnlyFoods: FoodDataPoint[];
 };
 
-export const customFoodsDataSchema = z.object({
-  customFoods: z.array(foodDataPointSchema),
-}) as z.ZodType<CustomFoodsData>;
+export const clientOnlyFoodsDataSchema = z.object({
+  clientOnlyFoods: z.array(foodDataPointSchema),
+}) as z.ZodType<ClientOnlyFoodsData>;
 
 export const nutritionMacroGoalsSchema = z.object({
   calories: z.number(),
@@ -169,13 +190,17 @@ export const settingsDataSchema = z.object({
 }) as z.ZodType<SettingsData>;
 
 export const dashboardsStoredSchema = storedDataSchema(dashboardsDataSchema);
-export const goalsStoredSchema = storedDataSchema(goalsDataSchema);
+export const clientOnlyGoalsStoredSchema = storedDataSchema(
+  clientOnlyGoalsDataSchema,
+);
 export const mealsStoredSchema = storedDataSchema(mealsDataSchema);
-export const customFoodsStoredSchema = storedDataSchema(customFoodsDataSchema);
+export const clientOnlyFoodsStoredSchema = storedDataSchema(
+  clientOnlyFoodsDataSchema,
+);
 export const settingsStoredSchema = storedDataSchema(settingsDataSchema);
 
 export type StoredDashboards = StoredData<DashboardsData>;
-export type StoredGoals = StoredData<GoalsData>;
+export type StoredClientOnlyGoals = StoredData<ClientOnlyGoalsData>;
 export type StoredMeals = StoredData<MealsData>;
-export type StoredCustomFoods = StoredData<CustomFoodsData>;
+export type StoredClientOnlyFoods = StoredData<ClientOnlyFoodsData>;
 export type StoredSettings = StoredData<SettingsData>;

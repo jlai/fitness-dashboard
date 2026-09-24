@@ -9,19 +9,16 @@ import {
   parseWaterUnit,
   parseWeightUnit,
 } from "@/api/user";
-import { db as dashDb } from "@/storage/db/dashdb";
-import { customFoodsAtom } from "@/storage/custom-foods";
-import { goalsAtom } from "@/storage/goals";
+import { readFitbitMigrationSettings } from "@/storage/db/import-from-fitbit-migration";
+import { clientOnlyFoodsAtom } from "@/storage/client-only-foods";
+import { clientOnlyGoalsAtom } from "@/storage/goals";
 import { mealsAtom } from "@/storage/meals";
 import { settingsBlobAtom, DEFAULT_FDA_MACRO_GOALS } from "@/storage/settings";
 import { dashboardsAtom, type UserTile } from "@/storage/tiles";
 import {
   createDefaultDashboardsData,
   createDefaultSettingsData,
-  type CustomFoodsData,
   type DashboardsData,
-  type GoalsData,
-  type MealsData,
   type SettingsData,
   type SettingsPrefs,
 } from "@/storage/settings-storage";
@@ -190,24 +187,10 @@ function readLegacyDashboards(): DashboardsData {
   return createDefaultDashboardsData();
 }
 
-async function readLegacyGoals(): Promise<GoalsData> {
-  const goals = await dashDb.clientOnlyGoals.toArray();
-  return { goals };
-}
-
-async function readLegacyMeals(): Promise<MealsData> {
-  const meals = await dashDb.clientOnlyMeals.toArray();
-  return { meals };
-}
-
-async function readLegacyCustomFoods(): Promise<CustomFoodsData> {
-  const customFoods = await dashDb.clientOnlyFoods.toArray();
-  return { customFoods };
-}
-
 /**
- * Import legacy localStorage + Dexie data into the current SettingsStorage
- * backend via jotai atoms (so Suspense caches stay in sync).
+ * Import legacy localStorage data (prefs, dashboard tiles, and the Fitbit
+ * migration backup) into the current SettingsStorage backend via jotai atoms
+ * so Suspense caches stay in sync.
  */
 export async function importLegacySettings() {
   const settingsData: SettingsData = {
@@ -217,16 +200,13 @@ export async function importLegacySettings() {
     },
   };
   const dashboards = readLegacyDashboards();
-  const [goals, meals, customFoods] = await Promise.all([
-    readLegacyGoals(),
-    readLegacyMeals(),
-    readLegacyCustomFoods(),
-  ]);
+  const { clientOnlyGoals, meals, clientOnlyFoods } =
+    readFitbitMigrationSettings();
 
   const store = getDefaultStore();
   await store.set(settingsBlobAtom, settingsData);
   await store.set(dashboardsAtom, dashboards);
-  await store.set(goalsAtom, goals);
+  await store.set(clientOnlyGoalsAtom, clientOnlyGoals);
   await store.set(mealsAtom, meals);
-  await store.set(customFoodsAtom, customFoods);
+  await store.set(clientOnlyFoodsAtom, clientOnlyFoods);
 }

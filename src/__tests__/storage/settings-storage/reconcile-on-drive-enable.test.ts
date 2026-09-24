@@ -41,7 +41,11 @@ describe("reconcileMemoryAndDriveOnEnable", () => {
 
   it("copies memory-only keys to Drive and drive-only keys to Memory", async () => {
     const memory = getMemorySettingsStorage();
-    await memory.set(SETTINGS_STORAGE_KEYS.goals, { goals: [{ metric: "steps", period: "daily", value: 1, unit: "" }] });
+    await memory.set(SETTINGS_STORAGE_KEYS.clientOnlyGoals, {
+      clientOnlyGoals: [
+        { metric: "steps", period: "daily", value: 1, unit: "" },
+      ],
+    });
 
     listAppDataFiles.mockResolvedValue([
       { id: "meals-id", name: "meals.json" },
@@ -57,12 +61,12 @@ describe("reconcileMemoryAndDriveOnEnable", () => {
     const resolveConflicts = jest.fn();
     const result = await reconcileMemoryAndDriveOnEnable({ resolveConflicts });
 
-    expect(result.memoryOnly).toEqual([SETTINGS_STORAGE_KEYS.goals]);
+    expect(result.memoryOnly).toEqual([SETTINGS_STORAGE_KEYS.clientOnlyGoals]);
     expect(result.driveOnly).toEqual([SETTINGS_STORAGE_KEYS.meals]);
     expect(result.conflicts).toEqual([]);
     expect(resolveConflicts).not.toHaveBeenCalled();
     expect(createAppDataFile).toHaveBeenCalledWith(
-      "goals.json",
+      "client-only-goals.json",
       expect.stringContaining('"metric":"steps"'),
     );
     expect(listAppDataFiles).toHaveBeenCalledTimes(1);
@@ -78,13 +82,15 @@ describe("reconcileMemoryAndDriveOnEnable", () => {
     await memory.set(SETTINGS_STORAGE_KEYS.settings, {
       settings: { mapStyle: "memory-style" },
     });
-    await memory.set(SETTINGS_STORAGE_KEYS.goals, {
-      goals: [{ metric: "steps", period: "daily", value: 100, unit: "" }],
+    await memory.set(SETTINGS_STORAGE_KEYS.clientOnlyGoals, {
+      clientOnlyGoals: [
+        { metric: "steps", period: "daily", value: 100, unit: "" },
+      ],
     });
 
     listAppDataFiles.mockResolvedValue([
       { id: "id-settings.json", name: "settings.json" },
-      { id: "id-goals.json", name: "goals.json" },
+      { id: "id-client-only-goals.json", name: "client-only-goals.json" },
     ]);
     downloadAppDataFile.mockImplementation(async (fileId: string) => {
       if (fileId === "id-settings.json") {
@@ -96,7 +102,9 @@ describe("reconcileMemoryAndDriveOnEnable", () => {
       }
       return JSON.stringify({
         data: {
-          goals: [{ metric: "steps", period: "daily", value: 999, unit: "" }],
+          clientOnlyGoals: [
+            { metric: "steps", period: "daily", value: 999, unit: "" },
+          ],
         },
         version: 1,
         updateTime: "2026-01-01T00:00:00.000Z",
@@ -107,12 +115,12 @@ describe("reconcileMemoryAndDriveOnEnable", () => {
     const result = await reconcileMemoryAndDriveOnEnable({ resolveConflicts });
 
     expect(result.conflicts).toEqual([
-      SETTINGS_STORAGE_KEYS.goals,
+      SETTINGS_STORAGE_KEYS.clientOnlyGoals,
       SETTINGS_STORAGE_KEYS.settings,
     ]);
     expect(resolveConflicts).toHaveBeenCalledTimes(1);
     expect(resolveConflicts).toHaveBeenCalledWith([
-      SETTINGS_STORAGE_KEYS.goals,
+      SETTINGS_STORAGE_KEYS.clientOnlyGoals,
       SETTINGS_STORAGE_KEYS.settings,
     ]);
     expect(updateAppDataFile).toHaveBeenCalledTimes(2);
@@ -121,7 +129,7 @@ describe("reconcileMemoryAndDriveOnEnable", () => {
       expect.stringContaining("memory-style"),
     );
     expect(updateAppDataFile).toHaveBeenCalledWith(
-      "id-goals.json",
+      "id-client-only-goals.json",
       expect.stringContaining('"value":100'),
     );
     expect(listAppDataFiles).toHaveBeenCalledTimes(1);

@@ -10,7 +10,9 @@ import {
 describe("settings-storage helpers", () => {
   it("accepts valid keys and maps them to filenames", () => {
     expect(() => assertValidSettingsKey("meals")).not.toThrow();
-    expect(settingsKeyToFileName("custom-foods")).toBe("custom-foods.json");
+    expect(settingsKeyToFileName("client-only-foods")).toBe(
+      "client-only-foods.json",
+    );
   });
 
   it("rejects invalid keys", () => {
