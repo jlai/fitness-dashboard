@@ -1,7 +1,10 @@
 /**
  * @jest-environment node
  */
-import { CloudflareSecretStore } from "@/server/auth/cloudflare-secret-store";
+import {
+  CloudflareSecretStore,
+  createCloudflareSecretsApiClient,
+} from "@/server/auth/cloudflare-secret-store";
 import { purposeOptions } from "@/server/auth/secret-store";
 import { rotateTokenSecrets } from "@/server/auth/rotate-token-secrets";
 import {
@@ -61,10 +64,7 @@ describe("CloudflareSecretStore (Miniflare)", () => {
       : { keys: [SESSION_JWK] };
 
     await authMf.seedSecret("SESSION_ACTIVE_KEY", JSON.stringify(SESSION_JWK));
-    await authMf.seedSecret(
-      "SESSION_ACCEPTED_KEYS",
-      JSON.stringify(accepted),
-    );
+    await authMf.seedSecret("SESSION_ACCEPTED_KEYS", JSON.stringify(accepted));
   }
 
   it("reads ACTIVE_KEY and ACCEPTED_KEYS from Secrets Store bindings", async () => {
@@ -196,10 +196,7 @@ describe("CloudflareSecretStore (Miniflare)", () => {
           status: statusById.get(secretId) ?? base.status,
         };
       },
-      async editSecret(
-        secretId: string,
-        params: { value: string },
-      ) {
+      async editSecret(secretId: string, params: { value: string }) {
         const existing = await baseClient.getSecret(secretId);
         writeOrder.push(existing.name);
         if (existing.name === "SESSION_ACCEPTED_KEYS") {
@@ -233,10 +230,7 @@ describe("CloudflareSecretStore (Miniflare)", () => {
 
     const rotated = await store.rotateKeys();
 
-    expect(writeOrder).toEqual([
-      "SESSION_ACCEPTED_KEYS",
-      "SESSION_ACTIVE_KEY",
-    ]);
+    expect(writeOrder).toEqual(["SESSION_ACCEPTED_KEYS", "SESSION_ACTIVE_KEY"]);
     expect(acceptedPolls).toBeGreaterThanOrEqual(3);
     await expect(store.getActiveKey()).resolves.toMatchObject({
       kid: rotated.kid,
@@ -254,13 +248,14 @@ describe("CloudflareSecretStore (Miniflare)", () => {
         const base = await baseClient.getSecret(secretId);
         return { ...base, status: "pending" as const };
       },
-      async editSecret(
-        secretId: string,
-        params: { value: string },
-      ) {
+      async editSecret(secretId: string, params: { value: string }) {
         const existing = await baseClient.getSecret(secretId);
         await baseClient.editSecret(secretId, params);
-        return { id: secretId, name: existing.name, status: "pending" as const };
+        return {
+          id: secretId,
+          name: existing.name,
+          status: "pending" as const,
+        };
       },
     };
 
@@ -349,9 +344,11 @@ describe("CloudflareSecretStore (Miniflare)", () => {
       await expect(driveStore.getActiveKey()).resolves.toMatchObject({
         kid: result.drive.kid,
       });
-      await expect(sessionStore.getKeyById("session-1")).resolves.toMatchObject({
-        kid: "session-1",
-      });
+      await expect(sessionStore.getKeyById("session-1")).resolves.toMatchObject(
+        {
+          kid: "session-1",
+        },
+      );
       await expect(healthStore.getKeyById("health-1")).resolves.toMatchObject({
         kid: "health-1",
       });
@@ -363,5 +360,131 @@ describe("CloudflareSecretStore (Miniflare)", () => {
       process.env.CLOUDFLARE_ACCOUNT_ID = originalAccount;
       process.env.CLOUDFLARE_API_TOKEN = originalToken;
     }
+  });
+});
+
+function jsonResponse(body: unknown, init?: { status?: number }) {
+  return new Response(JSON.stringify(body), {
+    status: init?.status ?? 200,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+function secretResult(params: {
+  id: string;
+  name: string;
+  status?: "pending" | "active" | "deleted";
+  storeId?: string;
+}) {
+  return {
+    id: params.id,
+    name: params.name,
+    status: params.status ?? "active",
+    store_id: params.storeId ?? TEST_SECRETS_STORE_ID,
+    created: "2026-01-01T00:00:00Z",
+    modified: "2026-01-01T00:00:00Z",
+  };
+}
+
+describe("createCloudflareSecretsApiClient", () => {
+  it("lists, gets, and edits secrets through the Cloudflare SDK", async () => {
+    const listed = secretResult({
+      id: "secret-accepted",
+      name: "SESSION_ACCEPTED_KEYS",
+    });
+    const fetchImpl = jest.fn(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = new URL(String(input));
+        const method = (init?.method ?? "GET").toUpperCase();
+
+        expect(url.origin + url.pathname).toMatch(
+          new RegExp(
+            `/accounts/${TEST_ACCOUNT_ID}/secrets_store/stores/${TEST_SECRETS_STORE_ID}/secrets`,
+          ),
+        );
+        const headers = new Headers(init?.headers);
+        expect(headers.get("Authorization")).toBe("Bearer test-token");
+
+        if (
+          method === "GET" &&
+          url.pathname.endsWith("/secrets") &&
+          (url.searchParams.get("page") === "1" ||
+            !url.searchParams.has("page"))
+        ) {
+          return jsonResponse({
+            success: true,
+            result: [listed],
+            result_info: { page: 1, per_page: 20 },
+          });
+        }
+
+        if (method === "GET" && url.pathname.endsWith("/secrets")) {
+          return jsonResponse({
+            success: true,
+            result: [],
+            result_info: { page: 2, per_page: 20 },
+          });
+        }
+
+        if (
+          method === "GET" &&
+          url.pathname.endsWith("/secrets/secret-active")
+        ) {
+          return jsonResponse({
+            success: true,
+            result: secretResult({
+              id: "secret-active",
+              name: "SESSION_ACTIVE_KEY",
+              status: "pending",
+            }),
+          });
+        }
+
+        if (
+          method === "PATCH" &&
+          url.pathname.endsWith("/secrets/secret-active")
+        ) {
+          expect(JSON.parse(String(init?.body))).toEqual({ value: "next-key" });
+          return jsonResponse({
+            success: true,
+            result: secretResult({
+              id: "secret-active",
+              name: "SESSION_ACTIVE_KEY",
+              status: "pending",
+            }),
+          });
+        }
+
+        throw new Error(`Unexpected ${method} ${url.toString()}`);
+      },
+    );
+
+    const client = createCloudflareSecretsApiClient({
+      accountId: TEST_ACCOUNT_ID,
+      storeId: TEST_SECRETS_STORE_ID,
+      apiToken: "test-token",
+      fetchImpl: fetchImpl as typeof fetch,
+    });
+
+    const names: Array<{ id: string; name: string }> = [];
+    for await (const secret of client.listSecrets()) {
+      names.push(secret);
+    }
+
+    expect(names).toEqual([
+      { id: "secret-accepted", name: "SESSION_ACCEPTED_KEYS" },
+    ]);
+    await expect(client.getSecret("secret-active")).resolves.toEqual({
+      id: "secret-active",
+      name: "SESSION_ACTIVE_KEY",
+      status: "pending",
+    });
+    await expect(
+      client.editSecret("secret-active", { value: "next-key" }),
+    ).resolves.toEqual({
+      id: "secret-active",
+      name: "SESSION_ACTIVE_KEY",
+      status: "pending",
+    });
   });
 });

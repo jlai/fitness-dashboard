@@ -1,3 +1,6 @@
+import { createClient } from "cloudflare/tree-shakable";
+import { Secrets } from "cloudflare/resources/secrets-store/stores/secrets";
+
 import {
   generateOctJwk,
   octJwkToSymmetricKey,
@@ -47,7 +50,7 @@ export interface CloudflareSecretsApiClient {
 export interface CloudflareSecretStoreOptions extends SecretPurposeOptions {
   storeId: string;
   accountId: string;
-  /** Injected for tests; defaults to the Cloudflare Secrets Store HTTP API. */
+  /** Injected for tests; defaults to the official Cloudflare TypeScript SDK. */
   client?: CloudflareSecretsApiClient;
   /** Injected for tests; defaults to reading Secrets Store bindings from the Worker env. */
   readSecret?: (name: string) => Promise<string>;
@@ -59,7 +62,6 @@ export interface CloudflareSecretStoreOptions extends SecretPurposeOptions {
   pollTimeoutMs?: number;
 }
 
-const CLOUDFLARE_API_BASE = "https://api.cloudflare.com/client/v4";
 const DEFAULT_POLL_INTERVAL_MS = 500;
 const DEFAULT_POLL_TIMEOUT_MS = 10_000;
 
@@ -69,7 +71,8 @@ export class CloudflareSecretStore implements SecretStore {
   private readonly storeId: string;
   private readonly accountId: string;
   private readonly client: CloudflareSecretsApiClient | undefined;
-  private readonly readSecretFn: ((name: string) => Promise<string>) | undefined;
+  private readonly readSecretFn:
+    ((name: string) => Promise<string>) | undefined;
   private readonly sleepFn: (ms: number) => Promise<void>;
   private readonly pollIntervalMs: number;
   private readonly pollTimeoutMs: number;
@@ -270,7 +273,9 @@ export class CloudflareSecretStore implements SecretStore {
       }
 
       if (status === "deleted") {
-        throw new Error(`Cloudflare secret ${name} was deleted during rotation`);
+        throw new Error(
+          `Cloudflare secret ${name} was deleted during rotation`,
+        );
       }
     }
 
@@ -286,29 +291,15 @@ function defaultSleep(ms: number) {
   });
 }
 
-function parseSecretInfo(
-  body: {
-    success: boolean;
-    errors?: Array<{ message: string }>;
-    result?: { id?: string; name?: string; status?: string };
-  },
-  fallbackMessage: string,
-): CloudflareSecretInfo {
-  if (!body.success || !body.result?.id || !body.result.name) {
-    throw new Error(body.errors?.[0]?.message ?? fallbackMessage);
-  }
-
-  const status = body.result.status;
-  if (status !== "pending" && status !== "active" && status !== "deleted") {
-    throw new Error(
-      `Unexpected Cloudflare secret status ${String(status)} for ${body.result.name}`,
-    );
-  }
-
+function toSecretInfo(secret: {
+  id: string;
+  name: string;
+  status: CloudflareSecretStatus;
+}): CloudflareSecretInfo {
   return {
-    id: body.result.id,
-    name: body.result.name,
-    status,
+    id: secret.id,
+    name: secret.name,
+    status: secret.status,
   };
 }
 
@@ -318,95 +309,31 @@ export function createCloudflareSecretsApiClient(params: {
   apiToken: string;
   fetchImpl?: typeof fetch;
 }): CloudflareSecretsApiClient {
-  const fetchImpl = params.fetchImpl ?? fetch;
-  const basePath = `${CLOUDFLARE_API_BASE}/accounts/${params.accountId}/secrets_store/stores/${params.storeId}/secrets`;
-  const authHeaders = {
-    Authorization: `Bearer ${params.apiToken}`,
-  };
+  const client = createClient({
+    apiToken: params.apiToken,
+    fetch: params.fetchImpl,
+    resources: [Secrets],
+  });
+  const secrets = client.secretsStore.stores.secrets;
+  const account_id = params.accountId;
+  const store_id = params.storeId;
 
   return {
     async *listSecrets() {
-      let page = 1;
-
-      for (;;) {
-        const response = await fetchImpl(`${basePath}?page=${page}&per_page=100`, {
-          headers: authHeaders,
-        });
-        const body = (await response.json()) as {
-          success: boolean;
-          errors?: Array<{ message: string }>;
-          result?: Array<{ id: string; name: string }>;
-          result_info?: { total_pages?: number };
-        };
-
-        if (!response.ok || !body.success) {
-          throw new Error(
-            body.errors?.[0]?.message ??
-              `Failed to list Cloudflare secrets (${response.status})`,
-          );
-        }
-
-        for (const secret of body.result ?? []) {
-          yield secret;
-        }
-
-        const totalPages = body.result_info?.total_pages ?? page;
-        if (page >= totalPages) {
-          return;
-        }
-
-        page += 1;
+      for await (const secret of secrets.list(store_id, { account_id })) {
+        yield { id: secret.id, name: secret.name };
       }
     },
 
     async getSecret(secretId) {
-      const response = await fetchImpl(`${basePath}/${secretId}`, {
-        headers: authHeaders,
-      });
-      const body = (await response.json()) as {
-        success: boolean;
-        errors?: Array<{ message: string }>;
-        result?: { id?: string; name?: string; status?: string };
-      };
-
-      if (!response.ok) {
-        throw new Error(
-          body.errors?.[0]?.message ??
-            `Failed to get Cloudflare secret (${response.status})`,
-        );
-      }
-
-      return parseSecretInfo(
-        body,
-        `Failed to get Cloudflare secret (${response.status})`,
+      return toSecretInfo(
+        await secrets.get(secretId, { account_id, store_id }),
       );
     },
 
     async editSecret(secretId, { value }) {
-      const response = await fetchImpl(`${basePath}/${secretId}`, {
-        method: "PATCH",
-        headers: {
-          ...authHeaders,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ value }),
-      });
-      const body = (await response.json()) as {
-        success: boolean;
-        errors?: Array<{ message: string }>;
-        result?: { id?: string; name?: string; status?: string };
-      };
-
-      if (!response.ok) {
-        throw new Error(
-          body.errors?.[0]?.message ??
-            `Failed to update Cloudflare secret ${secretId}: (${response.status})`,
-        );
-      }
-
-      return parseSecretInfo(
-        body,
-        `Failed to update Cloudflare secret ${secretId}: (${response.status})`,
+      return toSecretInfo(
+        await secrets.edit(secretId, { account_id, store_id, value }),
       );
     },
   };
