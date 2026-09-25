@@ -11,6 +11,9 @@ interface CreateSessionBody {
   id_token?: unknown;
 }
 
+/**
+ * Create a new session token for the user from a Google OpenID Connect token
+ */
 export async function POST(request: Request) {
   const origin = requireSameOrigin(request);
 

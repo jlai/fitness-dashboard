@@ -285,6 +285,19 @@ describe("logout", () => {
       encryptedDriveToken: "encrypted-drive-jwt",
     });
 
+    fetchMock.mockImplementation(async () => {
+      expect(localStorage.getItem(SESSION_TOKEN_STORAGE_KEY)).toBe(
+        sessionToken,
+      );
+      expect(localStorage.getItem(ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY)).toBe(
+        "encrypted-jwt",
+      );
+      expect(localStorage.getItem(ENCRYPTED_DRIVE_TOKEN_STORAGE_KEY)).toBe(
+        "encrypted-drive-jwt",
+      );
+      return new Response(null, { status: 204 });
+    });
+
     await logout();
 
     expect(fetchMock).toHaveBeenCalledWith(
@@ -364,6 +377,16 @@ describe("revokeAuthorization", () => {
   it("revokes the health token and all sessions then clears local auth state", async () => {
     const sessionToken = fakeSessionToken();
     setStoredSession({ sessionToken, encryptedHealthToken: "encrypted-jwt" });
+
+    fetchMock.mockImplementation(async () => {
+      expect(localStorage.getItem(SESSION_TOKEN_STORAGE_KEY)).toBe(
+        sessionToken,
+      );
+      expect(localStorage.getItem(ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY)).toBe(
+        "encrypted-jwt",
+      );
+      return new Response(null, { status: 204 });
+    });
 
     await revokeAuthorization();
 

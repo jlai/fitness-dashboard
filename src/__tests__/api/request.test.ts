@@ -104,8 +104,15 @@ describe("extractErrors", () => {
 describe("makeRequest", () => {
   let fetchMock: jest.SpyInstance;
 
-  beforeEach(() => {
-    logout();
+  beforeEach(async () => {
+    const logoutFetch = jest
+      .spyOn(global, "fetch")
+      .mockResolvedValue(new Response(null, { status: 204 }));
+    try {
+      await logout();
+    } finally {
+      logoutFetch.mockRestore();
+    }
     localStorage.setItem(SESSION_TOKEN_STORAGE_KEY, fakeSessionToken());
     localStorage.setItem(ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY, "encrypted-jwt");
     fetchMock = jest.spyOn(global, "fetch");
