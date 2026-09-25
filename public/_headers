@@ -6,3 +6,6 @@
 /*/_next/static/*
   Cache-Control: public,max-age=31536000,immutable
   Cross-Origin-Opener-Policy: same-origin-allow-popups
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' blob: https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style; img-src 'self' data: https://tile.openstreetmap.org https://*.tile.opentopomap.org; frame-src 'self' https://accounts.google.com/gsi/; frame-ancestors 'none'; connect-src 'self' https://health.googleapis.com https://www.googleapis.com https://accounts.google.com/gsi/ https://oauth2.googleapis.com https://api.protomaps.com https://protomaps.github.io; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self';
+  Cross-Origin-Opener-Policy: same-origin-allow-popups

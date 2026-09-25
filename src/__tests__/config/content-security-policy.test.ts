@@ -65,4 +65,14 @@ describe("buildContentSecurityPolicy", () => {
     expect(scriptSrc).not.toContain("'unsafe-eval'");
     expect(scriptSrc).not.toContain("'unsafe-inline'");
   });
+
+  it("falls back to unsafe-inline for scripts when no nonce is provided", () => {
+    const csp = buildContentSecurityPolicy();
+    const scriptSrc = scriptSrcDirective(csp);
+
+    expect(scriptSrc).toContain("'unsafe-inline'");
+    expect(scriptSrc).not.toContain("'nonce-");
+    expect(scriptSrc).not.toContain("'strict-dynamic'");
+    expect(csp).toContain("frame-ancestors 'none'");
+  });
 });

@@ -1,3 +1,5 @@
+import { buildContentSecurityPolicy } from "./src/config/content-security-policy.mjs";
+
 function normalizeBasePath(value) {
   if (!value || value === "/") {
     return "";
@@ -23,6 +25,10 @@ const nextConfig = {
           {
             key: "Cross-Origin-Opener-Policy",
             value: "same-origin-allow-popups",
+          },
+          {
+            key: "Content-Security-Policy",
+            value: buildContentSecurityPolicy(),
           },
         ],
       },

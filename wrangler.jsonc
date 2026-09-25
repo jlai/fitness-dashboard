@@ -7,6 +7,9 @@
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS",
+    // Run the Worker (and Next.js proxy/headers) before HTML so CSP is applied.
+    // Hashed /_next/static files can still be served directly.
+    "run_worker_first": ["/*", "!/_next/static/*", "!/*/_next/static/*"],
   },
   "services": [
     {
