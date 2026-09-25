@@ -54,6 +54,8 @@ next-env.d.ts
 
 # other temporary files
 /.temp/
+dependency-check-bin
+dependency-check-reports
 
 # Copied from maplibre-gl on install/build
 /public/maplibre/

@@ -42,6 +42,7 @@ export function buildContentSecurityPolicy(nonce: string) {
     style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style;
     img-src 'self' data: https://tile.openstreetmap.org https://*.tile.opentopomap.org;
     frame-src 'self' https://accounts.google.com/gsi/;
+    frame-ancestors 'none';
     connect-src 'self' ${googleHealthApiUrl()} https://www.googleapis.com https://accounts.google.com/gsi/ https://oauth2.googleapis.com https://api.protomaps.com https://protomaps.github.io;
     worker-src 'self' blob:;
     object-src 'none';
