@@ -21,6 +21,8 @@ Pages that get parameters from the url (path fragments, query params, hashes) sh
 be valid in the id. For example, datapoint ids may only contain lowercase letters, numbers, and hyphens. We're generally pretty good at preventing
 CSRF/XSS and injection attacks but this is an easy point of defense.
 
+`console.log` and `console.error` statements in authentication-related contexts should be scrutinized to ensure that they do not log credentials.
+
 # Testing
 
 Make sure that `npm build` works before you're done. In case another process is using the .next directory, output to a temporary directory under `.temp`.
