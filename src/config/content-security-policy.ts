@@ -38,9 +38,9 @@ function googleHealthApiUrl() {
 export function buildContentSecurityPolicy(nonce?: string) {
   const isDev = process.env.NODE_ENV === "development";
   const scriptSrc = [
-    "self",
-    nonce ? "nonce-${nonce} strict-dynamic" : "unsafe-inline",
-    isDev ? "unsafe-eval" : "",
+    "'self'",
+    nonce ? "nonce-${nonce} 'strict-dynamic'" : "'unsafe-inline'",
+    isDev ? "'unsafe-eval'" : "",
   ]
     .filter(Boolean)
     .join(" ");
