@@ -2,7 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { buildContentSecurityPolicy } from "./config/content-security-policy";
 
-export function proxy(request: NextRequest) {
+/**
+ * OpenNext Cloudflare still compiles Edge Middleware from `middleware.ts`.
+ * Next.js 16 `proxy.ts` uses the Node.js runtime, which Cloudflare does not
+ * fully support yet.
+ */
+export function middleware(request: NextRequest) {
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
   const contentSecurityPolicy = buildContentSecurityPolicy(nonce);
 

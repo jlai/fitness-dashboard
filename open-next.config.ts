@@ -8,7 +8,7 @@ const config = defineCloudflareConfig({
   // incrementalCache: r2IncrementalCache
 });
 
-// OpenNext spreads next.config headers after proxy.ts, so the static CSP
+// OpenNext spreads next.config headers after middleware, so the static CSP
 // would replace the per-request nonce unless middleware wins.
 config.dangerous = {
   ...config.dangerous,
