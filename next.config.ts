@@ -1,6 +1,8 @@
-import { buildContentSecurityPolicy } from "./src/config/content-security-policy.mjs";
+import type { NextConfig } from "next";
 
-function normalizeBasePath(value) {
+import { buildContentSecurityPolicy } from "./src/config/content-security-policy";
+
+function normalizeBasePath(value: string | undefined) {
   if (!value || value === "/") {
     return "";
   }
@@ -13,10 +15,14 @@ function normalizeBasePath(value) {
 
 const basePath = normalizeBasePath(process.env.NEXT_PUBLIC_BASE_PATH);
 
-/** @type {import('next').NextConfig} */
-const nextConfig = {
+const nextConfig: NextConfig = {
   distDir: process.env.NEXT_DIST_DIR || ".next",
   ...(basePath ? { basePath } : {}),
+  experimental: {
+    sri: {
+      algorithm: "sha256",
+    },
+  },
   headers() {
     return [
       {
