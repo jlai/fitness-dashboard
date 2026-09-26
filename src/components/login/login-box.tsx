@@ -125,6 +125,84 @@ function StaySignedInOption({
   );
 }
 
+export function LoginStepper({
+  activeStep,
+  onGrantHealthAccess,
+  grantAccessReady,
+  onFinish,
+}: {
+  activeStep: number;
+  onGrantHealthAccess: () => void;
+  grantAccessReady: boolean;
+  onFinish: (rememberMe: boolean) => void;
+}) {
+  const [rememberMeChoice, setRememberMeChoice] = useState("dont-stay");
+
+  return (
+    <Stepper activeStep={activeStep} orientation="vertical" className="mt-8">
+      <Step>
+        <StepLabel>Sign into Google</StepLabel>
+        {activeStep === 0 ? (
+          <StepContent>
+            <Typography variant="body1" marginBottom={2}>
+              Ready to get started? Sign in with Google below.
+            </Typography>
+            <GoogleSignInButton />
+          </StepContent>
+        ) : null}
+      </Step>
+      <Step>
+        <StepLabel>Authorize access to Google Health</StepLabel>
+        {activeStep === 1 ? (
+          <StepContent>
+            <Typography variant="body1" marginBottom={2}>
+              You&apos;re signed in with Google. Next, grant access to view your
+              Google Health data and log new activities and other data.
+            </Typography>
+            <Button
+              variant="contained"
+              onClick={onGrantHealthAccess}
+              disabled={!grantAccessReady}
+            >
+              Grant access to Google Health
+            </Button>
+          </StepContent>
+        ) : null}
+      </Step>
+      <Step>
+        <StepLabel>Remember me on this computer?</StepLabel>
+        {activeStep === 2 ? (
+          <StepContent>
+            <RadioGroup
+              className="flex flex-col gap-y-3"
+              value={rememberMeChoice}
+              onChange={(event) => setRememberMeChoice(event.target.value)}
+            >
+              <StaySignedInOption
+                value="dont-stay"
+                label="Don't stay signed in"
+                description="Select this option if you're using a shared or public computer. You will need to sign in every time you open this page."
+              />
+              <StaySignedInOption
+                value="remember"
+                label="Remember me on this computer"
+                description="Stay logged in and quickly log in again when returning to this page in the future."
+              />
+            </RadioGroup>
+            <Button
+              variant="contained"
+              onClick={() => onFinish(rememberMeChoice === "remember")}
+              className="mt-4"
+            >
+              Finish
+            </Button>
+          </StepContent>
+        ) : null}
+      </Step>
+    </Stepper>
+  );
+}
+
 export default function LoginBox() {
   const router = useRouter();
   const allUnitsConfigured = useAtomValue(allUnitsConfiguredAtom);
@@ -134,7 +212,6 @@ export default function LoginBox() {
   const openIdSignedIn = useOpenIdSignedIn();
   const loggedIn = useLoggedIn();
   const { loginToGoogleAndAuthorize, ready } = useGoogleLoginAndAuthorization();
-  const [rememberMeChoice, setRememberMeChoice] = useState("dont-stay");
 
   const awaitingRememberMe = pendingRememberMeChoice && loggedIn;
   const showWelcomeBack =
@@ -151,28 +228,30 @@ export default function LoginBox() {
       });
   }, [loginToGoogleAndAuthorize, setPendingRememberMeChoice]);
 
-  const finishLogin = useCallback(() => {
-    if (rememberMeChoice === "remember") {
-      persistAuthTokens();
-    }
+  const finishLogin = useCallback(
+    (rememberMe: boolean) => {
+      if (rememberMe) {
+        persistAuthTokens();
+      }
 
-    setPendingRememberMeChoice(false);
+      setPendingRememberMeChoice(false);
 
-    if (!firstLoginDate) {
-      setFirstLoginDate(formatAsDate(dayjs()));
-    }
+      if (!firstLoginDate) {
+        setFirstLoginDate(formatAsDate(dayjs()));
+      }
 
-    if (!hasTokenScope(SETTINGS_READONLY) && !allUnitsConfigured) {
-      router.replace("/settings/locale");
-    }
-  }, [
-    allUnitsConfigured,
-    firstLoginDate,
-    rememberMeChoice,
-    router,
-    setFirstLoginDate,
-    setPendingRememberMeChoice,
-  ]);
+      if (!hasTokenScope(SETTINGS_READONLY) && !allUnitsConfigured) {
+        router.replace("/settings/locale");
+      }
+    },
+    [
+      allUnitsConfigured,
+      firstLoginDate,
+      router,
+      setFirstLoginDate,
+      setPendingRememberMeChoice,
+    ],
+  );
 
   return (
     <Container maxWidth="md" className="space-y-6">
@@ -234,67 +313,12 @@ export default function LoginBox() {
                 )}
               </Typography>
             </div>
-            <Stepper
+            <LoginStepper
               activeStep={activeStep}
-              orientation="vertical"
-              className="mt-8"
-            >
-              <Step>
-                <StepLabel>Sign into Google</StepLabel>
-                <StepContent>
-                  <Typography variant="body1" marginBottom={2}>
-                    Ready to get started? Sign in with Google below.
-                  </Typography>
-                  <GoogleSignInButton />
-                </StepContent>
-              </Step>
-              <Step>
-                <StepLabel>Authorize access to Google Health</StepLabel>
-                <StepContent>
-                  <Typography variant="body1" marginBottom={2}>
-                    You&apos;re signed in with Google. Next, grant access to view your
-                    Google Health data and log new activities and other data.
-                  </Typography>
-                  <Button
-                    variant="contained"
-                    onClick={grantHealthAccess}
-                    disabled={!ready}
-                  >
-                    Grant access to Google Health
-                  </Button>
-                </StepContent>
-              </Step>
-              <Step>
-                <StepLabel>Remember me on this computer?</StepLabel>
-                <StepContent>
-                  <RadioGroup
-                    className="flex flex-col gap-y-3"
-                    value={rememberMeChoice}
-                    onChange={(event) =>
-                      setRememberMeChoice(event.target.value)
-                    }
-                  >
-                    <StaySignedInOption
-                      value="dont-stay"
-                      label="Don't stay signed in"
-                      description="Select this option if you&apos;re using a shared or public computer. You will need to sign in every time you open this page."
-                    />
-                    <StaySignedInOption
-                      value="remember"
-                      label="Remember me on this computer"
-                      description="Stay logged in and quickly log in again when returning to this page in the future."
-                    />
-                  </RadioGroup>
-                  <Button
-                    variant="contained"
-                    onClick={finishLogin}
-                    className="mt-4"
-                  >
-                    Finish
-                  </Button>
-                </StepContent>
-              </Step>
-            </Stepper>
+              onGrantHealthAccess={grantHealthAccess}
+              grantAccessReady={ready}
+              onFinish={finishLogin}
+            />
           </>
         )}
         <section className="mt-8">
