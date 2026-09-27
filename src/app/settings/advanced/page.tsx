@@ -12,6 +12,7 @@ import { forceTokenRefresh, useLoggedIn } from "@/api/auth";
 import { useSwitchAccounts } from "@/components/login/use-switch-accounts";
 import { increasedTileLimitsAtom } from "@/storage/settings";
 import { showSuccessToast, withErrorToaster } from "@/components/toast";
+import { DEV_MODE_ENABLED } from "@/config";
 
 import { SettingsRow, SettingsTable } from "../common";
 
@@ -121,16 +122,12 @@ function DeveloperSettings() {
 }
 
 export default function AdvancedSettingsPage() {
-  const enableDevSettings =
-    process.env.NODE_ENV !== "production" ||
-    process.env.NEXT_PUBLIC_ENABLE_DEV_MODE === "true";
-
   return (
     <>
       <SettingsTable>
         <AdvancedSettings />
       </SettingsTable>
-      {enableDevSettings && (
+      {DEV_MODE_ENABLED && (
         <SettingsTable>
           <DeveloperSettings />
         </SettingsTable>
