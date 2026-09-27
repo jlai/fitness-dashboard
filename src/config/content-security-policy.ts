@@ -39,7 +39,7 @@ export function buildContentSecurityPolicy(nonce?: string) {
   const isDev = process.env.NODE_ENV === "development";
   const scriptSrc = [
     "'self'",
-    nonce ? `'nonce-${nonce}' 'strict-dynamic'` : "'unsafe-inline'",
+    nonce ? `'nonce-${nonce}'` : "'unsafe-inline'",
     isDev ? "'unsafe-eval'" : "",
   ]
     .filter(Boolean)
