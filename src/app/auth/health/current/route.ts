@@ -5,6 +5,7 @@ import {
 import {
   badRequestResponse,
   forbiddenResponse,
+  noContentResponse,
   unauthorizedResponse,
 } from "@/server/auth/http";
 import {
@@ -65,5 +66,5 @@ export async function DELETE(request: Request) {
   const revocationDatabase = await getRevocationDatabase();
   await revocationDatabase.add(stored.jti, stored.exp);
 
-  return new Response(null, { status: 204 });
+  return noContentResponse();
 }

@@ -65,6 +65,9 @@ describe("POST /auth/session", () => {
     const payload = await response.json();
 
     expect(response.status).toBe(200);
+    expect(response.headers.get("Cache-Control")).toBe(
+      "no-cache, max-age=0, must-revalidate",
+    );
     expect(payload.session_token).toEqual(expect.any(String));
     expect(payload.session_token.split(".")).toHaveLength(3);
 
@@ -149,6 +152,9 @@ describe("DELETE /auth/session/current", () => {
     );
 
     expect(response.status).toBe(204);
+    expect(response.headers.get("Cache-Control")).toBe(
+      "no-cache, max-age=0, must-revalidate",
+    );
 
     const revoked = await DELETE_CURRENT(
       makeRequest({

@@ -1,3 +1,4 @@
+import { noContentResponse } from "@/server/auth/http";
 import {
   isValidSession,
   requireSameOrigin,
@@ -20,5 +21,5 @@ export async function DELETE(request: Request) {
   const revocationDatabase = await getRevocationDatabase();
   await revocationDatabase.add(auth.session.jti, auth.session.exp);
 
-  return new Response(null, { status: 204 });
+  return noContentResponse();
 }

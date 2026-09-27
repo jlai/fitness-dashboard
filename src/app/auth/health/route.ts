@@ -5,6 +5,7 @@ import {
   forbiddenResponse,
   internalErrorResponse,
   jsonResponse,
+  noContentResponse,
 } from "@/server/auth/http";
 import {
   requireSameOrigin,
@@ -68,7 +69,7 @@ export async function DELETE(request: Request) {
       );
     }
 
-    return new Response(null, { status: 204 });
+    return noContentResponse();
   } catch {
     return internalErrorResponse("error revoking health token");
   }
