@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Roboto, Poppins } from "next/font/google";
+import { Roboto } from "next/font/google";
 import { headers } from "next/headers";
 import { HydrationProvider } from "react-hydration-provider";
 import { Container } from "@mui/material";
