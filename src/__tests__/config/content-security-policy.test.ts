@@ -1,4 +1,7 @@
-import { buildContentSecurityPolicy } from "@/config/content-security-policy";
+import {
+  CONTENT_SECURITY_POLICY_HEADER,
+  buildContentSecurityPolicy,
+} from "@/config/content-security-policy";
 
 function scriptSrcDirective(csp: string) {
   return csp
@@ -74,5 +77,31 @@ describe("buildContentSecurityPolicy", () => {
     expect(scriptSrc).not.toContain("'nonce-");
     expect(scriptSrc).not.toContain("'strict-dynamic'");
     expect(csp).toContain("frame-ancestors 'none'");
+  });
+
+  it("uses a lowercase header name so OpenNext does not join two CSP values", () => {
+    expect(CONTENT_SECURITY_POLICY_HEADER).toBe("content-security-policy");
+
+    const staticCsp = buildContentSecurityPolicy();
+    const nonceCsp = buildContentSecurityPolicy("test-nonce");
+    const mixedCase = new Request("https://example.com", {
+      headers: {
+        "Content-Security-Policy": staticCsp,
+        "content-security-policy": nonceCsp,
+      },
+    });
+    const matchingCase = new Request("https://example.com", {
+      headers: {
+        ...{ [CONTENT_SECURITY_POLICY_HEADER]: staticCsp },
+        ...{ [CONTENT_SECURITY_POLICY_HEADER]: nonceCsp },
+      },
+    });
+
+    expect(mixedCase.headers.get(CONTENT_SECURITY_POLICY_HEADER)).toBe(
+      `${staticCsp}, ${nonceCsp}`,
+    );
+    expect(matchingCase.headers.get(CONTENT_SECURITY_POLICY_HEADER)).toBe(
+      nonceCsp,
+    );
   });
 });

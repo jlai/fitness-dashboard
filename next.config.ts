@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
-import { buildContentSecurityPolicy } from "./src/config/content-security-policy";
+import {
+  CONTENT_SECURITY_POLICY_HEADER,
+  buildContentSecurityPolicy,
+} from "./src/config/content-security-policy";
 
 function normalizeBasePath(value: string | undefined) {
   if (!value || value === "/") {
@@ -28,7 +31,7 @@ const nextConfig: NextConfig = {
             value: "same-origin-allow-popups",
           },
           {
-            key: "Content-Security-Policy",
+            key: CONTENT_SECURITY_POLICY_HEADER,
             value: buildContentSecurityPolicy(),
           },
         ],

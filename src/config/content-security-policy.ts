@@ -31,6 +31,14 @@ function googleHealthApiUrl() {
 }
 
 /**
+ * Header name must be lowercase. OpenNext copies next.config and proxy headers
+ * into a Request using case-sensitive object keys; Fetch then treats
+ * `Content-Security-Policy` and `content-security-policy` as one header and
+ * joins the values with a comma.
+ */
+export const CONTENT_SECURITY_POLICY_HEADER = "content-security-policy";
+
+/**
  * Build a Content-Security-Policy header value.
  * Pass a per-request nonce to enforce strict script-src; omit it for the
  * static fallback used by next.config headers.

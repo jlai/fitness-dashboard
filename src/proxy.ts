@@ -1,32 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { buildContentSecurityPolicy } from "./config/content-security-policy";
+import {
+  CONTENT_SECURITY_POLICY_HEADER,
+  buildContentSecurityPolicy,
+} from "./config/content-security-policy";
 
-/**
- * OpenNext Cloudflare still compiles Edge Middleware from `middleware.ts`.
- * Next.js 16 `proxy.ts` uses the Node.js runtime, which Cloudflare does not
- * fully support yet.
- */
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
   const contentSecurityPolicy = buildContentSecurityPolicy(nonce);
 
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);
-  requestHeaders.set("Content-Security-Policy", contentSecurityPolicy);
+  requestHeaders.set(CONTENT_SECURITY_POLICY_HEADER, contentSecurityPolicy);
 
   const response = NextResponse.next({
     request: {
       headers: requestHeaders,
     },
   });
-  response.headers.set("Content-Security-Policy", contentSecurityPolicy);
+  response.headers.set(CONTENT_SECURITY_POLICY_HEADER, contentSecurityPolicy);
 
   return response;
 }
 
 export const config = {
   matcher: [
+    // Explicitly match / to fix a bug with basePath https://github.com/vercel/next.js/issues/47085
+    "/",
+
     /*
      * Match all request paths except for the ones starting with:
      * - api (API routes)

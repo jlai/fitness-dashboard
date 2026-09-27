@@ -8,8 +8,9 @@ const config = defineCloudflareConfig({
   // incrementalCache: r2IncrementalCache
 });
 
-// OpenNext spreads next.config headers after middleware, so the static CSP
-// would replace the per-request nonce unless middleware wins.
+// OpenNext copies next.config and proxy headers with case-sensitive keys, then
+// Cloudflare joins same-name Fetch headers with commas. Keep CSP lowercase and
+// let the nonce policy replace the static fallback.
 config.dangerous = {
   ...config.dangerous,
   middlewareHeadersOverrideNextConfigHeaders: true,
