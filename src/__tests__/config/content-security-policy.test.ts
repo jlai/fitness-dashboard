@@ -21,16 +21,25 @@ describe("buildContentSecurityPolicy", () => {
     }
   });
 
-  it("allows Next.js scripts via nonce instead of unsafe-inline", () => {
+  it("allows Next.js scripts and MUI Emotion styles via nonce instead of unsafe-inline", () => {
     const csp = buildContentSecurityPolicy("test-nonce");
     const directives = csp.split(";").map((part) => part.trim());
     const scriptSrc = directives.find((part) => part.startsWith("script-src "));
-    const styleSrc = directives.find((part) => part.startsWith("style-src "));
+    const styleSrcElem = directives.find((part) =>
+      part.startsWith("style-src-elem "),
+    );
+    const styleSrcAttr = directives.find((part) =>
+      part.startsWith("style-src-attr "),
+    );
 
     expect(scriptSrc).toContain("'nonce-test-nonce'");
-    expect(scriptSrc).toContain("'strict-dynamic'");
     expect(scriptSrc).not.toContain("'unsafe-inline'");
-    expect(styleSrc).toContain("'unsafe-inline'");
+    expect(styleSrcElem).toContain("'nonce-test-nonce'");
+    expect(styleSrcElem).not.toContain("'unsafe-inline'");
+    expect(styleSrcAttr).toBe("style-src-attr 'unsafe-inline'");
+    expect(directives.find((part) => part.startsWith("style-src "))).toBe(
+      undefined,
+    );
   });
 
   it("keeps Google Identity Services, MapLibre workers, and API connect-src", () => {
@@ -38,10 +47,22 @@ describe("buildContentSecurityPolicy", () => {
 
     expect(csp).toContain("https://accounts.google.com/gsi/client");
     expect(csp).toContain("https://accounts.google.com/gsi/style");
-    expect(csp).toContain("worker-src 'self' blob:");
+    expect(csp).toContain("worker-src 'self'");
     expect(csp).toContain("https://health.googleapis.com");
     expect(csp).toContain("https://www.googleapis.com");
     expect(csp).toContain("https://oauth2.googleapis.com");
+  });
+
+  it("quotes non-URL sources and leaves URLs unquoted", () => {
+    const csp = buildContentSecurityPolicy("test-nonce");
+
+    expect(csp).toContain(
+      "img-src 'self' data: https://tile.openstreetmap.org https://*.tile.opentopomap.org",
+    );
+    expect(csp).toContain("object-src 'none'");
+    expect(csp).toContain("'nonce-test-nonce'");
+    expect(csp).not.toContain("'data:'");
+    expect(csp).not.toContain("'https://");
   });
 
   it("includes extra script-src URLs", () => {
@@ -75,7 +96,8 @@ describe("buildContentSecurityPolicy", () => {
 
     expect(scriptSrc).toContain("'unsafe-inline'");
     expect(scriptSrc).not.toContain("'nonce-");
-    expect(scriptSrc).not.toContain("'strict-dynamic'");
+    expect(csp).toContain("style-src-elem 'self' 'unsafe-inline'");
+    expect(csp).toContain("style-src-attr 'unsafe-inline'");
     expect(csp).toContain("frame-ancestors 'none'");
   });
 

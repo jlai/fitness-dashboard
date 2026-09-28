@@ -1,11 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import {
-  StyledEngineProvider,
-  ThemeProvider,
-  useMediaQuery,
-} from "@mui/material";
+import { ThemeProvider, useMediaQuery } from "@mui/material";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { ConfirmProvider } from "material-ui-confirm";
@@ -83,14 +79,12 @@ export default function ClientSideSetup({
       <ThemeProvider theme={theme}>
         <JotaiProvider store={getDefaultStore()}>
           <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <StyledEngineProvider injectFirst>
-              <QueryClientProvider client={queryClient}>
-                <ConfirmProvider>
-                  <Setup>{children}</Setup>
-                  <Toaster />
-                </ConfirmProvider>
-              </QueryClientProvider>
-            </StyledEngineProvider>
+            <QueryClientProvider client={queryClient}>
+              <ConfirmProvider>
+                <Setup>{children}</Setup>
+                <Toaster />
+              </ConfirmProvider>
+            </QueryClientProvider>
           </LocalizationProvider>
         </JotaiProvider>
       </ThemeProvider>

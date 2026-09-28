@@ -3,11 +3,11 @@ import { Roboto } from "next/font/google";
 import { headers } from "next/headers";
 import { HydrationProvider } from "react-hydration-provider";
 import { Container } from "@mui/material";
-import { AppRouterCacheProvider } from "@mui/material-nextjs/v16-appRouter";
 import { Suspense } from "react";
 
 import { ErrorBoundary } from "@/components/error";
 import { ClientSideSetup } from "./client-setup-wrapper";
+import { MuiCacheProvider } from "./mui-cache-provider";
 
 import Header from "./header";
 
@@ -31,7 +31,7 @@ export default async function RootPageLayout({
     <html lang="en">
       <body className={`${roboto.className}`}>
         <HydrationProvider>
-          <AppRouterCacheProvider options={{ key: "css", nonce }}>
+          <MuiCacheProvider nonce={nonce}>
             <ClientSideSetup nonce={nonce}>
               <Header />
               <main>
@@ -44,7 +44,7 @@ export default async function RootPageLayout({
                 </ErrorBoundary>
               </main>
             </ClientSideSetup>
-          </AppRouterCacheProvider>
+          </MuiCacheProvider>
         </HydrationProvider>
       </body>
     </html>
