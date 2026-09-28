@@ -12,6 +12,7 @@ import { MuiCacheProvider } from "./mui-cache-provider";
 import Header from "./header";
 
 import "./globals.css";
+import "./mui-sonner.css";
 
 export const roboto = Roboto({ weight: ["400", "500"], subsets: ["latin"] });
 
