@@ -1,6 +1,8 @@
 import type { Serving } from "@generated/orval/fetch/google-health-api/models";
 import { z } from "zod";
 
+import "@/config/zod";
+
 import type { FoodDataPoint } from "@/api/nutrition/helpers";
 import type { NutritionMacroGoals } from "@/api/nutrition/types";
 import type {

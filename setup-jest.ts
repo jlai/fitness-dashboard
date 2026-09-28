@@ -2,6 +2,8 @@ import { TextDecoder, TextEncoder } from "node:util";
 import { webcrypto } from "node:crypto";
 import "whatwg-fetch";
 
+import "@/config/zod";
+
 if (typeof globalThis.structuredClone !== "function") {
   globalThis.structuredClone = <T>(value: T): T =>
     JSON.parse(JSON.stringify(value)) as T;

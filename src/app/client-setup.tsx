@@ -19,6 +19,7 @@ import {
 } from "@/api/request";
 import { GoogleIdentityProvider } from "@/components/login/google-identity";
 import { GOOGLE_OAUTH_CLIENT_ID } from "@/config";
+import "@/config/zod";
 import { analyticsPingEffect } from "@/storage/analytics";
 import {
   dateFormatAtomEffect,
