@@ -3,22 +3,22 @@
 import { useCallback } from "react";
 import { useConfirm } from "material-ui-confirm";
 
-import { clearEncryptedDriveAuth } from "@/api/auth";
-import { withErrorToaster } from "@/components/toast";
+import { logoutDrive } from "@/api/auth";
+import { runWithErrorToaster } from "@/components/toast";
 import {
   bumpSettingsStorageEpoch,
   migrateFromDriveOnDisable,
 } from "./migrate-from-drive-on-disable";
 
 /**
- * Move Drive app-data settings into Memory, delete the Drive copies, then drop
- * the local encrypted Drive token (without revoking at Google).
+ * Move Drive app-data settings into Memory, delete the Drive copies, then
+ * disconnect Google Drive (revoke at Google and drop the local token).
  */
 export function useDisableGoogleDriveSettings() {
   const confirm = useConfirm();
 
-  const disableGoogleDriveSettings = useCallback(
-    withErrorToaster(async () => {
+  const disableGoogleDriveSettings = useCallback(async () => {
+    await runWithErrorToaster(async () => {
       const { confirmed } = await confirm({
         title: "Disable Google Drive settings?",
         description:
@@ -34,11 +34,10 @@ export function useDisableGoogleDriveSettings() {
       }
 
       await migrateFromDriveOnDisable();
-      clearEncryptedDriveAuth();
+      await logoutDrive();
       bumpSettingsStorageEpoch();
-    }, "Failed to disable Google Drive settings"),
-    [confirm],
-  );
+    }, "Failed to disable Google Drive settings");
+  }, [confirm]);
 
   return { disableGoogleDriveSettings };
 }

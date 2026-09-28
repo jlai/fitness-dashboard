@@ -18,7 +18,7 @@ import {
 import { getRevocationDatabase } from "@/server/auth/revocation-database";
 
 interface AccessBody {
-  encrypted_drive_token?: unknown;
+  encryptedDriveToken?: unknown;
 }
 
 export async function POST(request: Request) {
@@ -43,8 +43,8 @@ export async function POST(request: Request) {
   }
 
   if (
-    typeof body.encrypted_drive_token !== "string" ||
-    body.encrypted_drive_token.length === 0
+    typeof body.encryptedDriveToken !== "string" ||
+    body.encryptedDriveToken.length === 0
   ) {
     return badRequestResponse("missing encrypted token");
   }
@@ -52,7 +52,7 @@ export async function POST(request: Request) {
   let stored;
 
   try {
-    stored = await decryptDriveRefreshToken(body.encrypted_drive_token);
+    stored = await decryptDriveRefreshToken(body.encryptedDriveToken);
   } catch (error) {
     if (isExpiredEncryptedTokenError(error)) {
       return unauthorizedResponse("encrypted drive token has expired");
@@ -84,7 +84,7 @@ export async function POST(request: Request) {
       return jsonResponse(
         {
           error: "token_refresh_failed",
-          error_description: "refresh token exchange failed",
+          errorDescription: "refresh token exchange failed",
         },
         status === 200 ? 400 : status,
       );
@@ -93,17 +93,17 @@ export async function POST(request: Request) {
     const scope = payload.scope ?? stored.scope;
     const refreshToken = payload.refresh_token ?? stored.refreshToken;
     // Re-encrypt so the client gets a refreshed iat/exp window.
-    const encrypted_drive_token = await encryptDriveRefreshToken({
+    const encryptedDriveToken = await encryptDriveRefreshToken({
       sub: stored.sub,
       refreshToken,
       scope,
     });
 
     return jsonResponse({
-      access_token: payload.access_token,
-      expires_in: payload.expires_in,
+      accessToken: payload.access_token,
+      expiresIn: payload.expires_in,
       scope,
-      encrypted_drive_token,
+      encryptedDriveToken,
     });
   } catch {
     return internalErrorResponse("error refreshing drive access token");

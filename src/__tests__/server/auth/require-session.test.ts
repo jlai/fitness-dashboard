@@ -49,7 +49,7 @@ describe("isValidSession", () => {
     expect(result.error?.status).toBe(401);
     await expect(result.error?.json()).resolves.toEqual({
       error: "unauthorized",
-      error_description: "session token has been revoked",
+      errorDescription: "session token has been revoked",
     });
   });
 
@@ -72,7 +72,7 @@ describe("isValidSession", () => {
     expect(result.error?.status).toBe(401);
     await expect(result.error?.json()).resolves.toEqual({
       error: "unauthorized",
-      error_description: "session token has been revoked",
+      errorDescription: "session token has been revoked",
     });
   });
 

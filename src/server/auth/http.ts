@@ -25,7 +25,7 @@ export function errorResponse(
   error: string,
   description: string,
 ) {
-  return jsonResponse({ error, error_description: description }, status);
+  return jsonResponse({ error, errorDescription: description }, status);
 }
 
 export function forbiddenResponse(message: string) {

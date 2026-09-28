@@ -53,7 +53,7 @@ export async function POST(request: Request) {
       return jsonResponse(
         {
           error: payload.error ?? "token_exchange_failed",
-          error_description:
+          errorDescription:
             payload.error_description ?? "authorization code exchange failed",
         },
         status === 200 ? 400 : status,
@@ -70,7 +70,7 @@ export async function POST(request: Request) {
           );
         }
       } catch {
-        return unauthorizedResponse("invalid id_token from token exchange");
+        return unauthorizedResponse("invalid idToken from token exchange");
       }
     }
 
@@ -78,17 +78,17 @@ export async function POST(request: Request) {
       return badRequestResponse("no refresh token returned");
     }
 
-    const encrypted_drive_token = await encryptDriveRefreshToken({
+    const encryptedDriveToken = await encryptDriveRefreshToken({
       sub: auth.session.sub,
       refreshToken: payload.refresh_token,
       scope: payload.scope,
     });
 
     return jsonResponse({
-      access_token: payload.access_token,
-      expires_in: payload.expires_in,
+      accessToken: payload.access_token,
+      expiresIn: payload.expires_in,
       scope: payload.scope,
-      encrypted_drive_token,
+      encryptedDriveToken,
     });
   } catch {
     return internalErrorResponse(

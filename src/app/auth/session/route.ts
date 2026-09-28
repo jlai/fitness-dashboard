@@ -8,7 +8,7 @@ import { requireSameOrigin } from "@/server/auth/require-session";
 import { signSessionToken } from "@/server/auth/session-token";
 
 interface CreateSessionBody {
-  id_token?: unknown;
+  idToken?: unknown;
 }
 
 /**
@@ -29,23 +29,22 @@ export async function POST(request: Request) {
     return badRequestResponse("invalid json body");
   }
 
-  if (typeof body.id_token !== "string" || body.id_token.length === 0) {
-    return badRequestResponse("missing id_token");
+  if (typeof body.idToken !== "string" || body.idToken.length === 0) {
+    return badRequestResponse("missing idToken");
   }
 
   let claims;
 
   try {
-    claims = await verifyGoogleIdToken(body.id_token);
+    claims = await verifyGoogleIdToken(body.idToken);
   } catch (error) {
     console.error({
       message: "error verifying google id token",
-      error: error instanceof Error ? error.message : String(error),
     });
-    return unauthorizedResponse("invalid id_token");
+    return unauthorizedResponse("invalid idToken");
   }
 
-  const session_token = await signSessionToken({ sub: claims.sub });
+  const sessionToken = await signSessionToken({ sub: claims.sub });
 
-  return jsonResponse({ session_token });
+  return jsonResponse({ sessionToken });
 }

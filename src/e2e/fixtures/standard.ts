@@ -74,10 +74,10 @@ export const test = base.extend({
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
-          access_token: "FAKE_ACCESS_TOKEN",
-          expires_in: 3600,
+          accessToken: "FAKE_ACCESS_TOKEN",
+          expiresIn: 3600,
           scope: GRANTED_SCOPE,
-          encrypted_health_token: "e2e-encrypted-token",
+          encryptedHealthToken: "e2e-encrypted-token",
         }),
       });
     });

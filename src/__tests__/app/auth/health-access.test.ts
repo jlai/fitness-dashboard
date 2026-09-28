@@ -45,7 +45,7 @@ async function makeRequest({
       Authorization: `Bearer ${token}`,
       ...headers,
     },
-    body: JSON.stringify({ encrypted_health_token: encrypted }),
+    body: JSON.stringify({ encryptedHealthToken: encrypted }),
   });
 }
 
@@ -77,11 +77,11 @@ describe("POST /auth/health/access", () => {
 
     expect(response.status).toBe(200);
     expect(refreshAccessTokenMock).toHaveBeenCalledWith("stored-refresh");
-    expect(payload.access_token).toBe("new-access");
+    expect(payload.accessToken).toBe("new-access");
     expect(payload.scope).toBe("openid");
-    expect(payload.encrypted_health_token).toEqual(expect.any(String));
+    expect(payload.encryptedHealthToken).toEqual(expect.any(String));
 
-    const refreshed = await decryptRefreshToken(payload.encrypted_health_token);
+    const refreshed = await decryptRefreshToken(payload.encryptedHealthToken);
     expect(refreshed).toEqual({
       sub: "user-1",
       refreshToken: "stored-refresh",
@@ -107,7 +107,7 @@ describe("POST /auth/health/access", () => {
       await makeRequest({ encryptedHealthToken: original }),
     );
     const payload = await response.json();
-    const refreshed = await decryptRefreshToken(payload.encrypted_health_token);
+    const refreshed = await decryptRefreshToken(payload.encryptedHealthToken);
 
     expect(response.status).toBe(200);
     expect(refreshed.iat).toBeGreaterThan(originalClaims.iat);
@@ -130,7 +130,7 @@ describe("POST /auth/health/access", () => {
     expect(response.status).toBe(401);
     await expect(response.json()).resolves.toEqual({
       error: "unauthorized",
-      error_description: "encrypted health token has expired",
+      errorDescription: "encrypted health token has expired",
     });
     expect(refreshAccessTokenMock).not.toHaveBeenCalled();
   });
@@ -142,7 +142,7 @@ describe("POST /auth/health/access", () => {
     expect(response.status).toBe(403);
     await expect(response.json()).resolves.toEqual({
       error: "forbidden",
-      error_description: "session does not match encrypted token",
+      errorDescription: "session does not match encrypted token",
     });
     expect(refreshAccessTokenMock).not.toHaveBeenCalled();
   });
@@ -189,7 +189,7 @@ describe("POST /auth/health/access", () => {
     expect(response.status).toBe(401);
     await expect(response.json()).resolves.toEqual({
       error: "unauthorized",
-      error_description: "encrypted health token has been revoked",
+      errorDescription: "encrypted health token has been revoked",
     });
     expect(refreshAccessTokenMock).not.toHaveBeenCalled();
   });
@@ -215,7 +215,7 @@ describe("POST /auth/health/access", () => {
     expect(response.status).toBe(401);
     await expect(response.json()).resolves.toEqual({
       error: "unauthorized",
-      error_description: "encrypted health token has been revoked",
+      errorDescription: "encrypted health token has been revoked",
     });
     expect(refreshAccessTokenMock).not.toHaveBeenCalled();
   });
@@ -248,7 +248,7 @@ describe("POST /auth/health/access", () => {
     expect(response.status).toBe(500);
     await expect(response.json()).resolves.toEqual({
       error: "internal_error",
-      error_description: "error refreshing access token",
+      errorDescription: "error refreshing access token",
     });
   });
 
@@ -266,9 +266,9 @@ describe("POST /auth/health/access", () => {
     const payload = await response.json();
 
     expect(response.status).toBe(200);
-    expect(payload.encrypted_health_token).toEqual(expect.any(String));
+    expect(payload.encryptedHealthToken).toEqual(expect.any(String));
     await expect(
-      decryptRefreshToken(payload.encrypted_health_token),
+      decryptRefreshToken(payload.encryptedHealthToken),
     ).resolves.toEqual({
       sub: "user-1",
       refreshToken: "rotated-refresh",

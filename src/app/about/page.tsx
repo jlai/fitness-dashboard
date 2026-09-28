@@ -71,8 +71,8 @@ export default function AboutPage() {
           data you would like to authorize access for. The authentication token
           is sent to our server and encrypted, and sent back to your browser
           where it is stored locally. This ensures that our server does not have
-          access to your authentication token or health data except briefly when you
-          visit the website, while keeping your authentication token secure.
+          access to your authentication token or health data except briefly when
+          you visit the website, while keeping your authentication token secure.
         </Typography>
         <Typography variant="body2">
           Some features, such as displaying maps of runs, may send coordinates
@@ -135,9 +135,9 @@ export default function AboutPage() {
           <AccordionDetails>
             <div className="space-y-2">
               <p>
-                In order to make sure that settings don't get lost when you sign
-                out, we store your settings (dashboard layout, meals, etc.) in a
-                hidden folder in your Google Drive.
+                In order to make sure that settings don&apos;t get lost when you
+                sign out, we store your settings (dashboard layout, meals, etc.)
+                in a hidden folder in your Google Drive.
               </p>
               <p>
                 The permission you grant when you enable the Google Drive
@@ -155,7 +155,7 @@ export default function AboutPage() {
                 >
                   Google Drive settings
                 </a>{" "}
-                and select "Manage apps".
+                and select &quot;Manage apps&quot;.
               </p>
             </div>
           </AccordionDetails>

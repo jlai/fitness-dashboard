@@ -74,14 +74,14 @@ describe("POST /auth/health/authorize", () => {
       code: "abc",
       redirectUri: REDIRECT_URI,
     });
-    expect(payload.access_token).toBe("access");
+    expect(payload.accessToken).toBe("access");
     expect(payload.scope).toBe("openid");
-    expect(payload.encrypted_health_token).toEqual(expect.any(String));
+    expect(payload.encryptedHealthToken).toEqual(expect.any(String));
     expect(payload).not.toHaveProperty("refresh_token");
-    expect(payload).not.toHaveProperty("session_token");
+    expect(payload).not.toHaveProperty("sessionToken");
 
     await expect(
-      decryptRefreshToken(payload.encrypted_health_token),
+      decryptRefreshToken(payload.encryptedHealthToken),
     ).resolves.toEqual({
       sub: "user-1",
       refreshToken: "refresh",
@@ -135,7 +135,7 @@ describe("POST /auth/health/authorize", () => {
     expect(response.status).toBe(403);
     await expect(response.json()).resolves.toEqual({
       error: "forbidden",
-      error_description: "authorization code user does not match session",
+      errorDescription: "authorization code user does not match session",
     });
   });
 });

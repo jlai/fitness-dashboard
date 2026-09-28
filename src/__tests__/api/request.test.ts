@@ -29,11 +29,11 @@ function mockFetch(fetchMock: jest.SpyInstance, healthResponse: Response) {
     if (url.includes("/auth/health/access")) {
       return new Response(
         JSON.stringify({
-          access_token: "test-token",
-          expires_in: 3600,
+          accessToken: "test-token",
+          expiresIn: 3600,
           scope:
             "https://www.googleapis.com/auth/googlehealth.profile.readonly",
-          encrypted_health_token: "encrypted-jwt",
+          encryptedHealthToken: "encrypted-jwt",
         }),
         { status: 200, headers: { "Content-Type": "application/json" } },
       );

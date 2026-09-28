@@ -4,7 +4,7 @@ import { useCallback } from "react";
 import { useConfirm } from "material-ui-confirm";
 
 import { useGoogleDriveAuthorization } from "@/api/auth";
-import { withErrorToaster } from "@/components/toast";
+import { runWithErrorToaster } from "@/components/toast";
 import type { SettingsStorageKey } from "./keys";
 import {
   reconcileMemoryAndDriveOnEnable,
@@ -19,8 +19,8 @@ export function useEnableGoogleDriveSettings() {
   const confirm = useConfirm();
   const { authorizeGoogleDrive, ready } = useGoogleDriveAuthorization();
 
-  const enableGoogleDriveSettings = useCallback(
-    withErrorToaster(async () => {
+  const enableGoogleDriveSettings = useCallback(async () => {
+    await runWithErrorToaster(async () => {
       await authorizeGoogleDrive();
 
       await reconcileMemoryAndDriveOnEnable({
@@ -39,9 +39,8 @@ export function useEnableGoogleDriveSettings() {
           return confirmed ? "memory" : "drive";
         },
       });
-    }, "Failed to enable Google Drive settings"),
-    [confirm, authorizeGoogleDrive],
-  );
+    }, "Failed to enable Google Drive settings");
+  }, [confirm, authorizeGoogleDrive]);
 
   return { enableGoogleDriveSettings, ready };
 }

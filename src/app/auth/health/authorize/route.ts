@@ -53,7 +53,7 @@ export async function POST(request: Request) {
       return jsonResponse(
         {
           error: payload.error ?? "token_exchange_failed",
-          error_description:
+          errorDescription:
             payload.error_description ?? "authorization code exchange failed",
         },
         status === 200 ? 400 : status,
@@ -70,7 +70,7 @@ export async function POST(request: Request) {
           );
         }
       } catch {
-        return unauthorizedResponse("invalid id_token from token exchange");
+        return unauthorizedResponse("invalid idToken from token exchange");
       }
     }
 
@@ -78,19 +78,19 @@ export async function POST(request: Request) {
       return badRequestResponse("no refresh token returned");
     }
 
-    const encrypted_health_token = await encryptRefreshToken({
+    const encryptedHealthToken = await encryptRefreshToken({
       sub: auth.session.sub,
       refreshToken: payload.refresh_token,
       scope: payload.scope,
     });
 
     return jsonResponse({
-      access_token: payload.access_token,
-      expires_in: payload.expires_in,
+      accessToken: payload.access_token,
+      expiresIn: payload.expires_in,
       scope: payload.scope,
-      encrypted_health_token,
+      encryptedHealthToken,
     });
-  } catch (reason) {
+  } catch {
     return internalErrorResponse(
       "error exchanging authorization code for token",
     );

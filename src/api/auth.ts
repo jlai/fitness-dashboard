@@ -33,14 +33,10 @@ const LEGACY_STAY_SIGNED_IN_STORAGE_KEY = "auth:stay-signed-in";
 const AUTH_TOKEN_UPDATE_EVENT_TYPE = "authtokenupdated";
 
 const SESSION_PATH = withBasePath("/auth/session");
-const SESSION_CURRENT_PATH = withBasePath("/auth/session/current");
-const SESSION_ALL_PATH = withBasePath("/auth/session/all");
-const HEALTH_PATH = withBasePath("/auth/health");
-const HEALTH_CURRENT_PATH = withBasePath("/auth/health/current");
+const SESSION_LOGOUT_PATH = withBasePath("/auth/session/logout");
 const HEALTH_AUTHORIZE_PATH = withBasePath("/auth/health/authorize");
 const HEALTH_ACCESS_PATH = withBasePath("/auth/health/access");
-const DRIVE_PATH = withBasePath("/auth/drive");
-const DRIVE_CURRENT_PATH = withBasePath("/auth/drive/current");
+const DRIVE_LOGOUT_PATH = withBasePath("/auth/drive/logout");
 const DRIVE_AUTHORIZE_PATH = withBasePath("/auth/drive/authorize");
 const DRIVE_ACCESS_PATH = withBasePath("/auth/drive/access");
 
@@ -51,14 +47,14 @@ interface SessionTokenClaims {
 }
 
 interface TokenEndpointResponse {
-  access_token?: string;
-  expires_in?: number;
+  accessToken?: string;
+  expiresIn?: number;
   scope?: string;
-  session_token?: string;
-  encrypted_health_token?: string;
-  encrypted_drive_token?: string;
+  sessionToken?: string;
+  encryptedHealthToken?: string;
+  encryptedDriveToken?: string;
   error?: string;
-  error_description?: string;
+  errorDescription?: string;
 }
 
 interface CachedAccessToken {
@@ -392,14 +388,14 @@ function getSessionTokenOrThrow() {
 }
 
 function cacheAccessToken(response: TokenEndpointResponse) {
-  const expiresInSeconds = Number(response.expires_in);
+  const expiresInSeconds = Number(response.expiresIn);
 
-  if (!response.access_token) {
+  if (!response.accessToken) {
     return;
   }
 
   currentHealthAccessToken = {
-    accessToken: response.access_token,
+    accessToken: response.accessToken,
     expiresAt: Number.isFinite(expiresInSeconds)
       ? Date.now() + expiresInSeconds * 1000
       : undefined,
@@ -407,14 +403,14 @@ function cacheAccessToken(response: TokenEndpointResponse) {
 }
 
 function cacheDriveAccessToken(response: TokenEndpointResponse) {
-  const expiresInSeconds = Number(response.expires_in);
+  const expiresInSeconds = Number(response.expiresIn);
 
-  if (!response.access_token) {
+  if (!response.accessToken) {
     return;
   }
 
   currentDriveAccessToken = {
-    accessToken: response.access_token,
+    accessToken: response.accessToken,
     expiresAt: Number.isFinite(expiresInSeconds)
       ? Date.now() + expiresInSeconds * 1000
       : undefined,
@@ -455,13 +451,11 @@ async function postSessionJson(
 
   if (response.status === 401 || response.status === 403) {
     forceSignOut();
-    let description =
-      response.status === 401 ? "unauthorized" : "forbidden";
+    let description = response.status === 401 ? "unauthorized" : "forbidden";
 
     try {
       const payload = (await response.json()) as TokenEndpointResponse;
-      description =
-        payload.error_description || payload.error || description;
+      description = payload.errorDescription || payload.error || description;
     } catch {
       // ignore JSON parse failures; still signed out locally
     }
@@ -473,7 +467,7 @@ async function postSessionJson(
 
   if (!response.ok || payload.error) {
     throw new Error(
-      payload.error_description || payload.error || "token request failed",
+      payload.errorDescription || payload.error || "token request failed",
     );
   }
 
@@ -483,7 +477,7 @@ async function postSessionJson(
 function applyHealthTokenResponse(payload: TokenEndpointResponse) {
   cacheAccessToken(payload);
   cacheGrantedScope(payload.scope);
-  saveEncryptedHealthToken(payload.encrypted_health_token);
+  saveEncryptedHealthToken(payload.encryptedHealthToken);
 }
 
 function applyDriveTokenResponse(
@@ -496,7 +490,7 @@ function applyDriveTokenResponse(
 
   cacheDriveAccessToken(payload);
   cacheGrantedDriveScope(payload.scope);
-  saveEncryptedDriveToken(payload.encrypted_drive_token);
+  saveEncryptedDriveToken(payload.encryptedDriveToken);
 }
 
 export async function createSession(idToken: string) {
@@ -506,14 +500,14 @@ export async function createSession(idToken: string) {
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ id_token: idToken }),
+    body: JSON.stringify({ idToken }),
   });
 
   const payload: TokenEndpointResponse = await response.json();
 
-  if (!response.ok || payload.error || !payload.session_token) {
+  if (!response.ok || payload.error || !payload.sessionToken) {
     throw new Error(
-      payload.error_description || payload.error || "session request failed",
+      payload.errorDescription || payload.error || "session request failed",
     );
   }
 
@@ -521,7 +515,7 @@ export async function createSession(idToken: string) {
   currentDriveAccessToken = null;
   setGrantedHealthScope(undefined);
   setGrantedDriveScope(undefined);
-  saveSessionToken(payload.session_token);
+  saveSessionToken(payload.sessionToken);
 
   // Session JWTs can expire while the encrypted health refresh token remains.
   // After Sign In With Google recreates the session, restore an access token
@@ -562,15 +556,15 @@ async function requestAccessToken() {
   }
 
   const payload = await postSessionJson(HEALTH_ACCESS_PATH, {
-    encrypted_health_token: encryptedHealthToken,
+    encryptedHealthToken,
   });
   applyHealthTokenResponse(payload);
 
-  if (!payload.access_token) {
+  if (!payload.accessToken) {
     throw new Error("no access token returned");
   }
 
-  return payload.access_token;
+  return payload.accessToken;
 }
 
 async function requestDriveAccessToken() {
@@ -582,7 +576,7 @@ async function requestDriveAccessToken() {
   }
 
   const payload = await postSessionJson(DRIVE_ACCESS_PATH, {
-    encrypted_drive_token: encryptedDriveToken,
+    encryptedDriveToken,
   });
 
   if (generation !== driveAuthGeneration) {
@@ -591,11 +585,11 @@ async function requestDriveAccessToken() {
 
   applyDriveTokenResponse(payload, generation);
 
-  if (!payload.access_token) {
+  if (!payload.accessToken) {
     throw new Error("no drive access token returned");
   }
 
-  return payload.access_token;
+  return payload.accessToken;
 }
 
 /**
@@ -822,15 +816,10 @@ export async function logout() {
 
   try {
     if (sessionToken) {
-      if (encryptedHealthToken) {
-        await revokeCurrentHealthToken(sessionToken, encryptedHealthToken);
-      }
-
-      if (encryptedDriveToken) {
-        await revokeCurrentDriveToken(sessionToken, encryptedDriveToken);
-      }
-
-      await revokeSession(sessionToken);
+      await postSessionLogout(sessionToken, {
+        encryptedHealthToken,
+        encryptedDriveToken,
+      });
     }
   } finally {
     clearAllAuthTokens();
@@ -846,127 +835,83 @@ export async function revokeAuthorization() {
   disableGoogleAutoSelect();
 
   try {
-    if (sessionToken && encryptedHealthToken) {
-      await revokeHealthToken(sessionToken, encryptedHealthToken);
-    }
-
-    if (sessionToken && encryptedDriveToken) {
-      await revokeDriveToken(sessionToken, encryptedDriveToken);
-    }
-
     if (sessionToken) {
-      await revokeAllSessions(sessionToken);
+      await postSessionLogout(sessionToken, {
+        encryptedHealthToken,
+        encryptedDriveToken,
+        unlink: true,
+      });
     }
   } finally {
     clearAllAuthTokens();
   }
 }
 
-async function revokeCurrentHealthToken(
-  sessionToken: string,
-  encryptedHealthToken: string,
-) {
+/**
+ * Revoke the Google Drive refresh token at Google and drop local Drive auth.
+ * Used when disabling Drive settings; does not end the Health session.
+ */
+export async function logoutDrive() {
+  const sessionToken = getSessionTokenFromStorage();
+  const encryptedDriveToken = getEncryptedDriveTokenFromStorage();
+
   try {
-    await fetch(HEALTH_CURRENT_PATH, {
-      method: "DELETE",
+    if (sessionToken && encryptedDriveToken) {
+      await fetch(DRIVE_LOGOUT_PATH, {
+        method: "POST",
+        mode: "same-origin",
+        headers: {
+          Authorization: `Bearer ${sessionToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ encryptedDriveToken }),
+      });
+    }
+  } catch (e) {
+    console.error("error disconnecting google drive", e);
+  } finally {
+    clearEncryptedDriveAuth();
+  }
+}
+
+async function postSessionLogout(
+  sessionToken: string,
+  {
+    encryptedHealthToken,
+    encryptedDriveToken,
+    unlink = false,
+  }: {
+    encryptedHealthToken: string | null;
+    encryptedDriveToken: string | null;
+    unlink?: boolean;
+  },
+) {
+  const body: Record<string, string | boolean> = {};
+
+  if (encryptedHealthToken) {
+    body.encryptedHealthToken = encryptedHealthToken;
+  }
+
+  if (encryptedDriveToken) {
+    body.encryptedDriveToken = encryptedDriveToken;
+  }
+
+  if (unlink) {
+    body.unlink = true;
+  }
+
+  try {
+    await fetch(SESSION_LOGOUT_PATH, {
+      method: "POST",
       mode: "same-origin",
       headers: {
         Authorization: `Bearer ${sessionToken}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ encrypted_health_token: encryptedHealthToken }),
+      body: JSON.stringify(body),
     });
   } catch (e) {
-    console.error("error revoking current health token", e);
-  }
-}
-
-async function revokeCurrentDriveToken(
-  sessionToken: string,
-  encryptedDriveToken: string,
-) {
-  try {
-    await fetch(DRIVE_CURRENT_PATH, {
-      method: "DELETE",
-      mode: "same-origin",
-      headers: {
-        Authorization: `Bearer ${sessionToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ encrypted_drive_token: encryptedDriveToken }),
-    });
-  } catch (e) {
-    console.error("error revoking current drive token", e);
-  }
-}
-
-async function revokeHealthToken(
-  sessionToken: string,
-  encryptedHealthToken: string,
-) {
-  try {
-    await fetch(HEALTH_PATH, {
-      method: "DELETE",
-      mode: "same-origin",
-      headers: {
-        Authorization: `Bearer ${sessionToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ encrypted_health_token: encryptedHealthToken }),
-    });
-  } catch (e) {
-    console.error("error revoking health token", e);
-  }
-}
-
-async function revokeDriveToken(
-  sessionToken: string,
-  encryptedDriveToken: string,
-) {
-  try {
-    await fetch(DRIVE_PATH, {
-      method: "DELETE",
-      mode: "same-origin",
-      headers: {
-        Authorization: `Bearer ${sessionToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ encrypted_drive_token: encryptedDriveToken }),
-    });
-  } catch (e) {
-    console.error("error revoking drive token", e);
-  }
-}
-
-async function revokeSession(sessionToken: string | null) {
-  if (!sessionToken) {
-    return;
-  }
-
-  try {
-    await fetch(SESSION_CURRENT_PATH, {
-      method: "DELETE",
-      mode: "same-origin",
-      headers: {
-        Authorization: `Bearer ${sessionToken}`,
-      },
-    });
-  } catch (e) {
-    console.error("error revoking session", e);
-  }
-}
-
-async function revokeAllSessions(sessionToken: string) {
-  try {
-    await fetch(SESSION_ALL_PATH, {
-      method: "DELETE",
-      mode: "same-origin",
-      headers: {
-        Authorization: `Bearer ${sessionToken}`,
-      },
-    });
-  } catch (e) {
-    console.error("error revoking all sessions", e);
+    console.error("error logging out", e);
   }
 }
 
@@ -997,7 +942,8 @@ function clearAllAuthTokens() {
 /**
  * Drop the local encrypted Drive refresh token (memory and localStorage) and
  * the in-memory Drive access token. Does not call Google's revoke endpoint or
- * clear Health/session auth.
+ * clear Health/session auth. Prefer {@link logoutDrive} when disconnecting
+ * Drive from settings.
  */
 export function clearEncryptedDriveAuth() {
   // Invalidate in-flight refreshes first, then drop the token before clearing
@@ -1018,7 +964,10 @@ export function clearEncryptedDriveAuth() {
 export const getFreshAccessToken = singleAsync(async () => {
   getSessionTokenOrThrow();
 
-  if (isCachedAccessTokenFresh(currentHealthAccessToken) && currentHealthAccessToken) {
+  if (
+    isCachedAccessTokenFresh(currentHealthAccessToken) &&
+    currentHealthAccessToken
+  ) {
     return currentHealthAccessToken.accessToken;
   }
 
@@ -1138,9 +1087,7 @@ export const syncAuthTokenEffect = atomEffect((get, set) => {
 });
 
 function parseScopeSet(scope: string | undefined) {
-  return new Set(
-    (scope?.split(" ") ?? []).filter((entry) => entry.length > 0),
-  );
+  return new Set((scope?.split(" ") ?? []).filter((entry) => entry.length > 0));
 }
 
 /** Get the full Google Health scope URLs granted for the current access token. */

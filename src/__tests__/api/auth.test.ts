@@ -13,6 +13,7 @@ import {
   getSessionSubject,
   isLoggedIn,
   logout,
+  logoutDrive,
   persistAuthTokens,
   restoreAccessToken,
   revokeAuthorization,
@@ -36,14 +37,10 @@ const loadGoogleOAuth2Mock = loadGoogleOAuth2 as jest.MockedFunction<
 const toastError = toast.error as jest.Mock;
 
 const SESSION_PATH = "/auth/session";
-const SESSION_CURRENT_PATH = "/auth/session/current";
-const SESSION_ALL_PATH = "/auth/session/all";
-const HEALTH_PATH = "/auth/health";
-const HEALTH_CURRENT_PATH = "/auth/health/current";
+const SESSION_LOGOUT_PATH = "/auth/session/logout";
 const HEALTH_AUTHORIZE_PATH = "/auth/health/authorize";
 const HEALTH_ACCESS_PATH = "/auth/health/access";
-const DRIVE_PATH = "/auth/drive";
-const DRIVE_CURRENT_PATH = "/auth/drive/current";
+const DRIVE_LOGOUT_PATH = "/auth/drive/logout";
 const SESSION_TOKEN_STORAGE_KEY = "auth:session-token";
 const ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY = "auth:encrypted-health-token";
 const ENCRYPTED_DRIVE_TOKEN_STORAGE_KEY = "auth:encrypted-drive-token";
@@ -131,10 +128,10 @@ describe("createSession", () => {
     fetchMock.mockRestore();
   });
 
-  it("posts the id_token and keeps the session token in memory", async () => {
+  it("posts the idToken and keeps the session token in memory", async () => {
     const sessionToken = fakeSessionToken();
     fetchMock.mockResolvedValue(
-      new Response(JSON.stringify({ session_token: sessionToken }), {
+      new Response(JSON.stringify({ sessionToken: sessionToken }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
       }),
@@ -146,7 +143,7 @@ describe("createSession", () => {
       SESSION_PATH,
       expect.objectContaining({
         method: "POST",
-        body: JSON.stringify({ id_token: "google-id-token" }),
+        body: JSON.stringify({ idToken: "google-id-token" }),
       }),
     );
     expect(localStorage.getItem(SESSION_TOKEN_STORAGE_KEY)).toBeNull();
@@ -156,13 +153,10 @@ describe("createSession", () => {
 
   it("restores an access token when an encrypted health token is already stored", async () => {
     const sessionToken = fakeSessionToken();
-    localStorage.setItem(
-      ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY,
-      "encrypted-jwt",
-    );
+    localStorage.setItem(ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY, "encrypted-jwt");
     fetchMock
       .mockResolvedValueOnce(
-        new Response(JSON.stringify({ session_token: sessionToken }), {
+        new Response(JSON.stringify({ sessionToken: sessionToken }), {
           status: 200,
           headers: { "Content-Type": "application/json" },
         }),
@@ -170,10 +164,10 @@ describe("createSession", () => {
       .mockResolvedValueOnce(
         new Response(
           JSON.stringify({
-            access_token: "restored-access-token",
-            expires_in: 3600,
+            accessToken: "restored-access-token",
+            expiresIn: 3600,
             scope: "openid",
-            encrypted_health_token: "encrypted-jwt-rotated",
+            encryptedHealthToken: "encrypted-jwt-rotated",
           }),
           { status: 200, headers: { "Content-Type": "application/json" } },
         ),
@@ -189,7 +183,7 @@ describe("createSession", () => {
         headers: expect.objectContaining({
           Authorization: `Bearer ${sessionToken}`,
         }),
-        body: JSON.stringify({ encrypted_health_token: "encrypted-jwt" }),
+        body: JSON.stringify({ encryptedHealthToken: "encrypted-jwt" }),
       }),
     );
     expect(getAccessTokenScopes().has("openid")).toBe(true);
@@ -225,7 +219,7 @@ describe("persistAuthTokens", () => {
     const sessionToken = fakeSessionToken();
     fetchMock
       .mockResolvedValueOnce(
-        new Response(JSON.stringify({ session_token: sessionToken }), {
+        new Response(JSON.stringify({ sessionToken: sessionToken }), {
           status: 200,
           headers: { "Content-Type": "application/json" },
         }),
@@ -233,10 +227,10 @@ describe("persistAuthTokens", () => {
       .mockResolvedValueOnce(
         new Response(
           JSON.stringify({
-            access_token: "access-token",
-            expires_in: 3600,
+            accessToken: "access-token",
+            expiresIn: 3600,
             scope: "openid",
-            encrypted_health_token: "encrypted-jwt",
+            encryptedHealthToken: "encrypted-jwt",
           }),
           { status: 200, headers: { "Content-Type": "application/json" } },
         ),
@@ -277,7 +271,7 @@ describe("logout", () => {
     localStorage.clear();
   });
 
-  it("revokes current health/drive tokens and the session then clears local auth state", async () => {
+  it("posts health/drive tokens to session logout then clears local auth state", async () => {
     const sessionToken = fakeSessionToken();
     setStoredSession({
       sessionToken,
@@ -301,59 +295,34 @@ describe("logout", () => {
     await logout();
 
     expect(fetchMock).toHaveBeenCalledWith(
-      HEALTH_CURRENT_PATH,
+      SESSION_LOGOUT_PATH,
       expect.objectContaining({
-        method: "DELETE",
+        method: "POST",
         headers: expect.objectContaining({
           Authorization: `Bearer ${sessionToken}`,
         }),
-        body: JSON.stringify({ encrypted_health_token: "encrypted-jwt" }),
-      }),
-    );
-    expect(fetchMock).toHaveBeenCalledWith(
-      DRIVE_CURRENT_PATH,
-      expect.objectContaining({
-        method: "DELETE",
-        headers: expect.objectContaining({
-          Authorization: `Bearer ${sessionToken}`,
-        }),
-        body: JSON.stringify({ encrypted_drive_token: "encrypted-drive-jwt" }),
-      }),
-    );
-    expect(fetchMock).toHaveBeenCalledWith(
-      SESSION_CURRENT_PATH,
-      expect.objectContaining({
-        method: "DELETE",
-        headers: expect.objectContaining({
-          Authorization: `Bearer ${sessionToken}`,
+        body: JSON.stringify({
+          encryptedHealthToken: "encrypted-jwt",
+          encryptedDriveToken: "encrypted-drive-jwt",
         }),
       }),
     );
-    expect(fetchMock).not.toHaveBeenCalledWith(HEALTH_PATH, expect.anything());
-    expect(fetchMock).not.toHaveBeenCalledWith(DRIVE_PATH, expect.anything());
     expect(localStorage.getItem(SESSION_TOKEN_STORAGE_KEY)).toBeNull();
     expect(localStorage.getItem(ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY)).toBeNull();
     expect(localStorage.getItem(ENCRYPTED_DRIVE_TOKEN_STORAGE_KEY)).toBeNull();
   });
 
-  it("skips current health/drive revoke when those tokens are absent", async () => {
+  it("omits health/drive tokens from logout when those tokens are absent", async () => {
     const sessionToken = fakeSessionToken();
     setStoredSession({ sessionToken, encryptedHealthToken: null });
 
     await logout();
 
-    expect(fetchMock).not.toHaveBeenCalledWith(
-      HEALTH_CURRENT_PATH,
-      expect.anything(),
-    );
-    expect(fetchMock).not.toHaveBeenCalledWith(
-      DRIVE_CURRENT_PATH,
-      expect.anything(),
-    );
     expect(fetchMock).toHaveBeenCalledWith(
-      SESSION_CURRENT_PATH,
+      SESSION_LOGOUT_PATH,
       expect.objectContaining({
-        method: "DELETE",
+        method: "POST",
+        body: JSON.stringify({}),
       }),
     );
   });
@@ -374,7 +343,7 @@ describe("revokeAuthorization", () => {
     localStorage.clear();
   });
 
-  it("revokes the health token and all sessions then clears local auth state", async () => {
+  it("logs out with unlink and any stored health/drive tokens", async () => {
     const sessionToken = fakeSessionToken();
     setStoredSession({ sessionToken, encryptedHealthToken: "encrypted-jwt" });
 
@@ -391,22 +360,15 @@ describe("revokeAuthorization", () => {
     await revokeAuthorization();
 
     expect(fetchMock).toHaveBeenCalledWith(
-      HEALTH_PATH,
+      SESSION_LOGOUT_PATH,
       expect.objectContaining({
-        method: "DELETE",
+        method: "POST",
         headers: expect.objectContaining({
           Authorization: `Bearer ${sessionToken}`,
         }),
-        body: JSON.stringify({ encrypted_health_token: "encrypted-jwt" }),
-      }),
-    );
-    expect(fetchMock).not.toHaveBeenCalledWith(DRIVE_PATH, expect.anything());
-    expect(fetchMock).toHaveBeenCalledWith(
-      SESSION_ALL_PATH,
-      expect.objectContaining({
-        method: "DELETE",
-        headers: expect.objectContaining({
-          Authorization: `Bearer ${sessionToken}`,
+        body: JSON.stringify({
+          encryptedHealthToken: "encrypted-jwt",
+          unlink: true,
         }),
       }),
     );
@@ -414,7 +376,7 @@ describe("revokeAuthorization", () => {
     expect(localStorage.getItem(ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY)).toBeNull();
   });
 
-  it("also revokes the drive token when one is stored", async () => {
+  it("also sends the drive token when one is stored", async () => {
     const sessionToken = fakeSessionToken();
     setStoredSession({
       sessionToken,
@@ -425,31 +387,30 @@ describe("revokeAuthorization", () => {
     await revokeAuthorization();
 
     expect(fetchMock).toHaveBeenCalledWith(
-      DRIVE_PATH,
+      SESSION_LOGOUT_PATH,
       expect.objectContaining({
-        method: "DELETE",
+        method: "POST",
         body: JSON.stringify({
-          encrypted_drive_token: "encrypted-drive-jwt",
+          encryptedHealthToken: "encrypted-jwt",
+          encryptedDriveToken: "encrypted-drive-jwt",
+          unlink: true,
         }),
       }),
     );
     expect(localStorage.getItem(ENCRYPTED_DRIVE_TOKEN_STORAGE_KEY)).toBeNull();
   });
 
-  it("skips health revoke when there is no encrypted health token", async () => {
+  it("still sends unlink when there is no encrypted health token", async () => {
     const sessionToken = fakeSessionToken();
     setStoredSession({ sessionToken, encryptedHealthToken: null });
 
     await revokeAuthorization();
 
-    expect(fetchMock).not.toHaveBeenCalledWith(
-      HEALTH_PATH,
-      expect.anything(),
-    );
     expect(fetchMock).toHaveBeenCalledWith(
-      SESSION_ALL_PATH,
+      SESSION_LOGOUT_PATH,
       expect.objectContaining({
-        method: "DELETE",
+        method: "POST",
+        body: JSON.stringify({ unlink: true }),
       }),
     );
   });
@@ -542,10 +503,10 @@ describe("clearEncryptedDriveAuth", () => {
     resolveRefresh(
       new Response(
         JSON.stringify({
-          access_token: "late-access",
-          expires_in: 3600,
+          accessToken: "late-access",
+          expiresIn: 3600,
           scope: "https://www.googleapis.com/auth/drive.appdata",
-          encrypted_drive_token: "late-encrypted-drive-jwt",
+          encryptedDriveToken: "late-encrypted-drive-jwt",
         }),
         { status: 200, headers: { "Content-Type": "application/json" } },
       ),
@@ -554,6 +515,66 @@ describe("clearEncryptedDriveAuth", () => {
     await refreshPromise;
 
     expect(localStorage.getItem(ENCRYPTED_DRIVE_TOKEN_STORAGE_KEY)).toBeNull();
+  });
+});
+
+describe("logoutDrive", () => {
+  let fetchMock: jest.SpyInstance;
+
+  beforeEach(async () => {
+    await resetAuthState();
+    fetchMock = jest
+      .spyOn(global, "fetch")
+      .mockResolvedValue(new Response(null, { status: 204 }));
+  });
+
+  afterEach(() => {
+    fetchMock.mockRestore();
+    localStorage.clear();
+  });
+
+  it("posts the drive token to /auth/drive/logout then clears local drive auth", async () => {
+    const sessionToken = fakeSessionToken();
+    setStoredSession({
+      sessionToken,
+      encryptedHealthToken: "encrypted-jwt",
+      encryptedDriveToken: "encrypted-drive-jwt",
+    });
+
+    await logoutDrive();
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      DRIVE_LOGOUT_PATH,
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({
+          Authorization: `Bearer ${sessionToken}`,
+        }),
+        body: JSON.stringify({
+          encryptedDriveToken: "encrypted-drive-jwt",
+        }),
+      }),
+    );
+    expect(localStorage.getItem(ENCRYPTED_DRIVE_TOKEN_STORAGE_KEY)).toBeNull();
+    expect(localStorage.getItem(ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY)).toBe(
+      "encrypted-jwt",
+    );
+    expect(localStorage.getItem(SESSION_TOKEN_STORAGE_KEY)).toBe(sessionToken);
+  });
+
+  it("clears local drive auth even when the logout request fails", async () => {
+    fetchMock.mockRejectedValue(new Error("network"));
+    setStoredSession({
+      encryptedHealthToken: "encrypted-jwt",
+      encryptedDriveToken: "encrypted-drive-jwt",
+    });
+
+    await logoutDrive();
+
+    expect(localStorage.getItem(ENCRYPTED_DRIVE_TOKEN_STORAGE_KEY)).toBeNull();
+    expect(localStorage.getItem(ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY)).toBe(
+      "encrypted-jwt",
+    );
   });
 });
 
@@ -575,10 +596,10 @@ describe("forceTokenRefresh", () => {
     fetchMock.mockResolvedValue(
       new Response(
         JSON.stringify({
-          access_token: "new-access-token",
-          expires_in: 3600,
+          accessToken: "new-access-token",
+          expiresIn: 3600,
           scope: "openid",
-          encrypted_health_token: "rotated-encrypted-jwt",
+          encryptedHealthToken: "rotated-encrypted-jwt",
         }),
         { status: 200, headers: { "Content-Type": "application/json" } },
       ),
@@ -593,7 +614,7 @@ describe("forceTokenRefresh", () => {
         headers: expect.objectContaining({
           Authorization: `Bearer ${sessionToken}`,
         }),
-        body: JSON.stringify({ encrypted_health_token: "encrypted-jwt" }),
+        body: JSON.stringify({ encryptedHealthToken: "encrypted-jwt" }),
       }),
     );
     expect(localStorage.getItem(ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY)).toBe(
@@ -607,10 +628,10 @@ describe("forceTokenRefresh", () => {
     fetchMock.mockResolvedValue(
       new Response(
         JSON.stringify({
-          access_token: "new-access-token",
-          expires_in: 3600,
+          accessToken: "new-access-token",
+          expiresIn: 3600,
           scope: "openid",
-          encrypted_health_token: "encrypted-jwt",
+          encryptedHealthToken: "encrypted-jwt",
         }),
         { status: 200, headers: { "Content-Type": "application/json" } },
       ),
@@ -628,9 +649,9 @@ describe("forceTokenRefresh", () => {
     fetchMock.mockResolvedValue(
       new Response(
         JSON.stringify({
-          access_token: "new-access-token",
-          expires_in: 3600,
-          encrypted_health_token: "encrypted-jwt",
+          accessToken: "new-access-token",
+          expiresIn: 3600,
+          encryptedHealthToken: "encrypted-jwt",
         }),
         { status: 200, headers: { "Content-Type": "application/json" } },
       ),
@@ -648,9 +669,9 @@ describe("forceTokenRefresh", () => {
     fetchMock.mockResolvedValue(
       new Response(
         JSON.stringify({
-          access_token: "new-access-token",
-          expires_in: 3600,
-          encrypted_health_token: "encrypted-jwt",
+          accessToken: "new-access-token",
+          expiresIn: 3600,
+          encryptedHealthToken: "encrypted-jwt",
         }),
         { status: 200, headers: { "Content-Type": "application/json" } },
       ),
@@ -678,7 +699,7 @@ describe("forceTokenRefresh", () => {
       new Response(
         JSON.stringify({
           error: "unauthorized",
-          error_description: "encrypted health token has expired",
+          errorDescription: "encrypted health token has expired",
         }),
         { status: 401, headers: { "Content-Type": "application/json" } },
       ),
@@ -700,7 +721,7 @@ describe("forceTokenRefresh", () => {
       new Response(
         JSON.stringify({
           error: "forbidden",
-          error_description: "session does not match encrypted token",
+          errorDescription: "session does not match encrypted token",
         }),
         { status: 403, headers: { "Content-Type": "application/json" } },
       ),
@@ -775,10 +796,10 @@ function mockHealthAccessResponse(
   fetchMock.mockResolvedValue(
     new Response(
       JSON.stringify({
-        access_token: accessToken,
-        expires_in: 3600,
+        accessToken: accessToken,
+        expiresIn: 3600,
         scope: "openid",
-        encrypted_health_token: encryptedHealthToken,
+        encryptedHealthToken: encryptedHealthToken,
       }),
       { status: 200, headers: { "Content-Type": "application/json" } },
     ),
@@ -811,7 +832,7 @@ describe("restoreAccessToken", () => {
         headers: expect.objectContaining({
           Authorization: `Bearer ${sessionToken}`,
         }),
-        body: JSON.stringify({ encrypted_health_token: "encrypted-jwt" }),
+        body: JSON.stringify({ encryptedHealthToken: "encrypted-jwt" }),
       }),
     );
     expect(getAccessTokenScopes().has("openid")).toBe(true);
@@ -936,7 +957,7 @@ describe("syncAuthTokenEffect", () => {
         headers: expect.objectContaining({
           Authorization: `Bearer ${sessionToken}`,
         }),
-        body: JSON.stringify({ encrypted_health_token: "encrypted-jwt" }),
+        body: JSON.stringify({ encryptedHealthToken: "encrypted-jwt" }),
       }),
     );
   });
@@ -1065,9 +1086,9 @@ describe("useGoogleLoginAndAuthorization", () => {
     const fetchMock = jest.spyOn(global, "fetch").mockResolvedValue(
       new Response(
         JSON.stringify({
-          encrypted_health_token: "new-encrypted",
-          access_token: "access",
-          expires_in: 3600,
+          encryptedHealthToken: "new-encrypted",
+          accessToken: "access",
+          expiresIn: 3600,
           scope: "openid",
         }),
         { status: 200, headers: { "Content-Type": "application/json" } },

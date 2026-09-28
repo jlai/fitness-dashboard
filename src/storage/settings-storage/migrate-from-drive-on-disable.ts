@@ -20,7 +20,7 @@ const ALL_KEYS = Object.values(SETTINGS_STORAGE_KEYS);
  * Copy every settings blob from Drive into Memory, then delete those files from
  * the Drive app data folder.
  *
- * Callers should then {@link clearEncryptedDriveAuth} and
+ * Callers should then {@link logoutDrive} and
  * {@link bumpSettingsStorageEpoch} so the backend switches to Memory.
  */
 export async function migrateFromDriveOnDisable(): Promise<MigrateFromDriveOnDisableResult> {

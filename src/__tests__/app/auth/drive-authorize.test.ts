@@ -74,14 +74,14 @@ describe("POST /auth/drive/authorize", () => {
       code: "abc",
       redirectUri: REDIRECT_URI,
     });
-    expect(payload.access_token).toBe("access");
+    expect(payload.accessToken).toBe("access");
     expect(payload.scope).toBe("https://www.googleapis.com/auth/drive.appdata");
-    expect(payload.encrypted_drive_token).toEqual(expect.any(String));
+    expect(payload.encryptedDriveToken).toEqual(expect.any(String));
     expect(payload).not.toHaveProperty("refresh_token");
-    expect(payload).not.toHaveProperty("encrypted_health_token");
+    expect(payload).not.toHaveProperty("encryptedHealthToken");
 
     await expect(
-      decryptDriveRefreshToken(payload.encrypted_drive_token),
+      decryptDriveRefreshToken(payload.encryptedDriveToken),
     ).resolves.toEqual({
       sub: "user-1",
       refreshToken: "refresh",

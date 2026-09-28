@@ -45,7 +45,7 @@ async function makeRequest({
       Authorization: `Bearer ${token}`,
       ...headers,
     },
-    body: JSON.stringify({ encrypted_drive_token: encrypted }),
+    body: JSON.stringify({ encryptedDriveToken: encrypted }),
   });
 }
 
@@ -68,11 +68,11 @@ describe("POST /auth/drive/access", () => {
 
     expect(response.status).toBe(200);
     expect(refreshAccessTokenMock).toHaveBeenCalledWith("stored-refresh");
-    expect(payload.access_token).toBe("new-access");
-    expect(payload.encrypted_drive_token).toEqual(expect.any(String));
+    expect(payload.accessToken).toBe("new-access");
+    expect(payload.encryptedDriveToken).toEqual(expect.any(String));
 
     const refreshed = await decryptDriveRefreshToken(
-      payload.encrypted_drive_token,
+      payload.encryptedDriveToken,
     );
     expect(refreshed.refreshToken).toBe("stored-refresh");
     expect(refreshed.scope).toBe(
@@ -95,7 +95,7 @@ describe("POST /auth/drive/access", () => {
     expect(response.status).toBe(401);
     await expect(response.json()).resolves.toEqual({
       error: "unauthorized",
-      error_description: "encrypted drive token has expired",
+      errorDescription: "encrypted drive token has expired",
     });
     jest.useRealTimers();
   });
@@ -119,7 +119,7 @@ describe("POST /auth/drive/access", () => {
     expect(response.status).toBe(401);
     await expect(response.json()).resolves.toEqual({
       error: "unauthorized",
-      error_description: "encrypted drive token has been revoked",
+      errorDescription: "encrypted drive token has been revoked",
     });
   });
 });

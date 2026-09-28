@@ -18,7 +18,7 @@ import {
 import { getRevocationDatabase } from "@/server/auth/revocation-database";
 
 interface AccessBody {
-  encrypted_health_token?: unknown;
+  encryptedHealthToken?: unknown;
 }
 
 export async function POST(request: Request) {
@@ -43,8 +43,8 @@ export async function POST(request: Request) {
   }
 
   if (
-    typeof body.encrypted_health_token !== "string" ||
-    body.encrypted_health_token.length === 0
+    typeof body.encryptedHealthToken !== "string" ||
+    body.encryptedHealthToken.length === 0
   ) {
     return badRequestResponse("missing encrypted token");
   }
@@ -52,7 +52,7 @@ export async function POST(request: Request) {
   let stored;
 
   try {
-    stored = await decryptRefreshToken(body.encrypted_health_token);
+    stored = await decryptRefreshToken(body.encryptedHealthToken);
   } catch (error) {
     if (isExpiredEncryptedTokenError(error)) {
       return unauthorizedResponse("encrypted health token has expired");
@@ -84,7 +84,7 @@ export async function POST(request: Request) {
       return jsonResponse(
         {
           error: "token_refresh_failed",
-          error_description: "refresh token exchange failed",
+          errorDescription: "refresh token exchange failed",
         },
         status === 200 ? 400 : status,
       );
@@ -93,17 +93,17 @@ export async function POST(request: Request) {
     const scope = payload.scope ?? stored.scope;
     const refreshToken = payload.refresh_token ?? stored.refreshToken;
     // Re-encrypt so the client gets a refreshed iat/exp window.
-    const encrypted_health_token = await encryptRefreshToken({
+    const encryptedHealthToken = await encryptRefreshToken({
       sub: stored.sub,
       refreshToken,
       scope,
     });
 
     return jsonResponse({
-      access_token: payload.access_token,
-      expires_in: payload.expires_in,
+      accessToken: payload.access_token,
+      expiresIn: payload.expires_in,
       scope,
-      encrypted_health_token,
+      encryptedHealthToken,
     });
   } catch {
     return internalErrorResponse("error refreshing access token");
