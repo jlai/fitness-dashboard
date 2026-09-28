@@ -15,7 +15,6 @@ jest.mock("@/server/auth/google-oauth-token", () => ({
   refreshAccessToken: jest.fn(),
 }));
 
-const ALLOWED_ORIGIN = "http://localhost:3000";
 const refreshAccessTokenMock = refreshAccessToken as jest.MockedFunction<
   typeof refreshAccessToken
 >;
@@ -44,7 +43,6 @@ async function makeRequest({
     method: "DELETE",
     headers: {
       "Content-Type": "application/json",
-      Origin: ALLOWED_ORIGIN,
       "Sec-Fetch-Site": "same-origin",
       Authorization: `Bearer ${token}`,
       ...headers,
@@ -56,11 +54,9 @@ async function makeRequest({
 }
 
 describe("DELETE /auth/health/current", () => {
-  const originalAllowedOrigin = process.env.GOOGLE_OAUTH_PROXY_ALLOWED_ORIGIN;
   const originalRevocation = process.env.SESSION_REVOCATION_DATABASE;
 
   beforeEach(() => {
-    process.env.GOOGLE_OAUTH_PROXY_ALLOWED_ORIGIN = ALLOWED_ORIGIN;
     process.env.SESSION_REVOCATION_DATABASE = "memory://";
     resetRevocationDatabase();
     refreshAccessTokenMock.mockResolvedValue({
@@ -74,7 +70,6 @@ describe("DELETE /auth/health/current", () => {
   });
 
   afterEach(() => {
-    process.env.GOOGLE_OAUTH_PROXY_ALLOWED_ORIGIN = originalAllowedOrigin;
     process.env.SESSION_REVOCATION_DATABASE = originalRevocation;
     resetRevocationDatabase();
   });
@@ -108,7 +103,6 @@ describe("DELETE /auth/health/current", () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Origin: ALLOWED_ORIGIN,
           "Sec-Fetch-Site": "same-origin",
           Authorization: `Bearer ${sessionToken}`,
         },
@@ -159,7 +153,6 @@ describe("DELETE /auth/health/current", () => {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
-          Origin: ALLOWED_ORIGIN,
           "Sec-Fetch-Site": "same-origin",
         },
         body: JSON.stringify({ encrypted_health_token: encrypted }),

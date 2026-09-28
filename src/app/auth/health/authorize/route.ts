@@ -10,8 +10,8 @@ import {
   unauthorizedResponse,
 } from "@/server/auth/http";
 import {
-  requireSameOrigin,
   isValidSession,
+  requireSameOrigin,
 } from "@/server/auth/require-session";
 
 interface AuthorizeBody {
@@ -91,6 +91,8 @@ export async function POST(request: Request) {
       encrypted_health_token,
     });
   } catch (reason) {
-    return internalErrorResponse("error exchanging authorization code for token");
+    return internalErrorResponse(
+      "error exchanging authorization code for token",
+    );
   }
 }

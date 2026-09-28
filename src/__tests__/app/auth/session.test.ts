@@ -14,7 +14,6 @@ jest.mock("@/server/auth/google-id-token", () => ({
   verifyGoogleIdToken: jest.fn(),
 }));
 
-const ALLOWED_ORIGIN = "http://localhost:3000";
 const verifyGoogleIdTokenMock = verifyGoogleIdToken as jest.MockedFunction<
   typeof verifyGoogleIdToken
 >;
@@ -36,7 +35,6 @@ function makeRequest({
     method,
     headers: {
       ...(method === "POST" ? { "Content-Type": "application/json" } : {}),
-      Origin: ALLOWED_ORIGIN,
       "Sec-Fetch-Site": "same-origin",
       ...(sessionToken ? { Authorization: `Bearer ${sessionToken}` } : {}),
       ...headers,
@@ -46,17 +44,14 @@ function makeRequest({
 }
 
 describe("POST /auth/session", () => {
-  const originalAllowedOrigin = process.env.GOOGLE_OAUTH_PROXY_ALLOWED_ORIGIN;
   const originalExpiration = process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES;
 
   beforeEach(() => {
-    process.env.GOOGLE_OAUTH_PROXY_ALLOWED_ORIGIN = ALLOWED_ORIGIN;
     delete process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES;
     verifyGoogleIdTokenMock.mockResolvedValue({ sub: "user-1" });
   });
 
   afterEach(() => {
-    process.env.GOOGLE_OAUTH_PROXY_ALLOWED_ORIGIN = originalAllowedOrigin;
     process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES = originalExpiration;
   });
 
@@ -123,19 +118,16 @@ describe("POST /auth/session", () => {
 });
 
 describe("DELETE /auth/session/current", () => {
-  const originalAllowedOrigin = process.env.GOOGLE_OAUTH_PROXY_ALLOWED_ORIGIN;
   const originalRevocation = process.env.SESSION_REVOCATION_DATABASE;
   const originalExpiration = process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES;
 
   beforeEach(() => {
-    process.env.GOOGLE_OAUTH_PROXY_ALLOWED_ORIGIN = ALLOWED_ORIGIN;
     process.env.SESSION_REVOCATION_DATABASE = "memory://";
     delete process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES;
     resetRevocationDatabase();
   });
 
   afterEach(() => {
-    process.env.GOOGLE_OAUTH_PROXY_ALLOWED_ORIGIN = originalAllowedOrigin;
     process.env.SESSION_REVOCATION_DATABASE = originalRevocation;
     process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES = originalExpiration;
     resetRevocationDatabase();
@@ -201,12 +193,10 @@ describe("DELETE /auth/session/current", () => {
 });
 
 describe("DELETE /auth/session/all", () => {
-  const originalAllowedOrigin = process.env.GOOGLE_OAUTH_PROXY_ALLOWED_ORIGIN;
   const originalRevocation = process.env.SESSION_REVOCATION_DATABASE;
   const originalExpiration = process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES;
 
   beforeEach(() => {
-    process.env.GOOGLE_OAUTH_PROXY_ALLOWED_ORIGIN = ALLOWED_ORIGIN;
     process.env.SESSION_REVOCATION_DATABASE = "memory://";
     delete process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES;
     resetRevocationDatabase();
@@ -215,7 +205,6 @@ describe("DELETE /auth/session/all", () => {
   });
 
   afterEach(() => {
-    process.env.GOOGLE_OAUTH_PROXY_ALLOWED_ORIGIN = originalAllowedOrigin;
     process.env.SESSION_REVOCATION_DATABASE = originalRevocation;
     process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES = originalExpiration;
     resetRevocationDatabase();

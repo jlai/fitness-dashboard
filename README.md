@@ -41,7 +41,7 @@ node -e "const {randomBytes}=require('crypto'); console.log(JSON.stringify({kty:
 ```
 NEXT_PUBLIC_GOOGLE_OAUTH_CLIENT_ID=idgoeshere
 GOOGLE_OAUTH_CLIENT_SECRET=secretgoeshere
-GOOGLE_OAUTH_PROXY_ALLOWED_ORIGIN=http://localhost:3000
+GOOGLE_OAUTH_REDIRECT_URI=http://localhost:3000
 SESSION_ACTIVE_KEY={"kty":"oct","kid":"session-1","alg":"HS256","k":"..."}
 HEALTH_ACTIVE_KEY={"kty":"oct","kid":"health-1","alg":"A256GCM","k":"..."}
 DRIVE_ACTIVE_KEY={"kty":"oct","kid":"drive-1","alg":"A256GCM","k":"..."}

@@ -9,8 +9,8 @@ import {
   unauthorizedResponse,
 } from "@/server/auth/http";
 import {
-  requireSameOrigin,
   isValidSession,
+  requireSameOrigin,
 } from "@/server/auth/require-session";
 import { getRevocationDatabase } from "@/server/auth/revocation-database";
 

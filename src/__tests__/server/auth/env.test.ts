@@ -1,6 +1,5 @@
 import {
   assertServerEnv,
-  getAllowedOrigins,
   getClientSecret,
   getConfiguredClientId,
   getConfiguredRedirectUri,
@@ -264,8 +263,6 @@ describe("required server env", () => {
       process.env.NEXT_PUBLIC_GOOGLE_OAUTH_CLIENT_ID,
     GOOGLE_OAUTH_CLIENT_SECRET: process.env.GOOGLE_OAUTH_CLIENT_SECRET,
     GOOGLE_OAUTH_REDIRECT_URI: process.env.GOOGLE_OAUTH_REDIRECT_URI,
-    GOOGLE_OAUTH_PROXY_ALLOWED_ORIGIN:
-      process.env.GOOGLE_OAUTH_PROXY_ALLOWED_ORIGIN,
     SESSION_ACTIVE_KEY: process.env.SESSION_ACTIVE_KEY,
     HEALTH_ACTIVE_KEY: process.env.HEALTH_ACTIVE_KEY,
     DRIVE_ACTIVE_KEY: process.env.DRIVE_ACTIVE_KEY,
@@ -301,21 +298,6 @@ describe("required server env", () => {
     expect(() => getConfiguredRedirectUri()).toThrow(
       "GOOGLE_OAUTH_REDIRECT_URI is not configured",
     );
-
-    process.env.GOOGLE_OAUTH_PROXY_ALLOWED_ORIGIN = ",";
-    expect(() => getAllowedOrigins()).toThrow(
-      "GOOGLE_OAUTH_PROXY_ALLOWED_ORIGIN is not configured",
-    );
-  });
-
-  it("parses configured allowed origins", () => {
-    process.env.GOOGLE_OAUTH_PROXY_ALLOWED_ORIGIN =
-      "http://localhost:3000, https://example.com";
-
-    expect(getAllowedOrigins()).toEqual([
-      "http://localhost:3000",
-      "https://example.com",
-    ]);
   });
 
   it("fails startup when required variables are missing", async () => {

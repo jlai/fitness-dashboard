@@ -8,8 +8,8 @@ import {
   noContentResponse,
 } from "@/server/auth/http";
 import {
-  requireSameOrigin,
   isValidSession,
+  requireSameOrigin,
 } from "@/server/auth/require-session";
 
 interface RevokeHealthBody {

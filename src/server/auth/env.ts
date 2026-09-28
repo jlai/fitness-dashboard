@@ -25,7 +25,6 @@ const REQUIRED_OAUTH_ENV_NAMES = [
   "NEXT_PUBLIC_GOOGLE_OAUTH_CLIENT_ID",
   "GOOGLE_OAUTH_CLIENT_SECRET",
   "GOOGLE_OAUTH_REDIRECT_URI",
-  "GOOGLE_OAUTH_PROXY_ALLOWED_ORIGIN",
 ] as const;
 
 function isEnvConfigured(name: string) {
@@ -56,19 +55,6 @@ export function getConfiguredRedirectUri() {
   return requireEnv("GOOGLE_OAUTH_REDIRECT_URI");
 }
 
-export function getAllowedOrigins() {
-  const origins = requireEnv("GOOGLE_OAUTH_PROXY_ALLOWED_ORIGIN")
-    .split(",")
-    .map((origin) => origin.trim())
-    .filter((origin) => origin.length > 0);
-
-  if (origins.length === 0) {
-    throw new Error("GOOGLE_OAUTH_PROXY_ALLOWED_ORIGIN is not configured");
-  }
-
-  return origins;
-}
-
 const DEFAULT_SITE_TOKEN_EXPIRATION_MINUTES = 120;
 
 export function getSiteTokenDefaultExpirationSeconds() {
@@ -88,8 +74,7 @@ export function getSiteTokenDefaultExpirationSeconds() {
 }
 
 export type RevocationDatabaseConfig =
-  | { backend: "memory" }
-  | { backend: "cloudflare-kv"; namespace: string };
+  { backend: "memory" } | { backend: "cloudflare-kv"; namespace: string };
 
 const DEFAULT_REVOCATION_DATABASE_URL = "memory://";
 
@@ -169,7 +154,6 @@ export async function assertServerEnv() {
   getConfiguredClientId();
   getClientSecret();
   getConfiguredRedirectUri();
-  getAllowedOrigins();
   getSiteTokenDefaultExpirationSeconds();
   getRevocationDatabaseConfig();
   await getSessionSecretStore().getActiveKey();

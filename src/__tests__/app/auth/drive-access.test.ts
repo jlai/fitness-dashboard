@@ -15,7 +15,6 @@ jest.mock("@/server/auth/google-oauth-token", () => ({
   refreshAccessToken: jest.fn(),
 }));
 
-const ALLOWED_ORIGIN = "http://localhost:3000";
 const refreshAccessTokenMock = refreshAccessToken as jest.MockedFunction<
   typeof refreshAccessToken
 >;
@@ -42,7 +41,6 @@ async function makeRequest({
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Origin: ALLOWED_ORIGIN,
       "Sec-Fetch-Site": "same-origin",
       Authorization: `Bearer ${token}`,
       ...headers,
@@ -52,10 +50,7 @@ async function makeRequest({
 }
 
 describe("POST /auth/drive/access", () => {
-  const originalAllowedOrigin = process.env.GOOGLE_OAUTH_PROXY_ALLOWED_ORIGIN;
-
   beforeEach(() => {
-    process.env.GOOGLE_OAUTH_PROXY_ALLOWED_ORIGIN = ALLOWED_ORIGIN;
     resetRevocationDatabase();
     refreshAccessTokenMock.mockResolvedValue({
       status: 200,
@@ -65,10 +60,6 @@ describe("POST /auth/drive/access", () => {
         scope: "https://www.googleapis.com/auth/drive.appdata",
       },
     });
-  });
-
-  afterEach(() => {
-    process.env.GOOGLE_OAUTH_PROXY_ALLOWED_ORIGIN = originalAllowedOrigin;
   });
 
   it("refreshes and returns a new encrypted drive token", async () => {

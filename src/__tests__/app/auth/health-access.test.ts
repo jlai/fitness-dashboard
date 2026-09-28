@@ -15,7 +15,6 @@ jest.mock("@/server/auth/google-oauth-token", () => ({
   refreshAccessToken: jest.fn(),
 }));
 
-const ALLOWED_ORIGIN = "http://localhost:3000";
 const refreshAccessTokenMock = refreshAccessToken as jest.MockedFunction<
   typeof refreshAccessToken
 >;
@@ -42,7 +41,6 @@ async function makeRequest({
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Origin: ALLOWED_ORIGIN,
       "Sec-Fetch-Site": "same-origin",
       Authorization: `Bearer ${token}`,
       ...headers,
@@ -52,11 +50,9 @@ async function makeRequest({
 }
 
 describe("POST /auth/health/access", () => {
-  const originalAllowedOrigin = process.env.GOOGLE_OAUTH_PROXY_ALLOWED_ORIGIN;
   const originalRevocation = process.env.SESSION_REVOCATION_DATABASE;
 
   beforeEach(() => {
-    process.env.GOOGLE_OAUTH_PROXY_ALLOWED_ORIGIN = ALLOWED_ORIGIN;
     process.env.SESSION_REVOCATION_DATABASE = "memory://";
     resetRevocationDatabase();
     refreshAccessTokenMock.mockResolvedValue({
@@ -70,7 +66,6 @@ describe("POST /auth/health/access", () => {
   });
 
   afterEach(() => {
-    process.env.GOOGLE_OAUTH_PROXY_ALLOWED_ORIGIN = originalAllowedOrigin;
     process.env.SESSION_REVOCATION_DATABASE = originalRevocation;
     resetRevocationDatabase();
     jest.useRealTimers();
@@ -211,10 +206,7 @@ describe("POST /auth/health/access", () => {
       iat: stored.iat + 10,
     });
     const revocationDatabase = await getRevocationDatabase();
-    await revocationDatabase.invalidateIssuedBefore(
-      stored.sub,
-      stored.iat + 1,
-    );
+    await revocationDatabase.invalidateIssuedBefore(stored.sub, stored.iat + 1);
 
     const response = await POST(
       await makeRequest({ encryptedHealthToken: encrypted, sessionToken }),

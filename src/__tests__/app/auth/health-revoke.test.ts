@@ -7,7 +7,6 @@ jest.mock("@/server/auth/google-oauth-token", () => ({
   revokeGoogleToken: jest.fn(),
 }));
 
-const ALLOWED_ORIGIN = "http://localhost:3000";
 const revokeGoogleTokenMock = revokeGoogleToken as jest.MockedFunction<
   typeof revokeGoogleToken
 >;
@@ -36,7 +35,6 @@ async function makeRequest({
     method: "DELETE",
     headers: {
       "Content-Type": "application/json",
-      Origin: ALLOWED_ORIGIN,
       "Sec-Fetch-Site": "same-origin",
       Authorization: `Bearer ${token}`,
       ...headers,
@@ -48,15 +46,8 @@ async function makeRequest({
 }
 
 describe("DELETE /auth/health", () => {
-  const originalAllowedOrigin = process.env.GOOGLE_OAUTH_PROXY_ALLOWED_ORIGIN;
-
   beforeEach(() => {
-    process.env.GOOGLE_OAUTH_PROXY_ALLOWED_ORIGIN = ALLOWED_ORIGIN;
     revokeGoogleTokenMock.mockResolvedValue({ status: 200 });
-  });
-
-  afterEach(() => {
-    process.env.GOOGLE_OAUTH_PROXY_ALLOWED_ORIGIN = originalAllowedOrigin;
   });
 
   it("revokes the refresh token from the encrypted health token", async () => {
@@ -104,7 +95,6 @@ describe("DELETE /auth/health", () => {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
-          Origin: ALLOWED_ORIGIN,
           "Sec-Fetch-Site": "same-origin",
         },
         body: JSON.stringify({ encrypted_health_token: encrypted }),

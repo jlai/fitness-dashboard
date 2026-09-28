@@ -1,4 +1,3 @@
-import { getProxyRequestError } from "./guards";
 import {
   forbiddenResponse,
   readBearerToken,
@@ -10,10 +9,8 @@ import { verifySessionToken, type SessionClaims } from "./session-token";
 export function requireSameOrigin(
   request: Request,
 ): { error: Response } | { error?: undefined } {
-  const proxyError = getProxyRequestError(request);
-
-  if (proxyError) {
-    return { error: forbiddenResponse(proxyError) };
+  if (request.headers.get("Sec-Fetch-Site") !== "same-origin") {
+    return { error: forbiddenResponse("invalid request") };
   }
 
   return {};
