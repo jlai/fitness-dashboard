@@ -1,41 +1,22 @@
-import {
-  forbiddenResponse,
-  readBearerToken,
-  unauthorizedResponse,
-} from "./http";
+import { FetchHeaderError, TokenValidationError } from "./errors";
+import { readBearerToken } from "./http";
 import { getRevocationDatabase } from "./revocation-database";
 import { verifySessionToken, type SessionClaims } from "./session-token";
 
-export function requireSameOrigin(
-  request: Request,
-): { error: Response } | { error?: undefined } {
+export function validateSecFetch(request: Request): void {
   if (request.headers.get("Sec-Fetch-Site") !== "same-origin") {
-    return { error: forbiddenResponse("invalid request") };
+    throw new FetchHeaderError();
   }
-
-  return {};
 }
 
-export async function isValidSession(
-  request: Request,
-): Promise<
-  | { session: SessionClaims; error?: undefined }
-  | { session?: undefined; error: Response }
-> {
+export async function isValidSession(request: Request): Promise<SessionClaims> {
   const token = readBearerToken(request);
 
   if (!token) {
-    return { error: unauthorizedResponse("missing session token") };
+    throw new TokenValidationError("missing session token");
   }
 
-  let session: SessionClaims;
-
-  try {
-    session = await verifySessionToken(token);
-  } catch {
-    return { error: unauthorizedResponse("invalid session token") };
-  }
-
+  const session = await verifySessionToken(token);
   const revocationDatabase = await getRevocationDatabase();
 
   if (
@@ -45,8 +26,8 @@ export async function isValidSession(
       iat: session.iat,
     })
   ) {
-    return { error: unauthorizedResponse("session token has been revoked") };
+    throw new TokenValidationError("session token has been revoked");
   }
 
-  return { session };
+  return session;
 }

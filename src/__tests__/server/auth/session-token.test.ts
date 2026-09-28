@@ -81,7 +81,10 @@ describe("signed session token", () => {
   });
 
   it("rejects a malformed token", async () => {
-    await expect(verifySessionToken("not-a-jwt")).rejects.toThrow();
+    await expect(verifySessionToken("not-a-jwt")).rejects.toMatchObject({
+      name: "TokenValidationError",
+      message: "invalid session token",
+    });
   });
 
   it("rejects an expired session token", async () => {
@@ -91,7 +94,10 @@ describe("signed session token", () => {
       exp: 1_001,
     });
 
-    await expect(verifySessionToken(jwt)).rejects.toThrow();
+    await expect(verifySessionToken(jwt)).rejects.toMatchObject({
+      name: "TokenValidationError",
+      message: "session token has expired",
+    });
   });
 
   it("rejects a session token without jti", async () => {
@@ -107,9 +113,10 @@ describe("signed session token", () => {
       .setExpirationTime("2h")
       .sign(tokenKey.key);
 
-    await expect(verifySessionToken(jwt)).rejects.toThrow(
-      "session token is missing jti",
-    );
+    await expect(verifySessionToken(jwt)).rejects.toMatchObject({
+      name: "TokenValidationError",
+      message: "invalid session token",
+    });
   });
 
   it("verifies tokens minted with a previous key after rotation", async () => {

@@ -92,6 +92,17 @@ describe("POST /auth/drive/authorize", () => {
     });
   });
 
+  it("rejects requests without an authorization code", async () => {
+    const response = await POST(await makeRequest({ body: {} }));
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      error: "invalid_request",
+      errorDescription: "missing authorization code",
+    });
+    expect(exchangeAuthorizationCodeMock).not.toHaveBeenCalled();
+  });
+
   it("rejects requests without a session token", async () => {
     const response = await POST(
       await makeRequest({

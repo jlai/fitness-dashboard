@@ -1,50 +1,37 @@
+import { TokenValidationError } from "@/server/auth/errors";
 import { verifyGoogleIdToken } from "@/server/auth/google-id-token";
 import {
-  badRequestResponse,
+  getHTTPErrorResponse,
   jsonResponse,
-  unauthorizedResponse,
+  readJsonBody,
 } from "@/server/auth/http";
-import { requireSameOrigin } from "@/server/auth/require-session";
+import { createSessionBodySchema } from "@/server/auth/request-bodies";
+import { validateSecFetch } from "@/server/auth/require-session";
 import { signSessionToken } from "@/server/auth/session-token";
-
-interface CreateSessionBody {
-  idToken?: unknown;
-}
 
 /**
  * Create a new session token for the user from a Google OpenID Connect token
  */
 export async function POST(request: Request) {
-  const origin = requireSameOrigin(request);
-
-  if (origin.error) {
-    return origin.error;
-  }
-
-  let body: CreateSessionBody;
-
   try {
-    body = (await request.json()) as CreateSessionBody;
-  } catch {
-    return badRequestResponse("invalid json body");
-  }
+    validateSecFetch(request);
+    const { idToken } = await readJsonBody(request, createSessionBodySchema);
 
-  if (typeof body.idToken !== "string" || body.idToken.length === 0) {
-    return badRequestResponse("missing idToken");
-  }
+    let claims;
 
-  let claims;
+    try {
+      claims = await verifyGoogleIdToken(idToken);
+    } catch {
+      console.error({
+        message: "error verifying google id token",
+      });
+      throw new TokenValidationError("invalid idToken");
+    }
 
-  try {
-    claims = await verifyGoogleIdToken(body.idToken);
+    const sessionToken = await signSessionToken({ sub: claims.sub });
+
+    return jsonResponse({ sessionToken });
   } catch (error) {
-    console.error({
-      message: "error verifying google id token",
-    });
-    return unauthorizedResponse("invalid idToken");
+    return getHTTPErrorResponse(error);
   }
-
-  const sessionToken = await signSessionToken({ sub: claims.sub });
-
-  return jsonResponse({ sessionToken });
 }

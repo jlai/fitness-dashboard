@@ -1,100 +1,56 @@
 import {
-  decryptRefreshToken,
+  decryptHealthRefreshToken,
   encryptRefreshToken,
-  isExpiredEncryptedTokenError,
+  isValidEncryptedToken,
 } from "@/server/auth/encrypted-token";
+import { InternalAuthError, TokenEndpointError } from "@/server/auth/errors";
 import { refreshAccessToken } from "@/server/auth/google-oauth-token";
 import {
-  badRequestResponse,
-  forbiddenResponse,
-  internalErrorResponse,
+  getHTTPErrorResponse,
   jsonResponse,
-  unauthorizedResponse,
+  readJsonBody,
 } from "@/server/auth/http";
+import { healthAccessBodySchema } from "@/server/auth/request-bodies";
 import {
   isValidSession,
-  requireSameOrigin,
+  validateSecFetch,
 } from "@/server/auth/require-session";
-import { getRevocationDatabase } from "@/server/auth/revocation-database";
-
-interface AccessBody {
-  encryptedHealthToken?: unknown;
-}
 
 export async function POST(request: Request) {
-  const origin = requireSameOrigin(request);
-
-  if (origin.error) {
-    return origin.error;
-  }
-
-  const auth = await isValidSession(request);
-
-  if (auth.error) {
-    return auth.error;
-  }
-
-  let body: AccessBody;
-
   try {
-    body = (await request.json()) as AccessBody;
-  } catch {
-    return badRequestResponse("invalid json body");
-  }
+    validateSecFetch(request);
+    const session = await isValidSession(request);
+    const { encryptedHealthToken } = await readJsonBody(
+      request,
+      healthAccessBodySchema,
+    );
+    const verified = await isValidEncryptedToken({
+      encrypted: encryptedHealthToken,
+      sessionSub: session.sub,
+      decrypt: decryptHealthRefreshToken,
+    });
 
-  if (
-    typeof body.encryptedHealthToken !== "string" ||
-    body.encryptedHealthToken.length === 0
-  ) {
-    return badRequestResponse("missing encrypted token");
-  }
+    let status;
+    let payload;
 
-  let stored;
-
-  try {
-    stored = await decryptRefreshToken(body.encryptedHealthToken);
-  } catch (error) {
-    if (isExpiredEncryptedTokenError(error)) {
-      return unauthorizedResponse("encrypted health token has expired");
+    try {
+      ({ status, payload } = await refreshAccessToken(verified.refreshToken));
+    } catch {
+      throw new InternalAuthError("error refreshing access token");
     }
 
-    return forbiddenResponse("invalid encrypted token");
-  }
-
-  if (stored.sub !== auth.session.sub) {
-    return forbiddenResponse("session does not match encrypted token");
-  }
-
-  const revocationDatabase = await getRevocationDatabase();
-
-  if (
-    await revocationDatabase.isRevoked({
-      jti: stored.jti,
-      sub: stored.sub,
-      iat: stored.iat,
-    })
-  ) {
-    return unauthorizedResponse("encrypted health token has been revoked");
-  }
-
-  try {
-    const { status, payload } = await refreshAccessToken(stored.refreshToken);
-
     if (status !== 200 || payload.error || !payload.access_token) {
-      return jsonResponse(
-        {
-          error: "token_refresh_failed",
-          errorDescription: "refresh token exchange failed",
-        },
-        status === 200 ? 400 : status,
+      throw new TokenEndpointError(
+        "token_refresh_failed",
+        "refresh token exchange failed",
       );
     }
 
-    const scope = payload.scope ?? stored.scope;
-    const refreshToken = payload.refresh_token ?? stored.refreshToken;
+    const scope = payload.scope ?? verified.scope;
+    const refreshToken = payload.refresh_token ?? verified.refreshToken;
     // Re-encrypt so the client gets a refreshed iat/exp window.
-    const encryptedHealthToken = await encryptRefreshToken({
-      sub: stored.sub,
+    const nextEncryptedHealthToken = await encryptRefreshToken({
+      sub: verified.sub,
       refreshToken,
       scope,
     });
@@ -103,9 +59,9 @@ export async function POST(request: Request) {
       accessToken: payload.access_token,
       expiresIn: payload.expires_in,
       scope,
-      encryptedHealthToken,
+      encryptedHealthToken: nextEncryptedHealthToken,
     });
-  } catch {
-    return internalErrorResponse("error refreshing access token");
+  } catch (error) {
+    return getHTTPErrorResponse(error, "error refreshing access token");
   }
 }

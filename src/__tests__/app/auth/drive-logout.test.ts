@@ -89,7 +89,7 @@ describe("POST /auth/drive/logout", () => {
       refreshToken: "stored-refresh",
       scope: DRIVE_SCOPE,
     });
-    const stored = await decryptDriveRefreshToken(encrypted);
+    const verified = await decryptDriveRefreshToken(encrypted);
     const sessionToken = await signSessionToken({ sub: "user-1" });
 
     const response = await POST(
@@ -102,9 +102,9 @@ describe("POST /auth/drive/logout", () => {
     const revocationDatabase = await getRevocationDatabase();
     await expect(
       revocationDatabase.isRevoked({
-        jti: stored.jti,
-        sub: stored.sub,
-        iat: stored.iat,
+        jti: verified.jti,
+        sub: verified.sub,
+        iat: verified.iat,
       }),
     ).resolves.toBe(true);
 
@@ -123,7 +123,7 @@ describe("POST /auth/drive/logout", () => {
     expect(accessResponse.status).toBe(401);
     await expect(accessResponse.json()).resolves.toEqual({
       error: "unauthorized",
-      errorDescription: "encrypted drive token has been revoked",
+      errorDescription: "encrypted token has been revoked",
     });
     expect(refreshAccessTokenMock).not.toHaveBeenCalled();
   });
@@ -142,9 +142,9 @@ describe("POST /auth/drive/logout", () => {
     const sessionToken = await signSessionToken({ sub: "user-2" });
     const response = await POST(await makeRequest({ sessionToken }));
 
-    expect(response.status).toBe(403);
+    expect(response.status).toBe(401);
     await expect(response.json()).resolves.toEqual({
-      error: "forbidden",
+      error: "unauthorized",
       errorDescription: "session does not match encrypted token",
     });
     expect(revokeGoogleTokenMock).not.toHaveBeenCalled();
@@ -155,7 +155,7 @@ describe("POST /auth/drive/logout", () => {
       await makeRequest({ encryptedDriveToken: "not-a-jwt" }),
     );
 
-    expect(response.status).toBe(403);
+    expect(response.status).toBe(401);
     expect(revokeGoogleTokenMock).not.toHaveBeenCalled();
   });
 
@@ -163,6 +163,10 @@ describe("POST /auth/drive/logout", () => {
     const response = await POST(await makeRequest({ body: {} }));
 
     expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      error: "invalid_request",
+      errorDescription: "missing encrypted token",
+    });
     expect(revokeGoogleTokenMock).not.toHaveBeenCalled();
   });
 

@@ -1,47 +1,28 @@
 import {
-  badRequestResponse,
-  jsonResponse,
-  noContentResponse,
-} from "@/server/auth/http";
-import {
-  isValidSession,
-  requireSameOrigin,
-} from "@/server/auth/require-session";
-import { getRevocationDatabase } from "@/server/auth/revocation-database";
-import {
   decryptDriveTokenForSession,
   decryptHealthTokenForSession,
   denylistStoredToken,
   revokeGoogleRefreshToken,
-  type DecryptTokenResult,
-} from "@/server/auth/revoke-encrypted-token";
+  type DecryptedRefreshToken,
+} from "@/server/auth/encrypted-token";
+import {
+  getHTTPErrorResponse,
+  jsonResponse,
+  noContentResponse,
+  readJsonBody,
+} from "@/server/auth/http";
+import { sessionLogoutBodySchema } from "@/server/auth/request-bodies";
+import {
+  isValidSession,
+  validateSecFetch,
+} from "@/server/auth/require-session";
+import { getRevocationDatabase } from "@/server/auth/revocation-database";
 
-interface LogoutBody {
-  encryptedHealthToken?: unknown;
-  encryptedDriveToken?: unknown;
-  unlink?: unknown;
-}
-
-function readOptionalEncryptedToken(value: unknown): {
-  token?: string;
-  error?: Response;
-} {
-  if (value === undefined) {
-    return {};
-  }
-
-  if (typeof value !== "string" || value.length === 0) {
-    return { error: badRequestResponse("missing encrypted token") };
-  }
-
-  return { token: value };
-}
-
-function tokenErrorsResponse(errors: Response[]) {
+function tokenErrorsResponse(errors: unknown[]) {
   const [only] = errors;
 
   if (only && errors.length === 1) {
-    return only;
+    return getHTTPErrorResponse(only);
   }
 
   if (errors.length === 0) {
@@ -63,31 +44,22 @@ async function revokeEncryptedToken(options: {
   decrypt: (
     encrypted: string,
     sessionSub: string,
-  ) => Promise<DecryptTokenResult>;
+  ) => Promise<DecryptedRefreshToken>;
   unlink: boolean;
   revokeErrorMessage: string;
-}): Promise<Response | undefined> {
-  const decrypted = await options.decrypt(
-    options.encrypted,
-    options.sessionSub,
-  );
+}): Promise<void> {
+  const verified = await options.decrypt(options.encrypted, options.sessionSub);
 
-  if (decrypted.error) {
-    return decrypted.error;
-  }
-
-  await denylistStoredToken(decrypted.stored);
+  await denylistStoredToken(verified);
 
   if (!options.unlink) {
-    return undefined;
+    return;
   }
 
-  const revoked = await revokeGoogleRefreshToken(
-    decrypted.stored.refreshToken,
+  await revokeGoogleRefreshToken(
+    verified.refreshToken,
     options.revokeErrorMessage,
   );
-
-  return revoked.error;
 }
 
 /**
@@ -96,78 +68,53 @@ async function revokeEncryptedToken(options: {
  * and invalidate every other session for this user.
  */
 export async function POST(request: Request) {
-  const origin = requireSameOrigin(request);
-
-  if (origin.error) {
-    return origin.error;
-  }
-
-  const auth = await isValidSession(request);
-
-  if (auth.error) {
-    return auth.error;
-  }
-
-  let body: LogoutBody;
-
   try {
-    body = (await request.json()) as LogoutBody;
-  } catch {
-    return badRequestResponse("invalid json body");
-  }
+    validateSecFetch(request);
+    const session = await isValidSession(request);
+    const body = await readJsonBody(request, sessionLogoutBodySchema);
+    const unlink = body.unlink === true;
+    const revocationDatabase = await getRevocationDatabase();
+    await revocationDatabase.add(session.jti, session.exp);
 
-  if (body.unlink !== undefined && typeof body.unlink !== "boolean") {
-    return badRequestResponse("invalid unlink");
-  }
+    if (unlink) {
+      await revocationDatabase.invalidateIssuedBefore(
+        session.sub,
+        Math.floor(Date.now() / 1000),
+      );
+    }
 
-  const unlink = body.unlink === true;
-  const revocationDatabase = await getRevocationDatabase();
-  await revocationDatabase.add(auth.session.jti, auth.session.exp);
+    const tokenErrors: unknown[] = [];
 
-  if (unlink) {
-    await revocationDatabase.invalidateIssuedBefore(
-      auth.session.sub,
-      Math.floor(Date.now() / 1000),
-    );
-  }
-
-  const tokenErrors: Response[] = [];
-
-  const healthField = readOptionalEncryptedToken(body.encryptedHealthToken);
-
-  if (healthField.error) {
-    tokenErrors.push(healthField.error);
-  } else if (healthField.token) {
-    const error = await revokeEncryptedToken({
-      encrypted: healthField.token,
-      sessionSub: auth.session.sub,
-      decrypt: decryptHealthTokenForSession,
-      unlink,
-      revokeErrorMessage: "error revoking health token",
-    });
-
-    if (error) {
+    try {
+      if (body.encryptedHealthToken) {
+        await revokeEncryptedToken({
+          encrypted: body.encryptedHealthToken,
+          sessionSub: session.sub,
+          decrypt: decryptHealthTokenForSession,
+          unlink,
+          revokeErrorMessage: "error revoking health token",
+        });
+      }
+    } catch (error) {
       tokenErrors.push(error);
     }
-  }
 
-  const driveField = readOptionalEncryptedToken(body.encryptedDriveToken);
-
-  if (driveField.error) {
-    tokenErrors.push(driveField.error);
-  } else if (driveField.token) {
-    const error = await revokeEncryptedToken({
-      encrypted: driveField.token,
-      sessionSub: auth.session.sub,
-      decrypt: decryptDriveTokenForSession,
-      unlink,
-      revokeErrorMessage: "error revoking drive token",
-    });
-
-    if (error) {
+    try {
+      if (body.encryptedDriveToken) {
+        await revokeEncryptedToken({
+          encrypted: body.encryptedDriveToken,
+          sessionSub: session.sub,
+          decrypt: decryptDriveTokenForSession,
+          unlink,
+          revokeErrorMessage: "error revoking drive token",
+        });
+      }
+    } catch (error) {
       tokenErrors.push(error);
     }
-  }
 
-  return tokenErrorsResponse(tokenErrors);
+    return tokenErrorsResponse(tokenErrors);
+  } catch (error) {
+    return getHTTPErrorResponse(error);
+  }
 }

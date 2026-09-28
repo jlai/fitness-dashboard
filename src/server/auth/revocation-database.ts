@@ -1,4 +1,5 @@
-import { ENCRYPTED_REFRESH_TOKEN_EXPIRATION_SECONDS } from "./encrypted-token";
+import { ENCRYPTED_REFRESH_TOKEN_EXPIRATION_SECONDS } from "@/config/encrypted-token";
+
 import {
   getRevocationDatabaseConfig,
   type RevocationDatabaseConfig,
@@ -192,9 +193,7 @@ function nowSeconds() {
   return Math.floor(Date.now() / 1000);
 }
 
-let cached:
-  | { key: string; database: RevocationDatabase }
-  | undefined;
+let cached: { key: string; database: RevocationDatabase } | undefined;
 
 export async function getRevocationDatabase(): Promise<RevocationDatabase> {
   const config = getRevocationDatabaseConfig();

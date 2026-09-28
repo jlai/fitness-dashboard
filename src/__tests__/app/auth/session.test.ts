@@ -4,7 +4,7 @@ import { POST as POST_ACCESS } from "@/app/auth/health/access/route";
 import { POST as POST_LOGOUT } from "@/app/auth/session/logout/route";
 import { POST } from "@/app/auth/session/route";
 import {
-  decryptRefreshToken,
+  decryptHealthRefreshToken,
   encryptDriveRefreshToken,
   encryptRefreshToken,
 } from "@/server/auth/encrypted-token";
@@ -105,6 +105,30 @@ describe("POST /auth/session", () => {
     const response = await POST(makeRequest({ body: {} }));
 
     expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      error: "invalid_request",
+      errorDescription: "missing idToken",
+    });
+    expect(verifyGoogleIdTokenMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects invalid JSON", async () => {
+    const response = await POST(
+      new Request("http://localhost:3000/auth/session", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Sec-Fetch-Site": "same-origin",
+        },
+        body: "{",
+      }),
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      error: "invalid_request",
+      errorDescription: "invalid json body",
+    });
     expect(verifyGoogleIdTokenMock).not.toHaveBeenCalled();
   });
 
@@ -201,7 +225,7 @@ describe("POST /auth/session/logout", () => {
       refreshToken: "drive-refresh",
       scope: "https://www.googleapis.com/auth/drive.appdata",
     });
-    const healthStored = await decryptRefreshToken(encryptedHealth);
+    const healthVerified = await decryptHealthRefreshToken(encryptedHealth);
 
     const response = await POST_LOGOUT(
       logoutRequest({
@@ -219,9 +243,9 @@ describe("POST /auth/session/logout", () => {
     const revocationDatabase = await getRevocationDatabase();
     await expect(
       revocationDatabase.isRevoked({
-        jti: healthStored.jti,
-        sub: healthStored.sub,
-        iat: healthStored.iat,
+        jti: healthVerified.jti,
+        sub: healthVerified.sub,
+        iat: healthVerified.iat,
       }),
     ).resolves.toBe(true);
 
@@ -258,9 +282,9 @@ describe("POST /auth/session/logout", () => {
       }),
     );
 
-    expect(response.status).toBe(403);
+    expect(response.status).toBe(401);
     await expect(response.json()).resolves.toEqual({
-      error: "forbidden",
+      error: "unauthorized",
       errorDescription: "session does not match encrypted token",
     });
     expect(revokeGoogleTokenMock).not.toHaveBeenCalled();
@@ -278,7 +302,7 @@ describe("POST /auth/session/logout", () => {
       }),
     );
 
-    expect(response.status).toBe(403);
+    expect(response.status).toBe(401);
     expect(revokeGoogleTokenMock).not.toHaveBeenCalled();
   });
 
@@ -338,6 +362,13 @@ describe("POST /auth/session/logout", () => {
     );
 
     expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      error: "invalid_request",
+      errorDescription: "invalid value for unlink",
+    });
+
+    const stillValid = await POST_LOGOUT(logoutRequest({ sessionToken }));
+    expect(stillValid.status).toBe(204);
   });
 
   it("with unlink revokes Google refresh tokens and invalidates other sessions", async () => {

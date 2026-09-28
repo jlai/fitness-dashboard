@@ -1,13 +1,15 @@
 import { decodeProtectedHeader } from "jose";
 
+import {
+  ENCRYPTED_DRIVE_TOKEN_EXPIRATION_SECONDS,
+  ENCRYPTED_HEALTH_TOKEN_EXPIRATION_SECONDS,
+} from "@/config/encrypted-token";
 import { resetSecretStores } from "@/server/auth/env";
 import {
   decryptDriveRefreshToken,
-  decryptRefreshToken,
+  decryptHealthRefreshToken,
   encryptDriveRefreshToken,
   encryptRefreshToken,
-  ENCRYPTED_DRIVE_TOKEN_EXPIRATION_SECONDS,
-  ENCRYPTED_HEALTH_TOKEN_EXPIRATION_SECONDS,
 } from "@/server/auth/encrypted-token";
 
 describe("encrypted refresh token", () => {
@@ -45,7 +47,7 @@ describe("encrypted refresh token", () => {
     );
     expect(header.iat).toBeGreaterThanOrEqual(before);
     expect(header.iat).toBeLessThanOrEqual(after);
-    await expect(decryptRefreshToken(jwt)).resolves.toEqual({
+    await expect(decryptHealthRefreshToken(jwt)).resolves.toEqual({
       sub: "user-123",
       refreshToken: "rtok",
       scope:
@@ -65,7 +67,7 @@ describe("encrypted refresh token", () => {
 
     jest.setSystemTime(new Date("2020-01-20T00:00:00Z"));
 
-    await expect(decryptRefreshToken(jwt)).rejects.toThrow();
+    await expect(decryptHealthRefreshToken(jwt)).rejects.toThrow();
   });
 
   it("gives each encrypted token a unique jti", async () => {
@@ -99,7 +101,7 @@ describe("encrypted refresh token", () => {
   });
 
   it("rejects a malformed token", async () => {
-    await expect(decryptRefreshToken("not-a-jwt")).rejects.toThrow();
+    await expect(decryptHealthRefreshToken("not-a-jwt")).rejects.toThrow();
   });
 
   it("decrypts tokens minted with a previous key after rotation", async () => {
@@ -126,7 +128,7 @@ describe("encrypted refresh token", () => {
     });
     resetSecretStores();
 
-    await expect(decryptRefreshToken(jwt)).resolves.toEqual({
+    await expect(decryptHealthRefreshToken(jwt)).resolves.toEqual({
       sub: "user-123",
       refreshToken: "rtok",
       jti: expect.any(String),
@@ -192,6 +194,6 @@ describe("encrypted drive refresh token", () => {
       refreshToken: "drive-rtok",
     });
 
-    await expect(decryptRefreshToken(driveJwt)).rejects.toThrow();
+    await expect(decryptHealthRefreshToken(driveJwt)).rejects.toThrow();
   });
 });

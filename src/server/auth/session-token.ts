@@ -1,6 +1,7 @@
-import { jwtVerify, SignJWT } from "jose";
+import { errors, jwtVerify, SignJWT } from "jose";
 
 import { getSiteTokenDefaultExpirationSeconds } from "./env";
+import { TokenValidationError } from "./errors";
 import { getSessionSecretStore } from "./get-secret-store";
 
 export const SESSION_TOKEN_TYP = "session+jwt";
@@ -40,30 +41,40 @@ export async function signSessionToken(params: {
 export async function verifySessionToken(
   token: string,
 ): Promise<SessionClaims> {
-  const store = getSessionSecretStore();
-  const { payload } = await jwtVerify(
-    token,
-    async (header) => (await store.getKeyById(header.kid)).key,
-    {
-      algorithms: ["HS256"],
-      typ: SESSION_TOKEN_TYP,
-    },
-  );
+  let payload;
+
+  try {
+    const store = getSessionSecretStore();
+    ({ payload } = await jwtVerify(
+      token,
+      async (header) => (await store.getKeyById(header.kid)).key,
+      {
+        algorithms: ["HS256"],
+        typ: SESSION_TOKEN_TYP,
+      },
+    ));
+  } catch (error) {
+    if (error instanceof errors.JWTExpired) {
+      throw new TokenValidationError("session token has expired");
+    }
+
+    throw new TokenValidationError("invalid session token");
+  }
 
   if (typeof payload.sub !== "string" || payload.sub.length === 0) {
-    throw new Error("session token is missing sub");
+    throw new TokenValidationError("invalid session token");
   }
 
   if (typeof payload.iat !== "number" || !Number.isFinite(payload.iat)) {
-    throw new Error("session token is missing iat");
+    throw new TokenValidationError("invalid session token");
   }
 
   if (typeof payload.exp !== "number" || !Number.isFinite(payload.exp)) {
-    throw new Error("session token is missing exp");
+    throw new TokenValidationError("invalid session token");
   }
 
   if (typeof payload.jti !== "string" || payload.jti.length === 0) {
-    throw new Error("session token is missing jti");
+    throw new TokenValidationError("invalid session token");
   }
 
   return {

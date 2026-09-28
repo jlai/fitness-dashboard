@@ -699,14 +699,14 @@ describe("forceTokenRefresh", () => {
       new Response(
         JSON.stringify({
           error: "unauthorized",
-          errorDescription: "encrypted health token has expired",
+          errorDescription: "encrypted token has expired",
         }),
         { status: 401, headers: { "Content-Type": "application/json" } },
       ),
     );
 
     await expect(forceTokenRefresh()).rejects.toThrow(
-      "encrypted health token has expired",
+      "encrypted token has expired",
     );
 
     expect(localStorage.getItem(SESSION_TOKEN_STORAGE_KEY)).toBeNull();

@@ -1,9 +1,18 @@
 import { EncryptJWT, errors, jwtDecrypt } from "jose";
 
 import {
-  getDriveSecretStore,
-  getHealthSecretStore,
-} from "./get-secret-store";
+  ENCRYPTED_DRIVE_TOKEN_EXPIRATION_SECONDS,
+  ENCRYPTED_HEALTH_TOKEN_EXPIRATION_SECONDS,
+} from "@/config/encrypted-token";
+
+import {
+  InternalAuthError,
+  TokenEndpointError,
+  TokenValidationError,
+} from "./errors";
+import { getDriveSecretStore, getHealthSecretStore } from "./get-secret-store";
+import { revokeGoogleToken } from "./google-oauth-token";
+import { getRevocationDatabase } from "./revocation-database";
 import type { SecretStore } from "./secret-store";
 
 export interface EncryptedRefreshTokenPayload {
@@ -18,17 +27,6 @@ export interface DecryptedRefreshToken extends EncryptedRefreshTokenPayload {
   exp: number;
 }
 
-/** Encrypted health/drive JWEs expire after 15 days and must be refreshed via /auth/{health|drive}/access. */
-export const ENCRYPTED_REFRESH_TOKEN_EXPIRATION_SECONDS = 15 * 24 * 60 * 60;
-
-/** Encrypted health JWEs expire after 15 days and must be refreshed via /auth/health/access. */
-export const ENCRYPTED_HEALTH_TOKEN_EXPIRATION_SECONDS =
-  ENCRYPTED_REFRESH_TOKEN_EXPIRATION_SECONDS;
-
-/** Encrypted drive JWEs expire after 15 days and must be refreshed via /auth/drive/access. */
-export const ENCRYPTED_DRIVE_TOKEN_EXPIRATION_SECONDS =
-  ENCRYPTED_REFRESH_TOKEN_EXPIRATION_SECONDS;
-
 type RefreshTokenKind = "health" | "drive";
 
 const TOKEN_KIND_CONFIG: Record<
@@ -41,12 +39,12 @@ const TOKEN_KIND_CONFIG: Record<
 > = {
   health: {
     typ: "refresh+jwt",
-    expirationSeconds: ENCRYPTED_REFRESH_TOKEN_EXPIRATION_SECONDS,
+    expirationSeconds: ENCRYPTED_HEALTH_TOKEN_EXPIRATION_SECONDS,
     getStore: getHealthSecretStore,
   },
   drive: {
     typ: "drive-refresh+jwt",
-    expirationSeconds: ENCRYPTED_REFRESH_TOKEN_EXPIRATION_SECONDS,
+    expirationSeconds: ENCRYPTED_DRIVE_TOKEN_EXPIRATION_SECONDS,
     getStore: getDriveSecretStore,
   },
 };
@@ -97,10 +95,6 @@ export async function encryptDriveRefreshToken(
   return encryptRefreshTokenFor("drive", payload);
 }
 
-export function isExpiredEncryptedTokenError(error: unknown) {
-  return error instanceof errors.JWTExpired;
-}
-
 async function decryptRefreshTokenFor(
   kind: RefreshTokenKind,
   token: string,
@@ -140,7 +134,8 @@ async function decryptRefreshTokenFor(
   const jti =
     typeof payload.jti === "string" && payload.jti.length > 0
       ? payload.jti
-      : typeof protectedHeader.jti === "string" && protectedHeader.jti.length > 0
+      : typeof protectedHeader.jti === "string" &&
+          protectedHeader.jti.length > 0
         ? protectedHeader.jti
         : undefined;
 
@@ -158,7 +153,7 @@ async function decryptRefreshTokenFor(
   };
 }
 
-export async function decryptRefreshToken(
+export async function decryptHealthRefreshToken(
   token: string,
 ): Promise<DecryptedRefreshToken> {
   return decryptRefreshTokenFor("health", token);
@@ -168,4 +163,110 @@ export async function decryptDriveRefreshToken(
   token: string,
 ): Promise<DecryptedRefreshToken> {
   return decryptRefreshTokenFor("drive", token);
+}
+
+async function decryptTokenForSession(options: {
+  encrypted: string;
+  sessionSub: string;
+  decrypt: (token: string) => Promise<DecryptedRefreshToken>;
+}): Promise<DecryptedRefreshToken> {
+  let verified: DecryptedRefreshToken;
+
+  try {
+    verified = await options.decrypt(options.encrypted);
+  } catch (error) {
+    if (error instanceof errors.JWTExpired) {
+      throw new TokenValidationError("encrypted token has expired");
+    }
+
+    throw new TokenValidationError("invalid encrypted token");
+  }
+
+  if (verified.sub !== options.sessionSub) {
+    throw new TokenValidationError("session does not match encrypted token");
+  }
+
+  return verified;
+}
+
+/**
+ * Decrypt an encrypted health/drive token for this session and reject it when
+ * expired or revoked.
+ */
+export async function isValidEncryptedToken(options: {
+  encrypted: string;
+  sessionSub: string;
+  decrypt: (token: string) => Promise<DecryptedRefreshToken>;
+}): Promise<DecryptedRefreshToken> {
+  const verified = await decryptTokenForSession(options);
+  const revocationDatabase = await getRevocationDatabase();
+
+  if (
+    await revocationDatabase.isRevoked({
+      jti: verified.jti,
+      sub: verified.sub,
+      iat: verified.iat,
+    })
+  ) {
+    throw new TokenValidationError("encrypted token has been revoked");
+  }
+
+  return verified;
+}
+
+export async function decryptHealthTokenForSession(
+  encrypted: string,
+  sessionSub: string,
+): Promise<DecryptedRefreshToken> {
+  return decryptTokenForSession({
+    encrypted,
+    sessionSub,
+    decrypt: decryptHealthRefreshToken,
+  });
+}
+
+export async function decryptDriveTokenForSession(
+  encrypted: string,
+  sessionSub: string,
+): Promise<DecryptedRefreshToken> {
+  return decryptTokenForSession({
+    encrypted,
+    sessionSub,
+    decrypt: decryptDriveRefreshToken,
+  });
+}
+
+export async function denylistStoredToken(verified: DecryptedRefreshToken) {
+  const revocationDatabase = await getRevocationDatabase();
+  await revocationDatabase.add(verified.jti, verified.exp);
+}
+
+export async function revokeGoogleRefreshToken(
+  refreshToken: string,
+  internalErrorMessage: string,
+): Promise<void> {
+  try {
+    const { status } = await revokeGoogleToken(refreshToken);
+
+    if (status !== 200) {
+      throw new TokenEndpointError(
+        "token_revoke_failed",
+        "refresh token revocation failed",
+      );
+    }
+  } catch (error) {
+    if (error instanceof TokenEndpointError) {
+      throw error;
+    }
+
+    throw new InternalAuthError(internalErrorMessage);
+  }
+}
+
+export async function revokeAndDenylistStoredToken(
+  verified: DecryptedRefreshToken,
+  internalErrorMessage: string,
+): Promise<void> {
+  await denylistStoredToken(verified);
+  await revokeGoogleRefreshToken(verified.refreshToken, internalErrorMessage);
 }

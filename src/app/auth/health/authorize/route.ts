@@ -1,62 +1,48 @@
 import { encryptRefreshToken } from "@/server/auth/encrypted-token";
 import { getConfiguredRedirectUri } from "@/server/auth/env";
+import {
+  InternalAuthError,
+  RequestValidationError,
+  TokenEndpointError,
+  TokenValidationError,
+} from "@/server/auth/errors";
 import { verifyGoogleIdToken } from "@/server/auth/google-id-token";
 import { exchangeAuthorizationCode } from "@/server/auth/google-oauth-token";
 import {
-  badRequestResponse,
-  forbiddenResponse,
-  internalErrorResponse,
+  getHTTPErrorResponse,
   jsonResponse,
-  unauthorizedResponse,
+  readJsonBody,
 } from "@/server/auth/http";
+import { authorizeBodySchema } from "@/server/auth/request-bodies";
 import {
   isValidSession,
-  requireSameOrigin,
+  validateSecFetch,
 } from "@/server/auth/require-session";
 
-interface AuthorizeBody {
-  code?: unknown;
-}
-
 export async function POST(request: Request) {
-  const origin = requireSameOrigin(request);
-
-  if (origin.error) {
-    return origin.error;
-  }
-
-  const auth = await isValidSession(request);
-
-  if (auth.error) {
-    return auth.error;
-  }
-
-  let body: AuthorizeBody;
-
   try {
-    body = (await request.json()) as AuthorizeBody;
-  } catch {
-    return badRequestResponse("invalid json body");
-  }
+    validateSecFetch(request);
+    const session = await isValidSession(request);
+    const { code } = await readJsonBody(request, authorizeBodySchema);
 
-  if (typeof body.code !== "string" || body.code.length === 0) {
-    return badRequestResponse("missing authorization code");
-  }
+    let status;
+    let payload;
 
-  try {
-    const { status, payload } = await exchangeAuthorizationCode({
-      code: body.code,
-      redirectUri: getConfiguredRedirectUri(),
-    });
+    try {
+      ({ status, payload } = await exchangeAuthorizationCode({
+        code,
+        redirectUri: getConfiguredRedirectUri(),
+      }));
+    } catch {
+      throw new InternalAuthError(
+        "error exchanging authorization code for token",
+      );
+    }
 
     if (status !== 200 || payload.error || !payload.access_token) {
-      return jsonResponse(
-        {
-          error: payload.error ?? "token_exchange_failed",
-          errorDescription:
-            payload.error_description ?? "authorization code exchange failed",
-        },
-        status === 200 ? 400 : status,
+      throw new TokenEndpointError(
+        payload.error ?? "token_exchange_failed",
+        payload.error_description ?? "authorization code exchange failed",
       );
     }
 
@@ -64,22 +50,26 @@ export async function POST(request: Request) {
       try {
         const codeUser = await verifyGoogleIdToken(payload.id_token);
 
-        if (codeUser.sub !== auth.session.sub) {
-          return forbiddenResponse(
+        if (codeUser.sub !== session.sub) {
+          throw new TokenValidationError(
             "authorization code user does not match session",
           );
         }
-      } catch {
-        return unauthorizedResponse("invalid idToken from token exchange");
+      } catch (error) {
+        if (error instanceof TokenValidationError) {
+          throw error;
+        }
+
+        throw new TokenValidationError("invalid idToken from token exchange");
       }
     }
 
     if (!payload.refresh_token) {
-      return badRequestResponse("no refresh token returned");
+      throw new RequestValidationError("no refresh token returned");
     }
 
     const encryptedHealthToken = await encryptRefreshToken({
-      sub: auth.session.sub,
+      sub: session.sub,
       refreshToken: payload.refresh_token,
       scope: payload.scope,
     });
@@ -90,8 +80,9 @@ export async function POST(request: Request) {
       scope: payload.scope,
       encryptedHealthToken,
     });
-  } catch {
-    return internalErrorResponse(
+  } catch (error) {
+    return getHTTPErrorResponse(
+      error,
       "error exchanging authorization code for token",
     );
   }

@@ -80,6 +80,28 @@ describe("POST /auth/drive/access", () => {
     );
   });
 
+  it("rejects requests without an encrypted token", async () => {
+    const sessionToken = await signSessionToken({ sub: "user-1" });
+    const response = await POST(
+      new Request("http://localhost:3000/auth/drive/access", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Sec-Fetch-Site": "same-origin",
+          Authorization: `Bearer ${sessionToken}`,
+        },
+        body: JSON.stringify({}),
+      }),
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      error: "invalid_request",
+      errorDescription: "missing encrypted token",
+    });
+    expect(refreshAccessTokenMock).not.toHaveBeenCalled();
+  });
+
   it("rejects an expired encrypted drive token", async () => {
     jest.useFakeTimers({ now: new Date("2020-01-01T00:00:00Z") });
     const encrypted = await encryptDriveRefreshToken({
@@ -95,7 +117,7 @@ describe("POST /auth/drive/access", () => {
     expect(response.status).toBe(401);
     await expect(response.json()).resolves.toEqual({
       error: "unauthorized",
-      errorDescription: "encrypted drive token has expired",
+      errorDescription: "encrypted token has expired",
     });
     jest.useRealTimers();
   });
@@ -105,11 +127,11 @@ describe("POST /auth/drive/access", () => {
       sub: "user-1",
       refreshToken: "stored-refresh",
     });
-    const stored = await decryptDriveRefreshToken(encrypted);
+    const verified = await decryptDriveRefreshToken(encrypted);
     const revocationDatabase = await getRevocationDatabase();
     await revocationDatabase.add(
-      stored.jti,
-      stored.iat + getSiteTokenDefaultExpirationSeconds(),
+      verified.jti,
+      verified.iat + getSiteTokenDefaultExpirationSeconds(),
     );
 
     const response = await POST(
@@ -119,7 +141,7 @@ describe("POST /auth/drive/access", () => {
     expect(response.status).toBe(401);
     await expect(response.json()).resolves.toEqual({
       error: "unauthorized",
-      errorDescription: "encrypted drive token has been revoked",
+      errorDescription: "encrypted token has been revoked",
     });
   });
 });

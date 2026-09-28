@@ -1,5 +1,5 @@
 import { POST } from "@/app/auth/health/authorize/route";
-import { decryptRefreshToken } from "@/server/auth/encrypted-token";
+import { decryptHealthRefreshToken } from "@/server/auth/encrypted-token";
 import { signSessionToken } from "@/server/auth/session-token";
 import { verifyGoogleIdToken } from "@/server/auth/google-id-token";
 import { exchangeAuthorizationCode } from "@/server/auth/google-oauth-token";
@@ -81,7 +81,7 @@ describe("POST /auth/health/authorize", () => {
     expect(payload).not.toHaveProperty("sessionToken");
 
     await expect(
-      decryptRefreshToken(payload.encryptedHealthToken),
+      decryptHealthRefreshToken(payload.encryptedHealthToken),
     ).resolves.toEqual({
       sub: "user-1",
       refreshToken: "refresh",
@@ -90,6 +90,17 @@ describe("POST /auth/health/authorize", () => {
       iat: expect.any(Number),
       exp: expect.any(Number),
     });
+  });
+
+  it("rejects requests without an authorization code", async () => {
+    const response = await POST(await makeRequest({ body: {} }));
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      error: "invalid_request",
+      errorDescription: "missing authorization code",
+    });
+    expect(exchangeAuthorizationCodeMock).not.toHaveBeenCalled();
   });
 
   it("rejects requests without a session token", async () => {
@@ -132,9 +143,9 @@ describe("POST /auth/health/authorize", () => {
 
     const response = await POST(await makeRequest());
 
-    expect(response.status).toBe(403);
+    expect(response.status).toBe(401);
     await expect(response.json()).resolves.toEqual({
-      error: "forbidden",
+      error: "unauthorized",
       errorDescription: "authorization code user does not match session",
     });
   });

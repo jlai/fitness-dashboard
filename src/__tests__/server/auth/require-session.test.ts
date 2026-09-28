@@ -1,3 +1,4 @@
+import { TokenValidationError } from "@/server/auth/errors";
 import { isValidSession } from "@/server/auth/require-session";
 import {
   getRevocationDatabase,
@@ -23,14 +24,13 @@ describe("isValidSession", () => {
 
   it("accepts a signed session token", async () => {
     const sessionToken = await signSessionToken({ sub: "user-1" });
-    const result = await isValidSession(
+    const session = await isValidSession(
       new Request("http://localhost:3000/auth/health/access", {
         headers: { Authorization: `Bearer ${sessionToken}` },
       }),
     );
 
-    expect(result.error).toBeUndefined();
-    expect(result.session?.sub).toBe("user-1");
+    expect(session.sub).toBe("user-1");
   });
 
   it("rejects a revoked session token", async () => {
@@ -39,17 +39,15 @@ describe("isValidSession", () => {
     const revocationDatabase = await getRevocationDatabase();
     await revocationDatabase.add(session.jti, session.exp);
 
-    const result = await isValidSession(
-      new Request("http://localhost:3000/auth/health/access", {
-        headers: { Authorization: `Bearer ${sessionToken}` },
-      }),
-    );
-
-    expect(result.session).toBeUndefined();
-    expect(result.error?.status).toBe(401);
-    await expect(result.error?.json()).resolves.toEqual({
-      error: "unauthorized",
-      errorDescription: "session token has been revoked",
+    await expect(
+      isValidSession(
+        new Request("http://localhost:3000/auth/health/access", {
+          headers: { Authorization: `Bearer ${sessionToken}` },
+        }),
+      ),
+    ).rejects.toMatchObject({
+      name: "TokenValidationError",
+      message: "session token has been revoked",
     });
   });
 
@@ -62,18 +60,13 @@ describe("isValidSession", () => {
       session.iat + 1,
     );
 
-    const result = await isValidSession(
-      new Request("http://localhost:3000/auth/health/access", {
-        headers: { Authorization: `Bearer ${sessionToken}` },
-      }),
-    );
-
-    expect(result.session).toBeUndefined();
-    expect(result.error?.status).toBe(401);
-    await expect(result.error?.json()).resolves.toEqual({
-      error: "unauthorized",
-      errorDescription: "session token has been revoked",
-    });
+    await expect(
+      isValidSession(
+        new Request("http://localhost:3000/auth/health/access", {
+          headers: { Authorization: `Bearer ${sessionToken}` },
+        }),
+      ),
+    ).rejects.toBeInstanceOf(TokenValidationError);
   });
 
   it("accepts a session token issued at or after a sub watermark", async () => {
@@ -82,13 +75,12 @@ describe("isValidSession", () => {
     const revocationDatabase = await getRevocationDatabase();
     await revocationDatabase.invalidateIssuedBefore(session.sub, session.iat);
 
-    const result = await isValidSession(
+    const verified = await isValidSession(
       new Request("http://localhost:3000/auth/health/access", {
         headers: { Authorization: `Bearer ${sessionToken}` },
       }),
     );
 
-    expect(result.error).toBeUndefined();
-    expect(result.session?.sub).toBe("user-1");
+    expect(verified.sub).toBe("user-1");
   });
 });

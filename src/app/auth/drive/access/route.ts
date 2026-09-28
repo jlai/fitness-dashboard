@@ -1,100 +1,56 @@
 import {
   decryptDriveRefreshToken,
   encryptDriveRefreshToken,
-  isExpiredEncryptedTokenError,
+  isValidEncryptedToken,
 } from "@/server/auth/encrypted-token";
+import { InternalAuthError, TokenEndpointError } from "@/server/auth/errors";
 import { refreshAccessToken } from "@/server/auth/google-oauth-token";
 import {
-  badRequestResponse,
-  forbiddenResponse,
-  internalErrorResponse,
+  getHTTPErrorResponse,
   jsonResponse,
-  unauthorizedResponse,
+  readJsonBody,
 } from "@/server/auth/http";
+import { driveAccessBodySchema } from "@/server/auth/request-bodies";
 import {
   isValidSession,
-  requireSameOrigin,
+  validateSecFetch,
 } from "@/server/auth/require-session";
-import { getRevocationDatabase } from "@/server/auth/revocation-database";
-
-interface AccessBody {
-  encryptedDriveToken?: unknown;
-}
 
 export async function POST(request: Request) {
-  const origin = requireSameOrigin(request);
-
-  if (origin.error) {
-    return origin.error;
-  }
-
-  const auth = await isValidSession(request);
-
-  if (auth.error) {
-    return auth.error;
-  }
-
-  let body: AccessBody;
-
   try {
-    body = (await request.json()) as AccessBody;
-  } catch {
-    return badRequestResponse("invalid json body");
-  }
+    validateSecFetch(request);
+    const session = await isValidSession(request);
+    const { encryptedDriveToken } = await readJsonBody(
+      request,
+      driveAccessBodySchema,
+    );
+    const verified = await isValidEncryptedToken({
+      encrypted: encryptedDriveToken,
+      sessionSub: session.sub,
+      decrypt: decryptDriveRefreshToken,
+    });
 
-  if (
-    typeof body.encryptedDriveToken !== "string" ||
-    body.encryptedDriveToken.length === 0
-  ) {
-    return badRequestResponse("missing encrypted token");
-  }
+    let status;
+    let payload;
 
-  let stored;
-
-  try {
-    stored = await decryptDriveRefreshToken(body.encryptedDriveToken);
-  } catch (error) {
-    if (isExpiredEncryptedTokenError(error)) {
-      return unauthorizedResponse("encrypted drive token has expired");
+    try {
+      ({ status, payload } = await refreshAccessToken(verified.refreshToken));
+    } catch {
+      throw new InternalAuthError("error refreshing drive access token");
     }
 
-    return forbiddenResponse("invalid encrypted token");
-  }
-
-  if (stored.sub !== auth.session.sub) {
-    return forbiddenResponse("session does not match encrypted token");
-  }
-
-  const revocationDatabase = await getRevocationDatabase();
-
-  if (
-    await revocationDatabase.isRevoked({
-      jti: stored.jti,
-      sub: stored.sub,
-      iat: stored.iat,
-    })
-  ) {
-    return unauthorizedResponse("encrypted drive token has been revoked");
-  }
-
-  try {
-    const { status, payload } = await refreshAccessToken(stored.refreshToken);
-
     if (status !== 200 || payload.error || !payload.access_token) {
-      return jsonResponse(
-        {
-          error: "token_refresh_failed",
-          errorDescription: "refresh token exchange failed",
-        },
-        status === 200 ? 400 : status,
+      throw new TokenEndpointError(
+        "token_refresh_failed",
+        "refresh token exchange failed",
       );
     }
 
-    const scope = payload.scope ?? stored.scope;
-    const refreshToken = payload.refresh_token ?? stored.refreshToken;
+    const scope = payload.scope ?? verified.scope;
+    const refreshToken = payload.refresh_token ?? verified.refreshToken;
     // Re-encrypt so the client gets a refreshed iat/exp window.
-    const encryptedDriveToken = await encryptDriveRefreshToken({
-      sub: stored.sub,
+    const nextEncryptedDriveToken = await encryptDriveRefreshToken({
+      sub: verified.sub,
       refreshToken,
       scope,
     });
@@ -103,9 +59,9 @@ export async function POST(request: Request) {
       accessToken: payload.access_token,
       expiresIn: payload.expires_in,
       scope,
-      encryptedDriveToken,
+      encryptedDriveToken: nextEncryptedDriveToken,
     });
-  } catch {
-    return internalErrorResponse("error refreshing drive access token");
+  } catch (error) {
+    return getHTTPErrorResponse(error, "error refreshing drive access token");
   }
 }

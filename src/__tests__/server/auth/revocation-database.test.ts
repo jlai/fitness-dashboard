@@ -1,7 +1,7 @@
 /**
  * @jest-environment node
  */
-import { ENCRYPTED_REFRESH_TOKEN_EXPIRATION_SECONDS } from "@/server/auth/encrypted-token";
+import { ENCRYPTED_REFRESH_TOKEN_EXPIRATION_SECONDS } from "@/config/encrypted-token";
 import {
   CloudflareKVRevocationDatabase,
   MemoryRevocationDatabase,
@@ -11,11 +11,7 @@ import {
   type AuthMiniflare,
 } from "@/__tests__/helpers/cloudflare-miniflare";
 
-function token(overrides?: {
-  jti?: string;
-  sub?: string;
-  iat?: number;
-}) {
+function token(overrides?: { jti?: string; sub?: string; iat?: number }) {
   return {
     jti: overrides?.jti ?? "jti-1",
     sub: overrides?.sub ?? "user-1",
