@@ -21,14 +21,6 @@ function fakeIdToken() {
   })}.sig`;
 }
 
-function fakeSessionToken() {
-  return `${toBase64Url({ alg: "HS256", typ: "session+jwt" })}.${toBase64Url({
-    sub: "e2e-user",
-    iat: 1,
-    exp: 9999999999,
-  })}.sig`;
-}
-
 function googleIdentityStub(idToken: string) {
   return `
     window.google = window.google || {};
@@ -69,6 +61,22 @@ export const test = base.extend({
       },
     );
 
+    await page.route("**/auth/session", async (route) => {
+      if (route.request().method() === "GET") {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            sub: "e2e-user",
+            exp: 9999999999,
+          }),
+        });
+        return;
+      }
+
+      await route.continue();
+    });
+
     await page.route("**/auth/health/access", async (route) => {
       await route.fulfill({
         status: 200,
@@ -95,7 +103,6 @@ export const test = base.extend({
         {
           origin: "http://127.0.0.1:3100",
           localStorage: [
-            { name: "auth:session-token", value: fakeSessionToken() },
             {
               name: "auth:encrypted-health-token",
               value: "e2e-encrypted-token",

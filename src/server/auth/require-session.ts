@@ -1,6 +1,6 @@
 import { FetchHeaderError, TokenValidationError } from "./errors";
-import { readBearerToken } from "./http";
 import { getRevocationDatabase } from "./revocation-database";
+import { readSessionCookie } from "./session-cookie";
 import { verifySessionToken, type SessionClaims } from "./session-token";
 
 export function validateSecFetch(request: Request): void {
@@ -10,7 +10,7 @@ export function validateSecFetch(request: Request): void {
 }
 
 export async function isValidSession(request: Request): Promise<SessionClaims> {
-  const token = readBearerToken(request);
+  const token = readSessionCookie(request);
 
   if (!token) {
     throw new TokenValidationError("missing session token");

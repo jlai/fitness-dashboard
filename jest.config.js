@@ -50,7 +50,7 @@ const config = {
 
   // Ignore node_modules, EXCEPT the ESM packages listed here.
   transformIgnorePatterns: [
-    "[\\\\/]node_modules[\\\\/](?!(p-queue|p-timeout|mui-sonner|d3-scale|@mui/material-nextjs|@mui/x-date-pickers|camelcase-keys|map-obj|jose)[\\\\/])",
+    "[\\\\/]node_modules[\\\\/](?!(p-queue|p-timeout|mui-sonner|d3-scale|@mui/material-nextjs|@mui/x-date-pickers|camelcase-keys|map-obj|jose|cookie)[\\\\/])",
   ],
 };
 

@@ -230,19 +230,21 @@ export default function LoginBox() {
 
   const finishLogin = useCallback(
     (rememberMe: boolean) => {
-      if (rememberMe) {
-        persistAuthTokens();
-      }
+      void (async () => {
+        if (rememberMe) {
+          await persistAuthTokens();
+        }
 
-      setPendingRememberMeChoice(false);
+        setPendingRememberMeChoice(false);
 
-      if (!firstLoginDate) {
-        setFirstLoginDate(formatAsDate(dayjs()));
-      }
+        if (!firstLoginDate) {
+          setFirstLoginDate(formatAsDate(dayjs()));
+        }
 
-      if (!hasTokenScope(SETTINGS_READONLY) && !allUnitsConfigured) {
-        router.replace("/settings/locale");
-      }
+        if (!hasTokenScope(SETTINGS_READONLY) && !allUnitsConfigured) {
+          router.replace("/settings/locale");
+        }
+      })();
     },
     [
       allUnitsConfigured,

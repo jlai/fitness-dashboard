@@ -4,7 +4,6 @@ import { useCallback, useRef } from "react";
 import { atom, getDefaultStore, useAtomValue } from "jotai";
 import { atomEffect } from "jotai-effect";
 import { toast } from "mui-sonner";
-import { jwtDecode } from "jwt-decode";
 
 import { singleAsync } from "@/utils/async";
 import { GOOGLE_OAUTH_CLIENT_ID, withBasePath } from "@/config";
@@ -20,13 +19,6 @@ import {
 // Refresh when token is expiring soon
 const EXPIRING_SOON_MILLIS = 2 * 60 * 1000;
 
-/**
- * When restoring a stored session on page load, require at least this fraction
- * of the session lifetime remaining so the user is not signed out shortly after.
- */
-const MIN_SESSION_LIFETIME_REMAINING = 0.1;
-
-const SESSION_TOKEN_STORAGE_KEY = "auth:session-token";
 const ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY = "auth:encrypted-health-token";
 const ENCRYPTED_DRIVE_TOKEN_STORAGE_KEY = "auth:encrypted-drive-token";
 const LEGACY_STAY_SIGNED_IN_STORAGE_KEY = "auth:stay-signed-in";
@@ -40,17 +32,17 @@ const DRIVE_LOGOUT_PATH = withBasePath("/auth/drive/logout");
 const DRIVE_AUTHORIZE_PATH = withBasePath("/auth/drive/authorize");
 const DRIVE_ACCESS_PATH = withBasePath("/auth/drive/access");
 
-interface SessionTokenClaims {
-  sub?: string;
-  iat?: number;
-  exp?: number;
+interface SessionClaims {
+  sub: string;
+  exp: number;
 }
 
 interface TokenEndpointResponse {
   accessToken?: string;
   expiresIn?: number;
   scope?: string;
-  sessionToken?: string;
+  sub?: string;
+  exp?: number;
   encryptedHealthToken?: string;
   encryptedDriveToken?: string;
   error?: string;
@@ -64,7 +56,7 @@ interface CachedAccessToken {
 
 let currentHealthAccessToken: CachedAccessToken | null = null;
 let currentDriveAccessToken: CachedAccessToken | null = null;
-let sessionAccessToken: string | null = null;
+let sessionClaims: SessionClaims | null = null;
 let encryptedHealthRefreshToken: string | null = null;
 let encryptedDriveRefreshToken: string | null = null;
 /** Bumped when Drive auth is cleared so in-flight refreshes cannot re-persist tokens. */
@@ -81,14 +73,6 @@ export const grantedScopesAtom = atom<string | undefined>(undefined);
 
 /** Space-separated Google Drive scopes from the latest drive access-token response. */
 export const grantedDriveScopesAtom = atom<string | undefined>(undefined);
-
-function readSessionTokenFromLocalStorage() {
-  if (typeof localStorage === "undefined") {
-    return null;
-  }
-
-  return localStorage.getItem(SESSION_TOKEN_STORAGE_KEY);
-}
 
 function readEncryptedHealthTokenFromLocalStorage() {
   if (typeof localStorage === "undefined") {
@@ -111,58 +95,21 @@ export function hasPersistedEncryptedHealthToken() {
   return !!readEncryptedHealthTokenFromLocalStorage();
 }
 
-/** Persist session + health/drive tokens across visits when the user chose remember me. */
+/** Persist encrypted health/drive tokens across visits when the user chose remember me. */
 function isPersistingAuthTokens() {
   return hasPersistedEncryptedHealthToken();
 }
 
-/**
- * True when a stored session still has enough lifetime left to restore on
- * page load (unexpired and at least {@link MIN_SESSION_LIFETIME_REMAINING}
- * of its total lifetime remaining).
- */
-function isSessionTokenWorthRestoring(token: string) {
-  const claims = decodeSessionClaims(token);
-
-  if (!claims?.sub || typeof claims.exp !== "number") {
-    return false;
-  }
-
-  const nowSeconds = Math.floor(Date.now() / 1000);
-
-  if (claims.exp <= nowSeconds) {
-    return false;
-  }
-
-  if (typeof claims.iat !== "number" || claims.iat >= claims.exp) {
-    // Lifetime unknown; allow restore based on absolute expiry only.
-    return true;
-  }
-
-  const lifetime = claims.exp - claims.iat;
-  const remaining = claims.exp - nowSeconds;
-
-  return remaining / lifetime >= MIN_SESSION_LIFETIME_REMAINING;
+function isSessionUnexpired(claims: SessionClaims | null = sessionClaims) {
+  return !!claims?.sub && claims.exp * 1000 > Date.now();
 }
 
-function getSessionTokenFromStorage() {
-  if (sessionAccessToken) {
-    return sessionAccessToken;
+function remainingSessionLifetimeHours() {
+  if (!sessionClaims || !isSessionUnexpired(sessionClaims)) {
+    return undefined;
   }
 
-  const stored = readSessionTokenFromLocalStorage();
-  if (stored) {
-    if (isSessionTokenWorthRestoring(stored)) {
-      sessionAccessToken = stored;
-    } else if (typeof localStorage !== "undefined") {
-      // Near expiry or expired — drop the session so the user re-auths with a
-      // fresh token instead of being signed out mid-visit. Keep the encrypted
-      // health token so remember-me / One Tap can recreate the session.
-      localStorage.removeItem(SESSION_TOKEN_STORAGE_KEY);
-    }
-  }
-
-  return sessionAccessToken;
+  return (sessionClaims.exp - Math.floor(Date.now() / 1000)) / 3600;
 }
 
 function getEncryptedHealthTokenFromStorage() {
@@ -197,51 +144,18 @@ export function hasEncryptedDriveToken() {
 }
 
 export interface AuthSession {
-  sessionToken: string | null;
   encryptedHealthToken: string | null;
   encryptedDriveToken: string | null;
   sub?: string;
-}
-
-function decodeSessionClaims(token: string) {
-  try {
-    return jwtDecode<SessionTokenClaims>(token);
-  } catch {
-    return null;
-  }
-}
-
-function getSessionClaims(token = getSessionTokenFromStorage()) {
-  if (!token) {
-    return null;
-  }
-
-  return decodeSessionClaims(token);
-}
-
-function isSessionTokenUnexpired(token = getSessionTokenFromStorage()) {
-  if (!token) {
-    return false;
-  }
-
-  const claims = decodeSessionClaims(token);
-
-  if (!claims?.sub || typeof claims.exp !== "number") {
-    return false;
-  }
-
-  return claims.exp * 1000 > Date.now();
+  exp?: number;
 }
 
 function getAuthSession(): AuthSession {
-  const sessionToken = getSessionTokenFromStorage();
-  const claims = sessionToken ? decodeSessionClaims(sessionToken) : null;
-
   return {
-    sessionToken,
     encryptedHealthToken: getEncryptedHealthTokenFromStorage(),
     encryptedDriveToken: getEncryptedDriveTokenFromStorage(),
-    sub: claims?.sub,
+    sub: sessionClaims?.sub,
+    exp: sessionClaims?.exp,
   };
 }
 
@@ -277,18 +191,12 @@ function notifyAuthChanged() {
   getDefaultStore().set(authSessionAtom, getAuthSession());
 }
 
-export function getSessionSubject(token = getSessionTokenFromStorage()) {
-  return getSessionClaims(token)?.sub;
+export function getSessionSubject() {
+  return sessionClaims?.sub;
 }
 
-/** Keep the session JWT in memory; also write to localStorage when remembering. */
-export function saveSessionToken(sessionToken: string) {
-  sessionAccessToken = sessionToken;
-
-  if (isPersistingAuthTokens()) {
-    localStorage.setItem(SESSION_TOKEN_STORAGE_KEY, sessionToken);
-  }
-
+function saveSessionClaims(claims: SessionClaims | null) {
+  sessionClaims = claims;
   notifyAuthChanged();
 }
 
@@ -331,17 +239,12 @@ function saveEncryptedDriveToken(encryptedDriveToken?: string) {
 }
 
 /**
- * Save the current in-memory session and encrypted health/drive tokens to
- * localStorage so the user can resume on return visits.
+ * Persist encrypted health/drive tokens and extend the session cookie so the
+ * user can resume on return visits.
  */
-export function persistAuthTokens() {
-  const sessionToken = getSessionTokenFromStorage();
+export async function persistAuthTokens() {
   const encryptedHealthToken = getEncryptedHealthTokenFromStorage();
   const encryptedDriveToken = getEncryptedDriveTokenFromStorage();
-
-  if (sessionToken) {
-    localStorage.setItem(SESSION_TOKEN_STORAGE_KEY, sessionToken);
-  }
 
   if (encryptedHealthToken) {
     localStorage.setItem(
@@ -358,6 +261,28 @@ export function persistAuthTokens() {
   }
 
   localStorage.removeItem(LEGACY_STAY_SIGNED_IN_STORAGE_KEY);
+
+  const maxLifetimeHours = remainingSessionLifetimeHours();
+
+  if (maxLifetimeHours !== undefined && maxLifetimeHours > 0) {
+    try {
+      const response = await fetch(SESSION_PATH, {
+        method: "PATCH",
+        mode: "same-origin",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ maxLifetimeHours }),
+      });
+
+      if (response.status === 401 || response.status === 403) {
+        forceSignOut();
+      }
+    } catch (error) {
+      console.error("error extending session", error);
+    }
+  }
+
   notifyAuthChanged();
 }
 
@@ -377,14 +302,10 @@ function cacheGrantedDriveScope(scope?: string) {
   setGrantedDriveScope(scope);
 }
 
-function getSessionTokenOrThrow() {
-  const sessionToken = getSessionTokenFromStorage();
-
-  if (!isSessionTokenUnexpired(sessionToken) || !sessionToken) {
+function requireActiveSession() {
+  if (!isSessionUnexpired()) {
     throw new Error("no session token available");
   }
-
-  return sessionToken;
 }
 
 function cacheAccessToken(response: TokenEndpointResponse) {
@@ -437,14 +358,13 @@ async function postSessionJson(
   path: string,
   body?: Record<string, string>,
 ): Promise<TokenEndpointResponse> {
-  const sessionToken = getSessionTokenOrThrow();
+  requireActiveSession();
 
   const response = await fetch(path, {
     method: "POST",
     mode: "same-origin",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${sessionToken}`,
     },
     body: body ? JSON.stringify(body) : undefined,
   });
@@ -505,7 +425,12 @@ export async function createSession(idToken: string) {
 
   const payload: TokenEndpointResponse = await response.json();
 
-  if (!response.ok || payload.error || !payload.sessionToken) {
+  if (
+    !response.ok ||
+    payload.error ||
+    !payload.sub ||
+    typeof payload.exp !== "number"
+  ) {
     throw new Error(
       payload.errorDescription || payload.error || "session request failed",
     );
@@ -515,7 +440,7 @@ export async function createSession(idToken: string) {
   currentDriveAccessToken = null;
   setGrantedHealthScope(undefined);
   setGrantedDriveScope(undefined);
-  saveSessionToken(payload.sessionToken);
+  saveSessionClaims({ sub: payload.sub, exp: payload.exp });
 
   // Session JWTs can expire while the encrypted health refresh token remains.
   // After Sign In With Google recreates the session, restore an access token
@@ -808,19 +733,16 @@ export function useGoogleDriveAuthorization({
 }
 
 export async function logout() {
-  const sessionToken = getSessionTokenFromStorage();
   const encryptedHealthToken = getEncryptedHealthTokenFromStorage();
   const encryptedDriveToken = getEncryptedDriveTokenFromStorage();
 
   disableGoogleAutoSelect();
 
   try {
-    if (sessionToken) {
-      await postSessionLogout(sessionToken, {
-        encryptedHealthToken,
-        encryptedDriveToken,
-      });
-    }
+    await postSessionLogout({
+      encryptedHealthToken,
+      encryptedDriveToken,
+    });
   } finally {
     clearAllAuthTokens();
   }
@@ -828,20 +750,17 @@ export async function logout() {
 
 /** Revoke Google Health and Drive access and invalidate all site sessions for this user. */
 export async function revokeAuthorization() {
-  const sessionToken = getSessionTokenFromStorage();
   const encryptedHealthToken = getEncryptedHealthTokenFromStorage();
   const encryptedDriveToken = getEncryptedDriveTokenFromStorage();
 
   disableGoogleAutoSelect();
 
   try {
-    if (sessionToken) {
-      await postSessionLogout(sessionToken, {
-        encryptedHealthToken,
-        encryptedDriveToken,
-        unlink: true,
-      });
-    }
+    await postSessionLogout({
+      encryptedHealthToken,
+      encryptedDriveToken,
+      unlink: true,
+    });
   } finally {
     clearAllAuthTokens();
   }
@@ -852,16 +771,14 @@ export async function revokeAuthorization() {
  * Used when disabling Drive settings; does not end the Health session.
  */
 export async function logoutDrive() {
-  const sessionToken = getSessionTokenFromStorage();
   const encryptedDriveToken = getEncryptedDriveTokenFromStorage();
 
   try {
-    if (sessionToken && encryptedDriveToken) {
+    if (isSessionUnexpired() && encryptedDriveToken) {
       await fetch(DRIVE_LOGOUT_PATH, {
         method: "POST",
         mode: "same-origin",
         headers: {
-          Authorization: `Bearer ${sessionToken}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ encryptedDriveToken }),
@@ -874,18 +791,15 @@ export async function logoutDrive() {
   }
 }
 
-async function postSessionLogout(
-  sessionToken: string,
-  {
-    encryptedHealthToken,
-    encryptedDriveToken,
-    unlink = false,
-  }: {
-    encryptedHealthToken: string | null;
-    encryptedDriveToken: string | null;
-    unlink?: boolean;
-  },
-) {
+async function postSessionLogout({
+  encryptedHealthToken,
+  encryptedDriveToken,
+  unlink = false,
+}: {
+  encryptedHealthToken: string | null;
+  encryptedDriveToken: string | null;
+  unlink?: boolean;
+}) {
   const body: Record<string, string | boolean> = {};
 
   if (encryptedHealthToken) {
@@ -905,7 +819,6 @@ async function postSessionLogout(
       method: "POST",
       mode: "same-origin",
       headers: {
-        Authorization: `Bearer ${sessionToken}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(body),
@@ -916,13 +829,13 @@ async function postSessionLogout(
 }
 
 export function isLoggedIn() {
-  return isSessionTokenUnexpired() && !!getEncryptedHealthTokenFromStorage();
+  return isSessionUnexpired() && !!getEncryptedHealthTokenFromStorage();
 }
 
 function clearAllAuthTokens() {
   currentHealthAccessToken = null;
   currentDriveAccessToken = null;
-  sessionAccessToken = null;
+  sessionClaims = null;
   encryptedHealthRefreshToken = null;
   encryptedDriveRefreshToken = null;
   setGrantedHealthScope(undefined);
@@ -930,7 +843,6 @@ function clearAllAuthTokens() {
   getDefaultStore().set(pendingRememberMeChoiceAtom, false);
 
   if (typeof localStorage !== "undefined") {
-    localStorage.removeItem(SESSION_TOKEN_STORAGE_KEY);
     localStorage.removeItem(ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY);
     localStorage.removeItem(ENCRYPTED_DRIVE_TOKEN_STORAGE_KEY);
     localStorage.removeItem(LEGACY_STAY_SIGNED_IN_STORAGE_KEY);
@@ -962,7 +874,7 @@ export function clearEncryptedDriveAuth() {
 }
 
 export const getFreshAccessToken = singleAsync(async () => {
-  getSessionTokenOrThrow();
+  requireActiveSession();
 
   if (
     isCachedAccessTokenFresh(currentHealthAccessToken) &&
@@ -986,7 +898,7 @@ export const getFreshAccessToken = singleAsync(async () => {
 
 /** Exchange or reuse the in-memory Google Drive access token. */
 export const getFreshDriveAccessToken = singleAsync(async () => {
-  getSessionTokenOrThrow();
+  requireActiveSession();
 
   if (
     isCachedAccessTokenFresh(currentDriveAccessToken) &&
@@ -1029,7 +941,7 @@ export async function restoreAccessToken() {
  * token when an encrypted drive refresh token is present.
  */
 export async function restoreDriveAccessToken() {
-  if (!isSessionTokenUnexpired() || !getEncryptedDriveTokenFromStorage()) {
+  if (!isSessionUnexpired() || !getEncryptedDriveTokenFromStorage()) {
     return;
   }
 
@@ -1054,19 +966,45 @@ export async function forceDriveTokenRefresh() {
 
 export const authSessionAtom = atom<AuthSession>(getAuthSession());
 
+async function restoreSessionFromCookie() {
+  try {
+    const response = await fetch(SESSION_PATH, {
+      method: "GET",
+      mode: "same-origin",
+    });
+
+    if (!response.ok) {
+      saveSessionClaims(null);
+      return;
+    }
+
+    const payload: TokenEndpointResponse = await response.json();
+
+    if (!payload.sub || typeof payload.exp !== "number") {
+      saveSessionClaims(null);
+      return;
+    }
+
+    saveSessionClaims({ sub: payload.sub, exp: payload.exp });
+  } catch {
+    saveSessionClaims(null);
+  }
+}
+
 /** Watch for localStorage and in-memory auth changes. */
 export const syncAuthTokenEffect = atomEffect((get, set) => {
-  void restoreAccessToken();
-  void restoreDriveAccessToken();
+  void (async () => {
+    await restoreSessionFromCookie();
+    await restoreAccessToken();
+    await restoreDriveAccessToken();
+  })();
 
   const storageListener = (event: StorageEvent) => {
     if (
-      event.key === SESSION_TOKEN_STORAGE_KEY ||
       event.key === ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY ||
       event.key === ENCRYPTED_DRIVE_TOKEN_STORAGE_KEY
     ) {
       // Another tab changed persisted tokens; refresh memory from storage.
-      sessionAccessToken = null;
       encryptedHealthRefreshToken = null;
       encryptedDriveRefreshToken = null;
       set(authSessionAtom, getAuthSession());
@@ -1155,12 +1093,19 @@ export function useDriveAuthEnabled() {
 export function useLoggedIn() {
   const session = useAtomValue(authSessionAtom);
   return (
-    isSessionTokenUnexpired(session.sessionToken) &&
-    !!session.encryptedHealthToken
+    isSessionUnexpired(
+      session.sub && typeof session.exp === "number"
+        ? { sub: session.sub, exp: session.exp }
+        : null,
+    ) && !!session.encryptedHealthToken
   );
 }
 
 export function useOpenIdSignedIn() {
   const session = useAtomValue(authSessionAtom);
-  return isSessionTokenUnexpired(session.sessionToken);
+  return isSessionUnexpired(
+    session.sub && typeof session.exp === "number"
+      ? { sub: session.sub, exp: session.exp }
+      : null,
+  );
 }

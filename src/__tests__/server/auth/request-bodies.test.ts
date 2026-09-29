@@ -4,10 +4,34 @@ import {
   driveAccessBodySchema,
   driveLogoutBodySchema,
   healthAccessBodySchema,
+  patchSessionBodySchema,
   sessionLogoutBodySchema,
 } from "@/server/auth/request-bodies";
 
 describe("auth request body schemas", () => {
+  it("requires a positive finite maxLifetimeHours", () => {
+    expect(
+      patchSessionBodySchema.safeParse({ maxLifetimeHours: 2 }).success,
+    ).toBe(true);
+    expect(
+      patchSessionBodySchema.safeParse({ maxLifetimeHours: 0.5 }).success,
+    ).toBe(true);
+    expect(patchSessionBodySchema.safeParse({}).success).toBe(false);
+    expect(
+      patchSessionBodySchema.safeParse({ maxLifetimeHours: 0 }).success,
+    ).toBe(false);
+    expect(
+      patchSessionBodySchema.safeParse({ maxLifetimeHours: -1 }).success,
+    ).toBe(false);
+    expect(
+      patchSessionBodySchema.safeParse({ maxLifetimeHours: "2" }).success,
+    ).toBe(false);
+    expect(
+      patchSessionBodySchema.safeParse({ maxLifetimeHours: Number.NaN }).error
+        ?.issues[0]?.message,
+    ).toBe("invalid maxLifetimeHours");
+  });
+
   it("requires a non-empty idToken", () => {
     expect(createSessionBodySchema.safeParse({ idToken: "tok" }).success).toBe(
       true,

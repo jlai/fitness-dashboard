@@ -4,6 +4,7 @@ import {
   getRevocationDatabase,
   resetRevocationDatabase,
 } from "@/server/auth/revocation-database";
+import { sessionCookieRequestHeader } from "@/server/auth/session-cookie";
 import {
   signSessionToken,
   verifySessionToken,
@@ -22,11 +23,20 @@ describe("isValidSession", () => {
     resetRevocationDatabase();
   });
 
+  it("rejects requests without a session cookie", async () => {
+    await expect(
+      isValidSession(new Request("http://localhost:3000/auth/health/access")),
+    ).rejects.toMatchObject({
+      name: "TokenValidationError",
+      message: "missing session token",
+    });
+  });
+
   it("accepts a signed session token", async () => {
     const sessionToken = await signSessionToken({ sub: "user-1" });
     const session = await isValidSession(
       new Request("http://localhost:3000/auth/health/access", {
-        headers: { Authorization: `Bearer ${sessionToken}` },
+        headers: { Cookie: sessionCookieRequestHeader(sessionToken) },
       }),
     );
 
@@ -42,7 +52,7 @@ describe("isValidSession", () => {
     await expect(
       isValidSession(
         new Request("http://localhost:3000/auth/health/access", {
-          headers: { Authorization: `Bearer ${sessionToken}` },
+          headers: { Cookie: sessionCookieRequestHeader(sessionToken) },
         }),
       ),
     ).rejects.toMatchObject({
@@ -63,7 +73,7 @@ describe("isValidSession", () => {
     await expect(
       isValidSession(
         new Request("http://localhost:3000/auth/health/access", {
-          headers: { Authorization: `Bearer ${sessionToken}` },
+          headers: { Cookie: sessionCookieRequestHeader(sessionToken) },
         }),
       ),
     ).rejects.toBeInstanceOf(TokenValidationError);
@@ -77,7 +87,7 @@ describe("isValidSession", () => {
 
     const verified = await isValidSession(
       new Request("http://localhost:3000/auth/health/access", {
-        headers: { Authorization: `Bearer ${sessionToken}` },
+        headers: { Cookie: sessionCookieRequestHeader(sessionToken) },
       }),
     );
 

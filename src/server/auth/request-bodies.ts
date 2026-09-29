@@ -8,6 +8,12 @@ export const createSessionBodySchema = z.object({
   idToken: nonEmptyString("missing idToken"),
 });
 
+export const patchSessionBodySchema = z.object({
+  maxLifetimeHours: z
+    .number({ error: "invalid maxLifetimeHours" })
+    .positive({ error: "invalid maxLifetimeHours" }),
+});
+
 export const sessionLogoutBodySchema = z.object({
   encryptedHealthToken: nonEmptyString("missing encrypted token").optional(),
   encryptedDriveToken: nonEmptyString("missing encrypted token").optional(),

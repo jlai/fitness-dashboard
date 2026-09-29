@@ -1,9 +1,6 @@
 import { createStore, getDefaultStore } from "jotai";
 
-import {
-  authSessionAtom,
-  grantedDriveScopesAtom,
-} from "@/api/auth";
+import { authSessionAtom, grantedDriveScopesAtom } from "@/api/auth";
 import { DRIVE_APPDATA } from "@/config/google-drive-scopes";
 import {
   createSettingsBlobAtom,
@@ -43,7 +40,6 @@ describe("settingsStorageAtom backend selection", () => {
     auth.getGrantedDriveScopesRaw.mockReturnValue(undefined);
     getDefaultStore().set(grantedDriveScopesAtom, undefined);
     getDefaultStore().set(authSessionAtom, {
-      sessionToken: null,
       encryptedHealthToken: null,
       encryptedDriveToken: null,
     });

@@ -3,6 +3,7 @@ import {
   decryptHealthRefreshToken,
   encryptRefreshToken,
 } from "@/server/auth/encrypted-token";
+import { sessionCookieRequestHeader } from "@/server/auth/session-cookie";
 import { signSessionToken } from "@/server/auth/session-token";
 import { refreshAccessToken } from "@/server/auth/google-oauth-token";
 import {
@@ -42,7 +43,7 @@ async function makeRequest({
     headers: {
       "Content-Type": "application/json",
       "Sec-Fetch-Site": "same-origin",
-      Authorization: `Bearer ${token}`,
+      Cookie: sessionCookieRequestHeader(token),
       ...headers,
     },
     body: JSON.stringify({ encryptedHealthToken: encrypted }),
@@ -159,7 +160,7 @@ describe("POST /auth/health/access", () => {
         headers: {
           "Content-Type": "application/json",
           "Sec-Fetch-Site": "same-origin",
-          Authorization: `Bearer ${sessionToken}`,
+          Cookie: sessionCookieRequestHeader(sessionToken),
         },
         body: JSON.stringify({}),
       }),

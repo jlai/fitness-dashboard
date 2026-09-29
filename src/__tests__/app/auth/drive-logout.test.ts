@@ -12,6 +12,7 @@ import {
   getRevocationDatabase,
   resetRevocationDatabase,
 } from "@/server/auth/revocation-database";
+import { sessionCookieRequestHeader } from "@/server/auth/session-cookie";
 import { signSessionToken } from "@/server/auth/session-token";
 
 jest.mock("@/server/auth/google-oauth-token", () => ({
@@ -52,7 +53,7 @@ async function makeRequest({
     headers: {
       "Content-Type": "application/json",
       "Sec-Fetch-Site": "same-origin",
-      Authorization: `Bearer ${token}`,
+      Cookie: sessionCookieRequestHeader(token),
       ...headers,
     },
     body: JSON.stringify(
@@ -114,7 +115,7 @@ describe("POST /auth/drive/logout", () => {
         headers: {
           "Content-Type": "application/json",
           "Sec-Fetch-Site": "same-origin",
-          Authorization: `Bearer ${sessionToken}`,
+          Cookie: sessionCookieRequestHeader(sessionToken),
         },
         body: JSON.stringify({ encryptedDriveToken: encrypted }),
       }),

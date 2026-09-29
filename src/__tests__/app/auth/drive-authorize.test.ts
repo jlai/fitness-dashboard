@@ -1,5 +1,6 @@
 import { POST } from "@/app/auth/drive/authorize/route";
 import { decryptDriveRefreshToken } from "@/server/auth/encrypted-token";
+import { sessionCookieRequestHeader } from "@/server/auth/session-cookie";
 import { signSessionToken } from "@/server/auth/session-token";
 import { verifyGoogleIdToken } from "@/server/auth/google-id-token";
 import { exchangeAuthorizationCode } from "@/server/auth/google-oauth-token";
@@ -37,7 +38,7 @@ async function makeRequest({
     headers: {
       "Content-Type": "application/json",
       "Sec-Fetch-Site": "same-origin",
-      Authorization: `Bearer ${token}`,
+      Cookie: sessionCookieRequestHeader(token),
       ...headers,
     },
     body: JSON.stringify(body),
@@ -107,7 +108,7 @@ describe("POST /auth/drive/authorize", () => {
     const response = await POST(
       await makeRequest({
         headers: {
-          Authorization: "",
+          Cookie: "",
         },
       }),
     );

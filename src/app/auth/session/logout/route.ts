@@ -11,6 +11,7 @@ import {
   noContentResponse,
   readJsonBody,
 } from "@/server/auth/http";
+import { applyClearedSessionCookie } from "@/server/auth/session-cookie";
 import { sessionLogoutBodySchema } from "@/server/auth/request-bodies";
 import {
   isValidSession,
@@ -113,7 +114,7 @@ export async function POST(request: Request) {
       tokenErrors.push(error);
     }
 
-    return tokenErrorsResponse(tokenErrors);
+    return applyClearedSessionCookie(tokenErrorsResponse(tokenErrors));
   } catch (error) {
     return getHTTPErrorResponse(error);
   }

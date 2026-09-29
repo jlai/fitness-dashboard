@@ -3,25 +3,9 @@ import {
   isAccountNotLinkedError,
   makeRequest,
 } from "@/api/request";
-import { logout } from "@/api/auth";
+import { createSession, logout } from "@/api/auth";
 
-const SESSION_TOKEN_STORAGE_KEY = "auth:session-token";
 const ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY = "auth:encrypted-health-token";
-
-function fakeSessionToken() {
-  const toBase64Url = (value: object) =>
-    Buffer.from(JSON.stringify(value))
-      .toString("base64")
-      .replace(/=/g, "")
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_");
-
-  return `${toBase64Url({ alg: "HS256", typ: "session+jwt" })}.${toBase64Url({
-    sub: "user-1",
-    iat: Math.floor(Date.now() / 1000) - 60,
-    exp: Math.floor(Date.now() / 1000) + 60 * 60,
-  })}.sig`;
-}
 
 function mockFetch(fetchMock: jest.SpyInstance, healthResponse: Response) {
   fetchMock.mockImplementation(async (input) => {
@@ -113,7 +97,20 @@ describe("makeRequest", () => {
     } finally {
       logoutFetch.mockRestore();
     }
-    localStorage.setItem(SESSION_TOKEN_STORAGE_KEY, fakeSessionToken());
+    const sessionFetch = jest.spyOn(global, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          sub: "user-1",
+          exp: Math.floor(Date.now() / 1000) + 3600,
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    );
+    try {
+      await createSession("google-id-token");
+    } finally {
+      sessionFetch.mockRestore();
+    }
     localStorage.setItem(ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY, "encrypted-jwt");
     fetchMock = jest.spyOn(global, "fetch");
   });

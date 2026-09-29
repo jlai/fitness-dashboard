@@ -1,8 +1,6 @@
-import { jwtDecode } from "jwt-decode";
-
 import { POST as POST_ACCESS } from "@/app/auth/health/access/route";
 import { POST as POST_LOGOUT } from "@/app/auth/session/logout/route";
-import { POST } from "@/app/auth/session/route";
+import { GET, PATCH, POST } from "@/app/auth/session/route";
 import {
   decryptHealthRefreshToken,
   encryptDriveRefreshToken,
@@ -14,6 +12,10 @@ import {
   getRevocationDatabase,
   resetRevocationDatabase,
 } from "@/server/auth/revocation-database";
+import {
+  SESSION_COOKIE_NAME,
+  sessionCookieRequestHeader,
+} from "@/server/auth/session-cookie";
 import {
   signSessionToken,
   verifySessionToken,
@@ -42,22 +44,38 @@ function makeRequest({
   body = { idToken: "google-id-token" },
   sessionToken,
 }: {
-  method?: "POST" | "DELETE";
+  method?: "GET" | "POST" | "PATCH";
   path?: string;
   headers?: HeadersInit;
   body?: unknown;
   sessionToken?: string;
 } = {}) {
+  const hasBody = method === "POST" || method === "PATCH";
+
   return new Request(`http://localhost:3000${path}`, {
     method,
     headers: {
-      ...(method === "POST" ? { "Content-Type": "application/json" } : {}),
+      ...(hasBody ? { "Content-Type": "application/json" } : {}),
       "Sec-Fetch-Site": "same-origin",
-      ...(sessionToken ? { Authorization: `Bearer ${sessionToken}` } : {}),
+      ...(sessionToken
+        ? { Cookie: sessionCookieRequestHeader(sessionToken) }
+        : {}),
       ...headers,
     },
-    body: method === "POST" ? JSON.stringify(body) : undefined,
+    body: hasBody ? JSON.stringify(body) : undefined,
   });
+}
+
+function readSessionCookieValue(response: Response) {
+  const header = response.headers.get("Set-Cookie");
+
+  expect(header).toEqual(expect.any(String));
+
+  const match = header!.match(new RegExp(`${SESSION_COOKIE_NAME}=([^;]*)`));
+
+  expect(match?.[1]).toEqual(expect.any(String));
+
+  return decodeURIComponent(match![1]);
 }
 
 describe("POST /auth/session", () => {
@@ -72,33 +90,34 @@ describe("POST /auth/session", () => {
     process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES = originalExpiration;
   });
 
-  it("creates a signed session JWT from the Google idToken", async () => {
+  it("creates a signed session JWT cookie from the Google idToken", async () => {
     const response = await POST(makeRequest());
     const payload = await response.json();
+    const sessionToken = readSessionCookieValue(response);
 
     expect(response.status).toBe(200);
     expect(response.headers.get("Cache-Control")).toBe(
       "no-cache, max-age=0, must-revalidate",
     );
-    expect(payload.sessionToken).toEqual(expect.any(String));
-    expect(payload.sessionToken.split(".")).toHaveLength(3);
+    expect(payload).toEqual({
+      sub: "user-1",
+      exp: expect.any(Number),
+    });
+    expect(payload).not.toHaveProperty("sessionToken");
 
-    const claims = jwtDecode<{
-      sub: string;
-      iat: number;
-      exp: number;
-      jti: string;
-    }>(payload.sessionToken);
+    const setCookie = response.headers.get("Set-Cookie")!;
+    expect(setCookie).toContain("HttpOnly");
+    expect(setCookie).toContain("Secure");
+    expect(setCookie).toContain("SameSite=Strict");
+    expect(setCookie).toContain("Path=/");
+    expect(setCookie).not.toContain("Max-Age");
+    expect(setCookie).not.toContain("Domain=");
+
+    const claims = await verifySessionToken(sessionToken);
     expect(claims.sub).toBe("user-1");
     expect(claims.exp).toBe(claims.iat + 120 * 60);
     expect(claims.jti).toEqual(expect.any(String));
-
-    await expect(verifySessionToken(payload.sessionToken)).resolves.toEqual({
-      sub: "user-1",
-      iat: claims.iat,
-      exp: claims.exp,
-      jti: claims.jti,
-    });
+    expect(payload.exp).toBe(claims.exp);
   });
 
   it("rejects requests without an idToken", async () => {
@@ -202,6 +221,7 @@ describe("POST /auth/session/logout", () => {
     expect(response.headers.get("Cache-Control")).toBe(
       "no-cache, max-age=0, must-revalidate",
     );
+    expect(response.headers.get("Set-Cookie")).toContain("Max-Age=0");
     expect(revokeGoogleTokenMock).not.toHaveBeenCalled();
 
     const revoked = await POST_LOGOUT(logoutRequest({ sessionToken }));
@@ -255,7 +275,7 @@ describe("POST /auth/session/logout", () => {
         headers: {
           "Content-Type": "application/json",
           "Sec-Fetch-Site": "same-origin",
-          Authorization: `Bearer ${sessionToken}`,
+          Cookie: sessionCookieRequestHeader(sessionToken),
         },
         body: JSON.stringify({ encryptedHealthToken: encryptedHealth }),
       }),
@@ -539,5 +559,170 @@ describe("POST /auth/session/logout", () => {
     });
     expect(revokeGoogleTokenMock).toHaveBeenCalledWith("health-refresh");
     expect(revokeGoogleTokenMock).toHaveBeenCalledWith("drive-refresh");
+  });
+});
+
+describe("GET /auth/session", () => {
+  const originalExpiration = process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES;
+  const originalRevocation = process.env.SESSION_REVOCATION_DATABASE;
+
+  beforeEach(() => {
+    delete process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES;
+    process.env.SESSION_REVOCATION_DATABASE = "memory://";
+    resetRevocationDatabase();
+  });
+
+  afterEach(() => {
+    process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES = originalExpiration;
+    process.env.SESSION_REVOCATION_DATABASE = originalRevocation;
+    resetRevocationDatabase();
+  });
+
+  it("returns sub and exp from a valid session cookie", async () => {
+    const sessionToken = await signSessionToken({ sub: "user-1" });
+    const verified = await verifySessionToken(sessionToken);
+    const response = await GET(makeRequest({ method: "GET", sessionToken }));
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload).toEqual({ sub: "user-1", exp: verified.exp });
+    expect(payload).not.toHaveProperty("sessionToken");
+  });
+
+  it("rejects requests without a session cookie", async () => {
+    const response = await GET(makeRequest({ method: "GET" }));
+
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toEqual({
+      error: "unauthorized",
+      errorDescription: "missing session token",
+    });
+  });
+
+  it("rejects requests that are not same-origin", async () => {
+    const sessionToken = await signSessionToken({ sub: "user-1" });
+    const response = await GET(
+      makeRequest({
+        method: "GET",
+        sessionToken,
+        headers: { "Sec-Fetch-Site": "cross-site" },
+      }),
+    );
+
+    expect(response.status).toBe(403);
+  });
+});
+
+describe("PATCH /auth/session", () => {
+  const originalExpiration = process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES;
+  const originalRevocation = process.env.SESSION_REVOCATION_DATABASE;
+
+  beforeEach(() => {
+    delete process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES;
+    process.env.SESSION_REVOCATION_DATABASE = "memory://";
+    resetRevocationDatabase();
+  });
+
+  afterEach(() => {
+    process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES = originalExpiration;
+    process.env.SESSION_REVOCATION_DATABASE = originalRevocation;
+    resetRevocationDatabase();
+    jest.useRealTimers();
+  });
+
+  it("extends the cookie Max-Age up to the JWT exp", async () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date("2026-01-01T00:00:00Z"));
+
+    const sessionToken = await signSessionToken({
+      sub: "user-1",
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + 2 * 60 * 60,
+    });
+    const response = await PATCH(
+      makeRequest({
+        method: "PATCH",
+        sessionToken,
+        body: { maxLifetimeHours: 24 },
+      }),
+    );
+
+    expect(response.status).toBe(204);
+    const setCookie = response.headers.get("Set-Cookie")!;
+    expect(setCookie).toContain(`${SESSION_COOKIE_NAME}=`);
+    expect(setCookie).toContain("Max-Age=7200");
+    expect(setCookie).toContain("HttpOnly");
+    expect(setCookie).toContain("Secure");
+    expect(setCookie).toContain("SameSite=Strict");
+    expect(readSessionCookieValue(response)).toBe(sessionToken);
+
+    jest.useRealTimers();
+  });
+
+  it("uses the requested hours when shorter than remaining JWT lifetime", async () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date("2026-01-01T00:00:00Z"));
+
+    const sessionToken = await signSessionToken({
+      sub: "user-1",
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + 2 * 60 * 60,
+    });
+    const response = await PATCH(
+      makeRequest({
+        method: "PATCH",
+        sessionToken,
+        body: { maxLifetimeHours: 1 },
+      }),
+    );
+
+    expect(response.status).toBe(204);
+    expect(response.headers.get("Set-Cookie")).toContain("Max-Age=3600");
+
+    jest.useRealTimers();
+  });
+
+  it("rejects missing or invalid maxLifetimeHours", async () => {
+    const sessionToken = await signSessionToken({ sub: "user-1" });
+
+    const missing = await PATCH(
+      makeRequest({ method: "PATCH", sessionToken, body: {} }),
+    );
+    expect(missing.status).toBe(400);
+
+    const zero = await PATCH(
+      makeRequest({
+        method: "PATCH",
+        sessionToken,
+        body: { maxLifetimeHours: 0 },
+      }),
+    );
+    expect(zero.status).toBe(400);
+    await expect(zero.json()).resolves.toEqual({
+      error: "invalid_request",
+      errorDescription: "invalid maxLifetimeHours",
+    });
+  });
+
+  it("rejects requests without a session cookie", async () => {
+    const response = await PATCH(
+      makeRequest({ method: "PATCH", body: { maxLifetimeHours: 1 } }),
+    );
+
+    expect(response.status).toBe(401);
+  });
+
+  it("rejects requests that are not same-origin", async () => {
+    const sessionToken = await signSessionToken({ sub: "user-1" });
+    const response = await PATCH(
+      makeRequest({
+        method: "PATCH",
+        sessionToken,
+        body: { maxLifetimeHours: 1 },
+        headers: { "Sec-Fetch-Site": "cross-site" },
+      }),
+    );
+
+    expect(response.status).toBe(403);
   });
 });

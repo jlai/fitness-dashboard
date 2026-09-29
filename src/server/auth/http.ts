@@ -113,15 +113,3 @@ export function getHTTPErrorResponse(
 
   return internalErrorResponse(fallbackInternalMessage);
 }
-
-export function readBearerToken(request: Request) {
-  const header = request.headers.get("Authorization");
-
-  if (!header) {
-    return undefined;
-  }
-
-  const match = /^Bearer\s+(\S+)/i.exec(header);
-
-  return match?.[1];
-}
