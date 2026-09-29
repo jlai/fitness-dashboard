@@ -28,7 +28,7 @@ export function MigrationNotice() {
         }}
         onClose={() => setShowing(false)}
       >
-        Prepare for the transition to Google Health before Sep 29th.{" "}
+        Prepare for the transition to Google Health before October 29th.{" "}
         <a href="/about/migration" className="underline">
           Learn more
         </a>

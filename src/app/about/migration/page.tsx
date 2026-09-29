@@ -25,8 +25,8 @@ export default function AboutMigrationPage() {
           is live.
         </Typography>
         <Typography variant="body2">
-          After September 29th, this website will be unavailable while we
-          prepare the new site. See the timeline below for more details.
+          After October 29th, this website will be unavailable while we prepare
+          the new site. See the timeline below for more details.
         </Typography>
         <Typography variant="body2">
           The new site will mostly look the same, but the login process will be
@@ -48,11 +48,11 @@ export default function AboutMigrationPage() {
         <Typography variant="h4">Timeline</Typography>
 
         <div className="space-y-2">
-          <Typography variant="h6">Before September 29th</Typography>
+          <Typography variant="h6">Before October 29th</Typography>
           <Typography variant="body2">
-            The website will remain available until September 29th. If you want
-            to keep using your existing custom foods, meals, and goals on the
-            new site, back them up before the Fitbit API goes offline.
+            The website will remain available until October 29th. If you want to
+            keep using your existing custom foods, meals, and goals on the new
+            site, back them up before the Fitbit API goes offline.
           </Typography>
           <Button
             variant="contained"
@@ -64,19 +64,21 @@ export default function AboutMigrationPage() {
         </div>
 
         <div className="space-y-2">
-          <Typography variant="h6">After September 29th</Typography>
+          <Typography variant="h6">After October 29th</Typography>
           <Typography variant="body2">
-            The website will be <b>unavailable</b> while we prepare the new version of
-            the dashboard. Unfortunately, this process will take some time while
-            we undergo an independent security assessment, which is a new
-            requirement for all third-party apps that integrate with Google
+            The website will be <b>unavailable</b> while we prepare the new
+            version of the dashboard. Unfortunately, this process will take some
+            time while we undergo an independent security assessment, which is a
+            new requirement for all third-party apps that integrate with Google
             Health to validate that we are handling your Google Health data
             securely.
           </Typography>
         </div>
 
         <div className="space-y-2">
-          <Typography variant="h6">Mid-October (exact date TBD)</Typography>
+          <Typography variant="h6">
+            Late October or Early November (exact date TBD)
+          </Typography>
           <Typography variant="body2">
             Once the website returns, you will sign in with your Google account
             and authorize access to Google Health. If you previously saved a
