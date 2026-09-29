@@ -16,6 +16,7 @@ import {
   logoutDrive,
   persistAuthTokens,
   restoreAccessToken,
+  saveEncryptedAuthTokens,
   revokeAuthorization,
   syncAuthTokenEffect,
   useAccessTokenScopes,
@@ -233,6 +234,45 @@ describe("persistAuthTokens", () => {
     expect(JSON.parse(patchCall?.[1]?.body as string)).toEqual({
       maxLifetimeHours: expect.any(Number),
     });
+  });
+});
+
+describe("saveEncryptedAuthTokens", () => {
+  beforeEach(async () => {
+    await resetAuthState();
+  });
+
+  afterEach(() => {
+    localStorage.clear();
+  });
+
+  it("writes health and drive tokens to memory and localStorage", () => {
+    saveEncryptedAuthTokens({
+      encryptedHealthToken: "encrypted-health",
+      encryptedDriveToken: "encrypted-drive",
+    });
+
+    expect(localStorage.getItem(ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY)).toBe(
+      "encrypted-health",
+    );
+    expect(localStorage.getItem(ENCRYPTED_DRIVE_TOKEN_STORAGE_KEY)).toBe(
+      "encrypted-drive",
+    );
+  });
+
+  it("leaves the other token unchanged when only one is provided", () => {
+    localStorage.setItem(ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY, "existing-health");
+
+    saveEncryptedAuthTokens({
+      encryptedDriveToken: "encrypted-drive",
+    });
+
+    expect(localStorage.getItem(ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY)).toBe(
+      "existing-health",
+    );
+    expect(localStorage.getItem(ENCRYPTED_DRIVE_TOKEN_STORAGE_KEY)).toBe(
+      "encrypted-drive",
+    );
   });
 });
 

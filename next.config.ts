@@ -18,8 +18,15 @@ function normalizeBasePath(value: string | undefined) {
 
 const basePath = normalizeBasePath(process.env.NEXT_PUBLIC_BASE_PATH);
 
+/** Compile `/settings/developer` (`page.dev.tsx`) only when debug mode is on. */
+const pageExtensions = ["tsx", "ts", "jsx", "js"];
+if (process.env.NEXT_PUBLIC_DEV_MODE === "true") {
+  pageExtensions.push("dev.tsx");
+}
+
 const nextConfig: NextConfig = {
   distDir: process.env.NEXT_DIST_DIR || ".next",
+  pageExtensions,
   ...(basePath ? { basePath } : {}),
   headers() {
     return [

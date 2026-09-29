@@ -239,6 +239,42 @@ function saveEncryptedDriveToken(encryptedDriveToken?: string) {
 }
 
 /**
+ * Store encrypted health/drive refresh tokens in memory and localStorage.
+ * Used by developer debug login; does not change the session cookie.
+ */
+export function saveEncryptedAuthTokens({
+  encryptedHealthToken,
+  encryptedDriveToken,
+}: {
+  encryptedHealthToken?: string;
+  encryptedDriveToken?: string;
+}) {
+  if (encryptedHealthToken) {
+    encryptedHealthRefreshToken = encryptedHealthToken;
+    if (typeof localStorage !== "undefined") {
+      localStorage.setItem(
+        ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY,
+        encryptedHealthToken,
+      );
+    }
+  }
+
+  if (encryptedDriveToken) {
+    encryptedDriveRefreshToken = encryptedDriveToken;
+    if (typeof localStorage !== "undefined") {
+      localStorage.setItem(
+        ENCRYPTED_DRIVE_TOKEN_STORAGE_KEY,
+        encryptedDriveToken,
+      );
+    }
+  }
+
+  if (encryptedHealthToken || encryptedDriveToken) {
+    notifyAuthChanged();
+  }
+}
+
+/**
  * Persist encrypted health/drive tokens and extend the session cookie so the
  * user can resume on return visits.
  */

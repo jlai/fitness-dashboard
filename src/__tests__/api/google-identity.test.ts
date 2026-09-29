@@ -1,5 +1,6 @@
 import {
   ensureGsiScript,
+  getGoogleIdTokenCallback,
   initializeGoogleId,
   loadGoogleAccountsId,
   loadGoogleOAuth2,
@@ -118,5 +119,6 @@ describe("google identity API", () => {
     expect(first).not.toHaveBeenCalled();
     expect(second).toHaveBeenCalledWith(credential);
     expect(id.initialize).toHaveBeenCalledTimes(1);
+    expect(getGoogleIdTokenCallback()).toBe(second);
   });
 });

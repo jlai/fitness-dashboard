@@ -21,6 +21,10 @@ export function setGoogleIdTokenCallback(
   idTokenCallback = callback;
 }
 
+export function getGoogleIdTokenCallback() {
+  return idTokenCallback;
+}
+
 /** Inject the GSI script once. Pass a CSP nonce on first insert. */
 export function ensureGsiScript(nonce?: string) {
   if (typeof document === "undefined") {

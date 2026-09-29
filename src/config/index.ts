@@ -84,5 +84,5 @@ export const EXTRA_CSP_SCRIPT_SRC =
 /** Site notice to warn about API issues, etc */
 export const SITE_NOTICE_HTML = process.env.NEXT_PUBLIC_SITE_NOTICE_HTML;
 
-/** Show developer settings and other debug UI */
-export const DEV_MODE_ENABLED = process.env.NODE_ENV === "development";
+/** Show developer settings and other debug UI. Inlined at build time. */
+export const DEV_MODE_ENABLED = process.env.NEXT_PUBLIC_DEV_MODE === "true";
