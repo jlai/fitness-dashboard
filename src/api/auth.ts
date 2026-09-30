@@ -21,7 +21,6 @@ const EXPIRING_SOON_MILLIS = 2 * 60 * 1000;
 
 const ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY = "auth:encrypted-health-token";
 const ENCRYPTED_DRIVE_TOKEN_STORAGE_KEY = "auth:encrypted-drive-token";
-const LEGACY_STAY_SIGNED_IN_STORAGE_KEY = "auth:stay-signed-in";
 const AUTH_TOKEN_UPDATE_EVENT_TYPE = "authtokenupdated";
 
 const SESSION_PATH = withBasePath("/auth/session");
@@ -295,8 +294,6 @@ export async function persistAuthTokens() {
       encryptedDriveToken,
     );
   }
-
-  localStorage.removeItem(LEGACY_STAY_SIGNED_IN_STORAGE_KEY);
 
   const maxLifetimeHours = remainingSessionLifetimeHours();
 
@@ -881,7 +878,6 @@ function clearAllAuthTokens() {
   if (typeof localStorage !== "undefined") {
     localStorage.removeItem(ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY);
     localStorage.removeItem(ENCRYPTED_DRIVE_TOKEN_STORAGE_KEY);
-    localStorage.removeItem(LEGACY_STAY_SIGNED_IN_STORAGE_KEY);
   }
 
   notifyAuthChanged();

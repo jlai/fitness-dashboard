@@ -10,6 +10,9 @@ export function validateSecFetch(request: Request): void {
 }
 
 export async function isValidSession(request: Request): Promise<SessionClaims> {
+  // This may already have been checked, but it's cheap to do it again
+  validateSecFetch(request);
+
   const token = readSessionCookie(request);
 
   if (!token) {
