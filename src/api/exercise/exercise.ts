@@ -23,6 +23,7 @@ import {
 } from "../datapoints";
 import { formatAsDate } from "../datetime";
 import mutationOptions from "../mutation-options";
+import { hasErrorType } from "../request";
 
 import type { ExerciseDataPoint } from "./helpers";
 import { ExerciseListResponse } from "./types";
@@ -47,7 +48,17 @@ function exercisesStartingBeforeFilter(before: Dayjs) {
 export function buildGetExerciseQuery(id: string) {
   return queryOptions({
     queryKey: ["exercise", id],
-    queryFn: () => getDataPoint("exercise", id),
+    queryFn: async () => {
+      try {
+        return await getDataPoint("exercise", id);
+      } catch (error) {
+        if (hasErrorType(error, "INVALID_ARGUMENT")) {
+          throw new Error("Exercise not found", { cause: error });
+        }
+
+        throw error;
+      }
+    },
     staleTime: ONE_DAY_IN_MILLIS,
   });
 }

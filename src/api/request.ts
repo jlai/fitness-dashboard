@@ -26,6 +26,19 @@ export interface ServerError extends Error {
   errorText?: string;
 }
 
+/** Whether a thrown API error includes the given Google RPC / Fitbit error type. */
+export function hasErrorType(error: unknown, errorType: string): boolean {
+  if (!error || typeof error !== "object" || !("errors" in error)) {
+    return false;
+  }
+
+  const { errors } = error as ServerError;
+  return Boolean(
+    Array.isArray(errors) &&
+    errors.some((item) => item.errorType === errorType),
+  );
+}
+
 export interface MakeRequestOptions {
   // Fitbit API sometimes throws spurious 502 errors on delete, e.g.
   // https://community.fitbit.com/t5/Web-API-Development/deletion-of-water-records-502-error/td-p/5786102

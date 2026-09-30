@@ -1,7 +1,9 @@
 import {
   extractErrors,
+  hasErrorType,
   isAccountNotLinkedError,
   makeRequest,
+  type ServerError,
 } from "@/api/request";
 import { createSession, logout } from "@/api/auth";
 
@@ -66,6 +68,34 @@ describe("isAccountNotLinkedError", () => {
   it("returns false for missing or unrelated bodies", () => {
     expect(isAccountNotLinkedError(undefined)).toBe(false);
     expect(isAccountNotLinkedError({ errors: [] })).toBe(false);
+  });
+});
+
+function serverError(errorType: string, message = "invalid"): ServerError {
+  const error = new Error(`server response (400): ${message}`) as ServerError;
+  error.status = 400;
+  error.errors = [{ errorType, fieldName: "unknown", message }];
+  error.errorText = message;
+  return error;
+}
+
+describe("hasErrorType", () => {
+  it("detects INVALID_ARGUMENT on a ServerError", () => {
+    expect(
+      hasErrorType(serverError("INVALID_ARGUMENT"), "INVALID_ARGUMENT"),
+    ).toBe(true);
+  });
+
+  it("returns false for other error types", () => {
+    expect(
+      hasErrorType(serverError("FAILED_PRECONDITION"), "INVALID_ARGUMENT"),
+    ).toBe(false);
+  });
+
+  it("returns false for missing or unrelated values", () => {
+    expect(hasErrorType(undefined, "INVALID_ARGUMENT")).toBe(false);
+    expect(hasErrorType(new Error("failed"), "INVALID_ARGUMENT")).toBe(false);
+    expect(hasErrorType({ errors: [] }, "INVALID_ARGUMENT")).toBe(false);
   });
 });
 
