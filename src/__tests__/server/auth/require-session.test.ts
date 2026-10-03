@@ -1,4 +1,4 @@
-import { TokenValidationError } from "@/server/auth/errors";
+import { FetchHeaderError, TokenValidationError } from "@/server/auth/errors";
 import { isValidSession } from "@/server/auth/require-session";
 import {
   getRevocationDatabase,
@@ -9,6 +9,15 @@ import {
   signSessionToken,
   verifySessionToken,
 } from "@/server/auth/session-token";
+
+function sessionRequest(headers: HeadersInit = {}) {
+  return new Request("http://localhost:3000/auth/health/access", {
+    headers: {
+      "Sec-Fetch-Site": "same-origin",
+      ...headers,
+    },
+  });
+}
 
 describe("isValidSession", () => {
   const originalRevocation = process.env.SESSION_REVOCATION_DATABASE;
@@ -23,10 +32,18 @@ describe("isValidSession", () => {
     resetRevocationDatabase();
   });
 
-  it("rejects requests without a session cookie", async () => {
+  it("rejects requests that are not same-origin", async () => {
     await expect(
-      isValidSession(new Request("http://localhost:3000/auth/health/access")),
-    ).rejects.toMatchObject({
+      isValidSession(
+        sessionRequest({
+          "Sec-Fetch-Site": "cross-site",
+        }),
+      ),
+    ).rejects.toBeInstanceOf(FetchHeaderError);
+  });
+
+  it("rejects requests without a session cookie", async () => {
+    await expect(isValidSession(sessionRequest())).rejects.toMatchObject({
       name: "TokenValidationError",
       message: "missing session token",
     });
@@ -35,9 +52,7 @@ describe("isValidSession", () => {
   it("accepts a signed session token", async () => {
     const sessionToken = await signSessionToken({ sub: "user-1" });
     const session = await isValidSession(
-      new Request("http://localhost:3000/auth/health/access", {
-        headers: { Cookie: sessionCookieRequestHeader(sessionToken) },
-      }),
+      sessionRequest({ Cookie: sessionCookieRequestHeader(sessionToken) }),
     );
 
     expect(session.sub).toBe("user-1");
@@ -51,9 +66,7 @@ describe("isValidSession", () => {
 
     await expect(
       isValidSession(
-        new Request("http://localhost:3000/auth/health/access", {
-          headers: { Cookie: sessionCookieRequestHeader(sessionToken) },
-        }),
+        sessionRequest({ Cookie: sessionCookieRequestHeader(sessionToken) }),
       ),
     ).rejects.toMatchObject({
       name: "TokenValidationError",
@@ -72,9 +85,7 @@ describe("isValidSession", () => {
 
     await expect(
       isValidSession(
-        new Request("http://localhost:3000/auth/health/access", {
-          headers: { Cookie: sessionCookieRequestHeader(sessionToken) },
-        }),
+        sessionRequest({ Cookie: sessionCookieRequestHeader(sessionToken) }),
       ),
     ).rejects.toBeInstanceOf(TokenValidationError);
   });
@@ -86,9 +97,7 @@ describe("isValidSession", () => {
     await revocationDatabase.invalidateIssuedBefore(session.sub, session.iat);
 
     const verified = await isValidSession(
-      new Request("http://localhost:3000/auth/health/access", {
-        headers: { Cookie: sessionCookieRequestHeader(sessionToken) },
-      }),
+      sessionRequest({ Cookie: sessionCookieRequestHeader(sessionToken) }),
     );
 
     expect(verified.sub).toBe("user-1");
