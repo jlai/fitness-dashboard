@@ -23,7 +23,7 @@ import {
 } from "../datapoints";
 import { formatAsDate } from "../datetime";
 import mutationOptions from "../mutation-options";
-import { hasErrorType } from "../request";
+import { hasErrorType, type ServerError } from "../request";
 
 import type { ExerciseDataPoint } from "./helpers";
 import { ExerciseListResponse } from "./types";
@@ -52,7 +52,10 @@ export function buildGetExerciseQuery(id: string) {
       try {
         return await getDataPoint("exercise", id);
       } catch (error) {
-        if (hasErrorType(error, "INVALID_ARGUMENT")) {
+        if (
+          hasErrorType(error, "INVALID_ARGUMENT") ||
+          (error as ServerError | undefined)?.status === 404
+        ) {
           throw new Error("Exercise not found", { cause: error });
         }
 

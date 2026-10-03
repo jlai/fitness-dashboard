@@ -36,6 +36,16 @@ describe("buildGetExerciseQuery", () => {
     ).rejects.toThrow("Exercise not found");
   });
 
+  it("maps 404 to Exercise not found", async () => {
+    const error = serverError("NOT_FOUND", "not found");
+    error.status = 404;
+    mockedGetDataPoint.mockRejectedValue(error);
+
+    await expect(
+      queryClient.fetchQuery(buildGetExerciseQuery("abcd")),
+    ).rejects.toThrow("Exercise not found");
+  });
+
   it("rethrows other datapoint errors", async () => {
     const error = serverError("PERMISSION_DENIED", "permission denied");
     mockedGetDataPoint.mockRejectedValue(error);
