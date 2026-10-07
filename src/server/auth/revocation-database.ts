@@ -5,7 +5,7 @@ import {
   type RevocationDatabaseConfig,
 } from "./env";
 
-const CLOUDFLARE_KV_MIN_TTL_SECONDS = 60;
+const CLOUDFLARE_KV_MIN_TTL_SECONDS = 3600;
 const BEFORE_KEY_PREFIX = "before:";
 
 export interface RevocationTokenClaims {
@@ -31,10 +31,7 @@ declare global {
 
 export abstract class RevocationDatabase {
   abstract add(jti: string, expiresAt: number): Promise<void>;
-  abstract invalidateIssuedBefore(
-    sub: string,
-    issuedBefore: number,
-  ): Promise<void>;
+  abstract invalidateIssuedBeforeNow(sub: string): Promise<void>;
   abstract isRevoked(token: RevocationTokenClaims): Promise<boolean>;
 }
 
@@ -53,24 +50,12 @@ export class MemoryRevocationDatabase extends RevocationDatabase {
     this.revoked.set(jti, expiresAt);
   }
 
-  async invalidateIssuedBefore(
-    sub: string,
-    issuedBefore: number,
-  ): Promise<void> {
-    const expiresAt = issuedBeforeExpiresAt(issuedBefore);
-
-    if (expiresAt <= nowSeconds()) {
-      return;
-    }
-
-    const existing = this.issuedBefore.get(sub);
-    const nextIssuedBefore = existing
-      ? Math.max(existing.issuedBefore, issuedBefore)
-      : issuedBefore;
+  async invalidateIssuedBeforeNow(sub: string): Promise<void> {
+    const issuedBefore = nowSeconds();
 
     this.issuedBefore.set(sub, {
-      issuedBefore: nextIssuedBefore,
-      expiresAt: issuedBeforeExpiresAt(nextIssuedBefore),
+      issuedBefore,
+      expiresAt: getExpiresAtForRevocationEntry(issuedBefore),
     });
   }
 
@@ -130,24 +115,11 @@ export class CloudflareKVRevocationDatabase extends RevocationDatabase {
     });
   }
 
-  async invalidateIssuedBefore(
-    sub: string,
-    issuedBefore: number,
-  ): Promise<void> {
-    const now = nowSeconds();
-    const key = beforeKey(sub);
-    const existingRaw = await this.kv.get(key);
-    const existing = parseIssuedBefore(existingRaw);
-    const nextIssuedBefore =
-      existing === undefined ? issuedBefore : Math.max(existing, issuedBefore);
-    const expiresAt = issuedBeforeExpiresAt(nextIssuedBefore);
+  async invalidateIssuedBeforeNow(sub: string): Promise<void> {
+    const issuedBefore = nowSeconds();
 
-    if (expiresAt <= now) {
-      return;
-    }
-
-    await this.kv.put(key, String(nextIssuedBefore), {
-      expiration: Math.max(expiresAt, now + CLOUDFLARE_KV_MIN_TTL_SECONDS),
+    await this.kv.put(beforeKey(sub), String(issuedBefore), {
+      expiration: getExpiresAtForRevocationEntry(issuedBefore),
     });
   }
 
@@ -171,8 +143,15 @@ function beforeKey(sub: string) {
   return `${BEFORE_KEY_PREFIX}${sub}`;
 }
 
-function issuedBeforeExpiresAt(issuedBefore: number) {
-  return issuedBefore + ENCRYPTED_REFRESH_TOKEN_EXPIRATION_SECONDS;
+/**
+ * Determine when the revocation entry should expire from the KV.
+ * This should be later than the expiration of the longest-lived token that might be revoked.
+ */
+function getExpiresAtForRevocationEntry(issuedBefore: number) {
+  return Math.max(
+    issuedBefore + ENCRYPTED_REFRESH_TOKEN_EXPIRATION_SECONDS,
+    nowSeconds() + CLOUDFLARE_KV_MIN_TTL_SECONDS,
+  );
 }
 
 function parseIssuedBefore(raw: string | null): number | undefined {

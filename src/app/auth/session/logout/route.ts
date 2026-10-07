@@ -78,10 +78,7 @@ export async function POST(request: Request) {
     await revocationDatabase.add(session.jti, session.exp);
 
     if (unlink) {
-      await revocationDatabase.invalidateIssuedBefore(
-        session.sub,
-        Math.floor(Date.now() / 1000),
-      );
+      await revocationDatabase.invalidateIssuedBeforeNow(session.sub);
     }
 
     const tokenErrors: unknown[] = [];

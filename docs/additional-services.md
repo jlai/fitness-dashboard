@@ -1,5 +1,11 @@
 # Additional services
 
+## Cross-Account Protection (RISC)
+
+Google can notify the app when a signed-in user's Google Account has a
+security-relevant change. See [risc.md](risc.md) for setup, the receiver
+endpoint, and the registration script.
+
 ## Maps
 
 For maps, we use [Protomaps](https://protomaps.com/) because:

@@ -10,6 +10,10 @@ hosted deployments will be limited to ~100 users unless you go through a potenti
 
 Create a KV store for revoked sessions. Copy the ID for use in the build-time variable `CF_BINDING_SESSION_REVOCATION`.
 
+A persistent revocation store is also required for
+[Cross-Account Protection (RISC)](risc.md): Google security events invalidate
+sessions by writing to this store.
+
 ## Secrets Store
 
 The secret store currently needs to be manually seeded. Generate initial keys and manually upload

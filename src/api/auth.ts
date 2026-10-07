@@ -623,7 +623,7 @@ export function useGoogleLoginAndAuthorization({
             client_id: GOOGLE_OAUTH_CLIENT_ID,
             scope: REQUESTED_SCOPES.join(" "),
             ux_mode: "popup",
-            redirect_uri: window.location.origin,
+            // redirect_uri: window.location.origin,
             hint,
             include_granted_scopes: false,
             select_account: selectAccount,

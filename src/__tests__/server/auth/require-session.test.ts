@@ -75,13 +75,15 @@ describe("isValidSession", () => {
   });
 
   it("rejects a session token issued before a sub watermark", async () => {
-    const sessionToken = await signSessionToken({ sub: "user-1" });
+    const now = Math.floor(Date.now() / 1000);
+    const sessionToken = await signSessionToken({
+      sub: "user-1",
+      iat: now - 60,
+      exp: now + 3600,
+    });
     const session = await verifySessionToken(sessionToken);
     const revocationDatabase = await getRevocationDatabase();
-    await revocationDatabase.invalidateIssuedBefore(
-      session.sub,
-      session.iat + 1,
-    );
+    await revocationDatabase.invalidateIssuedBeforeNow(session.sub);
 
     await expect(
       isValidSession(
@@ -91,11 +93,10 @@ describe("isValidSession", () => {
   });
 
   it("accepts a session token issued at or after a sub watermark", async () => {
-    const sessionToken = await signSessionToken({ sub: "user-1" });
-    const session = await verifySessionToken(sessionToken);
     const revocationDatabase = await getRevocationDatabase();
-    await revocationDatabase.invalidateIssuedBefore(session.sub, session.iat);
+    await revocationDatabase.invalidateIssuedBeforeNow("user-1");
 
+    const sessionToken = await signSessionToken({ sub: "user-1" });
     const verified = await isValidSession(
       sessionRequest({ Cookie: sessionCookieRequestHeader(sessionToken) }),
     );

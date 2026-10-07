@@ -222,6 +222,9 @@ describe("POST /auth/health/access", () => {
   });
 
   it("rejects an encrypted health token issued before a sub watermark", async () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date("2026-01-01T00:00:00Z"));
+
     const encrypted = await encryptRefreshToken({
       sub: "user-1",
       refreshToken: "stored-refresh",
@@ -232,11 +235,10 @@ describe("POST /auth/health/access", () => {
       sub: "user-1",
       iat: verified.iat + 10,
     });
+
+    jest.setSystemTime(new Date("2026-01-01T00:00:01Z"));
     const revocationDatabase = await getRevocationDatabase();
-    await revocationDatabase.invalidateIssuedBefore(
-      verified.sub,
-      verified.iat + 1,
-    );
+    await revocationDatabase.invalidateIssuedBeforeNow(verified.sub);
 
     const response = await POST(
       await makeRequest({ encryptedHealthToken: encrypted, sessionToken }),
@@ -251,14 +253,14 @@ describe("POST /auth/health/access", () => {
   });
 
   it("accepts an encrypted health token issued at or after a sub watermark", async () => {
+    const revocationDatabase = await getRevocationDatabase();
+    await revocationDatabase.invalidateIssuedBeforeNow("user-1");
+
     const encrypted = await encryptRefreshToken({
       sub: "user-1",
       refreshToken: "stored-refresh",
       scope: "openid",
     });
-    const verified = await decryptHealthRefreshToken(encrypted);
-    const revocationDatabase = await getRevocationDatabase();
-    await revocationDatabase.invalidateIssuedBefore(verified.sub, verified.iat);
 
     const response = await POST(
       await makeRequest({ encryptedHealthToken: encrypted }),

@@ -30,6 +30,15 @@ export function noContentResponse() {
   });
 }
 
+export function acceptedResponse() {
+  return new Response(null, {
+    status: 202,
+    headers: {
+      "Cache-Control": AUTH_CACHE_CONTROL,
+    },
+  });
+}
+
 export function errorResponse(
   status: number,
   error: string,

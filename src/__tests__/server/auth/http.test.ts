@@ -6,6 +6,7 @@ import {
   TokenValidationError,
 } from "@/server/auth/errors";
 import {
+  acceptedResponse,
   badRequestResponse,
   forbiddenResponse,
   getHTTPErrorResponse,
@@ -32,6 +33,13 @@ describe("auth HTTP helpers", () => {
     const response = noContentResponse();
 
     expect(response.status).toBe(204);
+    expect(response.headers.get("Cache-Control")).toBe(AUTH_CACHE_CONTROL);
+  });
+
+  it("sets Cache-Control on accepted responses", () => {
+    const response = acceptedResponse();
+
+    expect(response.status).toBe(202);
     expect(response.headers.get("Cache-Control")).toBe(AUTH_CACHE_CONTROL);
   });
 

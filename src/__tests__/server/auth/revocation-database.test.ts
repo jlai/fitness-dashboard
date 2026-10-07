@@ -51,14 +51,14 @@ describe("MemoryRevocationDatabase", () => {
     await expect(db.isRevoked(token({ jti: "jti-1" }))).resolves.toBe(false);
   });
 
-  it("invalidates tokens issued before a cutoff for a sub", async () => {
+  it("invalidates tokens issued before now for a sub", async () => {
     jest.useFakeTimers();
     jest.setSystemTime(new Date("2026-01-01T00:00:00Z"));
 
     const db = new MemoryRevocationDatabase();
     const cutoff = Math.floor(Date.now() / 1000);
 
-    await db.invalidateIssuedBefore("user-1", cutoff);
+    await db.invalidateIssuedBeforeNow("user-1");
 
     await expect(
       db.isRevoked(token({ sub: "user-1", iat: cutoff - 1 })),
@@ -71,16 +71,19 @@ describe("MemoryRevocationDatabase", () => {
     ).resolves.toBe(false);
   });
 
-  it("keeps the maximum issued-before cutoff", async () => {
+  it("overwrites the previous issued-before watermark", async () => {
     jest.useFakeTimers();
     jest.setSystemTime(new Date("2026-01-01T00:00:00Z"));
 
     const db = new MemoryRevocationDatabase();
-    const earlier = Math.floor(Date.now() / 1000) - 30;
+    const earlier = Math.floor(Date.now() / 1000);
+
+    await db.invalidateIssuedBeforeNow("user-1");
+
+    jest.setSystemTime(new Date("2026-01-01T00:00:30Z"));
     const later = Math.floor(Date.now() / 1000);
 
-    await db.invalidateIssuedBefore("user-1", later);
-    await db.invalidateIssuedBefore("user-1", earlier);
+    await db.invalidateIssuedBeforeNow("user-1");
 
     await expect(
       db.isRevoked(token({ sub: "user-1", iat: later - 1 })),
@@ -88,6 +91,9 @@ describe("MemoryRevocationDatabase", () => {
     await expect(
       db.isRevoked(token({ sub: "user-1", iat: later })),
     ).resolves.toBe(false);
+    await expect(
+      db.isRevoked(token({ sub: "user-1", iat: earlier })),
+    ).resolves.toBe(true);
   });
 
   it("drops an expired issued-before watermark", async () => {
@@ -97,30 +103,13 @@ describe("MemoryRevocationDatabase", () => {
     const db = new MemoryRevocationDatabase();
     const cutoff = Math.floor(Date.now() / 1000);
 
-    await db.invalidateIssuedBefore("user-1", cutoff);
+    await db.invalidateIssuedBeforeNow("user-1");
 
     jest.setSystemTime(
       new Date(
         (cutoff + ENCRYPTED_REFRESH_TOKEN_EXPIRATION_SECONDS + 1) * 1000,
       ),
     );
-
-    await expect(
-      db.isRevoked(token({ sub: "user-1", iat: cutoff - 1 })),
-    ).resolves.toBe(false);
-  });
-
-  it("does not store an already-expired issued-before watermark", async () => {
-    jest.useFakeTimers();
-    jest.setSystemTime(new Date("2026-01-01T00:00:00Z"));
-
-    const db = new MemoryRevocationDatabase();
-    const cutoff =
-      Math.floor(Date.now() / 1000) -
-      ENCRYPTED_REFRESH_TOKEN_EXPIRATION_SECONDS -
-      1;
-
-    await db.invalidateIssuedBefore("user-1", cutoff);
 
     await expect(
       db.isRevoked(token({ sub: "user-1", iat: cutoff - 1 })),
@@ -177,7 +166,7 @@ describe("CloudflareKVRevocationDatabase (Miniflare)", () => {
     const db = new CloudflareKVRevocationDatabase(kv);
     const cutoff = Math.floor(Date.now() / 1000);
 
-    await db.invalidateIssuedBefore("user-1", cutoff);
+    await db.invalidateIssuedBeforeNow("user-1");
 
     await expect(kv.get("before:user-1")).resolves.toBe(String(cutoff));
     await expect(
@@ -188,37 +177,15 @@ describe("CloudflareKVRevocationDatabase (Miniflare)", () => {
     ).resolves.toBe(false);
   });
 
-  it("keeps the maximum issued-before cutoff in KV", async () => {
-    const earlier = Math.floor(Date.now() / 1000) - 30;
-    const later = Math.floor(Date.now() / 1000);
+  it("writes the current timestamp without reading an existing watermark", async () => {
     const kv = await authMf.getKv();
     const db = new CloudflareKVRevocationDatabase(kv);
 
-    await db.invalidateIssuedBefore("user-1", later);
-    await db.invalidateIssuedBefore("user-1", earlier);
+    await kv.put("before:user-1", "1");
+    await db.invalidateIssuedBeforeNow("user-1");
 
-    await expect(kv.get("before:user-1")).resolves.toBe(String(later));
-    await expect(
-      db.isRevoked(token({ sub: "user-1", iat: later - 1 })),
-    ).resolves.toBe(true);
-    await expect(
-      db.isRevoked(token({ sub: "user-1", iat: later })),
-    ).resolves.toBe(false);
-  });
-
-  it("does not store an already-expired issued-before watermark", async () => {
-    const kv = await authMf.getKv();
-    const db = new CloudflareKVRevocationDatabase(kv);
-    const cutoff =
-      Math.floor(Date.now() / 1000) -
-      ENCRYPTED_REFRESH_TOKEN_EXPIRATION_SECONDS -
-      1;
-
-    await db.invalidateIssuedBefore("user-1", cutoff);
-
-    await expect(kv.get("before:user-1")).resolves.toBeNull();
-    await expect(
-      db.isRevoked(token({ sub: "user-1", iat: cutoff - 1 })),
-    ).resolves.toBe(false);
+    const stored = await kv.get("before:user-1");
+    expect(stored).toBe(String(Math.floor(Date.now() / 1000)));
+    expect(stored).not.toBe("1");
   });
 });
