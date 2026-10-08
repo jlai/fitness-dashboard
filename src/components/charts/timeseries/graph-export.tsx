@@ -92,7 +92,7 @@ export function useSaveAsCSV(resource: ChartResource, range: DayjsRange) {
 
   const saveAsCSV = useCallback(() => {
     if (!exportData) {
-      console.log("no data to save", exportData);
+      console.log("no data to save");
       return;
     }
 

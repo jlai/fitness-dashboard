@@ -623,8 +623,8 @@ export function useGoogleLoginAndAuthorization({
             client_id: GOOGLE_OAUTH_CLIENT_ID,
             scope: REQUESTED_SCOPES.join(" "),
             ux_mode: "popup",
-            // redirect_uri: window.location.origin,
             hint,
+            // Exclude previously granted scopes to prevent mixed scope sets (e.g. Drive) which Google Health rejects
             include_granted_scopes: false,
             select_account: selectAccount,
             callback: (codeResponse) => {
@@ -730,7 +730,6 @@ export function useGoogleDriveAuthorization({
             client_id: GOOGLE_OAUTH_CLIENT_ID,
             scope: REQUESTED_DRIVE_SCOPES.join(" "),
             ux_mode: "popup",
-            redirect_uri: window.location.origin,
             hint,
             include_granted_scopes: false,
             select_account: selectAccount,
