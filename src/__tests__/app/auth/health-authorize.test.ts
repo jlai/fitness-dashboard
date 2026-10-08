@@ -147,7 +147,7 @@ describe("POST /auth/health/authorize", () => {
     expect(response.status).toBe(401);
     await expect(response.json()).resolves.toEqual({
       error: "unauthorized",
-      errorDescription: "authorization code user does not match session",
+      errorDescription: "invalid token",
     });
   });
 });

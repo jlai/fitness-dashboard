@@ -63,7 +63,7 @@ describe("auth HTTP helpers", () => {
       ).json(),
     ).resolves.toEqual({
       error: "unauthorized",
-      errorDescription: "encrypted token has expired",
+      errorDescription: "invalid token",
     });
     expect(
       getHTTPErrorResponse(new TokenValidationError("invalid encrypted token"))

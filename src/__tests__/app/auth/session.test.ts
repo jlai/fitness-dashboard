@@ -159,7 +159,7 @@ describe("POST /auth/session", () => {
     expect(response.status).toBe(401);
     await expect(response.json()).resolves.toEqual({
       error: "unauthorized",
-      errorDescription: "invalid idToken",
+      errorDescription: "invalid token",
     });
   });
 
@@ -229,7 +229,7 @@ describe("POST /auth/session/logout", () => {
     expect(revoked.status).toBe(401);
     await expect(revoked.json()).resolves.toEqual({
       error: "unauthorized",
-      errorDescription: "session token has been revoked",
+      errorDescription: "invalid token",
     });
   });
 
@@ -284,7 +284,7 @@ describe("POST /auth/session/logout", () => {
     expect(accessResponse.status).toBe(401);
     await expect(accessResponse.json()).resolves.toEqual({
       error: "unauthorized",
-      errorDescription: "session token has been revoked",
+      errorDescription: "invalid token",
     });
   });
 
@@ -305,7 +305,7 @@ describe("POST /auth/session/logout", () => {
     expect(response.status).toBe(401);
     await expect(response.json()).resolves.toEqual({
       error: "unauthorized",
-      errorDescription: "session does not match encrypted token",
+      errorDescription: "invalid token",
     });
     expect(revokeGoogleTokenMock).not.toHaveBeenCalled();
 
@@ -354,7 +354,7 @@ describe("POST /auth/session/logout", () => {
     expect(response.status).toBe(401);
     await expect(response.json()).resolves.toEqual({
       error: "unauthorized",
-      errorDescription: "missing session token",
+      errorDescription: "invalid token",
     });
   });
 
@@ -469,6 +469,124 @@ describe("POST /auth/session/logout", () => {
     expect(olderRevoked.status).toBe(401);
 
     jest.useRealTimers();
+  });
+
+  it("with unlink does not call Google revoke when the session is missing", async () => {
+    const encryptedHealth = await encryptRefreshToken({
+      sub: "user-1",
+      refreshToken: "health-refresh",
+    });
+    const encryptedDrive = await encryptDriveRefreshToken({
+      sub: "user-1",
+      refreshToken: "drive-refresh",
+      scope: "https://www.googleapis.com/auth/drive.appdata",
+    });
+
+    const response = await POST_LOGOUT(
+      logoutRequest({
+        body: {
+          encryptedHealthToken: encryptedHealth,
+          encryptedDriveToken: encryptedDrive,
+          unlink: true,
+        },
+      }),
+    );
+
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toEqual({
+      error: "unauthorized",
+      errorDescription: "invalid token",
+    });
+    expect(revokeGoogleTokenMock).not.toHaveBeenCalled();
+  });
+
+  it("with unlink does not call Google revoke when the session token is invalid", async () => {
+    const encryptedHealth = await encryptRefreshToken({
+      sub: "user-1",
+      refreshToken: "health-refresh",
+    });
+
+    const response = await POST_LOGOUT(
+      logoutRequest({
+        sessionToken: "not-a-valid-session",
+        body: { encryptedHealthToken: encryptedHealth, unlink: true },
+      }),
+    );
+
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toEqual({
+      error: "unauthorized",
+      errorDescription: "invalid token",
+    });
+    expect(revokeGoogleTokenMock).not.toHaveBeenCalled();
+  });
+
+  it("with unlink does not call Google revoke when the session was already revoked", async () => {
+    const sessionToken = await signSessionToken({ sub: "user-1" });
+    const encryptedHealth = await encryptRefreshToken({
+      sub: "user-1",
+      refreshToken: "health-refresh",
+    });
+
+    const first = await POST_LOGOUT(logoutRequest({ sessionToken }));
+    expect(first.status).toBe(204);
+
+    const response = await POST_LOGOUT(
+      logoutRequest({
+        sessionToken,
+        body: { encryptedHealthToken: encryptedHealth, unlink: true },
+      }),
+    );
+
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toEqual({
+      error: "unauthorized",
+      errorDescription: "invalid token",
+    });
+    expect(revokeGoogleTokenMock).not.toHaveBeenCalled();
+  });
+
+  it("with unlink does not call Google revoke when encrypted tokens are invalid", async () => {
+    const sessionToken = await signSessionToken({ sub: "user-1" });
+    const response = await POST_LOGOUT(
+      logoutRequest({
+        sessionToken,
+        body: {
+          encryptedHealthToken: "not-a-jwt",
+          encryptedDriveToken: "also-not-a-jwt",
+          unlink: true,
+        },
+      }),
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      error: "token_revoke_failed",
+      errorDescription: "some tokens could not be revoked",
+    });
+    expect(revokeGoogleTokenMock).not.toHaveBeenCalled();
+  });
+
+  it("with unlink does not call Google revoke when the session user mismatches the token", async () => {
+    const sessionToken = await signSessionToken({ sub: "user-2" });
+    const encryptedHealth = await encryptRefreshToken({
+      sub: "user-1",
+      refreshToken: "health-refresh",
+    });
+
+    const response = await POST_LOGOUT(
+      logoutRequest({
+        sessionToken,
+        body: { encryptedHealthToken: encryptedHealth, unlink: true },
+      }),
+    );
+
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toEqual({
+      error: "unauthorized",
+      errorDescription: "invalid token",
+    });
+    expect(revokeGoogleTokenMock).not.toHaveBeenCalled();
   });
 
   it("returns an error when unlink Google revoke fails", async () => {
@@ -595,7 +713,7 @@ describe("GET /auth/session", () => {
     expect(response.status).toBe(401);
     await expect(response.json()).resolves.toEqual({
       error: "unauthorized",
-      errorDescription: "missing session token",
+      errorDescription: "invalid token",
     });
   });
 

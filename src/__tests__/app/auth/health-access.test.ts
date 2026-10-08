@@ -135,7 +135,7 @@ describe("POST /auth/health/access", () => {
     expect(response.status).toBe(401);
     await expect(response.json()).resolves.toEqual({
       error: "unauthorized",
-      errorDescription: "encrypted token has expired",
+      errorDescription: "invalid token",
     });
     expect(refreshAccessTokenMock).not.toHaveBeenCalled();
   });
@@ -147,7 +147,7 @@ describe("POST /auth/health/access", () => {
     expect(response.status).toBe(401);
     await expect(response.json()).resolves.toEqual({
       error: "unauthorized",
-      errorDescription: "session does not match encrypted token",
+      errorDescription: "invalid token",
     });
     expect(refreshAccessTokenMock).not.toHaveBeenCalled();
   });
@@ -216,7 +216,7 @@ describe("POST /auth/health/access", () => {
     expect(response.status).toBe(401);
     await expect(response.json()).resolves.toEqual({
       error: "unauthorized",
-      errorDescription: "encrypted token has been revoked",
+      errorDescription: "invalid token",
     });
     expect(refreshAccessTokenMock).not.toHaveBeenCalled();
   });
@@ -247,7 +247,7 @@ describe("POST /auth/health/access", () => {
     expect(response.status).toBe(401);
     await expect(response.json()).resolves.toEqual({
       error: "unauthorized",
-      errorDescription: "encrypted token has been revoked",
+      errorDescription: "invalid token",
     });
     expect(refreshAccessTokenMock).not.toHaveBeenCalled();
   });

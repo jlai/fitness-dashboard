@@ -103,7 +103,7 @@ export function getHTTPErrorResponse(
   }
 
   if (error instanceof TokenValidationError) {
-    return unauthorizedResponse(error.message);
+    return unauthorizedResponse("invalid token");
   }
 
   if (error instanceof TokenEndpointError) {

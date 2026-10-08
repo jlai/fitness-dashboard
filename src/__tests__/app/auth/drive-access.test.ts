@@ -118,7 +118,7 @@ describe("POST /auth/drive/access", () => {
     expect(response.status).toBe(401);
     await expect(response.json()).resolves.toEqual({
       error: "unauthorized",
-      errorDescription: "encrypted token has expired",
+      errorDescription: "invalid token",
     });
     jest.useRealTimers();
   });
@@ -142,7 +142,7 @@ describe("POST /auth/drive/access", () => {
     expect(response.status).toBe(401);
     await expect(response.json()).resolves.toEqual({
       error: "unauthorized",
-      errorDescription: "encrypted token has been revoked",
+      errorDescription: "invalid token",
     });
   });
 });

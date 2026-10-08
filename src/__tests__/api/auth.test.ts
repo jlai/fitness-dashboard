@@ -687,15 +687,13 @@ describe("forceTokenRefresh", () => {
       new Response(
         JSON.stringify({
           error: "unauthorized",
-          errorDescription: "encrypted token has expired",
+          errorDescription: "invalid token",
         }),
         { status: 401, headers: { "Content-Type": "application/json" } },
       ),
     );
 
-    await expect(forceTokenRefresh()).rejects.toThrow(
-      "encrypted token has expired",
-    );
+    await expect(forceTokenRefresh()).rejects.toThrow("invalid token");
 
     expect(localStorage.getItem(ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY)).toBeNull();
     expect(isLoggedIn()).toBe(false);
@@ -707,15 +705,13 @@ describe("forceTokenRefresh", () => {
       new Response(
         JSON.stringify({
           error: "forbidden",
-          errorDescription: "session does not match encrypted token",
+          errorDescription: "invalid token",
         }),
         { status: 403, headers: { "Content-Type": "application/json" } },
       ),
     );
 
-    await expect(forceTokenRefresh()).rejects.toThrow(
-      "session does not match encrypted token",
-    );
+    await expect(forceTokenRefresh()).rejects.toThrow("invalid token");
 
     expect(localStorage.getItem(ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY)).toBeNull();
     expect(isLoggedIn()).toBe(false);

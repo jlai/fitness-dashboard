@@ -124,7 +124,7 @@ describe("POST /auth/drive/logout", () => {
     expect(accessResponse.status).toBe(401);
     await expect(accessResponse.json()).resolves.toEqual({
       error: "unauthorized",
-      errorDescription: "encrypted token has been revoked",
+      errorDescription: "invalid token",
     });
     expect(refreshAccessTokenMock).not.toHaveBeenCalled();
   });
@@ -146,7 +146,7 @@ describe("POST /auth/drive/logout", () => {
     expect(response.status).toBe(401);
     await expect(response.json()).resolves.toEqual({
       error: "unauthorized",
-      errorDescription: "session does not match encrypted token",
+      errorDescription: "invalid token",
     });
     expect(revokeGoogleTokenMock).not.toHaveBeenCalled();
   });
