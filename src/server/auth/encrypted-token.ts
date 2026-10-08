@@ -5,11 +5,7 @@ import {
   ENCRYPTED_HEALTH_TOKEN_EXPIRATION_SECONDS,
 } from "@/config/encrypted-token";
 
-import {
-  InternalAuthError,
-  TokenEndpointError,
-  TokenValidationError,
-} from "./errors";
+import { GoogleTokenEndpointError, TokenValidationError } from "./errors";
 import { getDriveSecretStore, getHealthSecretStore } from "./get-secret-store";
 import { revokeGoogleToken } from "./google-oauth-token";
 import { getRevocationDatabase } from "./revocation-database";
@@ -243,30 +239,20 @@ export async function denylistStoredToken(verified: DecryptedRefreshToken) {
 
 export async function revokeGoogleRefreshToken(
   refreshToken: string,
-  internalErrorMessage: string,
 ): Promise<void> {
-  try {
-    const { status } = await revokeGoogleToken(refreshToken);
+  const { status } = await revokeGoogleToken(refreshToken);
 
-    if (status !== 200) {
-      throw new TokenEndpointError(
-        "token_revoke_failed",
-        "refresh token revocation failed",
-      );
-    }
-  } catch (error) {
-    if (error instanceof TokenEndpointError) {
-      throw error;
-    }
-
-    throw new InternalAuthError(internalErrorMessage);
+  if (status !== 200) {
+    throw new GoogleTokenEndpointError(
+      "token_revoke_failed",
+      "refresh token revocation failed",
+    );
   }
 }
 
 export async function revokeAndDenylistStoredToken(
   verified: DecryptedRefreshToken,
-  internalErrorMessage: string,
 ): Promise<void> {
   await denylistStoredToken(verified);
-  await revokeGoogleRefreshToken(verified.refreshToken, internalErrorMessage);
+  await revokeGoogleRefreshToken(verified.refreshToken);
 }

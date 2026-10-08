@@ -47,7 +47,6 @@ async function revokeEncryptedToken(options: {
     sessionSub: string,
   ) => Promise<DecryptedRefreshToken>;
   unlink: boolean;
-  revokeErrorMessage: string;
 }): Promise<void> {
   const verified = await options.decrypt(options.encrypted, options.sessionSub);
 
@@ -57,10 +56,7 @@ async function revokeEncryptedToken(options: {
     return;
   }
 
-  await revokeGoogleRefreshToken(
-    verified.refreshToken,
-    options.revokeErrorMessage,
-  );
+  await revokeGoogleRefreshToken(verified.refreshToken);
 }
 
 /**
@@ -90,7 +86,6 @@ export async function POST(request: Request) {
           sessionSub: session.sub,
           decrypt: decryptHealthTokenForSession,
           unlink,
-          revokeErrorMessage: "error revoking health token",
         });
       }
     } catch (error) {
@@ -104,7 +99,6 @@ export async function POST(request: Request) {
           sessionSub: session.sub,
           decrypt: decryptDriveTokenForSession,
           unlink,
-          revokeErrorMessage: "error revoking drive token",
         });
       }
     } catch (error) {

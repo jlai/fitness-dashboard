@@ -23,20 +23,12 @@ export class FetchHeaderError extends Error {
 }
 
 /** Google token endpoint or revoke call returned a failure payload. */
-export class TokenEndpointError extends Error {
+export class GoogleTokenEndpointError extends Error {
   readonly code: string;
 
   constructor(code: string, message: string) {
     super(message);
-    this.name = "TokenEndpointError";
+    this.name = "GoogleTokenEndpointError";
     this.code = code;
-  }
-}
-
-/** Unexpected failure while talking to Google or encrypting a token. */
-export class InternalAuthError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "InternalAuthError";
   }
 }

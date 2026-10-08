@@ -1,8 +1,7 @@
 import {
-  InternalAuthError,
   RequestValidationError,
   FetchHeaderError,
-  TokenEndpointError,
+  GoogleTokenEndpointError,
   TokenValidationError,
 } from "@/server/auth/errors";
 import {
@@ -81,7 +80,7 @@ describe("auth HTTP helpers", () => {
     ).toBe(400);
     await expect(
       getHTTPErrorResponse(
-        new TokenEndpointError(
+        new GoogleTokenEndpointError(
           "token_refresh_failed",
           "refresh token exchange failed",
         ),
@@ -90,10 +89,6 @@ describe("auth HTTP helpers", () => {
       error: "token_refresh_failed",
       errorDescription: "refresh token exchange failed",
     });
-    expect(
-      getHTTPErrorResponse(new InternalAuthError("error revoking drive token"))
-        .status,
-    ).toBe(500);
     expect(getHTTPErrorResponse(new Error("boom"), "fallback").status).toBe(
       500,
     );

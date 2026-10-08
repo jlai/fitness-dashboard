@@ -30,7 +30,7 @@ export async function POST(request: Request) {
       session.sub,
     );
 
-    await revokeAndDenylistStoredToken(verified, "error revoking drive token");
+    await revokeAndDenylistStoredToken(verified);
 
     return noContentResponse();
   } catch (error) {

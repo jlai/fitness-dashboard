@@ -1,10 +1,9 @@
 import type { z } from "zod";
 
 import {
-  InternalAuthError,
   RequestValidationError,
   FetchHeaderError,
-  TokenEndpointError,
+  GoogleTokenEndpointError,
   TokenValidationError,
 } from "./errors";
 
@@ -95,29 +94,15 @@ export function getHTTPErrorResponse(
   fallbackInternalMessage = "internal error",
 ): Response {
   if (error instanceof FetchHeaderError) {
-    return forbiddenResponse(error.message);
+    return forbiddenResponse("forbidden");
   }
 
   if (error instanceof RequestValidationError) {
-    return badRequestResponse(error.message);
+    return badRequestResponse("invalid request");
   }
 
   if (error instanceof TokenValidationError) {
     return unauthorizedResponse("invalid token");
-  }
-
-  if (error instanceof TokenEndpointError) {
-    return jsonResponse(
-      {
-        error: error.code,
-        errorDescription: error.message,
-      },
-      400,
-    );
-  }
-
-  if (error instanceof InternalAuthError) {
-    return internalErrorResponse(error.message);
   }
 
   return internalErrorResponse(fallbackInternalMessage);

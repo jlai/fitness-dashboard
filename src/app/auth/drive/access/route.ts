@@ -3,7 +3,7 @@ import {
   encryptDriveRefreshToken,
   isValidEncryptedToken,
 } from "@/server/auth/encrypted-token";
-import { InternalAuthError, TokenEndpointError } from "@/server/auth/errors";
+import { GoogleTokenEndpointError } from "@/server/auth/errors";
 import { refreshAccessToken } from "@/server/auth/google-oauth-token";
 import {
   getHTTPErrorResponse,
@@ -30,17 +30,10 @@ export async function POST(request: Request) {
       decrypt: decryptDriveRefreshToken,
     });
 
-    let status;
-    let payload;
-
-    try {
-      ({ status, payload } = await refreshAccessToken(verified.refreshToken));
-    } catch {
-      throw new InternalAuthError("error refreshing drive access token");
-    }
+    const { status, payload } = await refreshAccessToken(verified.refreshToken);
 
     if (status !== 200 || payload.error || !payload.access_token) {
-      throw new TokenEndpointError(
+      throw new GoogleTokenEndpointError(
         "token_refresh_failed",
         "refresh token exchange failed",
       );

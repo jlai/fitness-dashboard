@@ -1,9 +1,8 @@
 import { encryptDriveRefreshToken } from "@/server/auth/encrypted-token";
 import { getConfiguredRedirectUri } from "@/server/auth/env";
 import {
-  InternalAuthError,
   RequestValidationError,
-  TokenEndpointError,
+  GoogleTokenEndpointError,
   TokenValidationError,
 } from "@/server/auth/errors";
 import { verifyGoogleIdToken } from "@/server/auth/google-id-token";
@@ -25,22 +24,13 @@ export async function POST(request: Request) {
     const session = await isValidSession(request);
     const { code } = await readJsonBody(request, authorizeBodySchema);
 
-    let status;
-    let payload;
-
-    try {
-      ({ status, payload } = await exchangeAuthorizationCode({
-        code,
-        redirectUri: getConfiguredRedirectUri(),
-      }));
-    } catch {
-      throw new InternalAuthError(
-        "error exchanging authorization code for drive token",
-      );
-    }
+    const { status, payload } = await exchangeAuthorizationCode({
+      code,
+      redirectUri: getConfiguredRedirectUri(),
+    });
 
     if (status !== 200 || payload.error || !payload.access_token) {
-      throw new TokenEndpointError(
+      throw new GoogleTokenEndpointError(
         payload.error ?? "token_exchange_failed",
         payload.error_description ?? "authorization code exchange failed",
       );
