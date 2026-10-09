@@ -6,6 +6,7 @@ import { atomWithStorage } from "jotai/utils";
 import { ANALYTICS_PING_URL } from "@/config";
 import { formatAsDate } from "@/api/datetime";
 import { isLoggedIn } from "@/api/auth";
+import { logError } from "@/utils/log-error";
 
 dayjs.extend(isoWeekPlugin);
 
@@ -85,7 +86,7 @@ export const analyticsPingEffect = atomEffect((get, set) => {
         set(weeksActiveAtom, weeksActive + 1);
       },
       () => {
-        console.error("failed to send analytics ping");
+        logError("failed to send analytics ping");
       },
     );
   }

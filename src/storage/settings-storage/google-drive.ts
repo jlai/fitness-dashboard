@@ -9,6 +9,7 @@ import {
   listAppDataFiles,
   updateAppDataFile,
 } from "@/api/google-drive";
+import { logError } from "@/utils/log-error";
 
 import {
   assertValidSettingsKey,
@@ -38,7 +39,10 @@ export class GoogleDriveSettingsStorage implements SettingsStorage {
   private fileIndex: Map<string, string> | null = null;
   private fileIndexPromise: Promise<Map<string, string>> | null = null;
   private readonly dirtyKeys = new Set<string>();
-  private readonly debouncers = new Map<string, DebouncedFunction<() => void>>();
+  private readonly debouncers = new Map<
+    string,
+    DebouncedFunction<() => void>
+  >();
   private readonly inflightPersists = new Map<string, Promise<void>>();
   /** Bumped to abandon in-flight / scheduled persists (e.g. on disable). */
   private writeGeneration = 0;
@@ -48,9 +52,7 @@ export class GoogleDriveSettingsStorage implements SettingsStorage {
 
     const cached = this.cache.get(key);
     if (cached) {
-      return cached.kind === "present"
-        ? (cached.value as StoredData<T>)
-        : null;
+      return cached.kind === "present" ? (cached.value as StoredData<T>) : null;
     }
 
     const fileId = await this.lookupFileId(settingsKeyToFileName(key));
@@ -69,11 +71,7 @@ export class GoogleDriveSettingsStorage implements SettingsStorage {
     return parsed;
   }
 
-  async set<T>(
-    key: string,
-    data: T,
-    version?: number,
-  ): Promise<StoredData<T>> {
+  async set<T>(key: string, data: T, version?: number): Promise<StoredData<T>> {
     assertValidSettingsKey(key);
 
     const existing = await this.getExistingForVersion(key);
@@ -107,8 +105,7 @@ export class GoogleDriveSettingsStorage implements SettingsStorage {
     }
 
     const cached = this.cache.get(key);
-    let fileId =
-      cached?.kind === "present" ? cached.fileId : undefined;
+    let fileId = cached?.kind === "present" ? cached.fileId : undefined;
 
     const fileName = settingsKeyToFileName(key);
     if (!fileId && cached?.kind !== "missing") {
@@ -268,11 +265,8 @@ export class GoogleDriveSettingsStorage implements SettingsStorage {
         this.setIndexEntry(fileName, fileId);
       }
     } catch (error) {
-      console.error(`Failed to persist settings key "${key}" to Drive`, error);
-      if (
-        generation === this.writeGeneration &&
-        !this.dirtyKeys.has(key)
-      ) {
+      logError(`Failed to persist settings key "${key}" to Drive`, error);
+      if (generation === this.writeGeneration && !this.dirtyKeys.has(key)) {
         const latest = this.cache.get(key);
         if (latest?.kind === "present") {
           this.dirtyKeys.add(key);

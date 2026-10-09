@@ -5,6 +5,8 @@ import { toast } from "mui-sonner";
 
 import { GoogleOneTap } from "@/components/login/google-identity";
 
+import { logError } from "@/utils/log-error";
+
 import { createSession, useOpenIdSignedIn } from "./auth";
 import { setGoogleIdTokenCallback } from "./google-identity";
 
@@ -20,7 +22,7 @@ export function GoogleOpenIdAutomaticSignIn() {
       }
 
       void createSession(response.credential).catch((error) => {
-        console.error("error creating session", error);
+        logError("error creating session", error);
         toast.error("Unable to reach Google to sign in");
       });
     });

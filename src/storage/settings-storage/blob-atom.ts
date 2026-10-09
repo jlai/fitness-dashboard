@@ -4,12 +4,10 @@ import { atom, type WritableAtom } from "jotai";
 import { RESET } from "jotai/utils";
 import type { ZodType } from "zod";
 
+import { logError } from "@/utils/log-error";
+
 import { settingsStorageAtom, settingsStorageEpochAtom } from "./backend";
-import {
-  wrapStoredData,
-  type SettingsStorage,
-  type StoredData,
-} from "./types";
+import { wrapStoredData, type SettingsStorage, type StoredData } from "./types";
 
 type DefaultData<T> = T | (() => T);
 
@@ -41,7 +39,7 @@ function validateOrDefault<TData>(
 
   const parsed = schema.safeParse(stored);
   if (!parsed.success) {
-    console.error(`Invalid settings data for key "${key}"`, parsed.error);
+    logError(`Invalid settings data for key "${key}"`, parsed.error);
     return resolveDefault(defaultData);
   }
 
@@ -95,9 +93,7 @@ export function createSettingsBlobAtom<TData>(opts: {
   const version = opts.version ?? 1;
   const cacheAtom = atom<CacheEntry<TData> | null>(null);
 
-  const loadFromStorage = (
-    storage: SettingsStorage,
-  ): Promise<TData> =>
+  const loadFromStorage = (storage: SettingsStorage): Promise<TData> =>
     dedupedLoad(storage, opts.key, async () => {
       try {
         const stored = await storage.get(opts.key);
@@ -108,7 +104,7 @@ export function createSettingsBlobAtom<TData>(opts: {
           opts.key,
         );
       } catch (error) {
-        console.error(`Failed to load settings key "${opts.key}"`, error);
+        logError(`Failed to load settings key "${opts.key}"`, error);
         return resolveDefault(opts.defaultData);
       }
     });

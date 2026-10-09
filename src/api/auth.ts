@@ -6,6 +6,7 @@ import { atomEffect } from "jotai-effect";
 import { toast } from "mui-sonner";
 
 import { singleAsync } from "@/utils/async";
+import { logError } from "@/utils/log-error";
 import { GOOGLE_OAUTH_CLIENT_ID, withBasePath } from "@/config";
 import { REQUESTED_DRIVE_SCOPES } from "@/config/google-drive-scopes";
 import { REQUESTED_SCOPES } from "@/config/google-health-scopes";
@@ -312,7 +313,7 @@ export async function persistAuthTokens() {
         forceSignOut();
       }
     } catch (error) {
-      console.error("error extending session", error);
+      logError("error extending session", error);
     }
   }
 
@@ -576,7 +577,7 @@ export function useGoogleLoginAndAuthorization({
       pendingRef.current = null;
 
       if (!silent) {
-        console.error("error starting login flow", error);
+        logError("error starting login flow", error);
         toast.error("Unable to reach Google to sign in");
       }
 
@@ -683,7 +684,7 @@ export function useGoogleDriveAuthorization({
       pendingRef.current = null;
 
       if (!silent) {
-        console.error("error starting drive authorization flow", error);
+        logError("error starting drive authorization flow", error);
         toast.error("Unable to reach Google to authorize Drive");
       }
 
@@ -817,7 +818,7 @@ export async function logoutDrive() {
       });
     }
   } catch (e) {
-    console.error("error disconnecting google drive", e);
+    logError("error disconnecting google drive", e);
   } finally {
     clearEncryptedDriveAuth();
   }
@@ -856,7 +857,7 @@ async function postSessionLogout({
       body: JSON.stringify(body),
     });
   } catch (e) {
-    console.error("error logging out", e);
+    logError("error logging out", e);
   }
 }
 
@@ -921,7 +922,7 @@ export const getFreshAccessToken = singleAsync(async () => {
   try {
     return await requestAccessToken();
   } catch (e) {
-    console.error("error while refreshing token", e);
+    logError("error while refreshing token", e);
     currentHealthAccessToken = null;
     throw e;
   }
@@ -945,7 +946,7 @@ export const getFreshDriveAccessToken = singleAsync(async () => {
   try {
     return await requestDriveAccessToken();
   } catch (e) {
-    console.error("error while refreshing drive token", e);
+    logError("error while refreshing drive token", e);
     currentDriveAccessToken = null;
     throw e;
   }
@@ -963,7 +964,7 @@ export async function restoreAccessToken() {
   try {
     await getFreshAccessToken();
   } catch (error) {
-    console.error("error restoring access token", error);
+    logError("error restoring access token", error);
   }
 }
 
@@ -979,7 +980,7 @@ export async function restoreDriveAccessToken() {
   try {
     await getFreshDriveAccessToken();
   } catch (error) {
-    console.error("error restoring drive access token", error);
+    logError("error restoring drive access token", error);
   }
 }
 

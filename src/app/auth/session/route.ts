@@ -21,6 +21,7 @@ import {
   sessionCookieMaxAgeSeconds,
 } from "@/server/auth/session-cookie";
 import { signSessionToken } from "@/server/auth/session-token";
+import { logError } from "@/utils/log-error";
 
 /**
  * Return the current session subject and expiry from the session cookie.
@@ -49,9 +50,7 @@ export async function POST(request: Request) {
     try {
       claims = await verifyGoogleIdToken(idToken);
     } catch {
-      console.error({
-        message: "error verifying google id token",
-      });
+      logError("error verifying google id token");
       throw new TokenValidationError("invalid idToken");
     }
 

@@ -11,6 +11,7 @@ import React, {
 
 import { ensureGsiScript, initializeGoogleId } from "@/api/google-identity";
 import { hasPersistedEncryptedHealthToken } from "@/api/auth";
+import { logError } from "@/utils/log-error";
 
 const GoogleIdentityContext = createContext<{ ready: boolean } | null>(null);
 
@@ -59,7 +60,7 @@ export function GoogleIdentityProvider({
         }
       })
       .catch((error) => {
-        console.error("error loading Google Identity Services", error);
+        logError("error loading Google Identity Services", error);
       });
 
     return () => {
