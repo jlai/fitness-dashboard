@@ -1,6 +1,6 @@
 import { errors, jwtVerify, SignJWT } from "jose";
 
-import { getSiteTokenDefaultExpirationSeconds } from "./env";
+import { getSessionTokenExpirationSeconds } from "./env";
 import { TokenValidationError } from "./errors";
 import { getSessionSecretStore } from "./get-secret-store";
 
@@ -20,7 +20,7 @@ export async function signSessionToken(params: {
   jti?: string;
 }) {
   const iat = params.iat ?? Math.floor(Date.now() / 1000);
-  const exp = params.exp ?? iat + getSiteTokenDefaultExpirationSeconds();
+  const exp = params.exp ?? iat + getSessionTokenExpirationSeconds();
   const jti = params.jti ?? crypto.randomUUID();
 
   const tokenKey = await getSessionSecretStore().getActiveKey();

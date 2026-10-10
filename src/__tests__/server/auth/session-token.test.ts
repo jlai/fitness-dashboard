@@ -3,7 +3,7 @@ import { jwtDecode } from "jwt-decode";
 
 import {
   getSessionSecretStore,
-  getSiteTokenDefaultExpirationSeconds,
+  getSessionTokenExpirationSeconds,
   resetSecretStores,
 } from "@/server/auth/env";
 import {
@@ -15,10 +15,10 @@ import {
 describe("signed session token", () => {
   const originalKey = process.env.SESSION_ACTIVE_KEY;
   const originalAccepted = process.env.SESSION_ACCEPTED_KEYS;
-  const originalExpiration = process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES;
+  const originalExpiration = process.env.SESSION_TOKEN_EXPIRATION_MINUTES;
 
   beforeEach(() => {
-    delete process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES;
+    delete process.env.SESSION_TOKEN_EXPIRATION_MINUTES;
     delete process.env.SESSION_ACCEPTED_KEYS;
     resetSecretStores();
   });
@@ -26,7 +26,7 @@ describe("signed session token", () => {
   afterEach(() => {
     process.env.SESSION_ACTIVE_KEY = originalKey;
     process.env.SESSION_ACCEPTED_KEYS = originalAccepted;
-    process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES = originalExpiration;
+    process.env.SESSION_TOKEN_EXPIRATION_MINUTES = originalExpiration;
     resetSecretStores();
   });
 
@@ -71,13 +71,13 @@ describe("signed session token", () => {
     expect(first.jti).not.toBe(second.jti);
   });
 
-  it("uses SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES when set", async () => {
-    process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES = "30";
+  it("uses SESSION_TOKEN_EXPIRATION_MINUTES when set", async () => {
+    process.env.SESSION_TOKEN_EXPIRATION_MINUTES = "30";
     const jwt = await signSessionToken({ sub: "user-123" });
     const claims = jwtDecode<{ iat: number; exp: number }>(jwt);
 
     expect(claims.exp).toBe(claims.iat + 30 * 60);
-    expect(getSiteTokenDefaultExpirationSeconds()).toBe(30 * 60);
+    expect(getSessionTokenExpirationSeconds()).toBe(30 * 60);
   });
 
   it("rejects a malformed token", async () => {

@@ -10,7 +10,7 @@ import {
   getRevocationDatabase,
   resetRevocationDatabase,
 } from "@/server/auth/revocation-database";
-import { getSiteTokenDefaultExpirationSeconds } from "@/server/auth/env";
+import { getSessionTokenExpirationSeconds } from "@/server/auth/env";
 
 jest.mock("@/server/auth/google-oauth-token", () => ({
   refreshAccessToken: jest.fn(),
@@ -132,7 +132,7 @@ describe("POST /auth/drive/access", () => {
     const revocationDatabase = await getRevocationDatabase();
     await revocationDatabase.add(
       verified.jti,
-      verified.iat + getSiteTokenDefaultExpirationSeconds(),
+      verified.iat + getSessionTokenExpirationSeconds(),
     );
 
     const response = await POST(

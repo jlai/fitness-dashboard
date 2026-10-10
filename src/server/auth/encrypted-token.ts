@@ -1,10 +1,6 @@
 import { EncryptJWT, errors, jwtDecrypt } from "jose";
 
-import {
-  ENCRYPTED_DRIVE_TOKEN_EXPIRATION_SECONDS,
-  ENCRYPTED_HEALTH_TOKEN_EXPIRATION_SECONDS,
-} from "@/config/encrypted-token";
-
+import { getEncryptedRefreshTokenExpirationSeconds } from "./env";
 import { GoogleTokenEndpointError, TokenValidationError } from "./errors";
 import { getDriveSecretStore, getHealthSecretStore } from "./get-secret-store";
 import { revokeGoogleToken } from "./google-oauth-token";
@@ -29,18 +25,15 @@ const TOKEN_KIND_CONFIG: Record<
   RefreshTokenKind,
   {
     typ: string;
-    expirationSeconds: number;
     getStore: () => SecretStore;
   }
 > = {
   health: {
     typ: "refresh+jwt",
-    expirationSeconds: ENCRYPTED_HEALTH_TOKEN_EXPIRATION_SECONDS,
     getStore: getHealthSecretStore,
   },
   drive: {
     typ: "drive-refresh+jwt",
-    expirationSeconds: ENCRYPTED_DRIVE_TOKEN_EXPIRATION_SECONDS,
     getStore: getDriveSecretStore,
   },
 };
@@ -57,7 +50,7 @@ async function encryptRefreshTokenFor(
   const config = TOKEN_KIND_CONFIG[kind];
   const tokenKey = await config.getStore().getActiveKey();
   const iat = Math.floor(Date.now() / 1000);
-  const exp = iat + config.expirationSeconds;
+  const exp = iat + getEncryptedRefreshTokenExpirationSeconds();
   const jti = crypto.randomUUID();
   const jwt = new EncryptJWT({
     refresh_token: payload.refreshToken,

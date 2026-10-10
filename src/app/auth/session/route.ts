@@ -1,4 +1,4 @@
-import { getSiteTokenDefaultExpirationSeconds } from "@/server/auth/env";
+import { getSessionTokenExpirationSeconds } from "@/server/auth/env";
 import { TokenValidationError } from "@/server/auth/errors";
 import { verifyGoogleIdToken } from "@/server/auth/google-id-token";
 import {
@@ -55,7 +55,7 @@ export async function POST(request: Request) {
     }
 
     const iat = Math.floor(Date.now() / 1000);
-    const exp = iat + getSiteTokenDefaultExpirationSeconds();
+    const exp = iat + getSessionTokenExpirationSeconds();
     const sessionToken = await signSessionToken({
       sub: claims.sub,
       iat,

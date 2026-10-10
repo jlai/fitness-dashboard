@@ -79,15 +79,15 @@ function readSessionCookieValue(response: Response) {
 }
 
 describe("POST /auth/session", () => {
-  const originalExpiration = process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES;
+  const originalExpiration = process.env.SESSION_TOKEN_EXPIRATION_MINUTES;
 
   beforeEach(() => {
-    delete process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES;
+    delete process.env.SESSION_TOKEN_EXPIRATION_MINUTES;
     verifyGoogleIdTokenMock.mockResolvedValue({ sub: "user-1" });
   });
 
   afterEach(() => {
-    process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES = originalExpiration;
+    process.env.SESSION_TOKEN_EXPIRATION_MINUTES = originalExpiration;
   });
 
   it("creates a signed session JWT cookie from the Google idToken", async () => {
@@ -179,18 +179,18 @@ describe("POST /auth/session", () => {
 
 describe("POST /auth/session/logout", () => {
   const originalRevocation = process.env.SESSION_REVOCATION_DATABASE;
-  const originalExpiration = process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES;
+  const originalExpiration = process.env.SESSION_TOKEN_EXPIRATION_MINUTES;
 
   beforeEach(() => {
     process.env.SESSION_REVOCATION_DATABASE = "memory://";
-    delete process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES;
+    delete process.env.SESSION_TOKEN_EXPIRATION_MINUTES;
     resetRevocationDatabase();
     revokeGoogleTokenMock.mockResolvedValue({ status: 200 });
   });
 
   afterEach(() => {
     process.env.SESSION_REVOCATION_DATABASE = originalRevocation;
-    process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES = originalExpiration;
+    process.env.SESSION_TOKEN_EXPIRATION_MINUTES = originalExpiration;
     resetRevocationDatabase();
     jest.useRealTimers();
   });
@@ -681,17 +681,17 @@ describe("POST /auth/session/logout", () => {
 });
 
 describe("GET /auth/session", () => {
-  const originalExpiration = process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES;
+  const originalExpiration = process.env.SESSION_TOKEN_EXPIRATION_MINUTES;
   const originalRevocation = process.env.SESSION_REVOCATION_DATABASE;
 
   beforeEach(() => {
-    delete process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES;
+    delete process.env.SESSION_TOKEN_EXPIRATION_MINUTES;
     process.env.SESSION_REVOCATION_DATABASE = "memory://";
     resetRevocationDatabase();
   });
 
   afterEach(() => {
-    process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES = originalExpiration;
+    process.env.SESSION_TOKEN_EXPIRATION_MINUTES = originalExpiration;
     process.env.SESSION_REVOCATION_DATABASE = originalRevocation;
     resetRevocationDatabase();
   });
@@ -732,17 +732,17 @@ describe("GET /auth/session", () => {
 });
 
 describe("PATCH /auth/session", () => {
-  const originalExpiration = process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES;
+  const originalExpiration = process.env.SESSION_TOKEN_EXPIRATION_MINUTES;
   const originalRevocation = process.env.SESSION_REVOCATION_DATABASE;
 
   beforeEach(() => {
-    delete process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES;
+    delete process.env.SESSION_TOKEN_EXPIRATION_MINUTES;
     process.env.SESSION_REVOCATION_DATABASE = "memory://";
     resetRevocationDatabase();
   });
 
   afterEach(() => {
-    process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES = originalExpiration;
+    process.env.SESSION_TOKEN_EXPIRATION_MINUTES = originalExpiration;
     process.env.SESSION_REVOCATION_DATABASE = originalRevocation;
     resetRevocationDatabase();
     jest.useRealTimers();

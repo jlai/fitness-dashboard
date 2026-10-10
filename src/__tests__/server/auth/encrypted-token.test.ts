@@ -1,10 +1,9 @@
 import { decodeProtectedHeader } from "jose";
 
 import {
-  ENCRYPTED_DRIVE_TOKEN_EXPIRATION_SECONDS,
-  ENCRYPTED_HEALTH_TOKEN_EXPIRATION_SECONDS,
-} from "@/config/encrypted-token";
-import { resetSecretStores } from "@/server/auth/env";
+  getEncryptedRefreshTokenExpirationSeconds,
+  resetSecretStores,
+} from "@/server/auth/env";
 import {
   decryptDriveRefreshToken,
   decryptHealthRefreshToken,
@@ -15,15 +14,24 @@ import {
 describe("encrypted refresh token", () => {
   const originalKey = process.env.HEALTH_ACTIVE_KEY;
   const originalAccepted = process.env.HEALTH_ACCEPTED_KEYS;
+  const originalExpiration =
+    process.env.ENCRYPTED_REFRESH_TOKEN_EXPIRATION_MINUTES;
 
   beforeEach(() => {
     delete process.env.HEALTH_ACCEPTED_KEYS;
+    delete process.env.ENCRYPTED_REFRESH_TOKEN_EXPIRATION_MINUTES;
     resetSecretStores();
   });
 
   afterEach(() => {
     process.env.HEALTH_ACTIVE_KEY = originalKey;
     process.env.HEALTH_ACCEPTED_KEYS = originalAccepted;
+    if (originalExpiration === undefined) {
+      delete process.env.ENCRYPTED_REFRESH_TOKEN_EXPIRATION_MINUTES;
+    } else {
+      process.env.ENCRYPTED_REFRESH_TOKEN_EXPIRATION_MINUTES =
+        originalExpiration;
+    }
     resetSecretStores();
     jest.useRealTimers();
   });
@@ -54,8 +62,23 @@ describe("encrypted refresh token", () => {
         "openid https://www.googleapis.com/auth/googlehealth.profile.readonly",
       jti: header.jti,
       iat: header.iat,
-      exp: (header.iat as number) + ENCRYPTED_HEALTH_TOKEN_EXPIRATION_SECONDS,
+      exp: (header.iat as number) + getEncryptedRefreshTokenExpirationSeconds(),
     });
+  });
+
+  it("uses ENCRYPTED_REFRESH_TOKEN_EXPIRATION_MINUTES when set", async () => {
+    process.env.ENCRYPTED_REFRESH_TOKEN_EXPIRATION_MINUTES = "90";
+    const jwt = await encryptRefreshToken({
+      sub: "user-123",
+      refreshToken: "rtok",
+    });
+    const header = decodeProtectedHeader(jwt);
+
+    await expect(decryptHealthRefreshToken(jwt)).resolves.toEqual(
+      expect.objectContaining({
+        exp: (header.iat as number) + 90 * 60,
+      }),
+    );
   });
 
   it("rejects an expired encrypted token", async () => {
@@ -147,15 +170,24 @@ describe("encrypted refresh token", () => {
 describe("encrypted drive refresh token", () => {
   const originalKey = process.env.DRIVE_ACTIVE_KEY;
   const originalAccepted = process.env.DRIVE_ACCEPTED_KEYS;
+  const originalExpiration =
+    process.env.ENCRYPTED_REFRESH_TOKEN_EXPIRATION_MINUTES;
 
   beforeEach(() => {
     delete process.env.DRIVE_ACCEPTED_KEYS;
+    delete process.env.ENCRYPTED_REFRESH_TOKEN_EXPIRATION_MINUTES;
     resetSecretStores();
   });
 
   afterEach(() => {
     process.env.DRIVE_ACTIVE_KEY = originalKey;
     process.env.DRIVE_ACCEPTED_KEYS = originalAccepted;
+    if (originalExpiration === undefined) {
+      delete process.env.ENCRYPTED_REFRESH_TOKEN_EXPIRATION_MINUTES;
+    } else {
+      process.env.ENCRYPTED_REFRESH_TOKEN_EXPIRATION_MINUTES =
+        originalExpiration;
+    }
     resetSecretStores();
   });
 
@@ -175,7 +207,7 @@ describe("encrypted drive refresh token", () => {
       scope: "https://www.googleapis.com/auth/drive.appdata",
       jti: header.jti,
       iat: header.iat,
-      exp: (header.iat as number) + ENCRYPTED_DRIVE_TOKEN_EXPIRATION_SECONDS,
+      exp: (header.iat as number) + getEncryptedRefreshTokenExpirationSeconds(),
     });
   });
 

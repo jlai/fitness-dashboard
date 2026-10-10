@@ -1,3 +1,5 @@
+import { ENCRYPTED_REFRESH_TOKEN_EXPIRATION_SECONDS } from "@/config/encrypted-token";
+
 import {
   getDriveSecretStore,
   getHealthSecretStore,
@@ -55,18 +57,54 @@ export function getConfiguredRedirectUri() {
   return requireEnv("GOOGLE_OAUTH_REDIRECT_URI");
 }
 
-const DEFAULT_SITE_TOKEN_EXPIRATION_MINUTES = 120;
+const DEFAULT_SESSION_TOKEN_EXPIRATION_MINUTES = 120;
+const MAX_SESSION_TOKEN_EXPIRATION_MINUTES = 72 * 60;
 
-export function getSiteTokenDefaultExpirationSeconds() {
-  const raw = process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES;
+/** Default and maximum encrypted refresh-token lifetime (15 days). */
+const DEFAULT_ENCRYPTED_REFRESH_TOKEN_EXPIRATION_MINUTES =
+  ENCRYPTED_REFRESH_TOKEN_EXPIRATION_SECONDS / 60;
+const MAX_ENCRYPTED_REFRESH_TOKEN_EXPIRATION_MINUTES =
+  DEFAULT_ENCRYPTED_REFRESH_TOKEN_EXPIRATION_MINUTES;
+
+export function getSessionTokenExpirationSeconds() {
+  return readExpirationMinutes({
+    name: "SESSION_TOKEN_EXPIRATION_MINUTES",
+    raw: process.env.SESSION_TOKEN_EXPIRATION_MINUTES,
+    defaultMinutes: DEFAULT_SESSION_TOKEN_EXPIRATION_MINUTES,
+    maxMinutes: MAX_SESSION_TOKEN_EXPIRATION_MINUTES,
+    maxDescription: "72 hours",
+  });
+}
+
+export function getEncryptedRefreshTokenExpirationSeconds() {
+  return readExpirationMinutes({
+    name: "ENCRYPTED_REFRESH_TOKEN_EXPIRATION_MINUTES",
+    raw: process.env.ENCRYPTED_REFRESH_TOKEN_EXPIRATION_MINUTES,
+    defaultMinutes: DEFAULT_ENCRYPTED_REFRESH_TOKEN_EXPIRATION_MINUTES,
+    maxMinutes: MAX_ENCRYPTED_REFRESH_TOKEN_EXPIRATION_MINUTES,
+    maxDescription: "15 days",
+  });
+}
+
+function readExpirationMinutes(options: {
+  name: string;
+  raw: string | undefined;
+  defaultMinutes: number;
+  maxMinutes: number;
+  maxDescription: string;
+}) {
   const minutes =
-    raw === undefined || raw === ""
-      ? DEFAULT_SITE_TOKEN_EXPIRATION_MINUTES
-      : Number(raw);
+    options.raw === undefined || options.raw === ""
+      ? options.defaultMinutes
+      : Number(options.raw);
 
   if (!Number.isFinite(minutes) || minutes <= 0) {
+    throw new Error(`${options.name} must be a positive number`);
+  }
+
+  if (minutes > options.maxMinutes) {
     throw new Error(
-      "SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES must be a positive number",
+      `${options.name} must be at most ${options.maxMinutes} minutes (${options.maxDescription})`,
     );
   }
 
@@ -154,7 +192,8 @@ export async function assertServerEnv() {
   getConfiguredClientId();
   getClientSecret();
   getConfiguredRedirectUri();
-  getSiteTokenDefaultExpirationSeconds();
+  getSessionTokenExpirationSeconds();
+  getEncryptedRefreshTokenExpirationSeconds();
   getRevocationDatabaseConfig();
   await getSessionSecretStore().getActiveKey();
   await getHealthSecretStore().getActiveKey();

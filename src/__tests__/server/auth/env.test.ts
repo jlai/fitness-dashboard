@@ -1,12 +1,15 @@
+import { ENCRYPTED_REFRESH_TOKEN_EXPIRATION_SECONDS } from "@/config/encrypted-token";
 import {
   assertServerEnv,
   getClientSecret,
   getConfiguredClientId,
   getConfiguredRedirectUri,
   getDriveSecretStore,
+  getEncryptedRefreshTokenExpirationSeconds,
   getHealthSecretStore,
   getRevocationDatabaseConfig,
   getSessionSecretStore,
+  getSessionTokenExpirationSeconds,
   getTokenSecretStoreConfig,
   resetSecretStores,
 } from "@/server/auth/env";
@@ -257,6 +260,86 @@ describe("SESSION_REVOCATION_DATABASE", () => {
   });
 });
 
+describe("token expiration", () => {
+  const originalSession = process.env.SESSION_TOKEN_EXPIRATION_MINUTES;
+  const originalRefresh =
+    process.env.ENCRYPTED_REFRESH_TOKEN_EXPIRATION_MINUTES;
+
+  afterEach(() => {
+    if (originalSession === undefined) {
+      delete process.env.SESSION_TOKEN_EXPIRATION_MINUTES;
+    } else {
+      process.env.SESSION_TOKEN_EXPIRATION_MINUTES = originalSession;
+    }
+
+    if (originalRefresh === undefined) {
+      delete process.env.ENCRYPTED_REFRESH_TOKEN_EXPIRATION_MINUTES;
+    } else {
+      process.env.ENCRYPTED_REFRESH_TOKEN_EXPIRATION_MINUTES = originalRefresh;
+    }
+  });
+
+  it("defaults session tokens to 120 minutes and refresh tokens to 15 days", () => {
+    delete process.env.SESSION_TOKEN_EXPIRATION_MINUTES;
+    delete process.env.ENCRYPTED_REFRESH_TOKEN_EXPIRATION_MINUTES;
+
+    expect(getSessionTokenExpirationSeconds()).toBe(120 * 60);
+    expect(getEncryptedRefreshTokenExpirationSeconds()).toBe(
+      ENCRYPTED_REFRESH_TOKEN_EXPIRATION_SECONDS,
+    );
+  });
+
+  it("reads configured lifetimes in minutes", () => {
+    process.env.SESSION_TOKEN_EXPIRATION_MINUTES = "30";
+    process.env.ENCRYPTED_REFRESH_TOKEN_EXPIRATION_MINUTES = "60";
+
+    expect(getSessionTokenExpirationSeconds()).toBe(30 * 60);
+    expect(getEncryptedRefreshTokenExpirationSeconds()).toBe(60 * 60);
+  });
+
+  it("accepts the maximum session and refresh lifetimes", () => {
+    process.env.SESSION_TOKEN_EXPIRATION_MINUTES = String(72 * 60);
+    process.env.ENCRYPTED_REFRESH_TOKEN_EXPIRATION_MINUTES = String(
+      (15 * 24 * 60 * 60) / 60,
+    );
+
+    expect(getSessionTokenExpirationSeconds()).toBe(72 * 60 * 60);
+    expect(getEncryptedRefreshTokenExpirationSeconds()).toBe(
+      ENCRYPTED_REFRESH_TOKEN_EXPIRATION_SECONDS,
+    );
+  });
+
+  it("rejects a session lifetime longer than 72 hours", () => {
+    process.env.SESSION_TOKEN_EXPIRATION_MINUTES = String(72 * 60 + 1);
+
+    expect(() => getSessionTokenExpirationSeconds()).toThrow(
+      "SESSION_TOKEN_EXPIRATION_MINUTES must be at most 4320 minutes (72 hours)",
+    );
+  });
+
+  it("rejects a refresh lifetime longer than 15 days", () => {
+    process.env.ENCRYPTED_REFRESH_TOKEN_EXPIRATION_MINUTES = String(
+      15 * 24 * 60 + 1,
+    );
+
+    expect(() => getEncryptedRefreshTokenExpirationSeconds()).toThrow(
+      "ENCRYPTED_REFRESH_TOKEN_EXPIRATION_MINUTES must be at most 21600 minutes (15 days)",
+    );
+  });
+
+  it("rejects non-positive lifetimes", () => {
+    process.env.SESSION_TOKEN_EXPIRATION_MINUTES = "0";
+    expect(() => getSessionTokenExpirationSeconds()).toThrow(
+      "SESSION_TOKEN_EXPIRATION_MINUTES must be a positive number",
+    );
+
+    process.env.ENCRYPTED_REFRESH_TOKEN_EXPIRATION_MINUTES = "-1";
+    expect(() => getEncryptedRefreshTokenExpirationSeconds()).toThrow(
+      "ENCRYPTED_REFRESH_TOKEN_EXPIRATION_MINUTES must be a positive number",
+    );
+  });
+});
+
 describe("required server env", () => {
   const originalEnv = {
     NEXT_PUBLIC_GOOGLE_OAUTH_CLIENT_ID:
@@ -267,8 +350,10 @@ describe("required server env", () => {
     HEALTH_ACTIVE_KEY: process.env.HEALTH_ACTIVE_KEY,
     DRIVE_ACTIVE_KEY: process.env.DRIVE_ACTIVE_KEY,
     TOKEN_SECRET_STORE: process.env.TOKEN_SECRET_STORE,
-    SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES:
-      process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES,
+    SESSION_TOKEN_EXPIRATION_MINUTES:
+      process.env.SESSION_TOKEN_EXPIRATION_MINUTES,
+    ENCRYPTED_REFRESH_TOKEN_EXPIRATION_MINUTES:
+      process.env.ENCRYPTED_REFRESH_TOKEN_EXPIRATION_MINUTES,
     SESSION_REVOCATION_DATABASE: process.env.SESSION_REVOCATION_DATABASE,
   };
 
@@ -322,7 +407,8 @@ describe("required server env", () => {
   });
 
   it("accepts defaults for optional variables at startup", async () => {
-    delete process.env.SITE_TOKEN_DEFAULT_EXPIRATION_MINUTES;
+    delete process.env.SESSION_TOKEN_EXPIRATION_MINUTES;
+    delete process.env.ENCRYPTED_REFRESH_TOKEN_EXPIRATION_MINUTES;
     delete process.env.SESSION_REVOCATION_DATABASE;
     process.env.TOKEN_SECRET_STORE = "env://";
     resetSecretStores();
