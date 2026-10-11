@@ -36,22 +36,24 @@ export async function POST(request: Request) {
       );
     }
 
-    if (payload.id_token) {
-      try {
-        const codeUser = await verifyGoogleIdToken(payload.id_token);
+    if (!payload.id_token) {
+      throw new TokenValidationError("missing idToken from token exchange");
+    }
 
-        if (codeUser.sub !== session.sub) {
-          throw new TokenValidationError(
-            "authorization code user does not match session",
-          );
-        }
-      } catch (error) {
-        if (error instanceof TokenValidationError) {
-          throw error;
-        }
+    try {
+      const codeUser = await verifyGoogleIdToken(payload.id_token);
 
-        throw new TokenValidationError("invalid idToken from token exchange");
+      if (codeUser.sub !== session.sub) {
+        throw new TokenValidationError(
+          "authorization code user does not match session",
+        );
       }
+    } catch (error) {
+      if (error instanceof TokenValidationError) {
+        throw error;
+      }
+
+      throw new TokenValidationError("invalid idToken from token exchange");
     }
 
     if (!payload.refresh_token) {

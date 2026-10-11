@@ -3,7 +3,10 @@ import {
   badRequestResponse,
   getHTTPErrorResponse,
 } from "@/server/auth/http";
-import { handleRiscSecurityEventToken } from "@/server/auth/risc";
+import {
+  applyRiscSecurityEvents,
+  verifyRiscSecurityEventToken,
+} from "@/server/auth/risc";
 
 /**
  * Receive Google Cross-Account Protection (RISC) security event tokens.
@@ -20,7 +23,8 @@ export async function POST(request: Request) {
       return badRequestResponse("missing security event token");
     }
 
-    await handleRiscSecurityEventToken(token);
+    const payload = await verifyRiscSecurityEventToken(token);
+    await applyRiscSecurityEvents(payload);
 
     return acceptedResponse();
   } catch (error) {

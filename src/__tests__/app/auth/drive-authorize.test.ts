@@ -49,6 +49,7 @@ describe("POST /auth/drive/authorize", () => {
   const originalRedirectUri = process.env.GOOGLE_OAUTH_REDIRECT_URI;
 
   beforeEach(() => {
+    jest.clearAllMocks();
     process.env.GOOGLE_OAUTH_REDIRECT_URI = REDIRECT_URI;
     verifyGoogleIdTokenMock.mockResolvedValue({ sub: "user-1" });
     exchangeAuthorizationCodeMock.mockResolvedValue({
@@ -56,6 +57,7 @@ describe("POST /auth/drive/authorize", () => {
       payload: {
         access_token: "access",
         refresh_token: "refresh",
+        id_token: "id-token",
         expires_in: 3600,
         scope: "https://www.googleapis.com/auth/drive.appdata",
       },
@@ -75,6 +77,7 @@ describe("POST /auth/drive/authorize", () => {
       code: "abc",
       redirectUri: REDIRECT_URI,
     });
+    expect(verifyGoogleIdTokenMock).toHaveBeenCalledWith("id-token");
     expect(payload.accessToken).toBe("access");
     expect(payload.scope).toBe("https://www.googleapis.com/auth/drive.appdata");
     expect(payload.encryptedDriveToken).toEqual(expect.any(String));
@@ -99,9 +102,29 @@ describe("POST /auth/drive/authorize", () => {
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({
       error: "invalid_request",
-      errorDescription: "missing authorization code",
+      errorDescription: "invalid request",
     });
     expect(exchangeAuthorizationCodeMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects a token response without an id token", async () => {
+    exchangeAuthorizationCodeMock.mockResolvedValue({
+      status: 200,
+      payload: {
+        access_token: "access",
+        refresh_token: "refresh",
+        expires_in: 3600,
+      },
+    });
+
+    const response = await POST(await makeRequest());
+
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toEqual({
+      error: "unauthorized",
+      errorDescription: "invalid token",
+    });
+    expect(verifyGoogleIdTokenMock).not.toHaveBeenCalled();
   });
 
   it("rejects requests without a session token", async () => {

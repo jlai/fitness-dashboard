@@ -80,17 +80,6 @@ export function resetRiscConfigurationCache() {
   cachedRiscConfiguration = undefined;
 }
 
-/**
- * Validate a Google Cross-Account Protection (RISC) security event token and
- * invalidate sessions for any affected subjects.
- */
-export async function handleRiscSecurityEventToken(
-  token: string,
-): Promise<void> {
-  const payload = await verifyRiscSecurityEventToken(token);
-  await applyRiscSecurityEvents(payload);
-}
-
 export async function verifyRiscSecurityEventToken(
   token: string,
 ): Promise<JWTPayload> {

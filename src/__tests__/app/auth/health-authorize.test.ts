@@ -49,6 +49,7 @@ describe("POST /auth/health/authorize", () => {
   const originalRedirectUri = process.env.GOOGLE_OAUTH_REDIRECT_URI;
 
   beforeEach(() => {
+    jest.clearAllMocks();
     process.env.GOOGLE_OAUTH_REDIRECT_URI = REDIRECT_URI;
     verifyGoogleIdTokenMock.mockResolvedValue({ sub: "user-1" });
     exchangeAuthorizationCodeMock.mockResolvedValue({
@@ -56,6 +57,7 @@ describe("POST /auth/health/authorize", () => {
       payload: {
         access_token: "access",
         refresh_token: "refresh",
+        id_token: "id-token",
         expires_in: 3600,
         scope: "openid",
       },
@@ -75,6 +77,7 @@ describe("POST /auth/health/authorize", () => {
       code: "abc",
       redirectUri: REDIRECT_URI,
     });
+    expect(verifyGoogleIdTokenMock).toHaveBeenCalledWith("id-token");
     expect(payload.accessToken).toBe("access");
     expect(payload.scope).toBe("openid");
     expect(payload.encryptedHealthToken).toEqual(expect.any(String));
@@ -99,7 +102,7 @@ describe("POST /auth/health/authorize", () => {
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({
       error: "invalid_request",
-      errorDescription: "missing authorization code",
+      errorDescription: "invalid request",
     });
     expect(exchangeAuthorizationCodeMock).not.toHaveBeenCalled();
   });
@@ -128,6 +131,26 @@ describe("POST /auth/health/authorize", () => {
 
     expect(response.status).toBe(403);
     expect(exchangeAuthorizationCodeMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects a token response without an id token", async () => {
+    exchangeAuthorizationCodeMock.mockResolvedValue({
+      status: 200,
+      payload: {
+        access_token: "access",
+        refresh_token: "refresh",
+        expires_in: 3600,
+      },
+    });
+
+    const response = await POST(await makeRequest());
+
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toEqual({
+      error: "unauthorized",
+      errorDescription: "invalid token",
+    });
+    expect(verifyGoogleIdTokenMock).not.toHaveBeenCalled();
   });
 
   it("rejects when the authorization code belongs to a different user", async () => {
