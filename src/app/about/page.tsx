@@ -160,6 +160,34 @@ export default function AboutPage() {
             </div>
           </AccordionDetails>
         </Accordion>
+        <Accordion>
+          <AccordionSummary expandIcon={<ArrowDropDown />}>
+            Can I edit exercise/sleep logs?
+          </AccordionSummary>
+          <AccordionDetails>
+            <div className="space-y-2">
+              <p>
+                Only exercise and sleep logs created from this website can be
+                edited or deleted (currently only deletion is supported). You
+                cannot delete logs created by other apps, including the Google
+                Health app.
+              </p>
+            </div>
+          </AccordionDetails>
+        </Accordion>
+        <Accordion>
+          <AccordionSummary expandIcon={<ArrowDropDown />}>
+            Is there a way to see Sleep Scores?
+          </AccordionSummary>
+          <AccordionDetails>
+            <div className="space-y-2">
+              <p>
+                Sleep Scores are only available in the Google Health app; 3rd
+                party developers don&apos;t have access to them.
+              </p>
+            </div>
+          </AccordionDetails>
+        </Accordion>
       </section>
     </Container>
   );
