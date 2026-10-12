@@ -1,21 +1,13 @@
 "use client";
 
-import { useCallback, useRef } from "react";
 import { atom, getDefaultStore, useAtomValue } from "jotai";
 import { atomEffect } from "jotai-effect";
-import { toast } from "mui-sonner";
 
 import { singleAsync } from "@/utils/async";
 import { logError } from "@/utils/log-error";
-import { GOOGLE_OAUTH_CLIENT_ID, withBasePath } from "@/config";
-import { REQUESTED_DRIVE_SCOPES } from "@/config/google-drive-scopes";
-import { REQUESTED_SCOPES } from "@/config/google-health-scopes";
+import { withBasePath } from "@/config";
 
-import {
-  disableGoogleAutoSelect,
-  loadGoogleOAuth2,
-  useGoogleIdentityReady,
-} from "./google-identity";
+import { disableGoogleAutoSelect } from "./google-identity";
 
 // Refresh when token is expiring soon
 const EXPIRING_SOON_MILLIS = 2 * 60 * 1000;
@@ -26,10 +18,8 @@ const AUTH_TOKEN_UPDATE_EVENT_TYPE = "authtokenupdated";
 
 const SESSION_PATH = withBasePath("/auth/session");
 const SESSION_LOGOUT_PATH = withBasePath("/auth/session/logout");
-const HEALTH_AUTHORIZE_PATH = withBasePath("/auth/health/authorize");
 const HEALTH_ACCESS_PATH = withBasePath("/auth/health/access");
 const DRIVE_LOGOUT_PATH = withBasePath("/auth/drive/logout");
-const DRIVE_AUTHORIZE_PATH = withBasePath("/auth/drive/authorize");
 const DRIVE_ACCESS_PATH = withBasePath("/auth/drive/access");
 
 interface SessionClaims {
@@ -112,7 +102,7 @@ function remainingSessionLifetimeHours() {
   return (sessionClaims.exp - Math.floor(Date.now() / 1000)) / 3600;
 }
 
-function getEncryptedHealthTokenFromStorage() {
+export function getEncryptedHealthTokenFromStorage() {
   if (encryptedHealthRefreshToken) {
     return encryptedHealthRefreshToken;
   }
@@ -125,7 +115,7 @@ function getEncryptedHealthTokenFromStorage() {
   return encryptedHealthRefreshToken;
 }
 
-function getEncryptedDriveTokenFromStorage() {
+export function getEncryptedDriveTokenFromStorage() {
   if (encryptedDriveRefreshToken) {
     return encryptedDriveRefreshToken;
   }
@@ -388,7 +378,7 @@ function forceSignOut() {
   clearAllAuthTokens();
 }
 
-async function postSessionJson(
+export async function postSessionJson(
   path: string,
   body?: Record<string, string>,
 ): Promise<TokenEndpointResponse> {
@@ -428,13 +418,13 @@ async function postSessionJson(
   return payload;
 }
 
-function applyHealthTokenResponse(payload: TokenEndpointResponse) {
+export function applyHealthTokenResponse(payload: TokenEndpointResponse) {
   cacheAccessToken(payload);
   cacheGrantedScope(payload.scope);
   saveEncryptedHealthToken(payload.encryptedHealthToken);
 }
 
-function applyDriveTokenResponse(
+export function applyDriveTokenResponse(
   payload: TokenEndpointResponse,
   generation = driveAuthGeneration,
 ) {
@@ -483,30 +473,6 @@ export async function createSession(idToken: string) {
   await restoreDriveAccessToken();
 }
 
-async function exchangeCodeForHealthToken(code: string) {
-  const payload = await postSessionJson(HEALTH_AUTHORIZE_PATH, { code });
-
-  applyHealthTokenResponse(payload);
-
-  if (!getEncryptedHealthTokenFromStorage()) {
-    throw new Error("no refresh token returned");
-  }
-
-  return payload;
-}
-
-async function exchangeCodeForDriveToken(code: string) {
-  const payload = await postSessionJson(DRIVE_AUTHORIZE_PATH, { code });
-
-  applyDriveTokenResponse(payload);
-
-  if (!getEncryptedDriveTokenFromStorage()) {
-    throw new Error("no drive refresh token returned");
-  }
-
-  return payload;
-}
-
 async function requestAccessToken() {
   const encryptedHealthToken = getEncryptedHealthTokenFromStorage();
 
@@ -549,220 +515,6 @@ async function requestDriveAccessToken() {
   }
 
   return payload.accessToken;
-}
-
-/**
- * Prompt the user to authorize Google Health via GIS CodeClient, then send the
- * code to the server to encrypt the refresh token.
- *
- * Always requests {@link REQUESTED_SCOPES} (openid + all Health permissions)
- * and never includes previously granted scopes. Google Health rejects mixed
- * scope sets (e.g. Drive) even when those were granted earlier.
- */
-export function useGoogleLoginAndAuthorization({
-  selectAccount = false,
-}: {
-  /** Also prompt the user to pick which Google account to use. */
-  selectAccount?: boolean;
-} = {}) {
-  const scriptLoadedSuccessfully = useGoogleIdentityReady();
-  const pendingRef = useRef<{
-    resolve: () => void;
-    reject: (error: unknown) => void;
-  } | null>(null);
-
-  const failPending = useCallback(
-    (error: unknown, { silent = false }: { silent?: boolean } = {}) => {
-      const pending = pendingRef.current;
-      pendingRef.current = null;
-
-      if (!silent) {
-        logError("error starting login flow", error);
-        toast.error("Unable to reach Google to sign in");
-      }
-
-      pending?.reject(
-        error instanceof Error
-          ? error
-          : new Error(
-              typeof error === "object" &&
-                error &&
-                "type" in error &&
-                typeof error.type === "string"
-                ? error.type
-                : String(error),
-            ),
-      );
-    },
-    [],
-  );
-
-  const completeLogin = useCallback(
-    async (code: string) => {
-      const pending = pendingRef.current;
-
-      try {
-        await exchangeCodeForHealthToken(code);
-        pendingRef.current = null;
-        pending?.resolve();
-      } catch (error) {
-        failPending(error);
-      }
-    },
-    [failPending],
-  );
-
-  const loginToGoogleAndAuthorize = useCallback(() => {
-    return new Promise<void>((resolve, reject) => {
-      pendingRef.current = { resolve, reject };
-
-      void (async () => {
-        try {
-          const oauth2 = await loadGoogleOAuth2();
-          const hint = selectAccount ? undefined : getSessionSubject();
-          const client = oauth2.initCodeClient({
-            client_id: GOOGLE_OAUTH_CLIENT_ID,
-            scope: REQUESTED_SCOPES.join(" "),
-            ux_mode: "popup",
-            hint,
-            // Exclude previously granted scopes to prevent mixed scope sets (e.g. Drive) which Google Health rejects
-            include_granted_scopes: false,
-            select_account: selectAccount,
-            callback: (codeResponse) => {
-              if (codeResponse.error) {
-                failPending(
-                  new Error(
-                    codeResponse.error_description ||
-                      codeResponse.error ||
-                      "authorization failed",
-                  ),
-                  { silent: codeResponse.error === "access_denied" },
-                );
-                return;
-              }
-
-              void completeLogin(codeResponse.code);
-            },
-            error_callback: (error) => {
-              failPending(error, { silent: error.type === "popup_closed" });
-            },
-          });
-
-          client.requestCode();
-        } catch (error) {
-          failPending(error);
-        }
-      })();
-    });
-  }, [completeLogin, failPending, selectAccount]);
-
-  return { loginToGoogleAndAuthorize, ready: scriptLoadedSuccessfully };
-}
-
-/**
- * Prompt the user to authorize Google Drive via GIS CodeClient, then send the
- * code to the server to encrypt a Drive-only refresh token.
- *
- * Uses {@link REQUESTED_DRIVE_SCOPES} only (not Health scopes) and does not
- * include previously granted scopes, so Drive stays on a separate token.
- */
-export function useGoogleDriveAuthorization({
-  selectAccount = false,
-}: {
-  /** Also prompt the user to pick which Google account to use. */
-  selectAccount?: boolean;
-} = {}) {
-  const scriptLoadedSuccessfully = useGoogleIdentityReady();
-  const pendingRef = useRef<{
-    resolve: () => void;
-    reject: (error: unknown) => void;
-  } | null>(null);
-
-  const failPending = useCallback(
-    (error: unknown, { silent = false }: { silent?: boolean } = {}) => {
-      const pending = pendingRef.current;
-      pendingRef.current = null;
-
-      if (!silent) {
-        logError("error starting drive authorization flow", error);
-        toast.error("Unable to reach Google to authorize Drive");
-      }
-
-      pending?.reject(
-        error instanceof Error
-          ? error
-          : new Error(
-              typeof error === "object" &&
-                error &&
-                "type" in error &&
-                typeof error.type === "string"
-                ? error.type
-                : String(error),
-            ),
-      );
-    },
-    [],
-  );
-
-  const completeAuthorization = useCallback(
-    async (code: string) => {
-      const pending = pendingRef.current;
-
-      try {
-        await exchangeCodeForDriveToken(code);
-        pendingRef.current = null;
-        pending?.resolve();
-      } catch (error) {
-        failPending(error);
-      }
-    },
-    [failPending],
-  );
-
-  const authorizeGoogleDrive = useCallback(() => {
-    return new Promise<void>((resolve, reject) => {
-      pendingRef.current = { resolve, reject };
-
-      void (async () => {
-        try {
-          const oauth2 = await loadGoogleOAuth2();
-          const hint = selectAccount ? undefined : getSessionSubject();
-          const client = oauth2.initCodeClient({
-            client_id: GOOGLE_OAUTH_CLIENT_ID,
-            scope: REQUESTED_DRIVE_SCOPES.join(" "),
-            ux_mode: "popup",
-            hint,
-            include_granted_scopes: false,
-            select_account: selectAccount,
-            callback: (codeResponse) => {
-              if (codeResponse.error) {
-                failPending(
-                  new Error(
-                    codeResponse.error_description ||
-                      codeResponse.error ||
-                      "authorization failed",
-                  ),
-                  { silent: codeResponse.error === "access_denied" },
-                );
-                return;
-              }
-
-              void completeAuthorization(codeResponse.code);
-            },
-            error_callback: (error) => {
-              failPending(error, { silent: error.type === "popup_closed" });
-            },
-          });
-
-          client.requestCode();
-        } catch (error) {
-          failPending(error);
-        }
-      })();
-    });
-  }, [completeAuthorization, failPending, selectAccount]);
-
-  return { authorizeGoogleDrive, ready: scriptLoadedSuccessfully };
 }
 
 export async function logout() {

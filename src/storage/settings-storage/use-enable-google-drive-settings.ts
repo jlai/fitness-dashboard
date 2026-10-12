@@ -3,7 +3,7 @@
 import { useCallback } from "react";
 import { useConfirm } from "material-ui-confirm";
 
-import { useGoogleDriveAuthorization } from "@/api/auth";
+import { useGoogleDriveAuthorization } from "@/api/drive-authorization";
 import { runWithErrorToaster } from "@/components/toast";
 import type { SettingsStorageKey } from "./keys";
 import {

@@ -3,7 +3,8 @@
 import { Alert, Typography, Button, Stack } from "@mui/material";
 import { useConfirm } from "material-ui-confirm";
 
-import { useGoogleLoginAndAuthorization, useMissingScopes } from "@/api/auth";
+import { useMissingScopes } from "@/api/auth";
+import { useGoogleHealthAuthorization } from "@/api/health-authorization";
 import { getScopeName, getScopeNameList } from "@/config/scopes";
 
 export function RequireScopes({
@@ -40,7 +41,7 @@ export function MissingScopesAlert({
   message?: string;
 }) {
   const missingScopes = useMissingScopes(requiredScopes);
-  const { loginToGoogleAndAuthorize } = useGoogleLoginAndAuthorization();
+  const { loginToGoogleAndAuthorize } = useGoogleHealthAuthorization();
   const disabled = missingScopes.length > 0;
 
   return (
@@ -84,7 +85,7 @@ function CompactMissingScopes({
   scopes: Array<string>;
 }) {
   const confirm = useConfirm();
-  const { loginToGoogleAndAuthorize } = useGoogleLoginAndAuthorization();
+  const { loginToGoogleAndAuthorize } = useGoogleHealthAuthorization();
 
   const handleReconsentClicked = () => {
     confirm({
@@ -125,7 +126,7 @@ function MissingScopes({
   name?: string;
   scopes: Array<string>;
 }) {
-  const { loginToGoogleAndAuthorize } = useGoogleLoginAndAuthorization();
+  const { loginToGoogleAndAuthorize } = useGoogleHealthAuthorization();
 
   return (
     <div className="flex-grow flex flex-col items-center place-items-center p-2">

@@ -31,10 +31,10 @@ import {
   hasTokenScope,
   pendingRememberMeChoiceAtom,
   persistAuthTokens,
-  useGoogleLoginAndAuthorization,
   useLoggedIn,
   useOpenIdSignedIn,
 } from "@/api/auth";
+import { useGoogleHealthAuthorization } from "@/api/health-authorization";
 import { formatAsDate } from "@/api/datetime";
 import { PRIVACY_POLICY_LINK, WEBSITE_NAME } from "@/config";
 import { SETTINGS_READONLY } from "@/config/google-health-scopes";
@@ -211,7 +211,7 @@ export default function LoginBox() {
   const pendingRememberMeChoice = useAtomValue(pendingRememberMeChoiceAtom);
   const openIdSignedIn = useOpenIdSignedIn();
   const loggedIn = useLoggedIn();
-  const { loginToGoogleAndAuthorize, ready } = useGoogleLoginAndAuthorization();
+  const { loginToGoogleAndAuthorize, ready } = useGoogleHealthAuthorization();
 
   const awaitingRememberMe = pendingRememberMeChoice && loggedIn;
   const showWelcomeBack =

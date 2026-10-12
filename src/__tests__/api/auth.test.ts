@@ -8,9 +8,11 @@ import {
   createSession,
   forceTokenRefresh,
   getAccessTokenScopes,
+  getDriveAccessTokenScopes,
   getFreshAccessToken,
   getFreshDriveAccessToken,
   getSessionSubject,
+  hasEncryptedDriveToken,
   isLoggedIn,
   logout,
   logoutDrive,
@@ -20,10 +22,12 @@ import {
   revokeAuthorization,
   syncAuthTokenEffect,
   useAccessTokenScopes,
-  useGoogleLoginAndAuthorization,
   useMissingScopes,
 } from "@/api/auth";
+import { useGoogleDriveAuthorization } from "@/api/drive-authorization";
+import { useGoogleHealthAuthorization } from "@/api/health-authorization";
 import { loadGoogleOAuth2 } from "@/api/google-identity";
+import { REQUESTED_DRIVE_SCOPES } from "@/config/google-drive-scopes";
 import { REQUESTED_SCOPES } from "@/config/google-health-scopes";
 
 jest.mock("@/api/google-identity", () => ({
@@ -42,6 +46,7 @@ const SESSION_LOGOUT_PATH = "/auth/session/logout";
 const HEALTH_AUTHORIZE_PATH = "/auth/health/authorize";
 const HEALTH_ACCESS_PATH = "/auth/health/access";
 const DRIVE_LOGOUT_PATH = "/auth/drive/logout";
+const DRIVE_AUTHORIZE_PATH = "/auth/drive/authorize";
 const ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY = "auth:encrypted-health-token";
 const ENCRYPTED_DRIVE_TOKEN_STORAGE_KEY = "auth:encrypted-drive-token";
 
@@ -209,7 +214,7 @@ describe("persistAuthTokens", () => {
 
     await createSession("google-id-token");
 
-    const { result } = renderHook(() => useGoogleLoginAndAuthorization());
+    const { result } = renderHook(() => useGoogleHealthAuthorization());
     await act(async () => {
       await result.current.loginToGoogleAndAuthorize();
     });
@@ -958,7 +963,7 @@ describe("syncAuthTokenEffect", () => {
   });
 });
 
-describe("useGoogleLoginAndAuthorization", () => {
+describe("useGoogleHealthAuthorization", () => {
   let codeClient: {
     requestCode: jest.Mock;
     callback?: (response: {
@@ -989,7 +994,7 @@ describe("useGoogleLoginAndAuthorization", () => {
   });
 
   async function startLogin() {
-    const { result } = renderHook(() => useGoogleLoginAndAuthorization());
+    const { result } = renderHook(() => useGoogleHealthAuthorization());
     const loginPromise = result.current.loginToGoogleAndAuthorize();
 
     await act(async () => {
@@ -1092,6 +1097,115 @@ describe("useGoogleLoginAndAuthorization", () => {
     expect(JSON.stringify(localStorage)).not.toContain("openid");
     expect(getAccessTokenScopes().has("openid")).toBe(true);
     expect(localStorage.getItem("auth:google-token")).toBeNull();
+
+    fetchMock.mockRestore();
+  });
+});
+
+describe("useGoogleDriveAuthorization", () => {
+  let codeClient: {
+    requestCode: jest.Mock;
+    callback?: (response: {
+      code?: string;
+      error?: string;
+      error_description?: string;
+    }) => void;
+    error_callback?: (error: { type: string }) => void;
+  };
+
+  beforeEach(async () => {
+    toastError.mockClear();
+    await resetAuthState();
+    jest.spyOn(console, "error").mockImplementation(() => {});
+    codeClient = { requestCode: jest.fn() };
+    loadGoogleOAuth2Mock.mockResolvedValue({
+      initCodeClient: jest.fn((options) => {
+        codeClient.callback = options.callback;
+        codeClient.error_callback = options.error_callback;
+        return { requestCode: codeClient.requestCode };
+      }),
+      revoke: jest.fn(),
+    } as unknown as Awaited<ReturnType<typeof loadGoogleOAuth2>>);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  async function startAuthorization() {
+    const { result } = renderHook(() => useGoogleDriveAuthorization());
+    const authorizePromise = result.current.authorizeGoogleDrive();
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    return { authorizePromise };
+  }
+
+  it("requests openid profile email so the token response includes an id_token", async () => {
+    await establishSession({
+      sub: "hint-user",
+      encryptedHealthToken: null,
+    });
+    const { authorizePromise } = await startAuthorization();
+
+    const oauth2 = await loadGoogleOAuth2Mock.mock.results[0].value;
+    expect(oauth2.initCodeClient).toHaveBeenCalledWith(
+      expect.objectContaining({
+        hint: "hint-user",
+        scope:
+          "openid profile email https://www.googleapis.com/auth/drive.appdata",
+        include_granted_scopes: false,
+      }),
+    );
+    expect(REQUESTED_DRIVE_SCOPES.join(" ")).toBe(
+      "openid profile email https://www.googleapis.com/auth/drive.appdata",
+    );
+
+    act(() => {
+      codeClient.error_callback?.({ type: "popup_closed" });
+    });
+    await expect(authorizePromise).rejects.toThrow("popup_closed");
+  });
+
+  it("sends the authorization code to /auth/drive/authorize", async () => {
+    await establishSession({ encryptedHealthToken: null });
+    const fetchMock = jest.spyOn(global, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          encryptedDriveToken: "encrypted-drive",
+          accessToken: "drive-access",
+          expiresIn: 3600,
+          scope: REQUESTED_DRIVE_SCOPES.join(" "),
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    );
+
+    const { authorizePromise } = await startAuthorization();
+
+    await act(async () => {
+      codeClient.callback?.({ code: "drive-auth-code" });
+    });
+
+    await authorizePromise;
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      DRIVE_AUTHORIZE_PATH,
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({ code: "drive-auth-code" }),
+      }),
+    );
+    expect(localStorage.getItem(ENCRYPTED_DRIVE_TOKEN_STORAGE_KEY)).toBeNull();
+    expect(hasEncryptedDriveToken()).toBe(true);
+    expect(
+      getDriveAccessTokenScopes().has(
+        "https://www.googleapis.com/auth/drive.appdata",
+      ),
+    ).toBe(true);
 
     fetchMock.mockRestore();
   });
