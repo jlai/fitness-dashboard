@@ -2,8 +2,9 @@
 
 import { InputAdornment, TextField } from "@mui/material";
 import { useAtom } from "jotai";
+import { useEffect, useState } from "react";
 
-import { getGoalsAtom } from "@/storage/goals";
+import { getGoalsAtom, type GoalWrite } from "@/storage/goals";
 import {
   kilometersFromDistanceGoal,
   millilitersFromWaterGoal,
@@ -11,6 +12,44 @@ import {
 } from "@/config/units";
 
 import { SettingsRow, SettingsTable } from "../common";
+
+function GoalNumberField({
+  value,
+  unitLabel,
+  onCommit,
+}: {
+  value: number | "";
+  unitLabel: string;
+  onCommit: (rawValue: string) => void;
+}) {
+  const stored = value === "" ? "" : String(value);
+  const [draft, setDraft] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (draft !== null && draft === stored) {
+      setDraft(null);
+    }
+  }, [draft, stored]);
+
+  return (
+    <TextField
+      value={draft ?? stored}
+      type="number"
+      onChange={(event) => {
+        const rawValue = event.target.value;
+        setDraft(rawValue);
+        onCommit(rawValue);
+      }}
+      slotProps={{
+        input: {
+          endAdornment: (
+            <InputAdornment position="end">{unitLabel}</InputAdornment>
+          ),
+        },
+      }}
+    />
+  );
+}
 
 function ActivityGoalsSettings() {
   const [stepsGoal, setStepsGoal] = useAtom(getGoalsAtom("steps", "daily"));
@@ -62,10 +101,15 @@ function ActivityGoalsSettings() {
   } = useUnits();
 
   const setNumericGoal = (
-    setter: (update: { value: number; unit: string }) => void,
+    setter: (update: GoalWrite | undefined) => void,
     unit: string,
     rawValue: string,
   ) => {
+    if (rawValue === "") {
+      setter(undefined);
+      return;
+    }
+
     const value = parseFloat(rawValue);
     if (Number.isFinite(value)) {
       setter({ value, unit });
@@ -82,99 +126,63 @@ function ActivityGoalsSettings() {
       <SettingsRow
         title="Daily steps"
         action={
-          <TextField
+          <GoalNumberField
             value={stepsGoal?.value ?? ""}
-            type="number"
-            onChange={(event) =>
-              setNumericGoal(
-                setStepsGoal,
-                stepsGoal?.unit ?? "",
-                event.target.value,
-              )
+            unitLabel="steps"
+            onCommit={(rawValue) =>
+              setNumericGoal(setStepsGoal, stepsGoal?.unit ?? "", rawValue)
             }
-            slotProps={{
-              input: {
-                endAdornment: (
-                  <InputAdornment position="end">steps</InputAdornment>
-                ),
-              },
-            }}
           />
         }
       />
       <SettingsRow
         title="Weekly steps"
         action={
-          <TextField
+          <GoalNumberField
             value={weeklyStepsGoal?.value ?? ""}
-            type="number"
-            onChange={(event) =>
+            unitLabel="steps"
+            onCommit={(rawValue) =>
               setNumericGoal(
                 setWeeklyStepsGoal,
                 weeklyStepsGoal?.unit ?? "",
-                event.target.value,
+                rawValue,
               )
             }
-            slotProps={{
-              input: {
-                endAdornment: (
-                  <InputAdornment position="end">steps</InputAdornment>
-                ),
-              },
-            }}
           />
         }
       />
       <SettingsRow
         title="Daily floors"
         action={
-          <TextField
+          <GoalNumberField
             value={floorsGoal?.value ?? ""}
-            type="number"
-            onChange={(event) =>
-              setNumericGoal(
-                setFloorsGoal,
-                floorsGoal?.unit ?? "",
-                event.target.value,
-              )
+            unitLabel="floors"
+            onCommit={(rawValue) =>
+              setNumericGoal(setFloorsGoal, floorsGoal?.unit ?? "", rawValue)
             }
-            slotProps={{
-              input: {
-                endAdornment: (
-                  <InputAdornment position="end">floors</InputAdornment>
-                ),
-              },
-            }}
           />
         }
       />
       <SettingsRow
         title="Weekly floors"
         action={
-          <TextField
+          <GoalNumberField
             value={weeklyFloorsGoal?.value ?? ""}
-            type="number"
-            onChange={(event) =>
+            unitLabel="floors"
+            onCommit={(rawValue) =>
               setNumericGoal(
                 setWeeklyFloorsGoal,
                 weeklyFloorsGoal?.unit ?? "",
-                event.target.value,
+                rawValue,
               )
             }
-            slotProps={{
-              input: {
-                endAdornment: (
-                  <InputAdornment position="end">floors</InputAdornment>
-                ),
-              },
-            }}
           />
         }
       />
       <SettingsRow
         title="Daily distance"
         action={
-          <TextField
+          <GoalNumberField
             value={
               distanceGoal
                 ? localizedKilometers(
@@ -185,29 +193,17 @@ function ActivityGoalsSettings() {
                   )
                 : ""
             }
-            type="number"
-            onChange={(event) => {
-              const value = parseFloat(event.target.value);
-              if (Number.isFinite(value)) {
-                setDistanceGoal({ value, unit: distanceUnit });
-              }
-            }}
-            slotProps={{
-              input: {
-                endAdornment: (
-                  <InputAdornment position="end">
-                    {localizedKilometersName}
-                  </InputAdornment>
-                ),
-              },
-            }}
+            unitLabel={localizedKilometersName}
+            onCommit={(rawValue) =>
+              setNumericGoal(setDistanceGoal, distanceUnit, rawValue)
+            }
           />
         }
       />
       <SettingsRow
         title="Weekly distance"
         action={
-          <TextField
+          <GoalNumberField
             value={
               weeklyDistanceGoal
                 ? localizedKilometers(
@@ -218,167 +214,113 @@ function ActivityGoalsSettings() {
                   )
                 : ""
             }
-            type="number"
-            onChange={(event) => {
-              const value = parseFloat(event.target.value);
-              if (Number.isFinite(value)) {
-                setWeeklyDistanceGoal({ value, unit: distanceUnit });
-              }
-            }}
-            slotProps={{
-              input: {
-                endAdornment: (
-                  <InputAdornment position="end">
-                    {localizedKilometersName}
-                  </InputAdornment>
-                ),
-              },
-            }}
+            unitLabel={localizedKilometersName}
+            onCommit={(rawValue) =>
+              setNumericGoal(setWeeklyDistanceGoal, distanceUnit, rawValue)
+            }
           />
         }
       />
       <SettingsRow
         title="Daily calories burned"
         action={
-          <TextField
+          <GoalNumberField
             value={caloriesOutGoal?.value ?? ""}
-            type="number"
-            onChange={(event) =>
+            unitLabel="Cal"
+            onCommit={(rawValue) =>
               setNumericGoal(
                 setCaloriesOutGoal,
                 caloriesOutGoal?.unit ?? "",
-                event.target.value,
+                rawValue,
               )
             }
-            slotProps={{
-              input: {
-                endAdornment: (
-                  <InputAdornment position="end">Cal</InputAdornment>
-                ),
-              },
-            }}
           />
         }
       />
       <SettingsRow
         title="Weekly calories burned"
         action={
-          <TextField
+          <GoalNumberField
             value={weeklyCaloriesOutGoal?.value ?? ""}
-            type="number"
-            onChange={(event) =>
+            unitLabel="Cal"
+            onCommit={(rawValue) =>
               setNumericGoal(
                 setWeeklyCaloriesOutGoal,
                 weeklyCaloriesOutGoal?.unit ?? "",
-                event.target.value,
+                rawValue,
               )
             }
-            slotProps={{
-              input: {
-                endAdornment: (
-                  <InputAdornment position="end">Cal</InputAdornment>
-                ),
-              },
-            }}
           />
         }
       />
       <SettingsRow
         title="Daily active minutes"
         action={
-          <TextField
+          <GoalNumberField
             value={activeMinutesGoal?.value ?? ""}
-            type="number"
-            onChange={(event) =>
+            unitLabel="mins"
+            onCommit={(rawValue) =>
               setNumericGoal(
                 setActiveMinutesGoal,
                 activeMinutesGoal?.unit ?? "",
-                event.target.value,
+                rawValue,
               )
             }
-            slotProps={{
-              input: {
-                endAdornment: (
-                  <InputAdornment position="end">mins</InputAdornment>
-                ),
-              },
-            }}
           />
         }
       />
       <SettingsRow
         title="Weekly active minutes"
         action={
-          <TextField
+          <GoalNumberField
             value={weeklyActiveMinutesGoal?.value ?? ""}
-            type="number"
-            onChange={(event) =>
+            unitLabel="mins"
+            onCommit={(rawValue) =>
               setNumericGoal(
                 setWeeklyActiveMinutesGoal,
                 weeklyActiveMinutesGoal?.unit ?? "",
-                event.target.value,
+                rawValue,
               )
             }
-            slotProps={{
-              input: {
-                endAdornment: (
-                  <InputAdornment position="end">mins</InputAdornment>
-                ),
-              },
-            }}
           />
         }
       />
       <SettingsRow
         title="Daily active zone minutes"
         action={
-          <TextField
+          <GoalNumberField
             value={activeZoneMinutesGoal?.value ?? ""}
-            type="number"
-            onChange={(event) =>
+            unitLabel="mins"
+            onCommit={(rawValue) =>
               setNumericGoal(
                 setActiveZoneMinutesGoal,
                 activeZoneMinutesGoal?.unit ?? "",
-                event.target.value,
+                rawValue,
               )
             }
-            slotProps={{
-              input: {
-                endAdornment: (
-                  <InputAdornment position="end">mins</InputAdornment>
-                ),
-              },
-            }}
           />
         }
       />
       <SettingsRow
         title="Weekly active zone minutes"
         action={
-          <TextField
+          <GoalNumberField
             value={weeklyActiveZoneMinutesGoal?.value ?? ""}
-            type="number"
-            onChange={(event) =>
+            unitLabel="mins"
+            onCommit={(rawValue) =>
               setNumericGoal(
                 setWeeklyActiveZoneMinutesGoal,
                 weeklyActiveZoneMinutesGoal?.unit ?? "",
-                event.target.value,
+                rawValue,
               )
             }
-            slotProps={{
-              input: {
-                endAdornment: (
-                  <InputAdornment position="end">mins</InputAdornment>
-                ),
-              },
-            }}
           />
         }
       />
       <SettingsRow
         title="Daily water"
         action={
-          <TextField
+          <GoalNumberField
             value={
               waterGoal
                 ? localizedWaterVolume(
@@ -386,29 +328,17 @@ function ActivityGoalsSettings() {
                   )
                 : ""
             }
-            type="number"
-            onChange={(event) => {
-              const value = parseFloat(event.target.value);
-              if (Number.isFinite(value)) {
-                setWaterGoal({ value, unit: waterUnit });
-              }
-            }}
-            slotProps={{
-              input: {
-                endAdornment: (
-                  <InputAdornment position="end">
-                    {localizedWaterVolumeName}
-                  </InputAdornment>
-                ),
-              },
-            }}
+            unitLabel={localizedWaterVolumeName}
+            onCommit={(rawValue) =>
+              setNumericGoal(setWaterGoal, waterUnit, rawValue)
+            }
           />
         }
       />
       <SettingsRow
         title="Weekly water"
         action={
-          <TextField
+          <GoalNumberField
             value={
               weeklyWaterGoal
                 ? localizedWaterVolume(
@@ -419,22 +349,10 @@ function ActivityGoalsSettings() {
                   )
                 : ""
             }
-            type="number"
-            onChange={(event) => {
-              const value = parseFloat(event.target.value);
-              if (Number.isFinite(value)) {
-                setWeeklyWaterGoal({ value, unit: waterUnit });
-              }
-            }}
-            slotProps={{
-              input: {
-                endAdornment: (
-                  <InputAdornment position="end">
-                    {localizedWaterVolumeName}
-                  </InputAdornment>
-                ),
-              },
-            }}
+            unitLabel={localizedWaterVolumeName}
+            onCommit={(rawValue) =>
+              setNumericGoal(setWeeklyWaterGoal, waterUnit, rawValue)
+            }
           />
         }
       />

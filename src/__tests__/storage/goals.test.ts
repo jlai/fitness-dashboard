@@ -85,4 +85,32 @@ describe("getGoalsAtom", () => {
       unit: "",
     });
   });
+
+  it("removes a goal when the value is cleared", async () => {
+    const store = createStore();
+    const stepsAtom = getGoalsAtom("steps", "daily");
+    const floorsAtom = getGoalsAtom("floors", "daily");
+
+    await store.set(stepsAtom, { value: 7500, unit: "" });
+    await store.set(floorsAtom, { value: 10, unit: "" });
+    await store.set(stepsAtom, undefined);
+
+    expect(await store.get(stepsAtom)).toBeUndefined();
+    expect(await store.get(floorsAtom)).toEqual({
+      metric: "floors",
+      period: "daily",
+      value: 10,
+      unit: "",
+    });
+
+    const blob = await store.get(clientOnlyGoalsAtom);
+    expect(blob.clientOnlyGoals).toEqual([
+      {
+        metric: "floors",
+        period: "daily",
+        value: 10,
+        unit: "",
+      },
+    ]);
+  });
 });

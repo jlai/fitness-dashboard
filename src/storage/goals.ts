@@ -61,12 +61,22 @@ const goalsAtomFamily = atomFamily(
 
         return findGoal(dataOrPromise, metric, period);
       },
-      async (_get, set, update: GoalWrite) => {
+      async (_get, set, update: GoalWrite | undefined) => {
         await set(clientOnlyGoalsAtom, (prev) => {
           const clientOnlyGoals = [...prev.clientOnlyGoals];
           const index = clientOnlyGoals.findIndex(
             (goal) => goal.metric === metric && goal.period === period,
           );
+
+          if (update === undefined) {
+            if (index < 0) {
+              return prev;
+            }
+
+            clientOnlyGoals.splice(index, 1);
+            return { clientOnlyGoals };
+          }
+
           const next: ClientGoal = {
             metric,
             period,

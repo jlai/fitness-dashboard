@@ -19,6 +19,7 @@ import {
   getGoalsAtom,
   type GoalMetric,
   type GoalPeriod,
+  type GoalWrite,
 } from "@/storage/goals";
 import { NumberFormats } from "@/utils/number-formats";
 import { showSuccessToast, withErrorToaster } from "@/components/toast";
@@ -167,6 +168,19 @@ interface GoalSettingsFormData {
   goal: number | "";
 }
 
+function commitGoalInput(
+  setGoal: (update: GoalWrite | undefined) => void,
+  unit: string,
+  raw: number | "",
+) {
+  if (raw === "") {
+    setGoal(undefined);
+    return;
+  }
+
+  setGoal({ value: Number(raw), unit });
+}
+
 export function GoalSettings({
   metric,
   period,
@@ -197,13 +211,13 @@ export function GoalSettings({
   const { formState } = form;
 
   const submit = withErrorToaster(async (values: GoalSettingsFormData) => {
-    setGoal({ value: Number(values.goal), unit: goal?.unit ?? "" });
+    commitGoalInput(setGoal, goal?.unit ?? "", values.goal);
 
     form.reset({
       goal: values.goal,
     });
 
-    showSuccessToast("Updated goal");
+    showSuccessToast(values.goal === "" ? "Cleared goal" : "Updated goal");
   }, "Error updating goal");
 
   return (
@@ -217,7 +231,7 @@ export function GoalSettings({
           type="number"
           name="goal"
           label={label}
-          rules={{ required: true, min: 0 }}
+          rules={{ min: 0 }}
           slotProps={{
             input: {
               endAdornment: (
@@ -269,13 +283,13 @@ export function DistanceGoalSettings({
   const { formState } = form;
 
   const submit = withErrorToaster(async (values: GoalSettingsFormData) => {
-    setGoal({ value: Number(values.goal), unit: distanceUnit });
+    commitGoalInput(setGoal, distanceUnit, values.goal);
 
     form.reset({
       goal: values.goal,
     });
 
-    showSuccessToast("Updated goal");
+    showSuccessToast(values.goal === "" ? "Cleared goal" : "Updated goal");
   }, "Error updating goal");
 
   return (
@@ -289,7 +303,7 @@ export function DistanceGoalSettings({
           type="number"
           name="goal"
           label={label}
-          rules={{ required: true, min: 0 }}
+          rules={{ min: 0 }}
           slotProps={{
             input: {
               endAdornment: (
@@ -341,13 +355,13 @@ export function WaterGoalSettings({
   const { formState } = form;
 
   const submit = withErrorToaster(async (values: GoalSettingsFormData) => {
-    setGoal({ value: Number(values.goal), unit: waterUnit });
+    commitGoalInput(setGoal, waterUnit, values.goal);
 
     form.reset({
       goal: values.goal,
     });
 
-    showSuccessToast("Updated goal");
+    showSuccessToast(values.goal === "" ? "Cleared goal" : "Updated goal");
   }, "Error updating goal");
 
   return (
@@ -361,7 +375,7 @@ export function WaterGoalSettings({
           type="number"
           name="goal"
           label={label}
-          rules={{ required: true, min: 0 }}
+          rules={{ min: 0 }}
           slotProps={{
             input: {
               endAdornment: (
