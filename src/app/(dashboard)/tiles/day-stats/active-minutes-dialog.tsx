@@ -136,13 +136,11 @@ function Overview() {
         for a more detailed explanation.
       </Typography>
       <Stack direction="row" justifyContent="center">
-        {activeMinutesGoal != null && (
-          <DailyGoalSummary
-            currentTotal={activeMinutes}
-            dailyGoal={activeMinutesGoal}
-            unit="mins"
-          />
-        )}
+        <DailyGoalSummary
+          currentTotal={activeMinutes}
+          dailyGoal={activeMinutesGoal}
+          unit="mins"
+        />
       </Stack>
     </>
   );

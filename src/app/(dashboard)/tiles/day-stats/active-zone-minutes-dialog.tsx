@@ -104,13 +104,11 @@ function Overview() {
         minute in vigorous and peak zones.
       </Typography>
       <Stack direction="row" justifyContent="center">
-        {activeZoneMinutesGoal && (
-          <DailyGoalSummary
-            currentTotal={dayAzmValue}
-            dailyGoal={activeZoneMinutesGoal.value}
-            unit="mins"
-          />
-        )}
+        <DailyGoalSummary
+          currentTotal={dayAzmValue}
+          dailyGoal={activeZoneMinutesGoal?.value}
+          unit="mins"
+        />
       </Stack>
     </>
   );

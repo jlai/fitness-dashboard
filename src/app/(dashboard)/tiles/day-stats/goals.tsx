@@ -24,12 +24,92 @@ import { NumberFormats } from "@/utils/number-formats";
 import { showSuccessToast, withErrorToaster } from "@/components/toast";
 
 import { useSelectedDay } from "../../state";
+import { useTileSetting } from "../tile";
 
 import StatGauge, { StatPercent } from "./stat-gauge";
 
+function GoalSummary({
+  title,
+  currentTotal,
+  goal,
+  unit,
+}: {
+  title: string;
+  currentTotal: number;
+  goal?: number;
+  unit: string;
+}) {
+  const [, setCurrentTab] = useTileSetting<
+    { defaultTab: string },
+    "defaultTab"
+  >("defaultTab", "overview");
+
+  if (goal != null && goal > 0) {
+    return (
+      <Stack direction="column" alignItems="center">
+        <Typography variant="h5">{title}</Typography>
+        <Box width={200} height={200} mt={2}>
+          <StatGauge
+            value={currentTotal}
+            valueMax={goal}
+            valueUnits={unit}
+            innerContent={<StatPercent ratio={currentTotal / goal} />}
+            bottomContent={
+              <GoalStatus currentTotal={currentTotal} goal={goal} unit={unit} />
+            }
+          />
+        </Box>
+      </Stack>
+    );
+  }
+
+  return (
+    <Stack direction="column" alignItems="center">
+      <Typography variant="h5">{title}</Typography>
+      <Box width={200} height={200} mt={2}>
+        <StatGauge
+          muted
+          value={currentTotal}
+          valueUnits={unit}
+          innerContent={<StatPercent />}
+          bottomContent={<Typography color="text.disabled">—</Typography>}
+        />
+      </Box>
+      <Button size="small" onClick={() => setCurrentTab("settings")}>
+        No goal set
+      </Button>
+    </Stack>
+  );
+}
+
+function GoalStatus({
+  currentTotal,
+  goal,
+  unit,
+}: {
+  currentTotal: number;
+  goal: number;
+  unit: string;
+}) {
+  return (
+    <Stack direction="column" alignItems="center">
+      <Typography>
+        {NumberFormats.FRACTION_DIGITS_1.format(currentTotal)} /{" "}
+        {NumberFormats.FRACTION_DIGITS_1.format(goal)} {unit}
+      </Typography>
+      {currentTotal < goal && (
+        <Typography>
+          {NumberFormats.FRACTION_DIGITS_1.format(goal - currentTotal)} {unit}{" "}
+          to go
+        </Typography>
+      )}
+    </Stack>
+  );
+}
+
 interface DailyGoalSummaryProps {
   currentTotal: number;
-  dailyGoal: number;
+  dailyGoal?: number;
   unit: string;
 }
 
@@ -39,39 +119,18 @@ export function DailyGoalSummary({
   unit,
 }: DailyGoalSummaryProps) {
   return (
-    <Stack direction="column" alignItems="center">
-      <Typography variant="h5">Daily goal</Typography>
-      <Box width={200} height={200} mt={2}>
-        <StatGauge
-          value={currentTotal}
-          valueMax={dailyGoal}
-          valueUnits={unit}
-          innerContent={<StatPercent ratio={currentTotal / dailyGoal} />}
-          bottomContent={
-            <Stack direction="column" alignItems="center">
-              <Typography>
-                {NumberFormats.FRACTION_DIGITS_1.format(currentTotal)} /{" "}
-                {NumberFormats.FRACTION_DIGITS_1.format(dailyGoal)} {unit}
-              </Typography>
-              {currentTotal < dailyGoal && (
-                <Typography>
-                  {NumberFormats.FRACTION_DIGITS_1.format(
-                    dailyGoal - currentTotal,
-                  )}{" "}
-                  {unit} to go
-                </Typography>
-              )}
-            </Stack>
-          }
-        />
-      </Box>
-    </Stack>
+    <GoalSummary
+      title="Daily goal"
+      currentTotal={currentTotal}
+      goal={dailyGoal}
+      unit={unit}
+    />
   );
 }
 
 interface WeeklyGoalSummaryProps {
   currentTotal: number;
-  weeklyGoal: number;
+  weeklyGoal?: number;
   unit: string;
 }
 
@@ -81,33 +140,12 @@ export function WeeklyGoalSummary({
   unit,
 }: WeeklyGoalSummaryProps) {
   return (
-    <Stack direction="column" alignItems="center">
-      <Typography variant="h5">Weekly goal</Typography>
-      <Box width={200} height={200} mt={2}>
-        <StatGauge
-          value={currentTotal}
-          valueMax={weeklyGoal}
-          valueUnits={unit}
-          innerContent={<StatPercent ratio={currentTotal / weeklyGoal} />}
-          bottomContent={
-            <Stack direction="column" alignItems="center">
-              <Typography>
-                {NumberFormats.FRACTION_DIGITS_1.format(currentTotal)} /{" "}
-                {NumberFormats.FRACTION_DIGITS_1.format(weeklyGoal)} {unit}
-              </Typography>
-              {currentTotal < weeklyGoal && (
-                <Typography>
-                  {NumberFormats.FRACTION_DIGITS_1.format(
-                    weeklyGoal - currentTotal,
-                  )}{" "}
-                  {unit} to go
-                </Typography>
-              )}
-            </Stack>
-          }
-        />
-      </Box>
-    </Stack>
+    <GoalSummary
+      title="Weekly goal"
+      currentTotal={currentTotal}
+      goal={weeklyGoal}
+      unit={unit}
+    />
   );
 }
 

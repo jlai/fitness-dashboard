@@ -4,7 +4,7 @@ import {
   GaugeValueArc,
 } from "@mui/x-charts";
 import Image from "next/image";
-import { Stack, Typography } from "@mui/material";
+import { Stack, Typography, useTheme } from "@mui/material";
 
 import NumericStat from "@/components/numeric-stat";
 import { NumberFormats } from "@/utils/number-formats";
@@ -17,6 +17,7 @@ export default function StatGauge({
   innerContent,
   bottomContent,
   ariaLabel,
+  muted = false,
 }: {
   /** numeric value; this should use localized values for screen reader support */
   value: number;
@@ -26,8 +27,12 @@ export default function StatGauge({
   innerContent?: React.ReactNode;
   bottomContent?: React.ReactNode;
   ariaLabel?: string;
+  /** Grey ring with no progress, used when a goal is not set. */
+  muted?: boolean;
 }) {
-  const showGoalRing = valueMax != null && valueMax > 0;
+  const theme = useTheme();
+  const showGoalRing = !muted && valueMax != null && valueMax > 0;
+  const showRing = showGoalRing || muted;
   const percent = showGoalRing ? (100 * value) / valueMax : 0;
 
   let color;
@@ -44,23 +49,37 @@ export default function StatGauge({
     <div className="size-full max-h-full p-2">
       <div className="size-full w-full max-h-full flex flex-col items-center">
         <div className="w-full flex-1 relative min-h-0">
-          {showGoalRing ? (
+          {showRing ? (
             <GaugeContainer
               startAngle={-180}
               endAngle={180}
-              value={value}
-              valueMax={valueMax}
+              value={muted ? null : value}
+              valueMax={muted ? 1 : valueMax}
               cornerRadius="50%"
-              aria-label={ariaLabel ?? `${valueUnits} progress`}
+              aria-label={
+                muted ? "No goal set" : (ariaLabel ?? `${valueUnits} progress`)
+              }
+              aria-valuetext={muted ? "No goal set" : undefined}
             >
-              <GaugeReferenceArc />
-              <GaugeValueArc style={{ fill: color }} />
+              <GaugeReferenceArc
+                style={
+                  muted
+                    ? {
+                        fill:
+                          theme.palette.mode === "dark"
+                            ? theme.palette.grey[600]
+                            : theme.palette.grey[400],
+                      }
+                    : undefined
+                }
+              />
+              {showGoalRing && <GaugeValueArc style={{ fill: color }} />}
             </GaugeContainer>
           ) : (
             <div className="size-full" aria-label={ariaLabel ?? valueUnits} />
           )}
           <div className="absolute inset-1/4 flex place-content-center">
-            {showGoalRing ? innerContent : undefined}
+            {showRing ? innerContent : undefined}
             {iconSrc && (
               <Image src={iconSrc} alt="" className="size-3/4 self-center" />
             )}
@@ -78,7 +97,17 @@ export default function StatGauge({
   );
 }
 
-export function StatPercent({ ratio }: { ratio: number }) {
+export function StatPercent({ ratio }: { ratio?: number }) {
+  if (ratio == null || !Number.isFinite(ratio)) {
+    return (
+      <Stack direction="column" alignItems="center" justifyContent="center">
+        <Typography variant="h5" color="text.disabled">
+          —
+        </Typography>
+      </Stack>
+    );
+  }
+
   return (
     <Stack direction="column" alignItems="center" justifyContent="center">
       <Typography variant="h5">

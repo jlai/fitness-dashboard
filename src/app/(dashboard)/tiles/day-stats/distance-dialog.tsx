@@ -114,20 +114,16 @@ function Overview() {
 
   return (
     <Stack direction="row" justifyContent="center">
-      {dailyGoal != null && (
-        <DailyGoalSummary
-          currentTotal={dailyDistance}
-          dailyGoal={dailyGoal}
-          unit={localizedKilometersNameLong}
-        />
-      )}
-      {weeklyGoal != null && (
-        <WeeklyGoalSummary
-          currentTotal={weeklyDistance}
-          weeklyGoal={weeklyGoal}
-          unit={localizedKilometersNameLong}
-        />
-      )}
+      <DailyGoalSummary
+        currentTotal={dailyDistance}
+        dailyGoal={dailyGoal}
+        unit={localizedKilometersNameLong}
+      />
+      <WeeklyGoalSummary
+        currentTotal={weeklyDistance}
+        weeklyGoal={weeklyGoal}
+        unit={localizedKilometersNameLong}
+      />
     </Stack>
   );
 }

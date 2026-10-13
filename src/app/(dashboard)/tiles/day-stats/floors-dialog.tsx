@@ -83,20 +83,16 @@ function Overview() {
 
   return (
     <Stack direction="row" justifyContent="center">
-      {dailyGoal && (
-        <DailyGoalSummary
-          currentTotal={currentTotal}
-          dailyGoal={dailyGoal.value}
-          unit="floors"
-        />
-      )}
-      {weeklyGoal && (
-        <WeeklyGoalSummary
-          currentTotal={weeklyTotal}
-          weeklyGoal={weeklyGoal.value}
-          unit="floors"
-        />
-      )}
+      <DailyGoalSummary
+        currentTotal={currentTotal}
+        dailyGoal={dailyGoal?.value}
+        unit="floors"
+      />
+      <WeeklyGoalSummary
+        currentTotal={weeklyTotal}
+        weeklyGoal={weeklyGoal?.value}
+        unit="floors"
+      />
     </Stack>
   );
 }

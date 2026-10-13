@@ -91,13 +91,13 @@ function Overview() {
   const currentTotal = Number(useSelectedDayTimeSeries("calories") ?? 0);
   const dailyGoal = useAtomValue(getGoalsAtom("caloriesOut", "daily"));
 
-  return dailyGoal ? (
+  return (
     <DailyGoalSummary
       currentTotal={currentTotal}
-      dailyGoal={dailyGoal.value}
+      dailyGoal={dailyGoal?.value}
       unit="Calories"
     />
-  ) : null;
+  );
 }
 
 function CaloriesPieChart() {
