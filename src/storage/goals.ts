@@ -1,5 +1,6 @@
 "use client";
 
+import { remove } from "es-toolkit";
 import { atom } from "jotai";
 import { atomFamily } from "jotai-family";
 
@@ -63,20 +64,21 @@ const goalsAtomFamily = atomFamily(
       },
       async (_get, set, update: GoalWrite | undefined) => {
         await set(clientOnlyGoalsAtom, (prev) => {
-          const clientOnlyGoals = [...prev.clientOnlyGoals];
-          const index = clientOnlyGoals.findIndex(
-            (goal) => goal.metric === metric && goal.period === period,
-          );
+          const matchesGoal = (goal: ClientGoal) =>
+            goal.metric === metric && goal.period === period;
 
           if (update === undefined) {
-            if (index < 0) {
+            if (!prev.clientOnlyGoals.some(matchesGoal)) {
               return prev;
             }
 
-            clientOnlyGoals.splice(index, 1);
+            const clientOnlyGoals = [...prev.clientOnlyGoals];
+            remove(clientOnlyGoals, matchesGoal);
             return { clientOnlyGoals };
           }
 
+          const clientOnlyGoals = [...prev.clientOnlyGoals];
+          const index = clientOnlyGoals.findIndex(matchesGoal);
           const next: ClientGoal = {
             metric,
             period,
