@@ -5,7 +5,6 @@ import { Button, Switch } from "@mui/material";
 import { useAtom, useSetAtom } from "jotai";
 import { RESET } from "jotai/utils";
 import { useConfirm } from "material-ui-confirm";
-import NextLink from "next/link";
 
 import { userTilesAtom } from "@/storage/tiles";
 import { increasedTileLimitsAtom } from "@/storage/settings";
@@ -54,17 +53,6 @@ function AdvancedSettings() {
         }
       >
         Reset the dashboard grid to the default layout
-      </SettingsRow>
-      <SettingsRow
-        title="Migrate settings"
-        action={
-          <Button href="/settings/migration" LinkComponent={NextLink}>
-            Open
-          </Button>
-        }
-      >
-        Import dashboard layout, preferences, goals, meals, and custom foods
-        previously stored in this browser into Google Drive or session storage.
       </SettingsRow>
     </>
   );

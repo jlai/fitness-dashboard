@@ -1,29 +1,46 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Alert, Button, Paper, Typography } from "@mui/material";
 
 import { useDriveAuthEnabled } from "@/api/auth";
 import RequireLogin from "@/components/require-login";
-import { importLegacySettings } from "@/storage/settings-storage/migrate-from-legacy";
-import { useEnableGoogleDriveSettings } from "@/storage/settings-storage";
 import { showSuccessToast, withErrorToaster } from "@/components/toast";
+import {
+  clearFitbitAuthToken,
+  clearMigrationBackupStorage,
+  hasMigrationBackupStorage,
+} from "@/storage/db/fitbitmigrationdb";
+import { useEnableGoogleDriveSettings } from "@/storage/settings-storage";
+import { importLegacySettings } from "@/storage/settings-storage/migrate-from-legacy";
 
 function MigrationContent() {
   const driveEnabled = useDriveAuthEnabled();
   const { enableGoogleDriveSettings, ready: driveAuthReady } =
     useEnableGoogleDriveSettings();
   const [importing, setImporting] = useState(false);
+  const [hasMigrationBackup, setHasMigrationBackup] = useState(false);
+
+  useEffect(() => {
+    setHasMigrationBackup(hasMigrationBackupStorage());
+  }, []);
 
   const handleImport = withErrorToaster(async () => {
     setImporting(true);
     try {
       await importLegacySettings();
+      clearMigrationBackupStorage();
+      clearFitbitAuthToken();
+      setHasMigrationBackup(false);
       showSuccessToast("Imported settings from this browser");
     } finally {
       setImporting(false);
     }
   }, "Failed to import settings");
+
+  const handleSkip = () => {
+    clearFitbitAuthToken();
+  };
 
   return (
     <Paper className="flex flex-col gap-4 p-6">
@@ -55,12 +72,17 @@ function MigrationContent() {
             Enable Google Drive
           </Button>
         )}
-        <Button
-          variant="contained"
-          onClick={() => void handleImport()}
-          disabled={importing || !driveEnabled}
-        >
-          {importing ? "Importing…" : "Import old settings"}
+        {hasMigrationBackup && (
+          <Button
+            variant="contained"
+            onClick={() => void handleImport()}
+            disabled={importing || !driveEnabled}
+          >
+            {importing ? "Importing…" : "Import old settings"}
+          </Button>
+        )}
+        <Button onClick={handleSkip} disabled={importing}>
+          Skip import
         </Button>
       </div>
     </Paper>

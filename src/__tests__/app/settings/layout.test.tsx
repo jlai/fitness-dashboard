@@ -1,9 +1,10 @@
 import { render, screen } from "@testing-library/react";
+import { usePathname } from "next/navigation";
 
 import SettingsLayout, { getSettingsNavItems } from "@/app/settings/layout";
 
 jest.mock("next/navigation", () => ({
-  usePathname: () => "/settings",
+  usePathname: jest.fn(() => "/settings"),
 }));
 
 jest.mock("@/config", () => ({
@@ -27,6 +28,10 @@ describe("getSettingsNavItems", () => {
 });
 
 describe("SettingsLayout", () => {
+  beforeEach(() => {
+    jest.mocked(usePathname).mockReturnValue("/settings");
+  });
+
   it("renders the Developer nav item when NEXT_PUBLIC_DEV_MODE is enabled", () => {
     render(
       <SettingsLayout>
@@ -37,5 +42,23 @@ describe("SettingsLayout", () => {
     expect(
       screen.getByRole("link", { name: "Developer" }).getAttribute("href"),
     ).toBe("/settings/developer");
+    expect(
+      screen.getByRole("navigation", { name: "settings sections" }),
+    ).toBeTruthy();
+  });
+
+  it("hides the settings sidebar on the migration page", () => {
+    jest.mocked(usePathname).mockReturnValue("/settings/migration");
+
+    render(
+      <SettingsLayout>
+        <div>migration content</div>
+      </SettingsLayout>,
+    );
+
+    expect(screen.getByText("migration content")).toBeTruthy();
+    expect(
+      screen.queryByRole("navigation", { name: "settings sections" }),
+    ).toBeNull();
   });
 });

@@ -17,6 +17,7 @@ import {
   redirectOnAccountNotLinkedEffect,
   warnOnRateLimitExceededEffect,
 } from "@/api/request";
+import { FitbitMigrationLoginRedirect } from "@/components/login/fitbit-migration-login-redirect";
 import { GoogleIdentityProvider } from "@/components/login/google-identity";
 import { GOOGLE_OAUTH_CLIENT_ID } from "@/config";
 import "@/config/zod";
@@ -51,6 +52,7 @@ function Setup({ children }: { children: React.ReactNode }) {
   return (
     <React.Fragment key={`key-{pageRefreshKey}`}>
       <GoogleOpenIdAutomaticSignIn />
+      <FitbitMigrationLoginRedirect />
       {children}
     </React.Fragment>
   );

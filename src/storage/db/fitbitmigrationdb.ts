@@ -3,6 +3,41 @@ import type { NutritionalValues } from "@/api/nutrition/types";
 /** localStorage key written by the Fitbit app's migration backup. */
 export const MIGRATION_BACKUP_STORAGE_KEY = "migration:fitbit-to-google";
 
+/** Legacy Fitbit session token left in this browser by the previous app. */
+export const FITBIT_AUTH_TOKEN_STORAGE_KEY = "auth:fitbit-token";
+
+function hasLocalStorageKey(key: string) {
+  if (typeof localStorage === "undefined") {
+    return false;
+  }
+
+  return localStorage.getItem(key) !== null;
+}
+
+function removeLocalStorageKey(key: string) {
+  if (typeof localStorage === "undefined") {
+    return;
+  }
+
+  localStorage.removeItem(key);
+}
+
+export function hasFitbitAuthToken() {
+  return hasLocalStorageKey(FITBIT_AUTH_TOKEN_STORAGE_KEY);
+}
+
+export function clearFitbitAuthToken() {
+  removeLocalStorageKey(FITBIT_AUTH_TOKEN_STORAGE_KEY);
+}
+
+export function hasMigrationBackupStorage() {
+  return hasLocalStorageKey(MIGRATION_BACKUP_STORAGE_KEY);
+}
+
+export function clearMigrationBackupStorage() {
+  removeLocalStorageKey(MIGRATION_BACKUP_STORAGE_KEY);
+}
+
 export type GoalPeriod = "daily" | "weekly" | "target";
 
 export interface MigrationGoal {

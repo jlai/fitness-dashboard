@@ -39,6 +39,7 @@ import { formatAsDate } from "@/api/datetime";
 import { PRIVACY_POLICY_LINK, WEBSITE_NAME } from "@/config";
 import { SETTINGS_READONLY } from "@/config/google-health-scopes";
 import { firstLoginDateAtom } from "@/storage/analytics";
+import { hasFitbitAuthToken } from "@/storage/db/fitbitmigrationdb";
 import { allUnitsConfiguredAtom } from "@/storage/settings";
 
 import { GoogleSignInButton } from "./google-sign-in-button";
@@ -241,7 +242,9 @@ export default function LoginBox() {
           setFirstLoginDate(formatAsDate(dayjs()));
         }
 
-        if (!hasTokenScope(SETTINGS_READONLY) && !allUnitsConfigured) {
+        if (hasFitbitAuthToken()) {
+          router.replace("/settings/migration");
+        } else if (!hasTokenScope(SETTINGS_READONLY) && !allUnitsConfigured) {
           router.replace("/settings/locale");
         }
       })();

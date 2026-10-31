@@ -61,9 +61,7 @@ const BASE_NAV_ITEMS: ReadonlyArray<SettingsNavItem> = [
     href: "/settings/advanced",
     label: "Advanced",
     icon: <AdvancedIcon />,
-    match: (pathname: string) =>
-      pathname.startsWith("/settings/advanced") ||
-      pathname.startsWith("/settings/migration"),
+    match: (pathname: string) => pathname.startsWith("/settings/advanced"),
   },
 ];
 
@@ -89,24 +87,27 @@ export default function SettingsLayout({
 }) {
   const pathname = usePathname();
   const navItems = getSettingsNavItems();
+  const showNav = !pathname.startsWith("/settings/migration");
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-4 md:flex-row md:items-start">
-      <Paper className="w-full shrink-0 md:sticky md:top-4 md:w-56">
-        <List component="nav" aria-label="settings sections" dense>
-          {navItems.map((item) => (
-            <ListItemButton
-              key={item.href}
-              component={Link}
-              href={item.href}
-              selected={item.match(pathname)}
-            >
-              <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.label} />
-            </ListItemButton>
-          ))}
-        </List>
-      </Paper>
+      {showNav && (
+        <Paper className="w-full shrink-0 md:sticky md:top-4 md:w-56">
+          <List component="nav" aria-label="settings sections" dense>
+            {navItems.map((item) => (
+              <ListItemButton
+                key={item.href}
+                component={Link}
+                href={item.href}
+                selected={item.match(pathname)}
+              >
+                <ListItemIcon>{item.icon}</ListItemIcon>
+                <ListItemText primary={item.label} />
+              </ListItemButton>
+            ))}
+          </List>
+        </Paper>
+      )}
       <div className="min-w-0 flex-1">{children}</div>
     </div>
   );
