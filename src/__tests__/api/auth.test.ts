@@ -5,6 +5,7 @@ import { useAtom } from "jotai";
 
 import {
   clearEncryptedDriveAuth,
+  applyHealthTokenResponse,
   createSession,
   forceTokenRefresh,
   getAccessTokenScopes,
@@ -635,6 +636,35 @@ describe("forceTokenRefresh", () => {
     expect(JSON.stringify(localStorage)).not.toContain("new-access-token");
     expect(JSON.stringify(localStorage)).not.toContain("openid");
     expect(getAccessTokenScopes().has("openid")).toBe(true);
+  });
+
+  it("uses a newly cached access token after an expired refresh failed", async () => {
+    await establishSession();
+    fetchMock.mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          error: "unauthorized",
+          errorDescription: "invalid token",
+        }),
+        { status: 401, headers: { "Content-Type": "application/json" } },
+      ),
+    );
+
+    await expect(getFreshAccessToken()).rejects.toThrow("invalid token");
+
+    fetchMock.mockReset();
+    fetchMock.mockResolvedValue(sessionClaimsResponse());
+    await createSession("google-id-token");
+    applyHealthTokenResponse({
+      accessToken: "fresh-access-token",
+      expiresIn: 3600,
+      scope: "openid",
+      encryptedHealthToken: "encrypted-jwt",
+    });
+    fetchMock.mockClear();
+
+    await expect(getFreshAccessToken()).resolves.toBe("fresh-access-token");
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("leaves an unexpired in-memory token alone when getFreshAccessToken is used", async () => {
