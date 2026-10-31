@@ -13,6 +13,7 @@ import {
 } from "@/storage/db/fitbitmigrationdb";
 import { useEnableGoogleDriveSettings } from "@/storage/settings-storage";
 import { importLegacySettings } from "@/storage/settings-storage/migrate-from-legacy";
+import Link from "next/link";
 
 function MigrationContent() {
   const driveEnabled = useDriveAuthEnabled();
@@ -45,20 +46,57 @@ function MigrationContent() {
   return (
     <Paper className="flex flex-col gap-4 p-6">
       <Typography variant="h5" component="h1">
-        Migrate settings
+        Welcome back!
       </Typography>
       <Typography>
-        Import dashboard layout, preferences, goals, meals, and custom foods
-        that were previously stored in this browser (including the Fitbit
-        migration backup in localStorage) into Settings storage. Legacy data is
-        not deleted; you can wipe it later from Advanced settings.
+        This website is now using the Google Health API to access your health
+        data, instead of the Fitbit API which is no longer available. Most of
+        the experience should be the same, but here are some things you should
+        know:
       </Typography>
-
+      <ul className="list-disc list-outside pl-4">
+        <li>
+          Previously, once you signed in with your Fitbit account, you could
+          stay signed in indefinitely. Now, you&apos;ll be asked to sign in
+          again every day. This might be adjustable in the future.
+        </li>
+        <li>
+          Dashboard layout and other settings are now stored in Google Drive,
+          instead of inside your browser. This means when you sign in from
+          another computer, you&apos; be able to sync your settings.
+        </li>
+        <li>
+          If you previously backed up your settings, you will need to import
+          them into Google Drive using the button below.
+        </li>
+        <li>
+          Previously, we would get your daily steps/distance/calorie goals from
+          the Fitbit API. This is not yet available in the Google Health API, so
+          to view them on the dashboard you&apos;ll need to set them manually
+          (or if you import your settings, it will be carried over from the
+          backup). In the future, we should be able to get these goals from the
+          Google Health API.
+        </li>
+        <li>
+          Custom foods are no longer synced with the Google Health app. If you
+          previously backed up your custom foods, they will be available as
+          &quot;dashboard only&quot; foods, which are only available on this
+          website and not in the Google Health app.
+        </li>
+      </ul>
+      <Typography>
+        If you have any questions, please feel free to reach out (see the{" "}
+        <Link href="/about" className="underline">
+          About page
+        </Link>
+        ).
+      </Typography>
       {!driveEnabled && (
         <Alert severity="info">
-          Google Drive app data is not enabled. Enable Drive so imported
-          settings sync across devices; otherwise they stay in this browser
-          session only.
+          Google Drive access is not enabled. You must enable Google Drive to
+          import your settings. This will only allow us to store your settings
+          in Google Drive; it will not have access any of your Google Drive
+          files.
         </Alert>
       )}
 
