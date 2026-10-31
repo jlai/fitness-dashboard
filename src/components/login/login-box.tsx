@@ -31,6 +31,7 @@ import {
   hasTokenScope,
   pendingRememberMeChoiceAtom,
   persistAuthTokens,
+  useDriveAuthEnabled,
   useLoggedIn,
   useOpenIdSignedIn,
 } from "@/api/auth";
@@ -41,6 +42,7 @@ import { SETTINGS_READONLY } from "@/config/google-health-scopes";
 import { firstLoginDateAtom } from "@/storage/analytics";
 import { hasFitbitAuthToken } from "@/storage/db/fitbitmigrationdb";
 import { allUnitsConfiguredAtom } from "@/storage/settings";
+import { useEnableGoogleDriveSettings } from "@/storage/settings-storage";
 
 import { GoogleSignInButton } from "./google-sign-in-button";
 
@@ -130,11 +132,15 @@ export function LoginStepper({
   activeStep,
   onGrantHealthAccess,
   grantAccessReady,
+  onAuthorizeDrive,
+  driveAuthReady,
   onFinish,
 }: {
   activeStep: number;
   onGrantHealthAccess: () => void;
   grantAccessReady: boolean;
+  onAuthorizeDrive: () => void;
+  driveAuthReady: boolean;
   onFinish: (rememberMe: boolean) => void;
 }) {
   const [rememberMeChoice, setRememberMeChoice] = useState("dont-stay");
@@ -171,8 +177,28 @@ export function LoginStepper({
         ) : null}
       </Step>
       <Step>
-        <StepLabel>Remember me on this computer?</StepLabel>
+        <StepLabel>Sync settings with Google Drive</StepLabel>
         {activeStep === 2 ? (
+          <StepContent>
+            <Typography variant="body1" marginBottom={2}>
+              Allow access to load and store settings (dashboard layouts, meals,
+              etc.) in Google Drive. The site will not be able to access any
+              files in your Google Drive account, but will take up a small
+              amount of your storage space.
+            </Typography>
+            <Button
+              variant="contained"
+              onClick={onAuthorizeDrive}
+              disabled={!driveAuthReady}
+            >
+              Sync settings with Google Drive
+            </Button>
+          </StepContent>
+        ) : null}
+      </Step>
+      <Step>
+        <StepLabel>Remember me on this computer?</StepLabel>
+        {activeStep === 3 ? (
           <StepContent>
             <RadioGroup
               className="flex flex-col gap-y-3"
@@ -212,12 +238,21 @@ export default function LoginBox() {
   const pendingRememberMeChoice = useAtomValue(pendingRememberMeChoiceAtom);
   const openIdSignedIn = useOpenIdSignedIn();
   const loggedIn = useLoggedIn();
+  const driveEnabled = useDriveAuthEnabled();
   const { loginToGoogleAndAuthorize, ready } = useGoogleHealthAuthorization();
+  const { enableGoogleDriveSettings, ready: driveAuthReady } =
+    useEnableGoogleDriveSettings();
 
   const awaitingRememberMe = pendingRememberMeChoice && loggedIn;
   const showWelcomeBack =
     hasPersistedEncryptedHealthToken() && !awaitingRememberMe;
-  const activeStep = awaitingRememberMe ? 2 : openIdSignedIn ? 1 : 0;
+  const activeStep = awaitingRememberMe
+    ? driveEnabled
+      ? 3
+      : 2
+    : openIdSignedIn
+      ? 1
+      : 0;
 
   const grantHealthAccess = useCallback(() => {
     loginToGoogleAndAuthorize()
@@ -228,6 +263,12 @@ export default function LoginBox() {
         // loginToGoogleAndAuthorize already toasts on failure
       });
   }, [loginToGoogleAndAuthorize, setPendingRememberMeChoice]);
+
+  const authorizeDriveStorage = useCallback(() => {
+    void enableGoogleDriveSettings().catch(() => {
+      // enableGoogleDriveSettings already toasts on failure
+    });
+  }, [enableGoogleDriveSettings]);
 
   const finishLogin = useCallback(
     (rememberMe: boolean) => {
@@ -322,6 +363,8 @@ export default function LoginBox() {
               activeStep={activeStep}
               onGrantHealthAccess={grantHealthAccess}
               grantAccessReady={ready}
+              onAuthorizeDrive={authorizeDriveStorage}
+              driveAuthReady={driveAuthReady}
               onFinish={finishLogin}
             />
           </>

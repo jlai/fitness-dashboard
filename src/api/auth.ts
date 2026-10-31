@@ -54,7 +54,8 @@ let driveAuthGeneration = 0;
 
 /**
  * After Google Health access is granted during login, keep the login box
- * visible until the user finishes the remember-me step.
+ * visible until the user finishes the remaining steps (Drive storage and
+ * remember-me).
  */
 export const pendingRememberMeChoiceAtom = atom(false);
 
