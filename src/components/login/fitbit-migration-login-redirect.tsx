@@ -5,7 +5,7 @@ import { useAtomValue } from "jotai";
 import { usePathname, useRouter } from "next/navigation";
 
 import { pendingRememberMeChoiceAtom, useLoggedIn } from "@/api/auth";
-import { hasFitbitAuthToken } from "@/storage/db/fitbitmigrationdb";
+import { needsFitbitMigrationRedirect } from "@/storage/db/fitbitmigrationdb";
 
 function isMigrationPath(pathname: string) {
   return (
@@ -16,7 +16,7 @@ function isMigrationPath(pathname: string) {
 
 /**
  * Send a signed-in user to the Fitbit migration page once per login while the
- * legacy Fitbit token is still stored in this browser.
+ * legacy Fitbit token or migration backup is still stored in this browser.
  */
 export function FitbitMigrationLoginRedirect() {
   const loggedIn = useLoggedIn();
@@ -35,7 +35,7 @@ export function FitbitMigrationLoginRedirect() {
       return;
     }
 
-    if (!hasFitbitAuthToken()) {
+    if (!needsFitbitMigrationRedirect()) {
       return;
     }
 

@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { Alert, Button, Paper, Typography } from "@mui/material";
+import { useConfirm } from "material-ui-confirm";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { useDriveAuthEnabled } from "@/api/auth";
 import RequireLogin from "@/components/require-login";
@@ -13,9 +16,10 @@ import {
 } from "@/storage/db/fitbitmigrationdb";
 import { useEnableGoogleDriveSettings } from "@/storage/settings-storage";
 import { importLegacySettings } from "@/storage/settings-storage/migrate-from-legacy";
-import Link from "next/link";
 
 function MigrationContent() {
+  const router = useRouter();
+  const confirm = useConfirm();
   const driveEnabled = useDriveAuthEnabled();
   const { enableGoogleDriveSettings, ready: driveAuthReady } =
     useEnableGoogleDriveSettings();
@@ -34,6 +38,7 @@ function MigrationContent() {
       clearFitbitAuthToken();
       setHasMigrationBackup(false);
       showSuccessToast("Imported settings from this browser");
+      router.replace("/");
     } finally {
       setImporting(false);
     }
@@ -41,6 +46,24 @@ function MigrationContent() {
 
   const handleSkip = () => {
     clearFitbitAuthToken();
+    showSuccessToast("Skipping settings import");
+    router.replace("/");
+  };
+
+  const handleDontImport = async () => {
+    const { confirmed } = await confirm({
+      description: "This will delete your old settings. Are you sure?",
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    clearMigrationBackupStorage();
+    clearFitbitAuthToken();
+    setHasMigrationBackup(false);
+    showSuccessToast("Old settings deleted");
+    router.replace("/");
   };
 
   return (
@@ -122,6 +145,16 @@ function MigrationContent() {
         <Button onClick={handleSkip} disabled={importing}>
           Skip import
         </Button>
+        {hasMigrationBackup && (
+          <Button
+            className="ml-auto"
+            color="error"
+            onClick={() => void handleDontImport()}
+            disabled={importing}
+          >
+            Don&apos;t import
+          </Button>
+        )}
       </div>
     </Paper>
   );
