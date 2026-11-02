@@ -1,7 +1,10 @@
 import { render } from "@testing-library/react";
 
 import { FitbitMigrationLoginRedirect } from "@/components/login/fitbit-migration-login-redirect";
-import { FITBIT_AUTH_TOKEN_STORAGE_KEY } from "@/storage/db/fitbitmigrationdb";
+import {
+  FITBIT_AUTH_TOKEN_STORAGE_KEY,
+  MIGRATION_BACKUP_STORAGE_KEY,
+} from "@/storage/db/fitbitmigrationdb";
 
 const replace = jest.fn();
 let loggedIn = false;
@@ -43,6 +46,18 @@ describe("FitbitMigrationLoginRedirect", () => {
     expect(replace).toHaveBeenCalledWith("/settings/migration");
   });
 
+  it("redirects to migration after login when a migration backup is stored", () => {
+    localStorage.setItem(MIGRATION_BACKUP_STORAGE_KEY, "{}");
+    const view = render(<FitbitMigrationLoginRedirect />);
+
+    expect(replace).not.toHaveBeenCalled();
+
+    loggedIn = true;
+    view.rerender(<FitbitMigrationLoginRedirect />);
+
+    expect(replace).toHaveBeenCalledWith("/settings/migration");
+  });
+
   it("waits until the remember-me step is finished", () => {
     localStorage.setItem(FITBIT_AUTH_TOKEN_STORAGE_KEY, "legacy-token");
     loggedIn = true;
@@ -58,7 +73,7 @@ describe("FitbitMigrationLoginRedirect", () => {
     expect(replace).toHaveBeenCalledWith("/settings/migration");
   });
 
-  it("does not redirect without a Fitbit token or when already on the migration page", () => {
+  it("does not redirect without migration state or when already on the migration page", () => {
     loggedIn = true;
     render(<FitbitMigrationLoginRedirect />);
     expect(replace).not.toHaveBeenCalled();

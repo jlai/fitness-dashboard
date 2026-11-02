@@ -34,6 +34,11 @@ export function hasMigrationBackupStorage() {
   return hasLocalStorageKey(MIGRATION_BACKUP_STORAGE_KEY);
 }
 
+/** True when this browser still has Fitbit migration state to finish. */
+export function needsFitbitMigrationRedirect() {
+  return hasFitbitAuthToken() || hasMigrationBackupStorage();
+}
+
 export function clearMigrationBackupStorage() {
   removeLocalStorageKey(MIGRATION_BACKUP_STORAGE_KEY);
 }

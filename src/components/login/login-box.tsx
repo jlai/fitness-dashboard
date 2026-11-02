@@ -40,7 +40,7 @@ import { formatAsDate } from "@/api/datetime";
 import { PRIVACY_POLICY_LINK, WEBSITE_NAME } from "@/config";
 import { SETTINGS_READONLY } from "@/config/google-health-scopes";
 import { firstLoginDateAtom } from "@/storage/analytics";
-import { hasFitbitAuthToken } from "@/storage/db/fitbitmigrationdb";
+import { needsFitbitMigrationRedirect } from "@/storage/db/fitbitmigrationdb";
 import { allUnitsConfiguredAtom } from "@/storage/settings";
 import { useEnableGoogleDriveSettings } from "@/storage/settings-storage";
 
@@ -65,6 +65,11 @@ function PermissionsTable() {
   return (
     <Table size="small">
       <TableBody>
+        <PermissionInfo title="Google Drive">
+          Load and store settings (dashboard layouts, meals, etc.) in Google
+          Drive. The site will not be able to access any files in your Google
+          Drive account, but will take up a small amount of your storage space.
+        </PermissionInfo>
         <PermissionInfo title="Name and email">
           Used by the Sign In With Google button to show which account
           you&apos;re signing in with.
@@ -283,7 +288,7 @@ export default function LoginBox() {
           setFirstLoginDate(formatAsDate(dayjs()));
         }
 
-        if (hasFitbitAuthToken()) {
+        if (needsFitbitMigrationRedirect()) {
           router.replace("/settings/migration");
         } else if (!hasTokenScope(SETTINGS_READONLY) && !allUnitsConfigured) {
           router.replace("/settings/locale");
@@ -412,9 +417,11 @@ export default function LoginBox() {
             <AccordionDetails>
               <div className="space-y-2">
                 <p>
-                  Health data is retrieved from the Google Health API. Some of
-                  the data may be cached in your browser&apos;s memory and local
-                  offline storage/cache. No data is stored on our servers/cloud.
+                  Health data is retrieved directly from the Google Health API.
+                  Unlike some other apps/services, we do not sync or store any
+                  health data on our servers. Settings like dashboard layouts
+                  and meals are stored in your Google Drive account (if
+                  allowed).
                 </p>
               </div>
             </AccordionDetails>
