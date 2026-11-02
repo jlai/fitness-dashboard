@@ -15,10 +15,7 @@ import {
   useOpenIdSignedIn,
 } from "@/api/auth";
 import { useSignOut } from "@/components/login/use-sign-out";
-import {
-  useDisableGoogleDriveSettings,
-  useEnableGoogleDriveSettings,
-} from "@/storage/settings-storage";
+import { useEnableGoogleDriveSettings } from "@/storage/settings-storage";
 import { getScopeName } from "@/config/scopes";
 
 import { SettingsRow, SettingsTable } from "./common";
@@ -62,7 +59,6 @@ function LoggedInAccountSettings() {
   const driveEnabled = useDriveAuthEnabled();
   const { enableGoogleDriveSettings, ready: driveAuthReady } =
     useEnableGoogleDriveSettings();
-  const { disableGoogleDriveSettings } = useDisableGoogleDriveSettings();
 
   const unlinkAccount = () => {
     confirm({
@@ -102,39 +98,32 @@ function LoggedInAccountSettings() {
           </div>
         </SettingsRow>
       )}
-      <SettingsRow
-        title="Save settings to Google Drive"
-        action={
-          driveEnabled ? (
-            <Button
-              color="error"
-              onClick={() => void disableGoogleDriveSettings()}
-            >
-              Disable
-            </Button>
-          ) : (
+      {!driveEnabled && (
+        <SettingsRow
+          title="Save settings to Google Drive"
+          action={
             <Button
               onClick={() => void enableGoogleDriveSettings()}
               disabled={!driveAuthReady}
             >
               Enable
             </Button>
-          )
-        }
-        component="div"
-      >
-        <div className="space-y-4">
-          <p>
-            Allow this website to store settings in your Google Drive. This
-            allows you to customize your dashboard and have the settings backed
-            up to the cloud. See the{" "}
-            <Link href="/about" className="underline">
-              FAQ
-            </Link>{" "}
-            for more details.
-          </p>
-        </div>
-      </SettingsRow>
+          }
+          component="div"
+        >
+          <div className="space-y-4">
+            <p>
+              Allow this website to store settings in your Google Drive. This
+              allows you to customize your dashboard and have the settings
+              backed up to the cloud. See the{" "}
+              <Link href="/about" className="underline">
+                FAQ
+              </Link>{" "}
+              for more details.
+            </p>
+          </div>
+        </SettingsRow>
+      )}
       <SettingsRow
         title="Unlink Google account"
         action={

@@ -16,7 +16,9 @@ describe("settings-storage helpers", () => {
   });
 
   it("rejects invalid keys", () => {
-    expect(() => assertValidSettingsKey("Meals")).toThrow(/invalid settings key/);
+    expect(() => assertValidSettingsKey("Meals")).toThrow(
+      /invalid settings key/,
+    );
     expect(() => assertValidSettingsKey("foods.json")).toThrow();
     expect(() => assertValidSettingsKey("../x")).toThrow();
     expect(() => assertValidSettingsKey("")).toThrow();
@@ -30,9 +32,9 @@ describe("settings-storage helpers", () => {
       updateTime: "2026-01-01T00:00:00.000Z",
     });
     expect(isStoredDataEnvelope(wrapped)).toBe(true);
-    expect(isStoredDataEnvelope({ data: 1, version: "1", updateTime: "x" })).toBe(
-      false,
-    );
+    expect(
+      isStoredDataEnvelope({ data: 1, version: "1", updateTime: "x" }),
+    ).toBe(false);
     expect(parseStoredData(wrapped)).toEqual(wrapped);
   });
 });
@@ -65,9 +67,41 @@ describe("MemorySettingsStorage", () => {
 
   it("rejects invalid keys on get and set", async () => {
     const storage = new MemorySettingsStorage();
-    await expect(storage.get("Bad Key")).rejects.toThrow(/invalid settings key/);
+    await expect(storage.get("Bad Key")).rejects.toThrow(
+      /invalid settings key/,
+    );
     await expect(storage.set("Bad Key", {})).rejects.toThrow(
       /invalid settings key/,
     );
+  });
+
+  it("tracks stored data presence and notifies subscribers", async () => {
+    const storage = new MemorySettingsStorage();
+    const listener = jest.fn();
+    const unsubscribe = storage.subscribe(listener);
+
+    expect(storage.hasStoredData()).toBe(false);
+
+    await storage.set("meals", []);
+    expect(storage.hasStoredData()).toBe(true);
+    expect(listener).toHaveBeenCalledTimes(1);
+
+    storage.seedSync("settings", { units: {} });
+    expect(listener).toHaveBeenCalledTimes(2);
+
+    await storage.delete("meals");
+    expect(listener).toHaveBeenCalledTimes(3);
+    expect(storage.hasStoredData()).toBe(true);
+
+    await storage.delete("settings");
+    expect(listener).toHaveBeenCalledTimes(4);
+    expect(storage.hasStoredData()).toBe(false);
+
+    await storage.delete("settings");
+    expect(listener).toHaveBeenCalledTimes(4);
+
+    unsubscribe();
+    await storage.set("meals", []);
+    expect(listener).toHaveBeenCalledTimes(4);
   });
 });

@@ -7,7 +7,10 @@ export {
   wrapStoredData,
 } from "./types";
 export { MemorySettingsStorage } from "./memory";
-export { GoogleDriveSettingsStorage, DRIVE_SETTINGS_WRITE_DEBOUNCE_MS } from "./google-drive";
+export {
+  GoogleDriveSettingsStorage,
+  DRIVE_SETTINGS_WRITE_DEBOUNCE_MS,
+} from "./google-drive";
 export { SETTINGS_STORAGE_KEYS, type SettingsStorageKey } from "./keys";
 export {
   settingsStorageAtom,
@@ -30,6 +33,7 @@ export {
 } from "./migrate-from-drive-on-disable";
 export { useEnableGoogleDriveSettings } from "./use-enable-google-drive-settings";
 export { useDisableGoogleDriveSettings } from "./use-disable-google-drive-settings";
+export { useHasMemorySettingsStored } from "./use-has-memory-settings-stored";
 export {
   storedDataSchema,
   userTileSchema,

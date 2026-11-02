@@ -23,6 +23,7 @@ import { SurveyButton } from "@/components/survey";
 
 import AccountMenu from "./account-menu";
 import { SiteNotice } from "./site-notice";
+import UnsavedSettingsSyncButton from "./unsaved-settings-sync-button";
 
 function NavLink({
   href,
@@ -69,7 +70,12 @@ function SiteBranding({ className = "" }: { className: string }) {
           )}
         </div>
       </div>
-      <Chip label="Health Preview" color="info" variant="filled" className="ml-4" />
+      <Chip
+        label="Health Preview"
+        color="info"
+        variant="filled"
+        className="ml-4"
+      />
     </div>
   );
 }
@@ -105,6 +111,7 @@ export default function Header() {
               <NavLink href="/about" icon={<AboutIcon />}>
                 About
               </NavLink>
+              <UnsavedSettingsSyncButton />
               <AccountMenu />
             </div>
           </div>
