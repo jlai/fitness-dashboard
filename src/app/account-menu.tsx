@@ -2,8 +2,6 @@
 
 import {
   AccountCircle as AccountIcon,
-  Settings as SettingsIcon,
-  Logout as LogoutIcon,
   Refresh as RefreshIcon,
   NewReleases as NewsIcon,
 } from "@mui/icons-material";
@@ -13,7 +11,6 @@ import {
   MenuItem,
   ListItemIcon,
   ListItemText,
-  Divider,
 } from "@mui/material";
 import Link from "next/link";
 import {
@@ -23,21 +20,14 @@ import {
 } from "material-ui-popup-state/hooks";
 import { useQueryClient } from "@tanstack/react-query";
 
-import { logout, useLoggedIn } from "@/api/auth";
 import { WHATS_NEW_LINK } from "@/config";
 
 export default function AccountMenu() {
-  const loggedIn = useLoggedIn();
   const popupState = usePopupState({
     variant: "popover",
     popupId: "account-popup-menu",
   });
   const queryClient = useQueryClient();
-
-  const handleLogoutClicked = () => {
-    logout();
-    popupState.close();
-  };
 
   const handleRefreshClicked = () => {
     queryClient.invalidateQueries();
@@ -64,29 +54,12 @@ export default function AccountMenu() {
             </Link>
           </MenuItem>
         )}
-        <MenuItem onClick={popupState.close}>
-          <Link href="/settings" className="flex flex-row">
-            <ListItemIcon>
-              <SettingsIcon />
-            </ListItemIcon>
-            <ListItemText>Settings</ListItemText>
-          </Link>
-        </MenuItem>
         <MenuItem onClick={handleRefreshClicked}>
           <ListItemIcon>
             <RefreshIcon />
           </ListItemIcon>
           <ListItemText>Refresh data</ListItemText>
         </MenuItem>
-        {loggedIn && <Divider />}
-        {loggedIn && (
-          <MenuItem onClick={handleLogoutClicked}>
-            <ListItemIcon>
-              <LogoutIcon />
-            </ListItemIcon>
-            <ListItemText>Logout</ListItemText>
-          </MenuItem>
-        )}
       </Menu>
     </>
   );

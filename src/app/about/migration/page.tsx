@@ -6,7 +6,7 @@ export default function AboutMigrationPage() {
     <Container maxWidth="md" className="space-y-8">
       <section className="space-y-4">
         <Typography variant="h4">
-          Preparing for the transition to Google Health
+          Temporarily unavailable while we transition to Google Health
         </Typography>
         <Typography variant="body2">
           Over the last few years, Google has been in the process of
@@ -48,22 +48,6 @@ export default function AboutMigrationPage() {
         <Typography variant="h4">Timeline</Typography>
 
         <div className="space-y-2">
-          <Typography variant="h6">Before November 1st</Typography>
-          <Typography variant="body2">
-            The website will remain available until November 1st. If you want to
-            keep using your existing custom foods, meals, and goals on the new
-            site, back them up before the Fitbit API goes offline.
-          </Typography>
-          <Button
-            variant="contained"
-            href="/settings/migration"
-            LinkComponent={NextLink}
-          >
-            Back up custom foods, meals, and goals
-          </Button>
-        </div>
-
-        <div className="space-y-2">
           <Typography variant="h6">After November 1st</Typography>
           <Typography variant="body2">
             The website will be <b>unavailable</b> while we prepare the new
@@ -74,13 +58,15 @@ export default function AboutMigrationPage() {
             securely.
           </Typography>
           <Typography variant="body2">
-            <b>Update (Oct 27)</b>: We are still waiting for the security
-            company to complete the assessment.
+            <b>Update (Nov 2)</b>: We have completed the security assessment and
+            are working through the paperwork.
           </Typography>
         </div>
 
         <div className="space-y-2">
-          <Typography variant="h6">Early November (exact date TBD)</Typography>
+          <Typography variant="h6">
+            Early November (hopefully within a week)
+          </Typography>
           <Typography variant="body2">
             Once the website returns, you will sign in with your Google account
             and authorize access to Google Health. If you previously saved a

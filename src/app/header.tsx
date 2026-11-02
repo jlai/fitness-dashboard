@@ -1,27 +1,15 @@
 import { AppBar, Container, Chip, Link } from "@mui/material";
 import React from "react";
 import NextLink from "next/link";
-import {
-  Restaurant as FoodIcon,
-  Dashboard as DashboardIcon,
-  Info as AboutIcon,
-  Timeline as HistoryIcon,
-} from "@mui/icons-material";
+import { Info as AboutIcon } from "@mui/icons-material";
 
-import {
-  HOST_WEBSITE_LINK,
-  HOST_WEBSITE_NAME,
-  SITE_NOTICE_HTML,
-  WEBSITE_NAME,
-} from "@/config";
+import { HOST_WEBSITE_LINK, HOST_WEBSITE_NAME, WEBSITE_NAME } from "@/config";
 import { SurveyButton } from "@/components/survey";
 import { poppins } from "@/fonts";
 
 export { poppins };
 
 import AccountMenu from "./account-menu";
-import { MigrationNotice } from "./migration-notice";
-import { SiteNotice } from "./site-notice";
 import { ProxyNotice } from "./proxy-notice";
 
 function NavLink({
@@ -84,17 +72,6 @@ export default function Header() {
         <Container maxWidth="lg">
           <div className="flex flex-row items-center gap-x-2 text-gray-500 dark:text-inherit">
             <SiteBranding className="flex-1" />
-            <div className="flex flex-row flex-1 items-center md:gap-x-2 md:mx-4">
-              <NavLink href="/" icon={<DashboardIcon />}>
-                Dashboard
-              </NavLink>
-              <NavLink href="/nutrition" icon={<FoodIcon />}>
-                Food
-              </NavLink>
-              <NavLink href="/history" icon={<HistoryIcon />}>
-                History
-              </NavLink>
-            </div>
             <div className="flex flex-row items-center gap-x-2 md:mx-4">
               <SurveyButton />
               <NavLink href="/about" icon={<AboutIcon />}>
@@ -106,8 +83,6 @@ export default function Header() {
         </Container>
       </AppBar>
       <ProxyNotice />
-      <MigrationNotice />
-      {SITE_NOTICE_HTML && <SiteNotice />}
     </>
   );
 }
