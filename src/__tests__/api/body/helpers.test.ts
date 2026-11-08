@@ -9,6 +9,7 @@ import {
   type WeightDataPoint,
 } from "@/api/body";
 import { SettingsWeightUnit } from "@/api/user";
+import { GOOGLE_OAUTH_CLIENT_ID } from "@/config";
 
 const sampleTime = {
   civilTime: {
@@ -47,6 +48,36 @@ describe("bmiFromWeightAndHeight", () => {
 });
 
 describe("toWeightLogs", () => {
+  it("only marks datapoints created by this app as deletable", () => {
+    const appCreatedWeight: WeightDataPoint = {
+      name: "users/me/dataTypes/weight/dataPoints/owned",
+      dataSource: {
+        application: { googleWebClientId: GOOGLE_OAUTH_CLIENT_ID },
+      },
+      weight: {
+        weightGrams: 76204,
+        sampleTime,
+      },
+    };
+    const importedWeight: WeightDataPoint = {
+      ...appCreatedWeight,
+      name: "users/me/dataTypes/weight/dataPoints/imported",
+      dataSource: {
+        application: { googleWebClientId: "another-app" },
+      },
+    };
+
+    expect(
+      toWeightLogs([appCreatedWeight, importedWeight], []).map((log) => [
+        log.name,
+        log.canDelete,
+      ]),
+    ).toEqual([
+      ["users/me/dataTypes/weight/dataPoints/owned", true],
+      ["users/me/dataTypes/weight/dataPoints/imported", false],
+    ]);
+  });
+
   it("joins fat and height onto weight samples", () => {
     const weights: Array<WeightDataPoint> = [
       {

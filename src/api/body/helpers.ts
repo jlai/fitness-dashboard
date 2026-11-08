@@ -3,7 +3,7 @@ import dayjs from "dayjs";
 import type { ObservationSampleTime } from "@generated/orval/fetch/google-health-api/models";
 
 import type { DataPointFor } from "../datapoints";
-import { getDataPointValue } from "../datapoints";
+import { getDataPointValue, isDataPointFromThisApp } from "../datapoints";
 import { formatAsDate } from "../datetime";
 import { SettingsWeightUnit, type WeightUnitSystem } from "../user";
 
@@ -219,6 +219,8 @@ export function toWeightLogs(
       return [
         {
           name: dataPoint.name ?? "",
+          canDelete:
+            Boolean(dataPoint.name) && isDataPointFromThisApp(dataPoint),
           date,
           time,
           weight: weightKg,

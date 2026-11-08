@@ -68,8 +68,8 @@ function WeightLogRow({
         {localizedKilogramsName}
       </TableCell>
       <TableCell className="w-[40px]">
-        {log.name && (
-          <IconButton onClick={onDelete}>
+        {log.canDelete && (
+          <IconButton aria-label="Delete weight log" onClick={onDelete}>
             <DeleteIcon />
           </IconButton>
         )}

@@ -9,6 +9,7 @@ import {
   FAT_TIME_SERIES,
   TODAY_ISO,
   kgFromPounds,
+  weightDataPoint,
 } from "@/e2e/data/weight";
 
 async function setupTimeSeriesData(
@@ -26,6 +27,41 @@ async function setupTimeSeriesData(
   await timeSeriesApi.setWeightTimeSeriesResponse(weightTimeSeries);
   await timeSeriesApi.setFatTimeSeriesResponse(fatTimeSeries);
 }
+
+test("only shows delete for weight logs created by this app", async ({
+  page,
+  weightApi,
+}) => {
+  const importedWeightDataPoint = {
+    ...weightDataPoint({
+      id: "imported",
+      date: TODAY_ISO,
+      pounds: 169,
+    }),
+    dataSource: {
+      application: { googleWebClientId: "another-app" },
+    },
+  };
+  await weightApi.setWeightLogsResponse([
+    ...INITIAL_WEIGHT_DATA_POINTS,
+    importedWeightDataPoint,
+  ]);
+  await page.goto("/history/weight");
+
+  const appCreatedRow = page
+    .getByRole("row")
+    .filter({ has: page.getByRole("cell", { name: "168" }) });
+  const importedRow = page
+    .getByRole("row")
+    .filter({ has: page.getByRole("cell", { name: "169" }) });
+
+  await expect(
+    appCreatedRow.getByRole("button", { name: "Delete weight log" }),
+  ).toBeVisible();
+  await expect(
+    importedRow.getByRole("button", { name: "Delete weight log" }),
+  ).toHaveCount(0);
+});
 
 test("can log a new weight entry", async ({
   page,

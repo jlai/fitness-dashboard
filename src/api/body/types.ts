@@ -1,6 +1,8 @@
 export interface WeightLog {
   /** Resource name used to delete the weight datapoint. */
   name: string;
+  /** Whether this app created the datapoint and can delete it. */
+  canDelete: boolean;
   /** Civil date `YYYY-MM-DD`. */
   date: string;
   /** Local time `HH:mm:ss`. */

@@ -8,6 +8,7 @@ import {
 } from "@/api/body";
 import { SettingsWeightUnit } from "@/api/user";
 import { TimeSeriesEntry } from "@/api/times-series";
+import { GOOGLE_OAUTH_CLIENT_ID } from "@/config";
 import { MOCK_DATE } from "@/e2e/fixtures/standard";
 
 const POUNDS = SettingsWeightUnit.WEIGHT_UNIT_POUNDS;
@@ -57,6 +58,9 @@ export function weightDataPoint({
 }): DataPoint {
   return {
     name: `users/me/dataTypes/weight/dataPoints/${id}`,
+    dataSource: {
+      application: { googleWebClientId: GOOGLE_OAUTH_CLIENT_ID },
+    },
     weight: {
       weightGrams: gramsFromLocalizedWeight(pounds, POUNDS),
       sampleTime: sampleTime(date, time),
