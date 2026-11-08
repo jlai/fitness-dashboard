@@ -81,7 +81,7 @@ function MigrationContent() {
         <li>
           Previously, once you signed in with your Fitbit account, you could
           stay signed in indefinitely. Now, you&apos;ll be asked to sign in
-          again every day. This might be adjustable in the future.
+          again every 3 days. This may be adjustable in the future.
         </li>
         <li>
           Dashboard layout and other settings are now stored in Google Drive,
@@ -105,6 +105,11 @@ function MigrationContent() {
           previously backed up your custom foods, they will be available as
           &quot;dashboard only&quot; foods, which are only available on this
           website and not in the Google Health app.
+        </li>
+        <li>
+          Only logs created from the dashboard can be edited or deleted. If you
+          log something from another app (including the Google Health app) you
+          will only be able to view it.
         </li>
       </ul>
       <Typography>

@@ -48,7 +48,7 @@ import {
 import { FormActionRow } from "@/components/forms/form-row";
 import { showSuccessToast, withErrorToaster } from "@/components/toast";
 import { clientOnlyFavoriteFoodsAtom } from "@/storage/client-only-favorite-foods";
-import { isValidDataPointId } from "@/api/datapoints";
+import { isDataPointFromThisApp, isValidDataPointId } from "@/api/datapoints";
 
 import { groupByMealType } from "./summarize-day";
 import { selectedFoodLogsAtom } from "./atoms";
@@ -162,6 +162,9 @@ export default function FoodLog({ day }: { day: Dayjs }) {
   const favoriteFoodIds = new Set(
     clientOnlyFavoriteFoods.map(({ foodId }) => foodId),
   );
+  const hasNonOwnedSelected = selectedFoodLogs.some(
+    (foodLog) => !isDataPointFromThisApp(foodLog),
+  );
   const areSelectedAllFavorites = selectedFoodLogs.every((foodLog) =>
     favoriteFoodIds.has(getDataPointIdFromName(foodLog.nutritionLog.food)),
   );
@@ -199,21 +202,37 @@ export default function FoodLog({ day }: { day: Dayjs }) {
         </Table>
       </Paper>
       <FormActionRow justifyContent="start">
-        <Button
-          disabled={selectedFoodLogs.size === 0}
-          color="warning"
-          onClick={deleteSelected}
-          startIcon={<DeleteIcon />}
+        <span
+          title={
+            hasNonOwnedSelected
+              ? "Only foods logged by this app can be deleted."
+              : undefined
+          }
         >
-          Delete
-        </Button>
-        <Button
-          disabled={selectedFoodLogs.size === 0}
-          onClick={() => setMoveDialogOpen(true)}
-          startIcon={<MoveIcon />}
+          <Button
+            disabled={selectedFoodLogs.size === 0 || hasNonOwnedSelected}
+            color="warning"
+            onClick={deleteSelected}
+            startIcon={<DeleteIcon />}
+          >
+            Delete
+          </Button>
+        </span>
+        <span
+          title={
+            hasNonOwnedSelected
+              ? "Only foods logged by this app can be moved."
+              : undefined
+          }
         >
-          Move
-        </Button>
+          <Button
+            disabled={selectedFoodLogs.size === 0 || hasNonOwnedSelected}
+            onClick={() => setMoveDialogOpen(true)}
+            startIcon={<MoveIcon />}
+          >
+            Move
+          </Button>
+        </span>
         <Button
           disabled={selectedFoodLogs.size === 0}
           onClick={() => setCopyDialogOpen(true)}

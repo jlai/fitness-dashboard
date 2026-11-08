@@ -19,6 +19,7 @@ import { ArticleOutlined, EditOutlined as EditIcon } from "@mui/icons-material";
 
 import { formatFoodName } from "@/utils/other-formats";
 import { NumberFormats } from "@/utils/number-formats";
+import { isDataPointFromThisApp } from "@/api/datapoints";
 import {
   FoodLogSummary,
   NutritionLogDataPoint,
@@ -112,6 +113,7 @@ export function FoodLogTableHeaderRows() {
 
 function FoodLogRow({ foodLog }: { foodLog: NutritionLogDataPoint }) {
   const { nutritionLog } = foodLog;
+  const isOwned = isDataPointFromThisApp(foodLog);
   const name = nutritionLog.foodDisplayName ?? "";
   const amount = nutritionLog.serving?.amount ?? 1;
   const unit = nutritionLogServingUnit(nutritionLog);
@@ -166,14 +168,23 @@ function FoodLogRow({ foodLog }: { foodLog: NutritionLogDataPoint }) {
             {amount} {amount === 1 ? unit?.name : unit?.plural}
           </Typography>
           <Toolbar className="invisible group-hover:visible p-1 max-h-3 min-h-2">
-            <IconButton
-              size="small"
-              className="text-slate-500"
-              title="Edit serving"
-              onClick={editPopupState.open}
+            <span
+              title={
+                isOwned
+                  ? undefined
+                  : "Only foods logged by this app can be edited."
+              }
             >
-              <EditIcon />
-            </IconButton>
+              <IconButton
+                size="small"
+                className="text-slate-500"
+                title={isOwned ? "Edit serving" : undefined}
+                disabled={!isOwned}
+                onClick={editPopupState.open}
+              >
+                <EditIcon />
+              </IconButton>
+            </span>
             <IconButton
               size="small"
               className="text-slate-500"
