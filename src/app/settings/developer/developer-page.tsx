@@ -1,7 +1,9 @@
 "use client";
 
 import React, { FormEvent, useLayoutEffect, useState } from "react";
-import { Button, TextField } from "@mui/material";
+import { Button, Tab, TextField } from "@mui/material";
+import { TabContext, TabList, TabPanel } from "@mui/lab";
+import { useAtomValue } from "jotai";
 import { toast } from "mui-sonner";
 
 import {
@@ -19,8 +21,17 @@ import {
 import { GoogleSignInButton } from "@/components/login/google-sign-in-button";
 import { useSwitchAccounts } from "@/components/login/use-switch-accounts";
 import { showSuccessToast, withErrorToaster } from "@/components/toast";
+import {
+  SETTINGS_STORAGE_KEYS,
+  settingsStorageAtom,
+  settingsStorageEpochAtom,
+  type SettingsStorageKey,
+  type StoredData,
+} from "@/storage/settings-storage";
 
 import { SettingsRow, SettingsTable } from "../common";
+
+const settingsStorageKeys = Object.values(SETTINGS_STORAGE_KEYS);
 
 function DeveloperSettings() {
   const loggedIn = useLoggedIn();
@@ -66,6 +77,92 @@ function DeveloperSettings() {
         Sign in with a different account
       </SettingsRow>
     </>
+  );
+}
+
+function StoredSettingsBlobs() {
+  const storage = useAtomValue(settingsStorageAtom);
+  const storageEpoch = useAtomValue(settingsStorageEpochAtom);
+  const [currentTab, setCurrentTab] = useState<SettingsStorageKey>(
+    settingsStorageKeys[0],
+  );
+  const [blobs, setBlobs] = useState<
+    Partial<Record<SettingsStorageKey, StoredData<unknown> | null>>
+  >({});
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string>();
+
+  React.useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setLoadError(undefined);
+
+    Promise.all(
+      settingsStorageKeys.map(
+        async (key) => [key, await storage.get(key)] as const,
+      ),
+    )
+      .then((entries) => {
+        if (active) {
+          setBlobs(Object.fromEntries(entries));
+        }
+      })
+      .catch((error: unknown) => {
+        if (!active) {
+          return;
+        }
+
+        const message = error instanceof Error ? error.message : String(error);
+        setLoadError(message);
+        toast.error(`Failed to load stored settings: ${message}`);
+      })
+      .finally(() => {
+        if (active) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [storage, storageEpoch]);
+
+  return (
+    <SettingsTable>
+      <SettingsRow title="Stored settings blobs" component="div">
+        View the raw stored data for each settings key.
+        <TabContext value={currentTab}>
+          <TabList
+            aria-label="Stored settings keys"
+            onChange={(_, value: SettingsStorageKey) => setCurrentTab(value)}
+          >
+            {settingsStorageKeys.map((key) => (
+              <Tab
+                key={key}
+                label={key}
+                value={key}
+                sx={{ textTransform: "none" }}
+              />
+            ))}
+          </TabList>
+          {settingsStorageKeys.map((key) => (
+            <TabPanel key={key} value={key}>
+              {loading ? (
+                "Loading..."
+              ) : loadError ? (
+                `Unable to load stored settings: ${loadError}`
+              ) : blobs[key] ? (
+                <pre className="max-h-96 overflow-auto rounded bg-gray-100 p-4 text-sm">
+                  {JSON.stringify(blobs[key], null, 2)}
+                </pre>
+              ) : (
+                "No stored data for this key."
+              )}
+            </TabPanel>
+          ))}
+        </TabContext>
+      </SettingsRow>
+    </SettingsTable>
   );
 }
 
@@ -222,6 +319,15 @@ export default function DeveloperSettingsPage() {
       <SettingsTable>
         <DeveloperSettings />
       </SettingsTable>
+      <React.Suspense
+        fallback={
+          <SettingsTable>
+            <SettingsRow title="Stored settings blobs">Loading...</SettingsRow>
+          </SettingsTable>
+        }
+      >
+        <StoredSettingsBlobs />
+      </React.Suspense>
       <DebugLoginForm />
     </>
   );

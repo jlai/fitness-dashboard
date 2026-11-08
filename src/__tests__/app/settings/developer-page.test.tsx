@@ -26,6 +26,30 @@ jest.mock("@/api/auth", () => ({
   useLoggedIn: () => useLoggedIn(),
 }));
 
+jest.mock("@/storage/settings-storage", () => {
+  const { atom } = jest.requireActual("jotai");
+  return {
+    SETTINGS_STORAGE_KEYS: {
+      dashboards: "dashboards",
+      clientOnlyGoals: "client-only-goals",
+      meals: "meals",
+      clientOnlyFoods: "client-only-foods",
+      settings: "settings",
+    },
+    settingsStorageAtom: atom({
+      get: async (key: string) =>
+        key === "settings"
+          ? {
+              data: { theme: "dark" },
+              version: 1,
+              updateTime: "2026-01-01T00:00:00.000Z",
+            }
+          : null,
+    }),
+    settingsStorageEpochAtom: atom(0),
+  };
+});
+
 jest.mock("@/components/login/use-switch-accounts", () => ({
   useSwitchAccounts: () => jest.fn(),
 }));
@@ -69,6 +93,27 @@ describe("DeveloperSettingsPage", () => {
     expect(screen.getByRole("textbox", { name: "OpenID token" })).toBeTruthy();
     expect(screen.getByRole("textbox", { name: "Health token" })).toBeTruthy();
     expect(screen.getByRole("textbox", { name: "Drive token" })).toBeTruthy();
+  });
+
+  it("shows stored settings blobs in tabs for each settings key", async () => {
+    await act(async () => {
+      renderPage();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    expect(await screen.findByRole("tab", { name: "dashboards" })).toBeTruthy();
+    expect(screen.getByRole("tab", { name: "client-only-goals" })).toBeTruthy();
+    expect(screen.getByRole("tab", { name: "meals" })).toBeTruthy();
+    expect(screen.getByRole("tab", { name: "client-only-foods" })).toBeTruthy();
+    expect(screen.getByRole("tab", { name: "settings" })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("tab", { name: "settings" }));
+    expect(await screen.findByText(/"theme": "dark"/)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("tab", { name: "meals" }));
+    expect(
+      await screen.findByText("No stored data for this key."),
+    ).toBeTruthy();
   });
 
   it("creates a session and saves health/drive tokens on submit", async () => {
