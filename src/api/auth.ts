@@ -59,6 +59,9 @@ let driveAuthGeneration = 0;
  */
 export const pendingRememberMeChoiceAtom = atom(false);
 
+/** True while a persisted Health token is being restored on page load. */
+export const authTokenRestorationPendingAtom = atom(true);
+
 /** Space-separated Google Health scopes from the latest access-token response. */
 export const grantedScopesAtom = atom<string | undefined>(undefined);
 
@@ -779,8 +782,10 @@ async function restoreSessionFromCookie() {
 /** Watch for localStorage and in-memory auth changes. */
 export const syncAuthTokenEffect = atomEffect((get, set) => {
   void (async () => {
+    set(authTokenRestorationPendingAtom, hasPersistedEncryptedHealthToken());
     await restoreSessionFromCookie();
     await restoreAccessToken();
+    set(authTokenRestorationPendingAtom, false);
     await restoreDriveAccessToken();
   })();
 
