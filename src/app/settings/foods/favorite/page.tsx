@@ -71,7 +71,16 @@ export default function ManageFavoriteFoods() {
       width: 100,
       getActions: ({ id, row: food }: GridRowParams<FavoriteFood>) => [
         ...(food.accessLevel === "PRIVATE"
-          ? [<ShowLabelAction popupState={popupState} key={id} food={food} />]
+          ? [
+              <ShowLabelAction
+                popupState={popupState}
+                key={id}
+                food={food}
+                useProvidedFood={clientOnlyFoods.some(
+                  (entry) => entry.name?.split("/").pop() === food.foodId,
+                )}
+              />,
+            ]
           : []),
       ],
     },

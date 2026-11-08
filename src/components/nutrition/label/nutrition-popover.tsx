@@ -29,6 +29,7 @@ import { formatServing } from "@/utils/food-amounts";
 export interface NutritionPopoverContext {
   nutritionLog: NutritionLog | null;
   foodId: string;
+  food?: Food;
 }
 
 const EMPTY_CONTEXT: NutritionPopoverContext = {
@@ -42,9 +43,11 @@ export const nutritionPopoverFoodAtom =
 export function ShowLabelAction({
   food,
   popupState,
+  useProvidedFood = false,
 }: {
   food: Food;
   popupState: PopupState;
+  useProvidedFood?: boolean;
 }) {
   const setFood = useSetAtom(nutritionPopoverFoodAtom);
 
@@ -55,6 +58,7 @@ export function ShowLabelAction({
           setFood({
             foodId: food.foodId,
             nutritionLog: null,
+            ...(useProvidedFood ? { food } : {}),
           });
           popupState.open(event);
         }
@@ -79,10 +83,11 @@ const NutritionPopover = function ({
   placement?: Placement;
 }) {
   const context = useAtomValue(nutritionPopoverFoodAtom);
-  const { data: food } = useQuery({
+  const { data: fetchedFood } = useQuery({
     ...buildGetFoodQuery(context.foodId),
-    enabled: Boolean(context.foodId),
+    enabled: Boolean(context.foodId) && !context.food,
   });
+  const food = context.food ?? fetchedFood;
 
   function getNutritionValues(
     food: Food,

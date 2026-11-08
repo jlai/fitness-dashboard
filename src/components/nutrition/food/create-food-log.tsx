@@ -124,6 +124,9 @@ export default function CreateFoodLog() {
         <Button href="/settings/foods/favorite" LinkComponent={NextLink}>
           Favorites
         </Button>
+        <Button href="/settings/foods/custom" LinkComponent={NextLink}>
+          Dashboard custom foods
+        </Button>
       </Stack>
     </DividedStack>
   );
