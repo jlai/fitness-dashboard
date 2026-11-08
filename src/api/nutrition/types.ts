@@ -76,6 +76,7 @@ export interface Food {
 
   // Only available on custom (private) foods
   nutritionalValues?: NutritionalValues;
+  sourceNutritionLogName?: string;
 }
 
 export type MealFood = Food & {

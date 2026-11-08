@@ -15,10 +15,22 @@ import {
 jest.mock("@/api/datapoints", () => ({
   ...jest.requireActual("@/api/datapoints"),
   getDataPoint: jest.fn(),
+  listDataPointsPage: jest.fn(),
 }));
 
 describe("favorite foods in food search", () => {
   it("offers and labels both local and catalog favorites", async () => {
+    jest.mocked(datapoints.listDataPointsPage).mockResolvedValue({
+      dataPoints: [
+        {
+          name: "users/me/dataTypes/nutrition-log/dataPoints/log-123",
+          nutritionLog: {
+            food: "users/123456789/dataTypes/food/dataPoints/public-123",
+            interval: { startTime: "2026-11-08T12:00:00Z" },
+          },
+        },
+      ],
+    });
     resetSettingsStorageSingletonsForTests();
     const store = getDefaultStore();
     store.set(settingsStorageEpochAtom, (epoch) => epoch + 1);
@@ -53,5 +65,8 @@ describe("favorite foods in food search", () => {
     expect(await screen.findByText("Catalog food")).toBeTruthy();
     expect(screen.getByText("Local food")).toBeTruthy();
     expect(screen.getAllByText("Favorite")).toHaveLength(2);
+    expect(screen.getAllByText("Recent")).toHaveLength(1);
+    expect(screen.getAllByText("Catalog food")).toHaveLength(1);
+    expect(screen.queryByText("Could not load recent foods.")).toBeNull();
   });
 });

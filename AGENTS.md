@@ -1,13 +1,11 @@
 # Overview
 
 This web app provides a dashboard and other features for users to view their Google Health (formerly Fitbit) data
-using the [Google Health API](https://developers.google.com/health). It was previously built for the
-[Fitbit Web API](https://dev.fitbit.com/build/reference/web-api/) and is in the process of being migrated to Google
-Health.
+using the [Google Health API](https://developers.google.com/health).
 
 # Architecture
 
-All data is stored on the client side or accessed from / written to the Google Health API. There is no server database.
+All data is stored on the client side or accessed from / written to the Google Health API, with settings stored in Google Drive.
 
 # Security
 
@@ -25,7 +23,7 @@ CSRF/XSS and injection attacks but this is an easy point of defense.
 
 # Testing
 
-Make sure that `npm build` works before you're done. In case another process is using the .next directory, output to a temporary directory under `.temp`.
+Make sure that `npm build` works before you're done. Output to a temporary directory under `.temp` to avoid conflicting with other commands.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

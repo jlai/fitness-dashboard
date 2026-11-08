@@ -1,13 +1,18 @@
 "use client";
 
 import { Alert, Button, Typography } from "@mui/material";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { DataGrid, GridColDef, GridRowParams } from "@mui/x-data-grid";
 import { usePopupState } from "material-ui-popup-state/hooks";
 import { useAtomValue, useSetAtom } from "jotai";
 
-import { buildFavoriteFoodsQuery, FavoriteFood, Food } from "@/api/nutrition";
+import {
+  buildFavoriteFoodsQuery,
+  FavoriteFood,
+  Food,
+  foodToDataPoint,
+} from "@/api/nutrition";
 import SearchFoods from "@/components/nutrition/food/food-search";
 import { FooterActionBar } from "@/components/layout/rows";
 import { FormRow } from "@/components/forms/form-row";
@@ -27,6 +32,8 @@ export default function ManageFavoriteFoods() {
   const { clientOnlyFoods } = useAtomValue(clientOnlyFoodsAtom);
   const storageEpoch = useAtomValue(settingsStorageEpochAtom);
   const setFavoriteFoods = useSetAtom(clientOnlyFavoriteFoodsAtom);
+  const setClientOnlyFoods = useSetAtom(clientOnlyFoodsAtom);
+  const savedRecentFoodIds = useRef(new Map<string, string>());
   const {
     data: favoriteFoods,
     isPending,
@@ -71,6 +78,25 @@ export default function ManageFavoriteFoods() {
   ];
 
   const handleAddFavoriteFood = withErrorToaster(async (food: Food) => {
+    if (food.sourceNutritionLogName) {
+      const sourceName = food.sourceNutritionLogName;
+      const foodId =
+        savedRecentFoodIds.current.get(sourceName) ?? crypto.randomUUID();
+      savedRecentFoodIds.current.set(sourceName, foodId);
+      food = {
+        ...food,
+        foodId,
+        sourceNutritionLogName: undefined,
+      };
+      const dataPoint = foodToDataPoint(food);
+      await setClientOnlyFoods((previous) => ({
+        clientOnlyFoods: previous.clientOnlyFoods.some(
+          (existing) => existing.name === dataPoint.name,
+        )
+          ? previous.clientOnlyFoods
+          : [...previous.clientOnlyFoods, dataPoint],
+      }));
+    }
     await setFavoriteFoods((previous) => ({
       clientOnlyFavoriteFoods: previous.clientOnlyFavoriteFoods.some(
         (entry) => entry.foodId === food.foodId,

@@ -11,8 +11,7 @@ import {
   Food,
   MealType,
   buildCreateFoodLogMutation,
-  foodResourceName,
-  nutritionLogServing,
+  nutritionLogFromMealFood,
   toNutritionLogMealType,
 } from "@/api/nutrition";
 import LinkedDayElement, { DaySelectorSource } from "@/components/linked-day";
@@ -65,11 +64,10 @@ export function CreateFoodLogForm() {
     }
 
     await createFood({
-      nutritionLog: {
-        food: foodResourceName(food.foodId),
-        mealType: toNutritionLogMealType(mealType),
-        serving: nutritionLogServing(servingSize.amount, servingSize.unit.id),
-      },
+      nutritionLog: nutritionLogFromMealFood(
+        { ...food, amount: servingSize.amount, unit: servingSize.unit },
+        toNutritionLogMealType(mealType),
+      ),
       day: daySource === "today" ? dayjs() : linkedDay,
     });
     showSuccessToast(`Logged food: ${food.name}`);

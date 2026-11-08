@@ -116,8 +116,21 @@ function newMealId() {
 async function saveMeal(meal: Meal): Promise<Meal> {
   const store = getDefaultStore();
   const id = meal.id || newMealId();
-  const stored = mealToClientOnlyMeal({ ...meal, id });
-  const privateFoods = privateFoodDataPoints({ ...meal, id });
+  const savedMeal = {
+    ...meal,
+    id,
+    mealFoods: meal.mealFoods.map((food) =>
+      food.sourceNutritionLogName
+        ? {
+            ...food,
+            foodId: crypto.randomUUID(),
+            sourceNutritionLogName: undefined,
+          }
+        : food,
+    ),
+  };
+  const stored = mealToClientOnlyMeal(savedMeal);
+  const privateFoods = privateFoodDataPoints(savedMeal);
 
   const [{ meals }, { clientOnlyFoods }] = await Promise.all([
     store.get(mealsAtom),
@@ -137,7 +150,7 @@ async function saveMeal(meal: Meal): Promise<Meal> {
     });
   }
 
-  return { ...meal, id };
+  return savedMeal;
 }
 
 export function buildMealsQuery() {

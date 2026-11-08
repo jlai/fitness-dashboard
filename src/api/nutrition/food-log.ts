@@ -266,6 +266,7 @@ export function buildUpdateFoodLogsMutation(queryClient: QueryClient) {
         queryClient,
         variables.map((foodLog) => formatAsDate(foodLog.day)),
       );
+      queryClient.invalidateQueries({ queryKey: ["recent-foods"] });
     },
   });
 }
@@ -286,6 +287,7 @@ export function buildDeleteFoodLogsMutation(queryClient: QueryClient) {
         queryClient,
         variables.map((foodLog) => formatAsDate(foodLog.day)),
       );
+      queryClient.invalidateQueries({ queryKey: ["recent-foods"] });
     },
   });
 }

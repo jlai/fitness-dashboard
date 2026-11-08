@@ -279,7 +279,7 @@ function filterField(dataType: DataType, timeField: "civil" | "physical") {
   }
 }
 
-function timeRangeFilter(
+export function timeRangeFilter(
   dataType: DataType,
   start: string,
   end: string,

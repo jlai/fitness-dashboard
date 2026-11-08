@@ -23,6 +23,7 @@ import { uniqBy } from "es-toolkit";
 
 import {
   buildFavoriteFoodsQuery,
+  buildRecentFoodsQuery,
   buildSearchFoodsQuery,
 } from "@/api/nutrition/search";
 import { Food } from "@/api/nutrition";
@@ -160,6 +161,9 @@ export default function SearchFoods({
       storageEpoch,
     ),
   );
+  const { data: recentFoods, isError: recentFoodsError } = useQuery(
+    buildRecentFoodsQuery(),
+  );
 
   const {
     data: searchResults,
@@ -213,18 +217,33 @@ export default function SearchFoods({
     const favoriteIds = new Set(
       clientOnlyFavoriteFoods.map(({ foodId }) => foodId),
     );
+    const recentIds = new Set((recentFoods ?? []).map(({ foodId }) => foodId));
     return [
       ...(favoriteFoods ?? []).filter((food) => !food.unavailable),
       ...clientOnlyFoods.map((food) => mapFoodDataPoint(food)),
+      ...(recentFoods ?? []),
       ...(searchResults?.foods ?? []),
-    ].map((food) => ({ ...food, favorite: favoriteIds.has(food.foodId) }));
-  }, [favoriteFoods, clientOnlyFoods, searchResults, clientOnlyFavoriteFoods]);
+    ].map((food) => ({
+      ...food,
+      favorite: favoriteIds.has(food.foodId),
+      recent: recentIds.has(food.foodId),
+    }));
+  }, [
+    favoriteFoods,
+    clientOnlyFoods,
+    recentFoods,
+    searchResults,
+    clientOnlyFavoriteFoods,
+  ]);
 
   return (
     <div className={className}>
       {(favoriteFoodsError ||
         favoriteFoods?.some((food) => food.unavailable)) && (
         <Alert severity="error">Could not load favorite foods.</Alert>
+      )}
+      {recentFoodsError && (
+        <Alert severity="error">Could not load recent foods.</Alert>
       )}
       <Autocomplete<FoodOption | SearchOption | null>
         loading={searchPending}

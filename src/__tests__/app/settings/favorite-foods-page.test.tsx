@@ -40,19 +40,35 @@ jest.mock("@/components/nutrition/label/nutrition-popover", () => ({
 jest.mock("@/components/nutrition/food/food-search", () => ({
   __esModule: true,
   default: ({ onChange }: { onChange: (food: object) => void }) => (
-    <button
-      onClick={() =>
-        onChange({
-          foodId: "local-123",
-          name: "Local food",
-          accessLevel: "PRIVATE",
-          calories: 0,
-          units: [],
-        })
-      }
-    >
-      Choose local food
-    </button>
+    <>
+      <button
+        onClick={() =>
+          onChange({
+            foodId: "local-123",
+            name: "Local food",
+            accessLevel: "PRIVATE",
+            calories: 0,
+            units: [],
+          })
+        }
+      >
+        Choose local food
+      </button>
+      <button
+        onClick={() =>
+          onChange({
+            foodId: "recent-log:log-123",
+            sourceNutritionLogName: "log-123",
+            name: "Homemade soup",
+            accessLevel: "PRIVATE",
+            calories: 200,
+            units: [],
+          })
+        }
+      >
+        Choose anonymous food
+      </button>
+    </>
   ),
 }));
 
@@ -159,5 +175,44 @@ describe("favorite foods management", () => {
         clientOnlyFavoriteFoods: [],
       });
     });
+  });
+
+  it("saves an anonymous recent food locally before favoriting it", async () => {
+    jest
+      .spyOn(crypto, "randomUUID")
+      .mockReturnValue("12345678-1234-4123-8123-123456789abc");
+    await act(async () => {
+      render(
+        <QueryClientProvider client={new QueryClient()}>
+          <Suspense fallback="Loading">
+            <ManageFavoriteFoods />
+          </Suspense>
+        </QueryClientProvider>,
+      );
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Choose anonymous food" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Add favorite food" }));
+    expect(
+      await screen.findByRole("button", { name: "Homemade soup" }),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Add favorite food" }));
+    await waitFor(async () => {
+      const { clientOnlyFavoriteFoods } = await getDefaultStore().get(
+        clientOnlyFavoriteFoodsAtom,
+      );
+      const { clientOnlyFoods } =
+        await getDefaultStore().get(clientOnlyFoodsAtom);
+      expect(clientOnlyFavoriteFoods).toEqual([
+        { foodId: "12345678-1234-4123-8123-123456789abc" },
+      ]);
+      expect(clientOnlyFoods).toHaveLength(2);
+      expect(clientOnlyFoods[1]).toMatchObject({
+        name: "users/me/dataTypes/food/dataPoints/12345678-1234-4123-8123-123456789abc",
+        food: { displayName: "Homemade soup", energyAvg: { kcal: 200 } },
+      });
+    });
+    jest.restoreAllMocks();
   });
 });
