@@ -9,6 +9,7 @@
  *   "service": "<CF_BINDING_WORKER_SELF_REFERENCE>"
  * Resolved from:
  *   CF_BINDING_WORKER_SELF_REFERENCE=fitness-dashboard-beta
+ *   CF_PROJECT_NAME, when set, overrides the source config's Worker name.
  */
 
 import { createRequire } from "node:module";
@@ -135,10 +136,27 @@ export function generateWranglerConfig(options = {}) {
     substituteBindingPlaceholders(source, env, applied)
   );
 
+  if (env.CF_PROJECT_NAME !== undefined) {
+    if (
+      !/^[a-z0-9][a-z0-9-]*$/.test(env.CF_PROJECT_NAME) ||
+      env.CF_PROJECT_NAME.length > 255
+    ) {
+      throw new Error(
+        "CF_PROJECT_NAME must start with a lowercase letter or number and contain at most 255 lowercase letters, numbers, and dashes",
+      );
+    }
+    config.name = env.CF_PROJECT_NAME;
+    applied.push("CF_PROJECT_NAME");
+  }
+
   relocateConfigPaths(config);
 
   fs.mkdirSync(path.dirname(outConfigPath), { recursive: true });
-  fs.writeFileSync(outConfigPath, `${JSON.stringify(config, null, 2)}\n`, "utf8");
+  fs.writeFileSync(
+    outConfigPath,
+    `${JSON.stringify(config, null, 2)}\n`,
+    "utf8",
+  );
 
   const relativeConfigPath = path
     .relative(path.dirname(redirectPath), outConfigPath)

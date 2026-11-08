@@ -40,3 +40,16 @@ Copy the ID of the Secrets Store (there's only one per account) to the build-tim
 Build command: `npm run build:cf`
 
 Deploy command: `npm run deploy:cf`
+
+Set `CF_PROJECT_NAME` to the desired Worker name in the deployment environment.
+It must start with a lowercase letter or number and use only lowercase letters,
+numbers, and dashes (at most 255 characters). For a `workers.dev` subdomain it
+must be at most 63 characters and must not end with a dash. If unset, the name
+defaults to `fitness-dashboard` from `wrangler.jsonc`. The checked-in name must remain
+valid because Next.js and OpenNext read the source Wrangler configuration during
+the build; `CF_PROJECT_NAME` is applied to the generated deployment configuration.
+
+Set `CF_BINDING_WORKER_SELF_REFERENCE` to the same Worker name, and configure
+`CF_BINDING_SESSION_REVOCATION` and `CF_BINDING_SECRETS_STORE_ID` as described
+above. The deployment config generator requires all three binding variables.
+`npm run deploy` and `npm run upload` also generate and use this configuration.
