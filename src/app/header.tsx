@@ -1,3 +1,5 @@
+"use client";
+
 import { AppBar, Container, Chip, Link } from "@mui/material";
 import { Poppins } from "next/font/google";
 import React from "react";
@@ -21,7 +23,7 @@ import { SurveyButton } from "@/components/survey";
 
 import AccountMenu from "./account-menu";
 import { SiteNotice } from "./site-notice";
-import { ProxyNotice } from "./proxy-notice";
+import UnsavedSettingsSyncButton from "./unsaved-settings-sync-button";
 
 function NavLink({
   href,
@@ -55,7 +57,12 @@ function SiteBranding({ className = "" }: { className: string }) {
         <div className={`${poppins.className} text-sm text-end`}>
           hosted by{" "}
           {HOST_WEBSITE_LINK ? (
-            <a href={HOST_WEBSITE_LINK} target="_blank" className="underline">
+            <a
+              href={HOST_WEBSITE_LINK}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline"
+            >
               {HOST_WEBSITE_NAME}
             </a>
           ) : (
@@ -63,7 +70,12 @@ function SiteBranding({ className = "" }: { className: string }) {
           )}
         </div>
       </div>
-      <Chip label="Preview" color="warning" variant="filled" className="ml-4" />
+      <Chip
+        label="Health Preview"
+        color="info"
+        variant="filled"
+        className="ml-4"
+      />
     </div>
   );
 }
@@ -99,12 +111,12 @@ export default function Header() {
               <NavLink href="/about" icon={<AboutIcon />}>
                 About
               </NavLink>
+              <UnsavedSettingsSyncButton />
               <AccountMenu />
             </div>
           </div>
         </Container>
       </AppBar>
-      <ProxyNotice />
       {SITE_NOTICE_HTML && <SiteNotice />}
     </>
   );

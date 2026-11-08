@@ -13,11 +13,18 @@ import { FormContainer } from "react-hook-form-mui";
 import { DatePickerElement } from "react-hook-form-mui/date-pickers";
 
 import { MealTypeElement } from "@/components/nutrition/food/meal-type-element";
-import { MealType, buildCreateMultipleFoodLogsMutation } from "@/api/nutrition";
+import {
+  MealType,
+  buildCreateMultipleFoodLogsMutation,
+  toNutritionLogMealType,
+} from "@/api/nutrition";
 import { FormRows } from "@/components/forms/form-row";
 import { getLabel } from "@/components/day-navigator";
 import { selectedDayForPageAtom } from "@/state";
 import { showSuccessToast, withErrorToaster } from "@/components/toast";
+import { MissingScopesAlert } from "@/components/require-scopes";
+import { NUTRITION_WRITEONLY } from "@/config/google-health-scopes";
+import { useMissingScopes } from "@/api/auth";
 
 import { selectedFoodLogsAtom } from "../atoms";
 
@@ -35,8 +42,10 @@ export function CopyFoodLogsDialog() {
   const [selectedFoodLogs, setSelectedFoodLogs] = useAtom(selectedFoodLogsAtom);
 
   const { mutateAsync: createFoodLogs, isPending: isSubmitting } = useMutation(
-    buildCreateMultipleFoodLogsMutation(queryClient)
+    buildCreateMultipleFoodLogsMutation(queryClient),
   );
+
+  const cannotWrite = useMissingScopes([NUTRITION_WRITEONLY]).length > 0;
 
   const onSubmit = withErrorToaster(async (values: CopyFoodLogsFormData) => {
     if (isSubmitting) {
@@ -45,12 +54,12 @@ export function CopyFoodLogsDialog() {
 
     await createFoodLogs(
       [...selectedFoodLogs.values()].map((foodLog) => ({
-        foodId: foodLog.loggedFood.foodId,
-        mealTypeId: values.mealType,
-        unitId: foodLog.loggedFood.unit!.id,
-        amount: foodLog.loggedFood.amount,
+        nutritionLog: {
+          ...foodLog.nutritionLog,
+          mealType: toNutritionLogMealType(values.mealType),
+        },
         day: values.day,
-      }))
+      })),
     );
 
     showSuccessToast("Copied food logs", {
@@ -77,25 +86,34 @@ export function CopyFoodLogsDialog() {
       >
         <DialogTitle>Copy selected foods</DialogTitle>
         <DialogContent>
-          {selectedFoodLogs.size > 1 ? (
-            <p>
-              Copy the selected {selectedFoodLogs.size} foods to another day.
-            </p>
-          ) : (
-            <p>Copy selected food to another day.</p>
-          )}
-          <FormRows mt={4}>
-            <DatePickerElement
-              name="day"
-              label="To date"
-              rules={{ required: true }}
-            />
-            <MealTypeElement name="mealType" fullWidth />
-          </FormRows>
+          <MissingScopesAlert scopes={[NUTRITION_WRITEONLY]}>
+            {selectedFoodLogs.size > 1 ? (
+              <p>
+                Copy the selected {selectedFoodLogs.size} foods to another day.
+              </p>
+            ) : (
+              <p>Copy selected food to another day.</p>
+            )}
+            <FormRows mt={4}>
+              <DatePickerElement
+                name="day"
+                label="To date"
+                rules={{ required: true }}
+                disabled={cannotWrite}
+              />
+              <MealTypeElement
+                name="mealType"
+                fullWidth
+                disabled={cannotWrite}
+              />
+            </FormRows>
+          </MissingScopesAlert>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpen(false)}>Cancel</Button>
-          <Button type="submit">Copy</Button>
+          <Button type="submit" disabled={cannotWrite}>
+            Copy
+          </Button>
         </DialogActions>
       </FormContainer>
     </Dialog>

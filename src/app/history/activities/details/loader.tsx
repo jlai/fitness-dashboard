@@ -1,12 +1,12 @@
 import { useAtom } from "jotai";
 import { Suspense } from "react";
 
-import { activityLogIdHashAtom } from "./atoms";
+import { exerciseIdHashAtom } from "./atoms";
 import { ActivityLogDetailsDialog } from "./dialog";
 
-/** Displays activity log dialog based on #activityLogId= hash param */
+/** Displays activity log dialog based on #exerciseId= hash param */
 export function ActivityLogDetailsHashLoader() {
-  const [logId, setLogId] = useAtom(activityLogIdHashAtom);
+  const [logId, setLogId] = useAtom(exerciseIdHashAtom);
 
   return (
     <Suspense>

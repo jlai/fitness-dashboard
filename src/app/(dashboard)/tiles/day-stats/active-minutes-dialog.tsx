@@ -12,17 +12,20 @@ import {
 import { TabContext, TabList, TabPanel } from "@mui/lab";
 import { Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useAtomValue } from "jotai";
 
 import { FormRows } from "@/components/forms/form-row";
 import {
   buildTimeSeriesQuery,
   TimeSeriesEntry,
   HeartTimeSeriesValue,
+  ActiveMinutesTimeSeriesValue,
 } from "@/api/times-series";
+import { getGoalsAtom } from "@/storage/goals";
 
 import { RenderDialogContentProps } from "../tile-with-dialog";
 import { useTileSetting } from "../tile";
-import { useDailySummary } from "../common";
+import { useSelectedDayTimeSeries } from "../common";
 import { useSelectedDay } from "../../state";
 
 import { DailyGoalSummary, GoalSettings } from "./goals";
@@ -35,7 +38,7 @@ export interface ActiveMinutesTileSettings {
 }
 
 export default function ActiveMinutesDialogContent(
-  props: RenderDialogContentProps
+  props: RenderDialogContentProps,
 ) {
   const [currentTab, setCurrentTab] = useTileSetting<
     ActiveMinutesTileSettings,
@@ -72,17 +75,18 @@ const ACTIVE_MINUTES_HEART_RATE_ZONES = new Set(["Fat Burn", "Cardio", "Peak"]);
 
 export function useActiveMinutes(source: ActiveMinutesSource) {
   const selectedDay = useSelectedDay();
+  const activeMinutesGoal = useAtomValue(
+    getGoalsAtom("activeMinutes", "daily"),
+  );
 
-  const {
-    summary: { fairlyActiveMinutes, veryActiveMinutes },
-    goals: { activeMinutes: activeMinutesGoal } = {},
-  } = useDailySummary();
+  const activeMinutesValue =
+    useSelectedDayTimeSeries<ActiveMinutesTimeSeriesValue>("active-minutes");
 
   const { data: heartSeries } = useQuery({
     ...buildTimeSeriesQuery<TimeSeriesEntry<HeartTimeSeriesValue>>(
       "heart",
       selectedDay,
-      selectedDay
+      selectedDay,
     ),
     enabled: source === "heart-rate-zones",
   });
@@ -99,11 +103,11 @@ export function useActiveMinutes(source: ActiveMinutesSource) {
       }
       break;
     default:
-      activeMinutes = fairlyActiveMinutes + veryActiveMinutes;
+      activeMinutes = activeMinutesValue?.activeMinutes ?? 0;
   }
 
   return {
-    activeMinutesGoal,
+    activeMinutesGoal: activeMinutesGoal?.value,
     activeMinutes,
   };
 }
@@ -111,7 +115,7 @@ export function useActiveMinutes(source: ActiveMinutesSource) {
 function Overview() {
   const [source] = useTileSetting<ActiveMinutesTileSettings, "source">(
     "source",
-    "mets"
+    "mets",
   );
 
   const { activeMinutes, activeMinutesGoal } = useActiveMinutes(source);
@@ -124,6 +128,7 @@ function Overview() {
         <a
           href="https://support.google.com/fitbit/answer/14236509"
           target="_blank"
+          rel="noopener noreferrer"
           className="underline"
         >
           Fitbit FAQ page
@@ -133,7 +138,7 @@ function Overview() {
       <Stack direction="row" justifyContent="center">
         <DailyGoalSummary
           currentTotal={activeMinutes}
-          dailyGoal={activeMinutesGoal ?? 0}
+          dailyGoal={activeMinutesGoal}
           unit="mins"
         />
       </Stack>
@@ -215,13 +220,21 @@ function Settings() {
       </section>
       <section>
         <Typography variant="h6">Goals</Typography>
-        <Typography variant="body1">Set daily active minute goal.</Typography>
+        <Typography variant="body1">
+          Set daily and weekly active minute goals.
+        </Typography>
 
         <FormRows mt={4}>
           <GoalSettings
-            resource="activeMinutes"
+            metric="activeMinutes"
             period="daily"
             label="Daily active minutes goal"
+            unit="mins"
+          />
+          <GoalSettings
+            metric="activeMinutes"
+            period="weekly"
+            label="Weekly active minutes goal"
             unit="mins"
           />
         </FormRows>

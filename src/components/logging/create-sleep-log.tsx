@@ -16,7 +16,10 @@ import {
 import { renderTimeViewClock } from "@mui/x-date-pickers";
 
 import { buildCreateSleepLogMutation } from "@/api/sleep";
+import { useMissingScopes } from "@/api/auth";
+import { SLEEP_WRITEONLY } from "@/config/google-health-scopes";
 
+import { MissingScopesAlert } from "../require-scopes";
 import { showSuccessToast, withErrorToaster } from "../toast";
 
 dayjs.extend(duration);
@@ -30,7 +33,7 @@ interface CreateSleepLogFormData {
 
 function validateTimes(
   value: any,
-  { startTime, endTime }: CreateSleepLogFormData
+  { startTime, endTime }: CreateSleepLogFormData,
 ) {
   if (startTime.isAfter(endTime)) {
     return "Start time is after end time";
@@ -57,8 +60,10 @@ function CreateSleepLog({ onSaveSuccess }: { onSaveSuccess?: () => void }) {
   const queryClient = useQueryClient();
 
   const { mutateAsync: createSleepLog } = useMutation(
-    buildCreateSleepLogMutation(queryClient)
+    buildCreateSleepLogMutation(queryClient),
   );
+
+  const cannotWrite = useMissingScopes([SLEEP_WRITEONLY]).length > 0;
 
   const onSubmit = withErrorToaster(async (values: CreateSleepLogFormData) => {
     await createSleepLog({
@@ -80,59 +85,65 @@ function CreateSleepLog({ onSaveSuccess }: { onSaveSuccess?: () => void }) {
       <Typography variant="h4" className="mb-8 text-center">
         Log sleep
       </Typography>
-      <div className="flex flex-row gap-x-8">
-        <div className="flex flex-col gap-y-8">
-          <div className="flex flex-row justify-center">
-            <SleepIcon />
+      <MissingScopesAlert scopes={[SLEEP_WRITEONLY]}>
+        <div className="flex flex-row gap-x-8">
+          <div className="flex flex-col gap-y-8">
+            <div className="flex flex-row justify-center">
+              <SleepIcon />
+            </div>
+            <DatePickerElement
+              name="startTime"
+              label="Start day"
+              disableFuture
+              rules={RULES}
+            />
+            <TimePickerElement
+              name="startTime"
+              label="Bed time"
+              viewRenderers={{
+                hours: renderTimeViewClock,
+                minutes: renderTimeViewClock,
+                seconds: renderTimeViewClock,
+              }}
+              rules={RULES}
+            />
           </div>
-          <DatePickerElement
-            name="startTime"
-            label="Start day"
-            disableFuture
-            rules={RULES}
-          />
-          <TimePickerElement
-            name="startTime"
-            label="Bed time"
-            viewRenderers={{
-              hours: renderTimeViewClock,
-              minutes: renderTimeViewClock,
-              seconds: renderTimeViewClock,
-            }}
-            rules={RULES}
-          />
-        </div>
-        <div className="flex flex-col gap-y-8">
-          <div className="flex flex-row justify-center">
-            <WakeIcon />
+          <div className="flex flex-col gap-y-8">
+            <div className="flex flex-row justify-center">
+              <WakeIcon />
+            </div>
+            <DatePickerElement
+              name="endTime"
+              label="End day"
+              disableFuture
+              rules={RULES}
+            />
+            <TimePickerElement
+              name="endTime"
+              label="Wakeup time"
+              rules={RULES}
+              viewRenderers={{
+                hours: renderTimeViewClock,
+                minutes: renderTimeViewClock,
+                seconds: renderTimeViewClock,
+              }}
+            />
           </div>
-          <DatePickerElement
-            name="endTime"
-            label="End day"
-            disableFuture
-            rules={RULES}
-          />
-          <TimePickerElement
-            name="endTime"
-            label="Wakeup time"
-            rules={RULES}
-            viewRenderers={{
-              hours: renderTimeViewClock,
-              minutes: renderTimeViewClock,
-              seconds: renderTimeViewClock,
-            }}
-          />
         </div>
-      </div>
-      <div className="flex flex-row justify-end mt-4">
-        <Typography variant="subtitle1">
-          Sleep duration{" "}
-          {duration.asSeconds() > 0 ? duration.format("H[h] m[m]") : "invalid"}
-        </Typography>
-      </div>
-      <div className="flex flex-row items-center justify-end mt-4">
-        <Button type="submit">Save</Button>
-      </div>
+        <div className="flex flex-row justify-end mt-4">
+          <Typography variant="subtitle1">
+            Sleep duration{" "}
+            {duration.asSeconds() > 0
+              ? duration.format("H[h] m[m]")
+              : "invalid"}
+          </Typography>
+        </div>
+        <div className="flex flex-row items-center justify-end mt-4">
+          <Button type="submit" disabled={cannotWrite}>
+            Save
+          </Button>
+        </div>
+      </MissingScopesAlert>
     </FormContainer>
   );
 }

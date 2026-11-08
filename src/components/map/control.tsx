@@ -42,7 +42,7 @@ export function ReactMapControl({
     }),
     {
       position: position,
-    }
+    },
   );
 
   if (container.className !== containerClassName) {

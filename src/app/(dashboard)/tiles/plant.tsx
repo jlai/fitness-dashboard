@@ -16,15 +16,20 @@ import {
 import dayjs from "dayjs";
 import { CasinoOutlined } from "@mui/icons-material";
 import { Chance } from "chance";
-import { find } from "es-toolkit/compat";
+import { useAtomValue } from "jotai";
 
 import { formatAsDate } from "@/api/datetime";
-import { millimetersToKilometers } from "@/config/units";
+import {
+  ActiveMinutesTimeSeriesValue,
+  TimeSeriesResource,
+} from "@/api/times-series";
+import { getGoalsAtom } from "@/storage/goals";
+import { kilometersFromDistanceGoal } from "@/config/units";
 import { FormRow, FormRows } from "@/components/forms/form-row";
 
 import { useSelectedDay } from "../state";
 
-import { useDailySummary } from "./common";
+import { useSelectedDayTimeSeries } from "./common";
 import { RenderDialogContentProps, TileWithDialog } from "./tile-with-dialog";
 import { useTileSettings } from "./tile";
 
@@ -74,48 +79,70 @@ interface PlantSettings {
 
 const DEFAULT_SETTINGS: PlantSettings = { goal: "steps", genus: "BushyPlant" };
 
+const PLANT_GOAL_RESOURCE: Record<PlantSettings["goal"], TimeSeriesResource> = {
+  steps: "steps",
+  "calories-out": "calories",
+  "active-minutes": "active-minutes",
+  distance: "distance",
+};
+
 export default function PlantTileContent() {
   const day = useSelectedDay();
-  const dailySummary = useDailySummary();
+  const stepsGoal = useAtomValue(getGoalsAtom("steps", "daily"));
+  const caloriesOutGoal = useAtomValue(getGoalsAtom("caloriesOut", "daily"));
+  const activeMinutesGoal = useAtomValue(
+    getGoalsAtom("activeMinutes", "daily"),
+  );
+  const distanceGoal = useAtomValue(getGoalsAtom("distance", "daily"));
   const [settings] = useTileSettings<PlantSettings>(DEFAULT_SETTINGS);
+  const dayValue = useSelectedDayTimeSeries<
+    string | ActiveMinutesTimeSeriesValue
+  >(PLANT_GOAL_RESOURCE[settings.goal]);
 
-  let progress: number;
-  let text: string;
+  let progress = 0;
+  let text: string | undefined;
 
   switch (settings.goal) {
     case "steps":
       {
-        const totalSteps = dailySummary.summary.steps;
-        const goalSteps = dailySummary.goals?.steps ?? 10000;
-        progress = Math.min(1.0, totalSteps / goalSteps);
-        text = "Meet your step goal to grow";
+        const totalSteps = Number(dayValue ?? 0);
+        if (stepsGoal) {
+          progress = Math.min(1.0, totalSteps / stepsGoal.value);
+          text = "Meet your step goal to grow";
+        }
       }
       break;
     case "calories-out":
       {
-        const total = dailySummary.summary.caloriesOut;
-        const goal = dailySummary.goals?.caloriesOut ?? 0;
-        progress = Math.min(1.0, total / goal);
-        text = "Burn calories to grow";
+        const total = Number(dayValue ?? 0);
+        if (caloriesOutGoal) {
+          progress = Math.min(1.0, total / caloriesOutGoal.value);
+          text = "Burn calories to grow";
+        }
       }
       break;
     case "active-minutes":
       {
-        const { fairlyActiveMinutes, veryActiveMinutes } = dailySummary.summary;
-        const total = fairlyActiveMinutes + veryActiveMinutes;
-        const goal = dailySummary.goals?.activeMinutes ?? 0;
-        progress = Math.min(1.0, total / goal);
-        text = "Be active to grow";
+        const total =
+          (dayValue as ActiveMinutesTimeSeriesValue | undefined)
+            ?.activeMinutes ?? 0;
+        if (activeMinutesGoal) {
+          progress = Math.min(1.0, total / activeMinutesGoal.value);
+          text = "Be active to grow";
+        }
       }
       break;
     case "distance":
       {
-        const total =
-          find(dailySummary.summary.distances, { activity: "total" })
-            ?.distance ?? 0;
-        const goal = millimetersToKilometers(dailySummary.goals?.distance ?? 0);
-        progress = Math.min(1.0, total / goal);
-        text = "Go the distance to grow";
+        const total = Number(dayValue ?? 0);
+        if (distanceGoal) {
+          const goal = kilometersFromDistanceGoal(
+            distanceGoal.value,
+            distanceGoal.unit,
+          );
+          progress = Math.min(1.0, total / goal);
+          text = "Go the distance to grow";
+        }
       }
       break;
   }
@@ -127,7 +154,7 @@ export default function PlantTileContent() {
     >
       <div className="flex flex-col h-full overflow-hidden">
         <div className="flex-1 min-h-0 text-center align-middle">
-          {progress < 0.7 && (
+          {text && progress < 0.7 && (
             <Typography variant="subtitle1" component="div" className="m-8">
               {text}
             </Typography>

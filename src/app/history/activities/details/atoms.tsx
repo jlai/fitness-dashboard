@@ -1,24 +1,19 @@
 import { atom } from "jotai";
 import { atomWithHash } from "jotai-location";
 
+import { isValidDataPointId } from "@/api/datapoints";
 import { cleanHashReplaceState } from "@/utils/hash";
 
-export const activityLogIdHashAtom = atomWithHash<number | bigint | null>(
-  "activityLogId",
+export const exerciseIdHashAtom = atomWithHash<string | null>(
+  "exerciseId",
   null,
   {
-    serialize: (value: number | bigint | null) =>
-      value ? value.toString() : "",
-    // Parse as BigInt since logIds can exceed Number.MAX_SAFE_INTEGER
-    deserialize: (value: string) => {
-      try {
-        return value ? BigInt(value) : null;
-      } catch {
-        return null;
-      }
-    },
+    serialize: (value: string | null) =>
+      value && isValidDataPointId(value) ? value : "",
+    deserialize: (value: string) =>
+      value && isValidDataPointId(value) ? value : null,
     setHash: cleanHashReplaceState,
-  }
+  },
 );
 
 export type XScaleMeasureType = "time" | "distance";

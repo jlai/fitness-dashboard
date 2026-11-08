@@ -3,6 +3,7 @@ import { useContext } from "react";
 import dayjs from "dayjs";
 
 import { buildTimeSeriesQuery, TimeSeriesResource } from "@/api/times-series";
+import { physicalRangeForLocalDay } from "@/api/datetime";
 
 import { TimeSeriesChartContext } from "./context";
 
@@ -16,7 +17,7 @@ export interface StringValueDatum {
 }
 
 export function useTimeSeriesQuery<TEntry = StringValueDatum>(
-  resource: TimeSeriesResource
+  resource: TimeSeriesResource,
 ) {
   const {
     range: { startDay, endDay },
@@ -25,7 +26,7 @@ export function useTimeSeriesQuery<TEntry = StringValueDatum>(
 }
 
 export function useTimeSeriesData<TEntry = StringValueDatum>(
-  resource: TimeSeriesResource
+  resource: TimeSeriesResource,
 ) {
   const query = useTimeSeriesQuery<TEntry>(resource);
   const { data } = useQuery(query);
@@ -40,17 +41,20 @@ export function useRangeInfo() {
 
   const numDays = endDay.diff(startDay, "days");
   const isIntraday = numDays === 0;
+  const physicalDay = isIntraday
+    ? physicalRangeForLocalDay(startDay)
+    : undefined;
 
   return {
     numDays,
     isIntraday,
-    startDay: isIntraday ? startDay.startOf("day") : startDay,
-    endDay: isIntraday ? startDay.endOf("day") : startDay,
+    startDay: physicalDay?.start ?? startDay,
+    endDay: physicalDay?.end ?? startDay,
   };
 }
 
 export function removeFutureDates<TDatum extends TimeSeriesDatum>(
-  data?: Array<TDatum>
+  data?: Array<TDatum>,
 ) {
   const today = dayjs().endOf("day");
   return data?.filter((data) => !dayjs(data.dateTime).isAfter(today));

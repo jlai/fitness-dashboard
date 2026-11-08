@@ -2,12 +2,26 @@
 
 import { Alert, Stack } from "@mui/material";
 import DOMPurify from "dompurify";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { SITE_NOTICE_HTML } from "@/config";
 
 export function SiteNotice() {
   const [showing, setShowing] = useState(true);
+  const safeHtml = useMemo(() => {
+    const purifier = DOMPurify();
+
+    purifier.addHook("afterSanitizeAttributes", (node) => {
+      if ("target" in node) {
+        node.setAttribute("target", "_blank");
+        node.setAttribute("rel", "noopener noreferrer");
+      }
+    });
+
+    return purifier.sanitize(SITE_NOTICE_HTML ?? "", {
+      RETURN_TRUSTED_TYPE: true,
+    });
+  }, []);
 
   if (!showing) {
     return undefined;
@@ -27,9 +41,7 @@ export function SiteNotice() {
       >
         <div
           dangerouslySetInnerHTML={{
-            __html: DOMPurify().sanitize(SITE_NOTICE_HTML ?? "", {
-              RETURN_TRUSTED_TYPE: true,
-            }),
+            __html: safeHtml,
           }}
         ></div>
       </Alert>

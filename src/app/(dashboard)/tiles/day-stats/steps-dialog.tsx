@@ -12,15 +12,17 @@ import { BarChart } from "@mui/x-charts";
 import { TabContext, TabList, TabPanel } from "@mui/lab";
 import { Suspense, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useAtomValue } from "jotai";
 import { dropWhile, sumBy } from "es-toolkit";
 
 import { buildActivityIntradayQuery } from "@/api/intraday";
-import { ENABLE_INTRADAY } from "@/config";
+import { physicalRangeForLocalDay } from "@/api/datetime";
 import { DateFormats } from "@/utils/date-formats";
 import { NumberFormats } from "@/utils/number-formats";
 import { aggregateByHour } from "@/components/charts/timeseries/aggregation";
 import { HeaderBar } from "@/components/layout/rows";
 import { FormRows } from "@/components/forms/form-row";
+import { getGoalsAtom } from "@/storage/goals";
 
 import { RenderDialogContentProps } from "../tile-with-dialog";
 import { useSelectedDay } from "../../state";
@@ -53,7 +55,7 @@ export default function StepsDialogContent(props: RenderDialogContentProps) {
         <TabContext value={currentTab}>
           <TabList onChange={(event, value) => setCurrentTab(value)}>
             <Tab label="Overview" value="overview" />
-            {ENABLE_INTRADAY && <Tab label="Detailed" value="intraday" />}
+            <Tab label="Detailed" value="intraday" />
             <Tab label="Settings" value="settings" />
           </TabList>
           <TabPanel value="overview">
@@ -61,13 +63,11 @@ export default function StepsDialogContent(props: RenderDialogContentProps) {
               <Overview />
             </Suspense>
           </TabPanel>
-          {ENABLE_INTRADAY && (
-            <TabPanel value="intraday">
-              <Suspense>
-                <StepsIntraday />
-              </Suspense>
-            </TabPanel>
-          )}
+          <TabPanel value="intraday">
+            <Suspense>
+              <StepsIntraday />
+            </Suspense>
+          </TabPanel>
           <TabPanel value="settings">
             <Suspense>
               <Settings />
@@ -81,28 +81,22 @@ export default function StepsDialogContent(props: RenderDialogContentProps) {
 }
 
 function Overview() {
-  const {
-    daySummary: { summary, goals },
-    weeklyGoals,
-    weekData,
-  } = useDayAndWeekSummary("steps");
-
-  const currentTotal = summary.steps;
-  const dailyGoal = goals?.steps ?? 0;
+  const { dayValue: currentTotal, weekData } = useDayAndWeekSummary("steps");
+  const dailyGoal = useAtomValue(getGoalsAtom("steps", "daily"));
+  const weeklyGoal = useAtomValue(getGoalsAtom("steps", "weekly"));
 
   const weeklySteps = sumBy(weekData, (entry) => Number(entry.value));
-  const weeklyGoal = weeklyGoals.steps;
 
   return (
     <Stack direction="row" justifyContent="center">
       <DailyGoalSummary
         currentTotal={currentTotal}
-        dailyGoal={dailyGoal}
+        dailyGoal={dailyGoal?.value}
         unit="steps"
       />
       <WeeklyGoalSummary
         currentTotal={weeklySteps}
-        weeklyGoal={weeklyGoal}
+        weeklyGoal={weeklyGoal?.value}
         unit="steps"
       />
     </Stack>
@@ -111,19 +105,18 @@ function Overview() {
 
 function StepsIntraday() {
   const day = useSelectedDay();
-  const startTime = day.startOf("day");
-  const endTime = day.endOf("day");
+  const { start: startTime, end: endTime } = physicalRangeForLocalDay(day);
   const [interval, setInterval] = useTileSetting<StepsTileSettings, "interval">(
     "interval",
-    "hour"
+    "hour",
   );
   const [trim, setTrim] = useTileSetting<StepsTileSettings, "trim">(
     "trim",
-    false
+    false,
   );
 
   const { data } = useQuery(
-    buildActivityIntradayQuery("steps", "15min", startTime, endTime)
+    buildActivityIntradayQuery("steps", "15min", startTime, endTime),
   );
 
   const processedData = useMemo(() => {
@@ -167,7 +160,7 @@ function StepsIntraday() {
           {
             dataKey: "dateTime",
             scaleType: "band",
-            valueFormatter: DateFormats.TIME.format,
+            valueFormatter: DateFormats.formatTime,
           },
         ]}
         yAxis={[{ label: "Steps" }]}
@@ -197,13 +190,13 @@ function Settings() {
 
       <FormRows mt={4}>
         <GoalSettings
-          resource="steps"
+          metric="steps"
           period="daily"
           label="Daily step goal"
           unit="steps"
         />
         <GoalSettings
-          resource="steps"
+          metric="steps"
           period="weekly"
           label="Weekly step goal"
           unit="steps"

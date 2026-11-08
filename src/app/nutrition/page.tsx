@@ -14,6 +14,7 @@ import { RequireScopes } from "@/components/require-scopes";
 import { selectedDayForPageAtom } from "@/state";
 import { HeaderBar } from "@/components/layout/rows";
 import { buildFoodLogQuery } from "@/api/nutrition";
+import { NUTRITION_READONLY } from "@/config/google-health-scopes";
 
 import FoodLog from "./food-log";
 
@@ -42,7 +43,7 @@ function NutritionPageContent() {
 export default function NutritionPage() {
   return (
     <RequireLogin>
-      <RequireScopes scopes={["nut"]}>
+      <RequireScopes scopes={[NUTRITION_READONLY]}>
         <ScopeProvider atoms={[selectedDayForPageAtom]}>
           <NutritionPageContent />
         </ScopeProvider>

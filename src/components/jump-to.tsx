@@ -19,7 +19,7 @@ export default function JumpTo({
         popupState.close();
       }
     },
-    [onPickDay, popupState]
+    [onPickDay, popupState],
   );
 
   return (

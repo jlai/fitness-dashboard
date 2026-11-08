@@ -39,15 +39,15 @@ function LogMenuItem({
 
 export function LogFab() {
   const [showingCreateActivityLog, setShowingCreateActivityLog] = useAtom(
-    createActivityLogDialogOpenAtom
+    createActivityLogDialogOpenAtom,
   );
 
   const [showingCreateSleepLog, setShowingCreateSleepLog] = useAtom(
-    createSleepLogDialogOpenAtom
+    createSleepLogDialogOpenAtom,
   );
 
   const [showingCreateWeightLog, setShowingCreateWeightLog] = useAtom(
-    createWeightLogDialogOpenAtom
+    createWeightLogDialogOpenAtom,
   );
 
   const popupState = usePopupState({

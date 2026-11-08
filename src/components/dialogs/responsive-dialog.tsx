@@ -32,7 +32,7 @@ interface ResponsiveDialogProps {
 // Atom that always returns false and ignores writes
 const falseAtom = atom(
   () => false,
-  () => {}
+  () => {},
 );
 
 export function ResponsiveDialog({
@@ -53,11 +53,11 @@ export function ResponsiveDialog({
   const [fullScreenPreference, setFullScreenPreference] = useAtom(
     fullScreenPreferenceId
       ? fullScreenPreferenceFamily(fullScreenPreferenceId)
-      : falseAtom
+      : falseAtom,
   );
 
   const [fullScreen, setFullScreen] = useState(
-    isMobileSize || initialFullScreen || fullScreenPreference
+    isMobileSize || initialFullScreen || fullScreenPreference,
   );
 
   return (

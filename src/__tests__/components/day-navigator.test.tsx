@@ -1,8 +1,8 @@
 import { render, screen } from "@testing-library/react";
 import dayjs, { Dayjs } from "dayjs";
 
-import DayNavigator from "@/components/day-navigator";
 import { formatAsDate } from "@/api/datetime";
+import DayNavigator from "@/components/day-navigator";
 
 jest.useFakeTimers();
 
@@ -16,7 +16,7 @@ describe("DayNavigator", () => {
     const onSelectDay = () => {};
 
     render(
-      <DayNavigator selectedDay={selectedDay} onSelectDay={onSelectDay} />
+      <DayNavigator selectedDay={selectedDay} onSelectDay={onSelectDay} />,
     );
 
     const label = screen.getByText("Today");
@@ -32,7 +32,7 @@ describe("DayNavigator", () => {
     const onSelectDay = () => {};
 
     render(
-      <DayNavigator selectedDay={selectedDay} onSelectDay={onSelectDay} />
+      <DayNavigator selectedDay={selectedDay} onSelectDay={onSelectDay} />,
     );
 
     const label = screen.getByText("Yesterday");
@@ -48,7 +48,7 @@ describe("DayNavigator", () => {
     const onSelectDay = () => {};
 
     render(
-      <DayNavigator selectedDay={selectedDay} onSelectDay={onSelectDay} />
+      <DayNavigator selectedDay={selectedDay} onSelectDay={onSelectDay} />,
     );
 
     const label = screen.getByText("February 2");
@@ -64,7 +64,7 @@ describe("DayNavigator", () => {
     const onSelectDay = () => {};
 
     render(
-      <DayNavigator selectedDay={selectedDay} onSelectDay={onSelectDay} />
+      <DayNavigator selectedDay={selectedDay} onSelectDay={onSelectDay} />,
     );
 
     const label = screen.getByText("February 2, 2021");
@@ -82,7 +82,7 @@ describe("DayNavigator", () => {
     });
 
     const { rerender } = render(
-      <DayNavigator selectedDay={selectedDay} onSelectDay={onSelectDay} />
+      <DayNavigator selectedDay={selectedDay} onSelectDay={onSelectDay} />,
     );
 
     const label = screen.getByText("February 2");
@@ -94,7 +94,7 @@ describe("DayNavigator", () => {
     previousButton.click();
 
     rerender(
-      <DayNavigator selectedDay={selectedDay} onSelectDay={onSelectDay} />
+      <DayNavigator selectedDay={selectedDay} onSelectDay={onSelectDay} />,
     );
 
     expect(onSelectDay).toHaveBeenCalledTimes(1);
@@ -106,7 +106,7 @@ describe("DayNavigator", () => {
     nextButton.click();
 
     rerender(
-      <DayNavigator selectedDay={selectedDay} onSelectDay={onSelectDay} />
+      <DayNavigator selectedDay={selectedDay} onSelectDay={onSelectDay} />,
     );
 
     expect(onSelectDay).toHaveBeenCalledTimes(2);
@@ -115,7 +115,7 @@ describe("DayNavigator", () => {
     nextButton.click();
 
     rerender(
-      <DayNavigator selectedDay={selectedDay} onSelectDay={onSelectDay} />
+      <DayNavigator selectedDay={selectedDay} onSelectDay={onSelectDay} />,
     );
 
     expect(onSelectDay).toHaveBeenCalledTimes(3);

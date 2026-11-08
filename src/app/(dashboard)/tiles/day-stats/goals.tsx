@@ -1,32 +1,116 @@
 import { Box, Button, InputAdornment, Stack, Typography } from "@mui/material";
-import {
-  useMutation,
-  useQueryClient,
-  useSuspenseQueries,
-} from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { useAtom } from "jotai";
+import { useEffect, useMemo } from "react";
 import { FormContainer, TextFieldElement, useForm } from "react-hook-form-mui";
 
-import { NumberFormats } from "@/utils/number-formats";
 import {
-  buildDailySummaryQuery,
   buildTimeSeriesQuery,
-  GoalResource,
+  getTimeSeriesValueForDay,
   TimeSeriesResource,
-} from "@/api/activity";
+} from "@/api/times-series";
 import {
-  buildActivityGoalsQuery,
-  buildUpdateActivityGoalMutation,
-} from "@/api/activity/goals";
+  kilometersFromDistanceGoal,
+  millilitersFromWaterGoal,
+  useUnits,
+} from "@/config/units";
 import { FormRow } from "@/components/forms/form-row";
+import {
+  getGoalsAtom,
+  type GoalMetric,
+  type GoalPeriod,
+  type GoalWrite,
+} from "@/storage/goals";
+import { NumberFormats } from "@/utils/number-formats";
 import { showSuccessToast, withErrorToaster } from "@/components/toast";
 
 import { useSelectedDay } from "../../state";
+import { useTileSetting } from "../tile";
 
 import StatGauge, { StatPercent } from "./stat-gauge";
 
+function GoalSummary({
+  title,
+  currentTotal,
+  goal,
+  unit,
+}: {
+  title: string;
+  currentTotal: number;
+  goal?: number;
+  unit: string;
+}) {
+  const [, setCurrentTab] = useTileSetting<
+    { defaultTab: string },
+    "defaultTab"
+  >("defaultTab", "overview");
+
+  if (goal != null && goal > 0) {
+    return (
+      <Stack direction="column" alignItems="center">
+        <Typography variant="h5">{title}</Typography>
+        <Box width={200} height={200} mt={2}>
+          <StatGauge
+            value={currentTotal}
+            valueMax={goal}
+            valueUnits={unit}
+            innerContent={<StatPercent ratio={currentTotal / goal} />}
+            bottomContent={
+              <GoalStatus currentTotal={currentTotal} goal={goal} unit={unit} />
+            }
+          />
+        </Box>
+      </Stack>
+    );
+  }
+
+  return (
+    <Stack direction="column" alignItems="center">
+      <Typography variant="h5">{title}</Typography>
+      <Box width={200} height={200} mt={2}>
+        <StatGauge
+          muted
+          value={currentTotal}
+          valueUnits={unit}
+          innerContent={<StatPercent />}
+          bottomContent={<Typography color="text.disabled">—</Typography>}
+        />
+      </Box>
+      <Button size="small" onClick={() => setCurrentTab("settings")}>
+        No goal set
+      </Button>
+    </Stack>
+  );
+}
+
+function GoalStatus({
+  currentTotal,
+  goal,
+  unit,
+}: {
+  currentTotal: number;
+  goal: number;
+  unit: string;
+}) {
+  return (
+    <Stack direction="column" alignItems="center">
+      <Typography>
+        {NumberFormats.FRACTION_DIGITS_1.format(currentTotal)} /{" "}
+        {NumberFormats.FRACTION_DIGITS_1.format(goal)} {unit}
+      </Typography>
+      {currentTotal < goal && (
+        <Typography>
+          {NumberFormats.FRACTION_DIGITS_1.format(goal - currentTotal)} {unit}{" "}
+          to go
+        </Typography>
+      )}
+    </Stack>
+  );
+}
+
 interface DailyGoalSummaryProps {
   currentTotal: number;
-  dailyGoal: number;
+  dailyGoal?: number;
   unit: string;
 }
 
@@ -36,39 +120,18 @@ export function DailyGoalSummary({
   unit,
 }: DailyGoalSummaryProps) {
   return (
-    <Stack direction="column" alignItems="center">
-      <Typography variant="h5">Daily goal</Typography>
-      <Box width={200} height={200} mt={2}>
-        <StatGauge
-          value={currentTotal}
-          valueMax={dailyGoal}
-          valueUnits={unit}
-          innerContent={<StatPercent ratio={currentTotal / dailyGoal} />}
-          bottomContent={
-            <Stack direction="column" alignItems="center">
-              <Typography>
-                {NumberFormats.FRACTION_DIGITS_1.format(currentTotal)} /{" "}
-                {NumberFormats.FRACTION_DIGITS_1.format(dailyGoal)} {unit}
-              </Typography>
-              {currentTotal < dailyGoal && (
-                <Typography>
-                  {NumberFormats.FRACTION_DIGITS_1.format(
-                    dailyGoal - currentTotal
-                  )}{" "}
-                  {unit} to go
-                </Typography>
-              )}
-            </Stack>
-          }
-        />
-      </Box>
-    </Stack>
+    <GoalSummary
+      title="Daily goal"
+      currentTotal={currentTotal}
+      goal={dailyGoal}
+      unit={unit}
+    />
   );
 }
 
 interface WeeklyGoalSummaryProps {
   currentTotal: number;
-  weeklyGoal: number;
+  weeklyGoal?: number;
   unit: string;
 }
 
@@ -78,33 +141,12 @@ export function WeeklyGoalSummary({
   unit,
 }: WeeklyGoalSummaryProps) {
   return (
-    <Stack direction="column" alignItems="center">
-      <Typography variant="h5">Weekly goal</Typography>
-      <Box width={200} height={200} mt={2}>
-        <StatGauge
-          value={currentTotal}
-          valueMax={weeklyGoal}
-          valueUnits={unit}
-          innerContent={<StatPercent ratio={currentTotal / weeklyGoal} />}
-          bottomContent={
-            <Stack direction="column" alignItems="center">
-              <Typography>
-                {NumberFormats.FRACTION_DIGITS_1.format(currentTotal)} /{" "}
-                {NumberFormats.FRACTION_DIGITS_1.format(weeklyGoal)} {unit}
-              </Typography>
-              {currentTotal < weeklyGoal && (
-                <Typography>
-                  {NumberFormats.FRACTION_DIGITS_1.format(
-                    weeklyGoal - currentTotal
-                  )}{" "}
-                  {unit} to go
-                </Typography>
-              )}
-            </Stack>
-          }
-        />
-      </Box>
-    </Stack>
+    <GoalSummary
+      title="Weekly goal"
+      currentTotal={currentTotal}
+      goal={weeklyGoal}
+      unit={unit}
+    />
   );
 }
 
@@ -113,76 +155,83 @@ export function useDayAndWeekSummary(resource: TimeSeriesResource) {
   const startDay = day.startOf("week");
   const endDay = day.endOf("week");
 
-  const [{ data: daySummary }, { data: weeklyGoals }, { data: weekData }] =
-    useSuspenseQueries({
-      queries: [
-        buildDailySummaryQuery(day),
-        buildActivityGoalsQuery("weekly"),
-        buildTimeSeriesQuery(resource, startDay, endDay),
-      ],
-    });
+  const { data: weekData } = useSuspenseQuery(
+    buildTimeSeriesQuery(resource, startDay, endDay),
+  );
 
-  return { daySummary, weeklyGoals, weekData };
+  const dayValue = Number(getTimeSeriesValueForDay(weekData, day) ?? 0);
+
+  return { dayValue, weekData };
 }
 
 interface GoalSettingsFormData {
-  goal: number;
+  goal: number | "";
+}
+
+function commitGoalInput(
+  setGoal: (update: GoalWrite | undefined) => void,
+  unit: string,
+  raw: number | "",
+) {
+  if (raw === "") {
+    setGoal(undefined);
+    return;
+  }
+
+  setGoal({ value: Number(raw), unit });
 }
 
 export function GoalSettings({
-  resource,
+  metric,
   period,
   label,
   unit,
 }: {
-  resource: GoalResource;
-  period: "daily" | "weekly";
+  metric: GoalMetric;
+  period: GoalPeriod;
   label: string;
   unit: string;
 }) {
-  const queryClient = useQueryClient();
-  const { mutateAsync: updateGoal } = useMutation(
-    buildUpdateActivityGoalMutation(queryClient)
+  const goalAtom = getGoalsAtom(metric, period);
+  const [goal, setGoal] = useAtom(goalAtom);
+
+  const defaultValues = useMemo(
+    () => ({ goal: goal?.value ?? ("" as const) }),
+    [goal],
   );
 
-  const fetchDefaultValues = async () => ({
-    goal: (await queryClient.fetchQuery(buildActivityGoalsQuery(period)))[
-      resource
-    ]!,
+  const form = useForm<GoalSettingsFormData>({
+    defaultValues,
   });
 
-  const form = useForm<GoalSettingsFormData>({
-    defaultValues: fetchDefaultValues,
-  });
+  useEffect(() => {
+    form.reset(defaultValues);
+  }, [defaultValues, form]);
 
   const { formState } = form;
 
   const submit = withErrorToaster(async (values: GoalSettingsFormData) => {
-    await updateGoal({
-      resource,
-      period,
-      goal: values.goal,
-    });
+    commitGoalInput(setGoal, goal?.unit ?? "", values.goal);
 
     form.reset({
       goal: values.goal,
     });
 
-    showSuccessToast("Updated goal");
+    showSuccessToast(values.goal === "" ? "Cleared goal" : "Updated goal");
   }, "Error updating goal");
 
   return (
     <FormContainer
       formContext={form}
       onSuccess={submit}
-      disabled={formState.isLoading}
+      disabled={formState.isSubmitting}
     >
       <FormRow>
         <TextFieldElement
           type="number"
           name="goal"
           label={label}
-          rules={{ required: true }}
+          rules={{ min: 0 }}
           slotProps={{
             input: {
               endAdornment: (
@@ -194,7 +243,151 @@ export function GoalSettings({
         />
         <Button
           type="submit"
-          disabled={formState.isLoading || !formState.isDirty}
+          disabled={formState.isSubmitting || !formState.isDirty}
+        >
+          Update goal
+        </Button>
+      </FormRow>
+    </FormContainer>
+  );
+}
+
+export function DistanceGoalSettings({
+  period,
+  label,
+  unit,
+}: {
+  period: GoalPeriod;
+  label: string;
+  unit: string;
+}) {
+  const goalAtom = getGoalsAtom("distance", period);
+  const [goal, setGoal] = useAtom(goalAtom);
+  const { distanceUnit, localizedKilometers } = useUnits();
+
+  const displayGoal =
+    goal != null
+      ? localizedKilometers(kilometersFromDistanceGoal(goal.value, goal.unit))
+      : ("" as const);
+
+  const defaultValues = useMemo(() => ({ goal: displayGoal }), [displayGoal]);
+
+  const form = useForm<GoalSettingsFormData>({
+    defaultValues,
+  });
+
+  useEffect(() => {
+    form.reset(defaultValues);
+  }, [defaultValues, form]);
+
+  const { formState } = form;
+
+  const submit = withErrorToaster(async (values: GoalSettingsFormData) => {
+    commitGoalInput(setGoal, distanceUnit, values.goal);
+
+    form.reset({
+      goal: values.goal,
+    });
+
+    showSuccessToast(values.goal === "" ? "Cleared goal" : "Updated goal");
+  }, "Error updating goal");
+
+  return (
+    <FormContainer
+      formContext={form}
+      onSuccess={submit}
+      disabled={formState.isSubmitting}
+    >
+      <FormRow>
+        <TextFieldElement
+          type="number"
+          name="goal"
+          label={label}
+          rules={{ min: 0 }}
+          slotProps={{
+            input: {
+              endAdornment: (
+                <InputAdornment position="end">{unit}</InputAdornment>
+              ),
+            },
+            inputLabel: { shrink: true },
+          }}
+        />
+        <Button
+          type="submit"
+          disabled={formState.isSubmitting || !formState.isDirty}
+        >
+          Update goal
+        </Button>
+      </FormRow>
+    </FormContainer>
+  );
+}
+
+export function WaterGoalSettings({
+  period,
+  label,
+  unit,
+}: {
+  period: GoalPeriod;
+  label: string;
+  unit: string;
+}) {
+  const goalAtom = getGoalsAtom("waterVolume", period);
+  const [goal, setGoal] = useAtom(goalAtom);
+  const { waterUnit, localizedWaterVolume } = useUnits();
+
+  const displayGoal =
+    goal != null
+      ? localizedWaterVolume(millilitersFromWaterGoal(goal.value, goal.unit))
+      : ("" as const);
+
+  const defaultValues = useMemo(() => ({ goal: displayGoal }), [displayGoal]);
+
+  const form = useForm<GoalSettingsFormData>({
+    defaultValues,
+  });
+
+  useEffect(() => {
+    form.reset(defaultValues);
+  }, [defaultValues, form]);
+
+  const { formState } = form;
+
+  const submit = withErrorToaster(async (values: GoalSettingsFormData) => {
+    commitGoalInput(setGoal, waterUnit, values.goal);
+
+    form.reset({
+      goal: values.goal,
+    });
+
+    showSuccessToast(values.goal === "" ? "Cleared goal" : "Updated goal");
+  }, "Error updating goal");
+
+  return (
+    <FormContainer
+      formContext={form}
+      onSuccess={submit}
+      disabled={formState.isSubmitting}
+    >
+      <FormRow>
+        <TextFieldElement
+          type="number"
+          name="goal"
+          label={label}
+          rules={{ min: 0 }}
+          slotProps={{
+            input: {
+              endAdornment: (
+                <InputAdornment position="end">{unit}</InputAdornment>
+              ),
+            },
+            inputLabel: { shrink: true },
+          }}
+        />
+        <Button
+          type="submit"
+          disabled={formState.isSubmitting || !formState.isDirty}
         >
           Update goal
         </Button>

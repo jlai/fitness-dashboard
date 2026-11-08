@@ -11,11 +11,13 @@ import { useMemo } from "react";
 import { FieldError, useController, UseControllerProps } from "react-hook-form";
 import React from "react";
 
-import { buildActivityTypesQuery } from "@/api/activity/activity-types";
+import { ExerciseExerciseType } from "@generated/orval/fetch/google-health-api/models";
+
+import { buildActivityTypesQuery } from "@/api/exercise/exercise-types";
 import { ACTIVITY_ICONS, commonActivityTypes } from "@/config/common-ids";
 
 export interface ActivityTypeOption {
-  id: number;
+  id: ExerciseExerciseType;
   name: string;
   group: string;
   requiresDistance?: boolean;
@@ -25,18 +27,20 @@ export function ActivityTypeInput({
   value,
   onChange,
   error,
+  disabled,
 }: {
   value: ActivityTypeOption | null;
   onChange: (value: ActivityTypeOption | null) => void;
   error?: FieldError;
+  disabled?: boolean;
 }) {
   const { data: categorizedActivityTypes } = useQuery(
-    buildActivityTypesQuery()
+    buildActivityTypesQuery(),
   );
 
   const options = useMemo(() => {
     const options: Array<ActivityTypeOption> = [];
-    const alreadyAddedTypes = new Set<number>();
+    const alreadyAddedTypes = new Set<ExerciseExerciseType>();
 
     // Add common activities at top
     for (const activityType of commonActivityTypes) {
@@ -73,7 +77,7 @@ export function ActivityTypeInput({
     <Autocomplete<ActivityTypeOption>
       value={value}
       onChange={(event, value) => onChange(value)}
-      disabled={!options}
+      disabled={disabled || !options}
       options={options ?? []}
       groupBy={(option) => option.group}
       getOptionLabel={(option) => option.name}
@@ -112,9 +116,11 @@ export function ActivityTypeInput({
 export function ActivityTypeElement({
   name,
   rules,
+  disabled,
 }: {
   name: string;
   rules?: UseControllerProps["rules"];
+  disabled?: boolean;
 }) {
   const { field, fieldState } = useController({
     name,
@@ -126,6 +132,7 @@ export function ActivityTypeElement({
       value={field.value}
       onChange={field.onChange}
       error={fieldState.error}
+      disabled={disabled}
     />
   );
 }

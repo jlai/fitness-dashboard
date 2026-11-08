@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+
 export default function Page() {
-  return <div></div>;
+  redirect("/settings/foods/favorite");
 }

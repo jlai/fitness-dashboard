@@ -29,15 +29,21 @@ import { useAtom, useAtomValue } from "jotai";
 import { ScaleLinear } from "d3-scale";
 import { AxisValueFormatterContext } from "@mui/x-charts/internals";
 
-import { ParsedTcx, Trackpoint } from "@/api/activity/tcx";
+import { ParsedTcx, Trackpoint } from "@/api/exercise/tcx";
 import { NumberFormats } from "@/utils/number-formats";
 import { useUnits } from "@/config/units";
-import { ActivityLog } from "@/api/activity";
+import type { ExerciseDataPoint } from "@/api/exercise";
+import {
+  getExerciseAverageHeartRate,
+  getExerciseElevationMeters,
+  getExerciseEndTime,
+  getExerciseFromDataPoint,
+  getExerciseStartTime,
+} from "@/api/exercise/helpers";
 import {
   buildActivityIntradayQuery,
   buildHeartRateIntradayQuery,
 } from "@/api/intraday";
-import { ENABLE_INTRADAY } from "@/config";
 import {
   augmentWithDistances,
   DistanceScale,
@@ -45,7 +51,8 @@ import {
 } from "@/utils/distances";
 import { FlexSpacer } from "@/components/layout/flex";
 import { createHeartRateZoneColorMap } from "@/config/heart-rate";
-import { ParsedHeartRateZones, parseHeartRateZones } from "@/api/heart-rate";
+import { ParsedHeartRateZones } from "@/api/heart-rate";
+import { currentTimeZone } from "@/utils/date-formats";
 
 import { useTrackpoints } from "./load-tcx";
 import { highlightedXAtom, xScaleMeasureAtom } from "./atoms";
@@ -54,32 +61,35 @@ import { SplitsChart } from "./splits";
 const TIME_FORMAT = new Intl.DateTimeFormat(undefined, {
   hour: "numeric",
   minute: "2-digit",
+  timeZone: currentTimeZone(),
 });
 
 const TIME_FORMAT_WITH_SECONDS = new Intl.DateTimeFormat(undefined, {
   hour: "numeric",
   minute: "2-digit",
   second: "2-digit",
+  timeZone: currentTimeZone(),
 });
 
 function formatTime(value: Date, context: AxisValueFormatterContext) {
-  if (isNaN(value.getDate())) {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) {
     return "";
   }
 
   return context.location === "tick"
-    ? TIME_FORMAT.format(value)
-    : TIME_FORMAT_WITH_SECONDS.format(value);
+    ? TIME_FORMAT.format(date)
+    : TIME_FORMAT_WITH_SECONDS.format(date);
 }
 
 export function ActivityTcxCharts({
   parsedTcx,
-  activityLog,
+  dataPoint,
   distanceScale,
   splits,
 }: {
   parsedTcx: ParsedTcx;
-  activityLog: ActivityLog;
+  dataPoint: ExerciseDataPoint;
   distanceScale: DistanceScale;
   splits: Array<SplitDatum>;
 }) {
@@ -91,20 +101,19 @@ export function ActivityTcxCharts({
     localizedTrackpoints,
   } = useTrackpoints(parsedTcx);
 
-  const startTime = dayjs(activityLog.startTime).startOf("minute");
-  const endTime = startTime
-    .add(activityLog.duration)
+  const exercise = getExerciseFromDataPoint(dataPoint);
+  const startTime = dayjs(getExerciseStartTime(exercise)).startOf("minute");
+  const endTime = dayjs(getExerciseEndTime(exercise))
     .startOf("minute")
     .add(1, "minute");
 
-  const { data: caloriesIntradayRaw } = useQuery({
-    ...buildActivityIntradayQuery("calories", "1min", startTime, endTime),
-    enabled: ENABLE_INTRADAY,
-  });
+  const { data: caloriesIntradayRaw } = useQuery(
+    buildActivityIntradayQuery("calories", "1min", startTime, endTime),
+  );
 
   const { data: heartRateIntradayResponse } = useQuery({
     ...buildHeartRateIntradayQuery("1min", startTime, endTime),
-    enabled: ENABLE_INTRADAY && !hasTrackedHeartRate,
+    enabled: !hasTrackedHeartRate,
   });
 
   const caloriesIntraday = useMemo(
@@ -113,10 +122,10 @@ export function ActivityTcxCharts({
         ? augmentWithDistances(
             caloriesIntradayRaw,
             distanceScale,
-            localizedKilometers
+            localizedKilometers,
           )
         : undefined,
-    [caloriesIntradayRaw, distanceScale, localizedKilometers]
+    [caloriesIntradayRaw, distanceScale, localizedKilometers],
   );
 
   const heartIntraday = useMemo(() => {
@@ -134,7 +143,7 @@ export function ActivityTcxCharts({
       ? augmentWithDistances(
           heartRateIntradayResponse.intradayData,
           distanceScale,
-          localizedKilometers
+          localizedKilometers,
         )
       : undefined;
   }, [
@@ -147,7 +156,8 @@ export function ActivityTcxCharts({
 
   const dateDomain: [Date, Date] = [startTime.toDate(), endTime.toDate()];
 
-  const { averageHeartRate, heartRateZones, elevationGain } = activityLog;
+  const averageHeartRate = getExerciseAverageHeartRate(exercise);
+  const elevationGain = getExerciseElevationMeters(exercise);
 
   return (
     <div className="p-4 h-full">
@@ -157,7 +167,7 @@ export function ActivityTcxCharts({
             {elevationGain > 0 && (
               <Typography variant="h6">
                 {NumberFormats.FRACTION_DIGITS_0.format(
-                  localizedMeters(elevationGain)
+                  localizedMeters(elevationGain),
                 )}{" "}
                 {localizedMetersName}
               </Typography>
@@ -173,19 +183,13 @@ export function ActivityTcxCharts({
       {(hasTrackedHeartRate || averageHeartRate) && (
         <section>
           <Typography variant="h5">Heart rate</Typography>
-          <HeartRateChart
-            data={heartIntraday}
-            dateDomain={dateDomain}
-            heartRateZones={parseHeartRateZones(heartRateZones)}
-          />
+          <HeartRateChart data={heartIntraday} dateDomain={dateDomain} />
         </section>
       )}
-      {ENABLE_INTRADAY && (
-        <section>
-          <ChartSectionHeader title="Calories burned" />
-          <CaloriesChart data={caloriesIntraday} dateDomain={dateDomain} />
-        </section>
-      )}
+      <section>
+        <ChartSectionHeader title="Calories burned" />
+        <CaloriesChart data={caloriesIntraday} dateDomain={dateDomain} />
+      </section>
       {splits && splits.length > 0 && (
         <section>
           <Typography variant="h5">Splits</Typography>
@@ -215,7 +219,7 @@ function ChartSectionHeader({
 function SynchronizedHighlight({
   svgRef,
 }: {
-  svgRef: RefObject<SVGSVGElement>;
+  svgRef: RefObject<SVGSVGElement | null>;
 }) {
   const xScaleMeasure = useAtomValue(xScaleMeasureAtom);
   const [highlightedX, setHighlightedX] = useAtom(highlightedXAtom);
@@ -424,7 +428,7 @@ export function ElevationChart({
   const valueFormatter = (value: number | null) =>
     value
       ? `${NumberFormats.FRACTION_DIGITS_0.format(
-          value
+          value,
         )} ${localizedMetersName}`
       : "";
 

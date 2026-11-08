@@ -1,26 +1,14 @@
 export interface WeightLog {
-  bmi?: number;
+  /** Resource name used to delete the weight datapoint. */
+  name: string;
+  /** Civil date `YYYY-MM-DD`. */
   date: string;
-  fat?: number;
-  logId: number;
-  source: string;
+  /** Local time `HH:mm:ss`. */
   time: string;
-  weight: number; // localized units (e.g. pounds)
-}
-
-// https://dev.fitbit.com/build/reference/web-api/body-timeseries/get-weight-timeseries-by-date-range/
-export interface GetWeightTimeSeriesResponse {
-  // NOTE: due to rounding problems in the API, this is in *localized* units
-  weight: Array<WeightLog>;
-}
-
-// https://dev.fitbit.com/build/reference/web-api/body/get-body-goals/
-export interface GetBodyWeightGoalResponse {
-  goal: {
-    goalType: "GAIN" | "LOSE" | "MAINTAIN";
-    startDate: string;
-    startWeight: number;
-    weight: number;
-    weightThreshold: number;
-  };
+  /** Weight in kilograms. */
+  weight: number;
+  /** Body fat percentage in range [0, 100], if logged. */
+  fat?: number;
+  /** BMI derived from the latest height on or before this log. */
+  bmi?: number;
 }

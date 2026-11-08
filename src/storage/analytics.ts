@@ -6,6 +6,7 @@ import { atomWithStorage } from "jotai/utils";
 import { ANALYTICS_PING_URL } from "@/config";
 import { formatAsDate } from "@/api/datetime";
 import { isLoggedIn } from "@/api/auth";
+import { logError } from "@/utils/log-error";
 
 dayjs.extend(isoWeekPlugin);
 
@@ -15,7 +16,7 @@ export const firstLoginDateAtom = atomWithStorage<string | undefined>(
   undefined,
   {
     getOnInit: true,
-  }
+  },
 );
 
 export const lastSurveyDateAtom = atomWithStorage<string | undefined>(
@@ -24,7 +25,7 @@ export const lastSurveyDateAtom = atomWithStorage<string | undefined>(
   undefined,
   {
     getOnInit: true,
-  }
+  },
 );
 
 export const lastPingDateAtom = atomWithStorage<string | undefined>(
@@ -33,7 +34,7 @@ export const lastPingDateAtom = atomWithStorage<string | undefined>(
   undefined,
   {
     getOnInit: true,
-  }
+  },
 );
 
 export const weeksActiveAtom = atomWithStorage<number>(
@@ -42,7 +43,7 @@ export const weeksActiveAtom = atomWithStorage<number>(
   undefined,
   {
     getOnInit: true,
-  }
+  },
 );
 
 /** Round down to the nearest power. */
@@ -85,8 +86,8 @@ export const analyticsPingEffect = atomEffect((get, set) => {
         set(weeksActiveAtom, weeksActive + 1);
       },
       () => {
-        console.error("failed to send analytics ping");
-      }
+        logError("failed to send analytics ping");
+      },
     );
   }
 });

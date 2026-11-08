@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 
-import { buildActivityTcxQuery } from "@/api/activity/activities";
-import { ParsedTcx, parseTcx, Trackpoint } from "@/api/activity/tcx";
+import { buildExerciseTcxQuery } from "@/api/exercise/exercise";
+import { ParsedTcx, parseTcx, Trackpoint } from "@/api/exercise/tcx";
 import { useUnits } from "@/config/units";
 
 export type LocalizedTrackpoint = Trackpoint & {
@@ -32,7 +32,7 @@ function useObjectUrl(object: File | Blob | null) {
 /** Turn a TCX string into a url that can be downloaded */
 export function useTcxDownloadUrl(
   tcxString: string | undefined,
-  tcxFilename: string
+  tcxFilename: string,
 ) {
   const tcxFile = useMemo(() => {
     return tcxString
@@ -47,15 +47,18 @@ export function useTcxDownloadUrl(
   return tcxDownloadUrl;
 }
 
-export function useFetchTcxAsString(activityLogId: number | bigint) {
-  const { data: tcxString } = useQuery(buildActivityTcxQuery(activityLogId));
+export function useFetchTcxAsString(activityLogId: string, enabled = true) {
+  const { data: tcxString } = useQuery({
+    ...buildExerciseTcxQuery(activityLogId),
+    enabled,
+  });
   return tcxString;
 }
 
 export function useParsedTcx(tcxString?: string) {
   return useMemo(
     () => (tcxString ? parseTcx(tcxString) : undefined),
-    [tcxString]
+    [tcxString],
   );
 }
 

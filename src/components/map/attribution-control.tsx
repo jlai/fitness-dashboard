@@ -17,15 +17,15 @@ function SafeAttributionControl({
 }: SafeAttributionControlProps) {
   const [attribution, setAttribution] = useState<string>();
   const [expanded, setExpanded] = useState(true);
-  const mapRef = useRef<MapLibreMap>();
+  const mapRef = useRef<MapLibreMap | null>(null);
 
   const update = useCallback(() => {
-    const sourceCaches = mapRef.current?.style.sourceCaches;
+    const tileManagers = mapRef.current?.style.tileManagers;
 
-    for (const id in sourceCaches) {
-      const sourceCache = sourceCaches[id];
-      if (sourceCache.used || sourceCache.usedForTerrain) {
-        const source = sourceCache.getSource();
+    for (const id in tileManagers) {
+      const tileManager = tileManagers[id];
+      if (tileManager.used || tileManager.usedForTerrain) {
+        const source = tileManager.getSource();
         if (source.attribution) {
           setAttribution(source.attribution);
         }
@@ -40,16 +40,16 @@ function SafeAttributionControl({
 
       update();
     },
-    [update]
+    [update],
   );
 
   const onRemove = useCallback(
     (map: MapLibreMap) => {
       map.off("sourcedata", update);
 
-      mapRef.current = undefined;
+      mapRef.current = null;
     },
-    [update]
+    [update],
   );
 
   const safeHtml = useMemo(() => {
@@ -58,7 +58,7 @@ function SafeAttributionControl({
     purifier.addHook("afterSanitizeAttributes", (node) => {
       if ("target" in node) {
         node.setAttribute("target", "_blank");
-        node.setAttribute("rel", "noopener");
+        node.setAttribute("rel", "noopener noreferrer");
       }
     });
 

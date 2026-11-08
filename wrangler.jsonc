@@ -1,0 +1,51 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // Custom worker wraps OpenNext fetch and adds weekly key rotation.
+  "main": "cloudflare-worker.ts",
+  "name": "fitness-dashboard",
+  "compatibility_date": "2026-08-04",
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS",
+    // Run the Worker (and Next.js proxy/headers) before HTML so CSP is applied.
+    // Hashed /_next/static files can still be served directly.
+    "run_worker_first": ["/*", "!/_next/static/*", "!/*/_next/static/*"],
+  },
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "<CF_BINDING_WORKER_SELF_REFERENCE>",
+    },
+  ],
+  "images": {
+    "binding": "IMAGES",
+  },
+  "observability": {
+    "enabled": true,
+  },
+  "keep_vars": true,
+  "upload_source_maps": true,
+  "secrets": {
+    "required": ["GOOGLE_OAUTH_CLIENT_SECRET", "CLOUDFLARE_API_TOKEN"],
+  },
+  // Rotate session/health Secrets Store keys every Wednesday at 00:00 UTC.
+  "triggers": {
+    "crons": ["0 0 * * WED"],
+  },
+  // Create with `npx wrangler kv namespace create SESSION_REVOCATION` and set CF_BINDING_SESSION_REVOCATION.
+  "kv_namespaces": [
+    {
+      "binding": "SESSION_REVOCATION",
+      "id": "<CF_BINDING_SESSION_REVOCATION>",
+    },
+  ],
+  // Bind Cloudflare Secrets Store entries when TOKEN_SECRET_STORE=cloudflare-secrets://...
+  "secrets_store_secrets": [
+    { "binding": "SESSION_ACTIVE_KEY", "store_id": "<CF_BINDING_SECRETS_STORE_ID>", "secret_name": "SESSION_ACTIVE_KEY" },
+    { "binding": "SESSION_ACCEPTED_KEYS", "store_id": "<CF_BINDING_SECRETS_STORE_ID>", "secret_name": "SESSION_ACCEPTED_KEYS" },
+    { "binding": "HEALTH_ACTIVE_KEY", "store_id": "<CF_BINDING_SECRETS_STORE_ID>", "secret_name": "HEALTH_ACTIVE_KEY" },
+    { "binding": "HEALTH_ACCEPTED_KEYS", "store_id": "<CF_BINDING_SECRETS_STORE_ID>", "secret_name": "HEALTH_ACCEPTED_KEYS" },
+    { "binding": "DRIVE_ACTIVE_KEY", "store_id": "<CF_BINDING_SECRETS_STORE_ID>", "secret_name": "DRIVE_ACTIVE_KEY" },
+    { "binding": "DRIVE_ACCEPTED_KEYS", "store_id": "<CF_BINDING_SECRETS_STORE_ID>", "secret_name": "DRIVE_ACCEPTED_KEYS" }
+  ],
+}

@@ -7,34 +7,49 @@ import {
 } from "@mui/material";
 import { useSuspenseQueries } from "@tanstack/react-query";
 import React, { Suspense } from "react";
+import { useAtomValue } from "jotai";
 
-import { buildFoodLogQuery, buildWaterGoalQuery } from "@/api/nutrition";
+import { buildHydrationLogQuery } from "@/api/nutrition";
 import { useUnits } from "@/config/units";
+import { millilitersFromWaterGoal } from "@/config/units";
 import NumericStat from "@/components/numeric-stat";
+import { getGoalsAtom } from "@/storage/goals";
 
 import { useSelectedDay } from "../state";
 
 import Wave from "./assets/wave.svg";
 import { RenderDialogContentProps, TileWithDialog } from "./tile-with-dialog";
+import { sumBy } from "es-toolkit";
 
 const WaterEntryPanel = React.lazy(
-  () => import("@/components/nutrition/water-entry-panel")
+  () => import("@/components/nutrition/water-entry-panel"),
 );
 
 export default function WaterTileContent() {
   const day = useSelectedDay();
   const units = useUnits();
+  const waterGoal = useAtomValue(getGoalsAtom("waterVolume", "daily"));
 
-  const [{ data: foodLog }, { data: waterGoalMl }] = useSuspenseQueries({
-    queries: [buildFoodLogQuery(day), buildWaterGoalQuery()],
+  const [{ data: hydrationLog }] = useSuspenseQueries({
+    queries: [buildHydrationLogQuery(day)],
   });
+
+  const waterGoalMl = waterGoal
+    ? millilitersFromWaterGoal(waterGoal.value, waterGoal.unit)
+    : undefined;
+  const waterConsumedMl = sumBy(
+    hydrationLog.dataPoints ?? [],
+    (dataPoint) => dataPoint.hydrationLog?.amountConsumed?.milliliters ?? 0,
+  );
 
   const { localizedWaterVolumeName, localizedWaterVolume } = units;
 
-  const waterConsumedMl = foodLog.summary.water;
-  const waterRemaining = localizedWaterVolume(waterGoalMl - waterConsumedMl);
+  const displayedVolume = localizedWaterVolume(
+    waterGoalMl != null ? waterGoalMl - waterConsumedMl : waterConsumedMl,
+  );
 
-  const ratio = Math.min(waterConsumedMl / waterGoalMl, 1.0);
+  const ratio =
+    waterGoalMl != null ? Math.min(waterConsumedMl / waterGoalMl, 1.0) : 0;
 
   return (
     <TileWithDialog dialogComponent={WaterTileDialogContent}>
@@ -51,12 +66,14 @@ export default function WaterTileContent() {
           <div className="size-full flex flex-col justify-center">
             <div className="flex flex-col items-center">
               <NumericStat
-                value={waterRemaining}
+                value={displayedVolume}
                 unit={localizedWaterVolumeName}
               />
-              <Typography variant="body2" component="span">
-                to drink
-              </Typography>
+              {waterGoalMl != null && (
+                <Typography variant="body2" component="span">
+                  to drink
+                </Typography>
+              )}
             </div>
           </div>
         </div>

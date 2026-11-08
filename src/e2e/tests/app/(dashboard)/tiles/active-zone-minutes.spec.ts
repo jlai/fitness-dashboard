@@ -27,7 +27,6 @@ test.describe("with no active zone minutes data", () => {
     ]);
 
     await timeSeriesApi.setActiveZoneMinutesTimeSeriesResponse([]);
-    await timeSeriesApi.setActivityGoalsResponse({ activeZoneMinutes: 25 });
 
     await page.goto("/");
 
@@ -52,9 +51,8 @@ test.describe("with active zone minutes data", () => {
     ]);
 
     await timeSeriesApi.setActiveZoneMinutesTimeSeriesResponse(
-      ACTIVE_ZONE_MINUTES_TIME_SERIES
+      ACTIVE_ZONE_MINUTES_TIME_SERIES,
     );
-    await timeSeriesApi.setActivityGoalsResponse({ activeZoneMinutes: 25 });
 
     await page.goto("/");
 

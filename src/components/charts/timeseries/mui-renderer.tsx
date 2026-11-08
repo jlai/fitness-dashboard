@@ -47,7 +47,7 @@ interface CommonChartProps<TDatum extends TimeSeriesDatum> {
 type EitherAxisConfig = Partial<Omit<AxisConfig, "position">>;
 
 function useXAxisConfig<TDatum extends TimeSeriesDatum>(
-  data?: Array<TDatum>
+  data?: Array<TDatum>,
 ): Array<EitherAxisConfig> {
   const {
     range,
@@ -106,6 +106,10 @@ function getYAxisConfig({
   ];
 }
 
+function toSeriesValue(value: number | null): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
 function getCommonSeriesProps<TDatum extends TimeSeriesDatum>({
   data,
   config,
@@ -117,7 +121,8 @@ function getCommonSeriesProps<TDatum extends TimeSeriesDatum>({
 }) {
   const props: Record<string, any> = {
     label: config.label,
-    data: data?.map((entry) => config.yAccessor(entry)) ?? [],
+    // MUI scales break on NaN; treat non-finite accessor results as gaps.
+    data: data?.map((entry) => toSeriesValue(config.yAccessor(entry))) ?? [],
     valueFormatter: makeSeriesValueFormatter({
       numberFormat: config.numberFormat,
       unit: config.unit,
@@ -132,6 +137,64 @@ function getCommonSeriesProps<TDatum extends TimeSeriesDatum>({
   return props;
 }
 
+function getPerPointTotals<TDatum extends TimeSeriesDatum>(
+  data: Array<TDatum> | undefined,
+  seriesConfigs: Array<ChartSeriesConfig<TDatum>>,
+) {
+  const totals: Array<number> = [];
+  for (const entry of data ?? []) {
+    let total = 0;
+    let hasValue = false;
+    for (const config of seriesConfigs) {
+      const value = toSeriesValue(config.yAccessor(entry));
+      if (value != null) {
+        total += value;
+        hasValue = true;
+      }
+    }
+    if (hasValue) {
+      totals.push(total);
+    }
+  }
+  return totals;
+}
+
+function yAxisOptionsForReferenceLine<TDatum extends TimeSeriesDatum>({
+  data,
+  seriesConfigs,
+  yAxisOptions,
+  referenceLine,
+}: {
+  data: Array<TDatum> | undefined;
+  seriesConfigs: Array<ChartSeriesConfig<TDatum>>;
+  yAxisOptions: YAxisOptions;
+  referenceLine?: ReferenceLineOptions;
+}): YAxisOptions {
+  if (referenceLine == null || !Number.isFinite(referenceLine.value)) {
+    return yAxisOptions;
+  }
+
+  const pointTotals = getPerPointTotals(data, seriesConfigs);
+  const seriesMax = pointTotals.length > 0 ? Math.max(...pointTotals) : 0;
+  const seriesMin = pointTotals.length > 0 ? Math.min(...pointTotals) : 0;
+
+  // Empty / all-zero domains become [0, 0], and d3 then maps any other value to NaN.
+  // Keep a non-zero span that includes the goal line.
+  const max = Math.max(
+    yAxisOptions.max ?? Number.NEGATIVE_INFINITY,
+    seriesMax,
+    referenceLine.value,
+    0,
+  );
+  const min = Math.min(yAxisOptions.min ?? 0, seriesMin < 0 ? seriesMin : 0, 0);
+
+  return {
+    ...yAxisOptions,
+    min,
+    max: max === min ? max + 1 : max,
+  };
+}
+
 function CommonChartElements({
   layout,
   loading,
@@ -142,6 +205,11 @@ function CommonChartElements({
   referenceLine?: ReferenceLineOptions;
 }) {
   const isHorizontal = layout === "horizontal";
+  // Skip while loading: empty series leave a [0,0] y-domain and scale(goal) → NaN.
+  const safeReferenceLine =
+    !loading && referenceLine != null && Number.isFinite(referenceLine.value)
+      ? referenceLine
+      : undefined;
 
   return (
     <>
@@ -155,10 +223,13 @@ function CommonChartElements({
       <ChartsTooltip />
       <MarkPlot />
       <ChartsGrid horizontal={!isHorizontal} vertical={isHorizontal} />
-      {referenceLine && (
+      {safeReferenceLine && (
         <ChartsReferenceLine
-          y={referenceLine.value}
-          label={referenceLine.label}
+          axisId="y"
+          {...(isHorizontal
+            ? { x: safeReferenceLine.value }
+            : { y: safeReferenceLine.value })}
+          label={safeReferenceLine.label}
           labelAlign="end"
           lineStyle={{ opacity: 0.5, stroke: "green", strokeDasharray: "4" }}
           labelStyle={{ opacity: 0.5 }}
@@ -188,7 +259,7 @@ function useAxes<TDatum extends TimeSeriesDatum>({
 }
 
 export function SimpleBarChart<
-  TDatum extends TimeSeriesDatum = TimeSeriesDatum
+  TDatum extends TimeSeriesDatum = TimeSeriesDatum,
 >({
   data,
   seriesConfigs,
@@ -196,7 +267,16 @@ export function SimpleBarChart<
   referenceLine,
 }: CommonChartProps<TDatum>) {
   const { layout } = useContext(TimeSeriesChartContext);
-  const axesProps = useAxes({ layout, data, yAxisOptions });
+  const axesProps = useAxes({
+    layout,
+    data,
+    yAxisOptions: yAxisOptionsForReferenceLine({
+      data,
+      seriesConfigs,
+      yAxisOptions,
+      referenceLine,
+    }),
+  });
 
   const series: Array<BarSeriesType> = seriesConfigs.map((config) => ({
     type: "bar",
@@ -222,7 +302,7 @@ export function SimpleBarChart<
 }
 
 export function StackedBarChart<
-  TDatum extends TimeSeriesDatum = TimeSeriesDatum
+  TDatum extends TimeSeriesDatum = TimeSeriesDatum,
 >({
   data,
   seriesConfigs,
@@ -230,7 +310,16 @@ export function StackedBarChart<
   referenceLine,
 }: CommonChartProps<TDatum>) {
   const { layout } = useContext(TimeSeriesChartContext);
-  const axesProps = useAxes({ layout, data, yAxisOptions });
+  const axesProps = useAxes({
+    layout,
+    data,
+    yAxisOptions: yAxisOptionsForReferenceLine({
+      data,
+      seriesConfigs,
+      yAxisOptions,
+      referenceLine,
+    }),
+  });
 
   const series: Array<BarSeriesType> = seriesConfigs.map((config) => ({
     type: "bar",
@@ -257,14 +346,22 @@ export function StackedBarChart<
 }
 
 export function SimpleLineChart<
-  TDatum extends TimeSeriesDatum = TimeSeriesDatum
+  TDatum extends TimeSeriesDatum = TimeSeriesDatum,
 >({
   data,
   seriesConfigs,
   yAxisOptions = {},
   referenceLine,
 }: CommonChartProps<TDatum>) {
-  const axesProps = useAxes({ data, yAxisOptions });
+  const axesProps = useAxes({
+    data,
+    yAxisOptions: yAxisOptionsForReferenceLine({
+      data,
+      seriesConfigs,
+      yAxisOptions,
+      referenceLine,
+    }),
+  });
 
   const series: Array<LineSeriesType> = seriesConfigs.map((config) => ({
     type: "line",

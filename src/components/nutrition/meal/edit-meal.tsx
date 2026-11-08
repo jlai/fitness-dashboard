@@ -60,13 +60,13 @@ export function CreateOrEditMeal({
 }) {
   const queryClient = useQueryClient();
   const { mutateAsync: mutateCreateMeal } = useMutation(
-    buildCreateMealMutation(queryClient)
+    buildCreateMealMutation(queryClient),
   );
   const { mutateAsync: mutateUpdateMeal } = useMutation(
-    buildUpdateMealMutation(queryClient)
+    buildUpdateMealMutation(queryClient),
   );
   const { mutateAsync: mutateDeleteMeal } = useMutation(
-    buildDeleteMealMutation(queryClient)
+    buildDeleteMealMutation(queryClient),
   );
 
   const saveMeal = withErrorToaster(async (meal: Meal) => {
@@ -145,7 +145,7 @@ export function EditMeal({
 
       onSaveMeal(meal);
     },
-    [onSaveMeal]
+    [onSaveMeal],
   );
 
   const isNewMeal = !form.getValues().id;
@@ -225,13 +225,16 @@ function FoodRow({
                   onClick={(event) => {
                     setFood({
                       // display the info for the default serving if CTRL or ALT is pressed
-                      foodLog:
+                      nutritionLog:
                         event.ctrlKey || event.altKey
                           ? null
                           : {
-                              loggedFood: food,
-                              logId: -1,
-                              logDate: "",
+                              foodDisplayName: food.name,
+                              energy: { kcal: food.calories },
+                              serving: {
+                                amount: food.amount,
+                                foodMeasurementUnitDisplayName: food.unit?.name,
+                              },
                             },
                       foodId: food.foodId,
                     });

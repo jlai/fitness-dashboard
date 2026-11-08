@@ -1,28 +1,216 @@
-import { getJSON } from "@/api/request";
+import {
+  extractErrors,
+  hasErrorType,
+  isAccountNotLinkedError,
+  makeRequest,
+  type ServerError,
+} from "@/api/request";
+import { createSession, logout } from "@/api/auth";
 
-describe("getJSON", () => {
-  it("parses ids larger than Number.MAX_SAFE_INTEGER without losing precision", async () => {
-    const body = JSON.stringify({
-      activities: [{ logId: "BIG_ID", steps: 5000, distance: 1.5 }],
-    }).replace('"BIG_ID"', "2369048793018741424");
+const ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY = "auth:encrypted-health-token";
 
-    const response = { text: async () => body } as Response;
+function mockFetch(fetchMock: jest.SpyInstance, healthResponse: Response) {
+  fetchMock.mockImplementation(async (input) => {
+    const url = String(input);
+    if (url.includes("/auth/health/access")) {
+      return new Response(
+        JSON.stringify({
+          accessToken: "test-token",
+          expiresIn: 3600,
+          scope:
+            "https://www.googleapis.com/auth/googlehealth.profile.readonly",
+          encryptedHealthToken: "encrypted-jwt",
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    }
 
-    const parsed = await getJSON<{
-      activities: Array<{
-        logId: number | bigint;
-        steps: number;
-        distance: number;
-      }>;
-    }>(response);
+    return healthResponse.clone();
+  });
+}
 
-    const [activity] = parsed.activities;
+const ACCOUNT_NOT_LINKED_BODY = {
+  error: {
+    code: 400,
+    message: "The account is not linked to Google Health.",
+    status: "FAILED_PRECONDITION",
+    details: [
+      {
+        "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+        reason: "ACCOUNT_NOT_LINKED",
+        domain: "health.googleapis.com",
+        metadata: {
+          redirect_uri: "https://evil.example/phishing",
+        },
+      },
+    ],
+  },
+};
 
-    // JSON.parse would round this to 2369048793018741000
-    expect(activity.logId).toBe(BigInt("2369048793018741424"));
+describe("isAccountNotLinkedError", () => {
+  it("detects ACCOUNT_NOT_LINKED in Google error details", () => {
+    expect(isAccountNotLinkedError(ACCOUNT_NOT_LINKED_BODY)).toBe(true);
+  });
 
-    // safe integers and floats are unaffected
-    expect(activity.steps).toBe(5000);
-    expect(activity.distance).toBe(1.5);
+  it("returns false for other Google errors", () => {
+    expect(
+      isAccountNotLinkedError({
+        error: {
+          code: 400,
+          message: "Invalid filter.",
+          status: "INVALID_ARGUMENT",
+          details: [{ reason: "INVALID_DATA_POINT_FILTER" }],
+        },
+      }),
+    ).toBe(false);
+  });
+
+  it("returns false for missing or unrelated bodies", () => {
+    expect(isAccountNotLinkedError(undefined)).toBe(false);
+    expect(isAccountNotLinkedError({ errors: [] })).toBe(false);
+  });
+});
+
+function serverError(errorType: string, message = "invalid"): ServerError {
+  const error = new Error(`server response (400): ${message}`) as ServerError;
+  error.status = 400;
+  error.errors = [{ errorType, fieldName: "unknown", message }];
+  error.errorText = message;
+  return error;
+}
+
+describe("hasErrorType", () => {
+  it("detects INVALID_ARGUMENT on a ServerError", () => {
+    expect(
+      hasErrorType(serverError("INVALID_ARGUMENT"), "INVALID_ARGUMENT"),
+    ).toBe(true);
+  });
+
+  it("returns false for other error types", () => {
+    expect(
+      hasErrorType(serverError("FAILED_PRECONDITION"), "INVALID_ARGUMENT"),
+    ).toBe(false);
+  });
+
+  it("returns false for missing or unrelated values", () => {
+    expect(hasErrorType(undefined, "INVALID_ARGUMENT")).toBe(false);
+    expect(hasErrorType(new Error("failed"), "INVALID_ARGUMENT")).toBe(false);
+    expect(hasErrorType({ errors: [] }, "INVALID_ARGUMENT")).toBe(false);
+  });
+});
+
+describe("extractErrors", () => {
+  it("reads Google Health error messages", async () => {
+    const errors = await extractErrors(
+      new Response(JSON.stringify(ACCOUNT_NOT_LINKED_BODY), { status: 400 }),
+    );
+
+    expect(errors).toEqual([
+      {
+        errorType: "FAILED_PRECONDITION",
+        fieldName: "unknown",
+        message: "The account is not linked to Google Health.",
+      },
+    ]);
+  });
+});
+
+describe("makeRequest", () => {
+  let fetchMock: jest.SpyInstance;
+
+  beforeEach(async () => {
+    const logoutFetch = jest
+      .spyOn(global, "fetch")
+      .mockResolvedValue(new Response(null, { status: 204 }));
+    try {
+      await logout();
+    } finally {
+      logoutFetch.mockRestore();
+    }
+    const sessionFetch = jest.spyOn(global, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          sub: "user-1",
+          exp: Math.floor(Date.now() / 1000) + 3600,
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    );
+    try {
+      await createSession("google-id-token");
+    } finally {
+      sessionFetch.mockRestore();
+    }
+    localStorage.setItem(ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY, "encrypted-jwt");
+    fetchMock = jest.spyOn(global, "fetch");
+  });
+
+  afterEach(() => {
+    fetchMock.mockRestore();
+    localStorage.clear();
+  });
+
+  it("dispatches an account-not-linked event without using the response redirect URI", async () => {
+    mockFetch(
+      fetchMock,
+      new Response(JSON.stringify(ACCOUNT_NOT_LINKED_BODY), { status: 400 }),
+    );
+    const dispatchSpy = jest.spyOn(window, "dispatchEvent");
+
+    await expect(makeRequest("/v4/users/me")).rejects.toMatchObject({
+      status: 400,
+      errorText: "The account is not linked to Google Health.",
+    });
+
+    expect(dispatchSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "googlehealthaccountnotlinked" }),
+    );
+    expect(JSON.stringify(dispatchSpy.mock.calls)).not.toContain(
+      "https://evil.example/phishing",
+    );
+
+    dispatchSpy.mockRestore();
+  });
+
+  it("does not dispatch the account-not-linked event for other 400 errors", async () => {
+    mockFetch(
+      fetchMock,
+      new Response(
+        JSON.stringify({
+          error: {
+            code: 400,
+            message: "Invalid filter.",
+            status: "INVALID_ARGUMENT",
+          },
+        }),
+        { status: 400 },
+      ),
+    );
+    const dispatchSpy = jest.spyOn(window, "dispatchEvent");
+
+    await expect(makeRequest("/v4/users/me")).rejects.toMatchObject({
+      status: 400,
+    });
+
+    expect(dispatchSpy).not.toHaveBeenCalledWith(
+      expect.objectContaining({ type: "googlehealthaccountnotlinked" }),
+    );
+
+    dispatchSpy.mockRestore();
+  });
+
+  it("dispatches a rate-limit event on 429", async () => {
+    mockFetch(fetchMock, new Response("too many requests", { status: 429 }));
+    const dispatchSpy = jest.spyOn(window, "dispatchEvent");
+
+    await expect(makeRequest("/v4/users/me")).rejects.toMatchObject({
+      status: 429,
+    });
+
+    expect(dispatchSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "fitbitratelimitexceeded" }),
+    );
+
+    dispatchSpy.mockRestore();
   });
 });

@@ -47,7 +47,7 @@ export function useTileScale() {
 }
 
 export function useTileSettings<TSettings>(
-  defaultSettings: TSettings
+  defaultSettings: TSettings,
 ): [TSettings, (update: TSettings) => void] {
   const { id, settings } = useTileData();
   const updateTileSettings = useSetAtom(updateTileSettingsAtom);
@@ -61,7 +61,7 @@ export function useTileSettings<TSettings>(
 /** Use a single tile settings property */
 export function useTileSetting<TSettings, TProp extends keyof TSettings>(
   prop: TProp,
-  defaultValue: TSettings[TProp]
+  defaultValue: TSettings[TProp],
 ): [TSettings[TProp], (update: TSettings[TProp]) => void] {
   const { id, settings } = useTileData() as {
     id: string;
@@ -86,13 +86,14 @@ export function TileClickableArea({
 }) {
   const isEditingGrid = useAtomValue(editingGridAtom);
 
+  // GridStack skips drag when mousedown lands on a <button>. While editing, render a
+  // non-button host so DnD can start on the first edit-mode entry.
+  if (isEditingGrid) {
+    return <div className="block size-full">{children}</div>;
+  }
+
   return (
-    <button
-      onClick={onClick}
-      className={`block size-full ${
-        isEditingGrid ? "pointer-events-none" : ""
-      }`}
-    >
+    <button onClick={onClick} type="button" className="block size-full">
       {children}
     </button>
   );

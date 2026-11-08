@@ -16,10 +16,10 @@ export default function AboutPage() {
       <section className="space-y-4">
         <Typography variant="h4">Introduction</Typography>
         <Typography variant="body2">
-          A dashboard for viewing stats from your Fitbit account, managing and
-          logging meals, viewing maps of your runs, and more. This is an early
-          preview. There are likely to be bugs and some data may not be
-          displayed accurately.
+          A dashboard for viewing stats from your Google Health account,
+          managing and logging meals, viewing maps of your runs, and more. This
+          is an early preview. There are likely to be bugs and some data may not
+          be displayed accurately.
         </Typography>
         <Typography variant="body2">
           This is a volunteer effort created by Fitbit users, for Fitbit users.
@@ -35,7 +35,12 @@ export default function AboutPage() {
         </Typography>
         {TOS_LINK && (
           <Typography variant="body2">
-            <Button variant="text" href={TOS_LINK} target="_blank">
+            <Button
+              variant="text"
+              href={TOS_LINK}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               View Terms of Service
             </Button>
           </Typography>
@@ -47,12 +52,12 @@ export default function AboutPage() {
         <Typography variant="body2">
           This website uses the{" "}
           <a
-            href="https://dev.fitbit.com/"
+            href="https://developers.google.com/health"
             className="underline"
             target="_blank"
-            rel="noreferrer"
+            rel="noopener noreferrer"
           >
-            Fitbit Web API
+            Google Health API
           </a>{" "}
           to directly get and display your fitness stats, without passing
           through or syncing to other cloud servers. This means we don&apos;t
@@ -60,14 +65,14 @@ export default function AboutPage() {
           outside your browser.
         </Typography>
         <Typography variant="body2">
-          When you connect with Fitbit, we redirect you to the Fitbit login
-          page. You&apos;ll be asked to grant permission to this website for
-          your Fitbit data, and you can choose what types of data you would like
-          to authorize access for. Fitbit then redirects back to this site with
-          an access token, which is stored locally in your browser. This token
-          allows your browser to request data from Fitbit&apos;s servers without
-          syncing it to another account or server like some other 3rd party
-          services.
+          When you connect with Google, we will open a new window to log into
+          your Google Account. You&apos;ll be asked to grant permission to this
+          website for your Google Health data, and you can choose what types of
+          data you would like to authorize access for. The authentication token
+          is sent to our server and encrypted, and sent back to your browser
+          where it is stored locally. This ensures that our server does not have
+          access to your authentication token or health data except briefly when
+          you visit the website, while keeping your authentication token secure.
         </Typography>
         <Typography variant="body2">
           Some features, such as displaying maps of runs, may send coordinates
@@ -75,7 +80,12 @@ export default function AboutPage() {
         </Typography>
         {PRIVACY_POLICY_LINK && (
           <Typography variant="body2">
-            <Button variant="text" href={PRIVACY_POLICY_LINK} target="_blank">
+            <Button
+              variant="text"
+              href={PRIVACY_POLICY_LINK}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               View Privacy Policy
             </Button>
           </Typography>
@@ -94,6 +104,7 @@ export default function AboutPage() {
               variant="text"
               href="https://github.com/jlai/fitness-dashboard/discussions"
               target="_blank"
+              rel="noopener noreferrer"
             >
               Feature suggestions
             </Button>
@@ -101,11 +112,17 @@ export default function AboutPage() {
               variant="text"
               href="https://github.com/jlai/fitness-dashboard/issues"
               target="_blank"
+              rel="noopener noreferrer"
             >
               Bug reports
             </Button>
             {CONTACT_INFO_LINK && (
-              <Button variant="text" href={CONTACT_INFO_LINK} target="_blank">
+              <Button
+                variant="text"
+                href={CONTACT_INFO_LINK}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 Contact
               </Button>
             )}
@@ -113,40 +130,62 @@ export default function AboutPage() {
         </Accordion>
         <Accordion>
           <AccordionSummary expandIcon={<ArrowDropDown />}>
-            Help, I&quot;m getting a blank page or errors due to rate limits
+            How does this website use Google Drive permissions?
           </AccordionSummary>
           <AccordionDetails>
-            The Fitbit Web API has rate limits on the number of data requests
-            this website can make on behalf of a user. If the limit is exceeded,
-            you may need to wait until the next hour for the quota to reset.
+            <div className="space-y-2">
+              <p>
+                In order to make sure that settings don&apos;t get lost when you
+                sign out, we store your settings (dashboard layout, meals, etc.)
+                in a hidden folder in your Google Drive.
+              </p>
+              <p>
+                The permission you grant when you enable the Google Drive
+                integration will only allow this website to read and write to
+                this folder, and will not be able to access any other data in
+                your Google Drive.
+              </p>
+              <p>
+                To delete this folder, you can go to your{" "}
+                <a
+                  href="https://drive.google.com/drive/settings"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline"
+                >
+                  Google Drive settings
+                </a>{" "}
+                and select &quot;Manage apps&quot;.
+              </p>
+            </div>
           </AccordionDetails>
         </Accordion>
         <Accordion>
           <AccordionSummary expandIcon={<ArrowDropDown />}>
-            Can I edit activities or sleep logs?
+            Can I edit exercise/sleep logs?
           </AccordionSummary>
           <AccordionDetails>
-            Unfortunately this is not supported in the Fitbit Web API.
+            <div className="space-y-2">
+              <p>
+                Only exercise and sleep logs created from this website can be
+                edited or deleted (currently only deletion is supported). You
+                cannot delete logs created by other apps, including the Google
+                Health app.
+              </p>
+            </div>
           </AccordionDetails>
         </Accordion>
         <Accordion>
           <AccordionSummary expandIcon={<ArrowDropDown />}>
-            Food search isn&quot;t returning any results
+            Is there a way to see Sleep Scores?
           </AccordionSummary>
           <AccordionDetails>
-            There seems to be a problem with the Fitbit API where the food
-            search sometimes returns blank results. Unfortunately, this will be
-            up to Fitbit to fix.
-          </AccordionDetails>
-        </Accordion>
-        <Accordion>
-          <AccordionSummary expandIcon={<ArrowDropDown />}>
-            I keep getting signed out
-          </AccordionSummary>
-          <AccordionDetails>
-            The Fitbit API has limits on having active sessions in multiple
-            browsers. If you log in from multiple browsers, or for example on a
-            desktop and a mobile device, you may have to re-login.
+            <div className="space-y-2">
+              <p>
+                Sleep Scores are only available in the Google Health app; 3rd
+                party developers don&apos;t have access to them.
+              </p>
+            </div>
           </AccordionDetails>
         </Accordion>
       </section>

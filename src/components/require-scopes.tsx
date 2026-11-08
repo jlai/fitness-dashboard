@@ -1,12 +1,10 @@
 "use client";
 
-import { Typography, Button, Stack } from "@mui/material";
-import { useCallback } from "react";
+import { Alert, Typography, Button, Stack } from "@mui/material";
 import { useConfirm } from "material-ui-confirm";
-import { useAtomValue } from "jotai";
 
-import { getAccessTokenScopes, redirectToLogin } from "@/api/auth";
-import { enableAdvancedScopesAtom } from "@/storage/settings";
+import { useMissingScopes } from "@/api/auth";
+import { useGoogleHealthAuthorization } from "@/api/health-authorization";
 import { getScopeName, getScopeNameList } from "@/config/scopes";
 
 export function RequireScopes({
@@ -20,22 +18,63 @@ export function RequireScopes({
   compact?: boolean;
   name?: string;
 }) {
-  if (requiredScopes) {
-    const scopes = getAccessTokenScopes();
-    const missingScopes = requiredScopes.filter(
-      (scope) => !scopes.has(scope) && !scopes.has(`w${scope}`)
-    );
+  const missingScopes = useMissingScopes(requiredScopes);
 
-    if (missingScopes.length > 0) {
-      return compact ? (
-        <CompactMissingScopes name={name} scopes={missingScopes} />
-      ) : (
-        <MissingScopes name={name} scopes={missingScopes} />
-      );
-    }
+  if (requiredScopes && missingScopes.length > 0) {
+    return compact ? (
+      <CompactMissingScopes name={name} scopes={missingScopes} />
+    ) : (
+      <MissingScopes name={name} scopes={missingScopes} />
+    );
   }
 
   return children;
+}
+
+export function MissingScopesAlert({
+  scopes: requiredScopes,
+  children,
+  message,
+}: {
+  scopes: Array<string>;
+  children?: React.ReactNode;
+  message?: string;
+}) {
+  const missingScopes = useMissingScopes(requiredScopes);
+  const { loginToGoogleAndAuthorize } = useGoogleHealthAuthorization();
+  const disabled = missingScopes.length > 0;
+
+  return (
+    <>
+      {disabled && (
+        <Alert
+          severity="warning"
+          className="mb-4"
+          action={
+            <Button
+              type="button"
+              size="small"
+              onClick={() => loginToGoogleAndAuthorize()}
+            >
+              Update permissions
+            </Button>
+          }
+        >
+          {message ??
+            "Saving requires additional permissions from your Google account"}
+          : {getScopeNameList(missingScopes)}
+        </Alert>
+      )}
+      {children != null && (
+        <fieldset
+          disabled={disabled}
+          className="m-0 min-w-0 w-full border-0 p-0"
+        >
+          {children}
+        </fieldset>
+      )}
+    </>
+  );
 }
 
 function CompactMissingScopes({
@@ -46,7 +85,7 @@ function CompactMissingScopes({
   scopes: Array<string>;
 }) {
   const confirm = useConfirm();
-  const enableAdvancedScopes = useAtomValue(enableAdvancedScopesAtom);
+  const { loginToGoogleAndAuthorize } = useGoogleHealthAuthorization();
 
   const handleReconsentClicked = () => {
     confirm({
@@ -54,16 +93,13 @@ function CompactMissingScopes({
       description: (
         <div>
           The following permissions are needed:{" "}
-          <b>{getScopeNameList(scopes)}</b>. Click OK to be redirected to Fitbit
+          <b>{getScopeNameList(scopes)}</b>. Click OK to be redirected to Google
           to update the types of data accessible by this website.
         </div>
       ),
     }).then(({ confirmed }) => {
       if (confirmed) {
-        redirectToLogin({
-          prompt: "consent",
-          requestAdvancedScopes: enableAdvancedScopes,
-        });
+        loginToGoogleAndAuthorize();
       }
     });
   };
@@ -90,22 +126,17 @@ function MissingScopes({
   name?: string;
   scopes: Array<string>;
 }) {
-  const enableAdvancedScopes = useAtomValue(enableAdvancedScopesAtom);
-
-  const reconsent = useCallback(() => {
-    redirectToLogin({
-      prompt: "consent",
-      requestAdvancedScopes: enableAdvancedScopes,
-    });
-  }, [enableAdvancedScopes]);
+  const { loginToGoogleAndAuthorize } = useGoogleHealthAuthorization();
 
   return (
     <div className="flex-grow flex flex-col items-center place-items-center p-2">
       <Typography variant="body1" className="mb-2">
-        {name ?? "This page"} requires additional permissions from your Fitbit
+        {name ?? "This page"} requires additional permissions from your Google
         account: {scopes.map((scope) => getScopeName(scope)).join(", ")}
       </Typography>
-      <Button onClick={reconsent}>Update permissions</Button>
+      <Button onClick={() => loginToGoogleAndAuthorize()}>
+        Update permissions
+      </Button>
     </div>
   );
 }

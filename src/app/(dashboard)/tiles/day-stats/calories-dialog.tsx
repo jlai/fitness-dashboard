@@ -7,16 +7,27 @@ import {
 } from "@mui/material";
 import { LineChart, PieChart, PieValueType } from "@mui/x-charts";
 import { TabContext, TabList, TabPanel } from "@mui/lab";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { Suspense } from "react";
+import { useAtomValue } from "jotai";
 
 import { NumberFormats } from "@/utils/number-formats";
+import { DateFormats } from "@/utils/date-formats";
 import { buildActivityIntradayQuery } from "@/api/intraday";
-import { ENABLE_INTRADAY } from "@/config";
+import { physicalRangeForLocalDay } from "@/api/datetime";
 import { FormRows } from "@/components/forms/form-row";
+import { getGoalsAtom } from "@/storage/goals";
+import { buildGetExerciseByDateQuery } from "@/api/exercise/exercise";
+import {
+  getExerciseCalories,
+  getExerciseDataPointId,
+  getExerciseDisplayName,
+  getExerciseFromDataPoint,
+  getExerciseStartTime,
+} from "@/api/exercise/helpers";
 
 import { RenderDialogContentProps } from "../tile-with-dialog";
-import { useDailySummary } from "../common";
+import { useSelectedDayTimeSeries } from "../common";
 import { useSelectedDay } from "../../state";
 import { useTileSetting } from "../tile";
 
@@ -46,7 +57,7 @@ export default function CaloriesDialogContent(props: RenderDialogContentProps) {
             <Tab label="Overview" value="overview" />
 
             <Tab label="By activity" value="pie" />
-            {ENABLE_INTRADAY && <Tab label="Burn rate" value="intraday" />}
+            <Tab label="Burn rate" value="intraday" />
             <Tab label="Settings" value="settings" />
           </TabList>
           <TabPanel value="overview">
@@ -59,13 +70,11 @@ export default function CaloriesDialogContent(props: RenderDialogContentProps) {
               <CaloriesPieChart />
             </Suspense>
           </TabPanel>
-          {ENABLE_INTRADAY && (
-            <TabPanel value="intraday">
-              <Suspense>
-                <CaloriesIntraday />
-              </Suspense>
-            </TabPanel>
-          )}
+          <TabPanel value="intraday">
+            <Suspense>
+              <CaloriesIntraday />
+            </Suspense>
+          </TabPanel>
           <TabPanel value="settings">
             <Suspense>
               <Settings />
@@ -79,39 +88,44 @@ export default function CaloriesDialogContent(props: RenderDialogContentProps) {
 }
 
 function Overview() {
-  const { summary, goals } = useDailySummary();
-  const currentTotal = summary.caloriesOut;
-  const dailyGoal = goals?.caloriesOut ?? 0;
+  const currentTotal = Number(useSelectedDayTimeSeries("calories") ?? 0);
+  const dailyGoal = useAtomValue(getGoalsAtom("caloriesOut", "daily"));
 
   return (
     <DailyGoalSummary
       currentTotal={currentTotal}
-      dailyGoal={dailyGoal}
+      dailyGoal={dailyGoal?.value}
       unit="Calories"
     />
   );
 }
 
 function CaloriesPieChart() {
-  const {
-    activities,
-    summary: { caloriesOut },
-  } = useDailySummary();
+  const day = useSelectedDay();
+  const caloriesOut = Number(useSelectedDayTimeSeries("calories") ?? 0);
+  const { data: activities = [] } = useSuspenseQuery(
+    buildGetExerciseByDateQuery(day),
+  );
 
   let otherCalories = caloriesOut;
 
   const seriesData: Array<PieValueType> = [];
 
-  for (const activityLog of activities) {
-    const time = new Date(`${activityLog.startDate}T${activityLog.startTime}`);
+  for (const dataPoint of activities) {
+    const exercise = getExerciseFromDataPoint(dataPoint);
+    const calories = getExerciseCalories(exercise);
+    const startTime = getExerciseStartTime(exercise);
+    const time = startTime ? new Date(startTime) : undefined;
 
     seriesData.push({
-      id: `${activityLog.logId}`,
-      value: activityLog.calories,
-      label: `${activityLog.name} at ${timeFormat.format(time)}`,
+      id: getExerciseDataPointId(dataPoint),
+      value: calories,
+      label: `${getExerciseDisplayName(exercise)}${
+        time ? ` at ${timeFormat.format(time)}` : ""
+      }`,
     });
 
-    otherCalories -= activityLog.calories;
+    otherCalories -= calories;
   }
 
   if (otherCalories > 0) {
@@ -145,11 +159,10 @@ function CaloriesPieChart() {
 
 function CaloriesIntraday() {
   const day = useSelectedDay();
-  const startTime = day.startOf("day");
-  const endTime = day.endOf("day");
+  const { start: startTime, end: endTime } = physicalRangeForLocalDay(day);
 
   const { data } = useQuery(
-    buildActivityIntradayQuery("calories", "5min", startTime, endTime)
+    buildActivityIntradayQuery("calories", "5min", startTime, endTime),
   );
 
   const processedData = data?.map((entry) => ({
@@ -163,7 +176,13 @@ function CaloriesIntraday() {
       height={300}
       loading={!data}
       dataset={processedData ?? []}
-      xAxis={[{ dataKey: "dateTime", scaleType: "time" }]}
+      xAxis={[
+        {
+          dataKey: "dateTime",
+          scaleType: "time",
+          valueFormatter: DateFormats.formatTime,
+        },
+      ]}
       yAxis={[{ label: "Cal/min" }]}
       series={[{ dataKey: "value", showMark: false, label: "Calories/minute" }]}
     />
@@ -174,13 +193,21 @@ function Settings() {
   return (
     <>
       <Typography variant="h6">Goals</Typography>
-      <Typography variant="body1">Set daily calories burn goal.</Typography>
+      <Typography variant="body1">
+        Set daily and weekly calories burned goals.
+      </Typography>
 
       <FormRows mt={4}>
         <GoalSettings
-          resource="caloriesOut"
+          metric="caloriesOut"
           period="daily"
           label="Daily calories burned goal"
+          unit="Cal"
+        />
+        <GoalSettings
+          metric="caloriesOut"
+          period="weekly"
+          label="Weekly calories burned goal"
           unit="Cal"
         />
       </FormRows>

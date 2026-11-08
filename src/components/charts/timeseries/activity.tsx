@@ -1,9 +1,10 @@
 import { useMemo } from "react";
-import { useQueries } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
+import { useAtomValue } from "jotai";
 
-import { useUnits } from "@/config/units";
+import { kilometersFromDistanceGoal, useUnits } from "@/config/units";
 import { NumberFormats } from "@/utils/number-formats";
-import { buildActivityGoalsQuery } from "@/api/activity/goals";
+import { getGoalsAtom } from "@/storage/goals";
 
 import { useAggregation } from "./aggregation";
 import { useRangeInfo, useTimeSeriesData, useTimeSeriesQuery } from "./data";
@@ -39,28 +40,25 @@ export function StepsChart() {
 
 export function DailyStepsChart() {
   const { showGoals } = useTimeSeriesChartConfig();
-  const query = useTimeSeriesQuery("steps");
-
-  const [{ data }, { data: goals }] = useQueries({
-    queries: [
-      query,
-      { ...buildActivityGoalsQuery("daily"), enabled: !!showGoals },
-    ],
-  });
+  const stepsGoal = useAtomValue(getGoalsAtom("steps", "daily"));
+  const { data } = useQuery(useTimeSeriesQuery("steps"));
 
   const props = useAggregation(data, STEPS_SERIES_CONFIGS);
 
-  const stepGoal = showGoals && goals?.steps;
+  const stepGoal =
+    showGoals && stepsGoal != null && Number.isFinite(stepsGoal.value)
+      ? stepsGoal.value
+      : undefined;
 
   return (
     <>
       <SimpleBarChart
         {...props}
         referenceLine={
-          stepGoal
+          stepGoal != null
             ? {
                 label: `Goal: ${NumberFormats.FRACTION_DIGITS_0.format(
-                  stepGoal
+                  stepGoal,
                 )} steps`,
                 value: stepGoal,
               }
@@ -80,14 +78,8 @@ export function DailyStepsChart() {
 export function DistanceChart() {
   const { localizedKilometers, localizedKilometersName } = useUnits();
   const { showGoals } = useTimeSeriesChartConfig();
-  const query = useTimeSeriesQuery("distance");
-
-  const [{ data }, { data: goals }] = useQueries({
-    queries: [
-      query,
-      { ...buildActivityGoalsQuery("daily"), enabled: !!showGoals },
-    ],
-  });
+  const distanceGoalValue = useAtomValue(getGoalsAtom("distance", "daily"));
+  const { data } = useQuery(useTimeSeriesQuery("distance"));
 
   const seriesConfigs = useMemo(
     () =>
@@ -97,22 +89,33 @@ export function DistanceChart() {
         unit: localizedKilometersName,
         yAccessor: (datum) => localizedKilometers(Number(datum.value)),
       }),
-    [localizedKilometers, localizedKilometersName]
+    [localizedKilometers, localizedKilometersName],
   );
 
   const props = useAggregation(data, seriesConfigs);
 
-  const distanceGoal = showGoals && goals?.distance;
+  const distanceGoalRaw =
+    showGoals && distanceGoalValue
+      ? localizedKilometers(
+          kilometersFromDistanceGoal(
+            distanceGoalValue.value,
+            distanceGoalValue.unit,
+          ),
+        )
+      : undefined;
+  const distanceGoal = Number.isFinite(distanceGoalRaw)
+    ? distanceGoalRaw
+    : undefined;
 
   return (
     <>
       <SimpleBarChart
         {...props}
         referenceLine={
-          distanceGoal
+          distanceGoal != null
             ? {
                 label: `Goal: ${NumberFormats.FRACTION_DIGITS_0.format(
-                  distanceGoal
+                  distanceGoal,
                 )} ${localizedKilometersName}`,
                 value: distanceGoal,
               }
@@ -125,7 +128,7 @@ export function DistanceChart() {
           yAccessor={(datum) => localizedKilometers(Number(datum.value))}
           valueFormatter={(value) =>
             `${NumberFormats.FRACTION_DIGITS_2.format(
-              value
+              value,
             )} ${localizedKilometersName}`
           }
         />
@@ -136,27 +139,27 @@ export function DistanceChart() {
 
 export function FloorsChart() {
   const { showGoals } = useTimeSeriesChartConfig();
-  const query = useTimeSeriesQuery("floors");
-  const [{ data }, { data: goals }] = useQueries({
-    queries: [
-      query,
-      { ...buildActivityGoalsQuery("daily"), enabled: !!showGoals },
-    ],
-  });
+  const floorsGoalValue = useAtomValue(getGoalsAtom("floors", "daily"));
+  const { data } = useQuery(useTimeSeriesQuery("floors"));
 
   const props = useAggregation(data, FLOORS_SERIES_CONFIGS);
 
-  const floorsGoal = showGoals && goals?.floors;
+  const floorsGoal =
+    showGoals &&
+    floorsGoalValue != null &&
+    Number.isFinite(floorsGoalValue.value)
+      ? floorsGoalValue.value
+      : undefined;
 
   return (
     <>
       <SimpleBarChart
         {...props}
         referenceLine={
-          floorsGoal
+          floorsGoal != null
             ? {
                 label: `Goal: ${NumberFormats.FRACTION_DIGITS_0.format(
-                  floorsGoal
+                  floorsGoal,
                 )} floors`,
                 value: floorsGoal,
               }

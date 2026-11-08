@@ -1,6 +1,6 @@
 # Fitness Dashboard
 
-This is a dashboard app for displaying your fitness data using the Fitbit Web API.
+This is a dashboard app for displaying your fitness data using the Google Health API.
 
 Technologies used:
 
@@ -16,33 +16,44 @@ See https://dashboard.exercise.quest for a live deployment.
 
 ## Running a local development server
 
-### Register a Fitbit developer app
+### Register a Google OAuth client
 
-Go to https://dev.fitbit.com/apps/new to register an application. You'll need this
-to be able to access the Fitbit API.
+Follow https://developers.google.com/health/setup to create a Google Cloud project,
+enable the Google Health API, and configure the OAuth consent screen. On the Data
+Access page, add every Google Health API scope, since login requests all of them.
 
-Set the `OAuth 2.0 Application Type` to either Client or Personal. Personal apps will
-only be able to access your own data, and should not be used for publicly-hosted
-dashboards.
+Create an OAuth client of type `Web application`. Add your site origin (for local
+development, `http://localhost:3000`) under Authorized JavaScript origins. For
+the authorization code popup flow, also add that same origin under Authorized
+redirect URIs.
 
-For the redirect URL, use `http://localhost:3000/login/callback` (or the appropriate
-domain if hosted somewhere other than localhost). You can add multiple URLs to the
-field separated by spaces.
-
-Set the access type to read/write if you need to modify data.
-
-Once you create the application, it will be assigned a `OAuth 2.0 Client ID`. Create a
-`.env.local` file in the same directory as this README, and put the ID in it:
+Once you create the client, it will be assigned a client ID and client secret.
+Create a `.env.local` file in the same directory as this README, and put them
+in it. Session JWTs, encrypted health tokens, and encrypted drive tokens each
+need an active oct JWK with a `kid` (32 random bytes, base64url-encoded as `k`):
 
 ```
-NEXT_PUBLIC_FITBIT_OAUTH_CLIENT_ID=idgoeshere
+node -e "const {randomBytes}=require('crypto'); console.log(JSON.stringify({kty:'oct',kid:'session-1',alg:'HS256',k:randomBytes(32).toString('base64url')}))"
+node -e "const {randomBytes}=require('crypto'); console.log(JSON.stringify({kty:'oct',kid:'health-1',alg:'A256GCM',k:randomBytes(32).toString('base64url')}))"
+node -e "const {randomBytes}=require('crypto'); console.log(JSON.stringify({kty:'oct',kid:'drive-1',alg:'A256GCM',k:randomBytes(32).toString('base64url')}))"
 ```
 
-If the application type is Personal, you can enable intraday data requests
-(e.g. calories/minute) with:
+```
+NEXT_PUBLIC_GOOGLE_OAUTH_CLIENT_ID=idgoeshere
+GOOGLE_OAUTH_CLIENT_SECRET=secretgoeshere
+GOOGLE_OAUTH_REDIRECT_URI=http://localhost:3000
+SESSION_ACTIVE_KEY={"kty":"oct","kid":"session-1","alg":"HS256","k":"..."}
+HEALTH_ACTIVE_KEY={"kty":"oct","kid":"health-1","alg":"A256GCM","k":"..."}
+DRIVE_ACTIVE_KEY={"kty":"oct","kid":"drive-1","alg":"A256GCM","k":"..."}
+```
+
+To rotate a key locally, set `ACTIVE_KEY` to the new JWK and put all still-valid
+keys (new first) in the matching `ACCEPTED_KEYS` JWKS until existing tokens
+expire or are re-encrypted:
 
 ```
-NEXT_PUBLIC_ENABLE_INTRADAY=true
+SESSION_ACTIVE_KEY={...new session JWK...}
+SESSION_ACCEPTED_KEYS={"keys":[{...new session JWK...},{...previous session JWK...}]}
 ```
 
 ### Docker Compose
@@ -73,15 +84,9 @@ To connect, open your web browser to http://localhost:3000
 Create `.env.production.local` with any custom environment properties,
 or set them using environment variables if using a cloud build pipeline.
 
-Build the static site:
-
-```bash
-npm run build
-```
-
-Upload the files to a hosting service. Note that you'll need to configure SPA-style
-routing so that 404's get rewritten to serve `index.html`. The process for this will
-vary by hosting provider.
+To serve the app under a URL prefix such as `https://example.com/fitness`,
+set `NEXT_PUBLIC_BASE_PATH=/fitness` at **build time**. The value should start
+with a slash and should not have a trailing slash.
 
 ## Running tests
 
@@ -124,5 +129,4 @@ npx playwright test --debug
 
 ## Contributing
 
-Since this project is early in development and will likely undergo major refactorings,
 I recommend keeping pull requests small, and open a ticket to discuss larger changes.

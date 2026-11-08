@@ -20,7 +20,7 @@ const LabelContainer = styled(Box)<LabelContainerProps>(
     textAlign: "left",
     width: width || "320px",
     margin: "auto",
-  })
+  }),
 );
 
 const Title = styled(Typography)(() => ({

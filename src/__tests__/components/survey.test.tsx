@@ -1,5 +1,4 @@
 import { act, render, screen } from "@testing-library/react";
-
 import { SurveyButton } from "@/components/survey";
 
 jest.useFakeTimers();

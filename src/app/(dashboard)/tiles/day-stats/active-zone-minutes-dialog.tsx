@@ -11,17 +11,19 @@ import {
 import { TabContext, TabList, TabPanel } from "@mui/lab";
 import { Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useAtomValue } from "jotai";
 import { LineChart } from "@mui/x-charts";
 import { dropWhile } from "es-toolkit";
 
 import { FormRows } from "@/components/forms/form-row";
 import { buildTimeSeriesQuery } from "@/api/times-series";
-import { buildActivityGoalsQuery } from "@/api/activity/goals";
 import { TimeSeriesEntry } from "@/api/times-series";
 import { ActiveZoneMinutesTimeSeriesValue } from "@/api/times-series";
 import { buildActiveZoneMinutesIntradayQuery } from "@/api/intraday";
-import { ENABLE_INTRADAY } from "@/config";
+import { physicalRangeForLocalDay } from "@/api/datetime";
+import { DateFormats } from "@/utils/date-formats";
 import { HeaderBar } from "@/components/layout/rows";
+import { getGoalsAtom } from "@/storage/goals";
 
 import { RenderDialogContentProps } from "../tile-with-dialog";
 import { useTileSetting } from "../tile";
@@ -35,7 +37,7 @@ interface ActiveZoneMinutesTileSettings {
 }
 
 export default function ActiveZoneMinutesDialogContent(
-  props: RenderDialogContentProps
+  props: RenderDialogContentProps,
 ) {
   const [currentTab, setCurrentTab] = useTileSetting<
     ActiveZoneMinutesTileSettings,
@@ -49,7 +51,7 @@ export default function ActiveZoneMinutesDialogContent(
         <TabContext value={currentTab}>
           <TabList onChange={(event, value) => setCurrentTab(value)}>
             <Tab label="Overview" value="overview" />
-            {ENABLE_INTRADAY && <Tab label="Details" value="intraday" />}
+            <Tab label="Details" value="intraday" />
             <Tab label="Settings" value="settings" />
           </TabList>
           <TabPanel value="overview">
@@ -57,13 +59,11 @@ export default function ActiveZoneMinutesDialogContent(
               <Overview />
             </Suspense>
           </TabPanel>
-          {ENABLE_INTRADAY && (
-            <TabPanel value="intraday">
-              <Suspense>
-                <ActiveZoneMinutesIntraday />
-              </Suspense>
-            </TabPanel>
-          )}
+          <TabPanel value="intraday">
+            <Suspense>
+              <ActiveZoneMinutesIntraday />
+            </Suspense>
+          </TabPanel>
           <TabPanel value="settings">
             <Suspense>
               <Settings />
@@ -78,19 +78,20 @@ export default function ActiveZoneMinutesDialogContent(
 
 function Overview() {
   const selectedDay = useSelectedDay();
-
-  const { data: goals } = useQuery(buildActivityGoalsQuery("daily"));
+  const activeZoneMinutesGoal = useAtomValue(
+    getGoalsAtom("activeZoneMinutes", "daily"),
+  );
 
   const { data: azmSeries } = useQuery(
     buildTimeSeriesQuery<TimeSeriesEntry<ActiveZoneMinutesTimeSeriesValue>>(
       "active-zone-minutes",
       selectedDay,
-      selectedDay
-    )
+      selectedDay,
+    ),
   );
 
   const dayAzm = azmSeries?.find((entry) =>
-    selectedDay.isSame(entry.dateTime, "day")
+    selectedDay.isSame(entry.dateTime, "day"),
   );
   const dayAzmValue = dayAzm?.value.activeZoneMinutes ?? 0;
 
@@ -105,7 +106,7 @@ function Overview() {
       <Stack direction="row" justifyContent="center">
         <DailyGoalSummary
           currentTotal={dayAzmValue}
-          dailyGoal={goals?.activeZoneMinutes ?? 0}
+          dailyGoal={activeZoneMinutesGoal?.value}
           unit="mins"
         />
       </Stack>
@@ -115,16 +116,15 @@ function Overview() {
 
 function ActiveZoneMinutesIntraday() {
   const day = useSelectedDay();
-  const startTime = day.startOf("day");
-  const endTime = day.endOf("day");
+  const { start: startTime, end: endTime } = physicalRangeForLocalDay(day);
 
   const [trim, setTrim] = useTileSetting<ActiveZoneMinutesTileSettings, "trim">(
     "trim",
-    false
+    false,
   );
 
   const { data } = useQuery(
-    buildActiveZoneMinutesIntradayQuery("5min", startTime, endTime)
+    buildActiveZoneMinutesIntradayQuery("5min", startTime, endTime),
   );
 
   let processedData = data?.map((entry) => ({
@@ -155,7 +155,13 @@ function ActiveZoneMinutesIntraday() {
         height={300}
         loading={!data}
         dataset={processedData ?? []}
-        xAxis={[{ dataKey: "dateTime", scaleType: "time" }]}
+        xAxis={[
+          {
+            dataKey: "dateTime",
+            scaleType: "time",
+            valueFormatter: DateFormats.formatTime,
+          },
+        ]}
         yAxis={[{ label: "Zone Mins" }]}
         series={[
           { dataKey: "value", showMark: false, label: "Active Zone Minutes" },
@@ -170,14 +176,20 @@ function Settings() {
     <>
       <Typography variant="h6">Goals</Typography>
       <Typography variant="body1">
-        Set daily active zone minutes goal.
+        Set daily and weekly active zone minutes goals.
       </Typography>
 
       <FormRows mt={4}>
         <GoalSettings
-          resource="activeZoneMinutes"
+          metric="activeZoneMinutes"
           period="daily"
           label="Daily active zone minutes goal"
+          unit="mins"
+        />
+        <GoalSettings
+          metric="activeZoneMinutes"
+          period="weekly"
+          label="Weekly active zone minutes goal"
           unit="mins"
         />
       </FormRows>

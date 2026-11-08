@@ -20,7 +20,8 @@ import { useState, useCallback } from "react";
 import JumpTo from "../jump-to";
 
 interface LogEntryWithId {
-  logId: number | bigint;
+  logId?: number | string;
+  name?: string;
 }
 
 interface RowElementProps<Log> {
@@ -28,30 +29,26 @@ interface RowElementProps<Log> {
 }
 
 interface HistoryListProps<Response, Log extends LogEntryWithId> {
-  buildQuery: (
-    initialDay: Dayjs,
-    pageSize: number
-  ) => UseInfiniteQueryOptions<
-    Response,
-    Error,
-    InfiniteData<Response>,
-    Response,
-    (string | number)[], // query key type
-    string
-  >;
+  buildQuery: any;
   getLogs: (response: Response) => Array<Log>;
+  getRowKey?: (log: Log) => string | number;
   slots: {
     row: React.JSXElementConstructor<RowElementProps<Log>>;
-    headerCells: React.JSXElementConstructor<{}>;
+    headerCells: React.JSXElementConstructor<object>;
   };
 }
 
 const DEFAULT_PAGE_SIZE = 10;
 const ALLOWED_PAGE_SIZES = [10, 25, 50, 100];
 
+function defaultRowKey<Log extends LogEntryWithId>(log: Log) {
+  return log.name ?? log.logId ?? "";
+}
+
 export default function HistoryList<Response, Log extends LogEntryWithId>({
   buildQuery,
   getLogs,
+  getRowKey = defaultRowKey,
   slots: { row: Row, headerCells: HeaderCells },
 }: HistoryListProps<Response, Log>) {
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
@@ -71,7 +68,7 @@ export default function HistoryList<Response, Log extends LogEntryWithId>({
 
       setPageNumber(newPageNumber);
     },
-    [setPageNumber, fetchNextPage, numLoadedPages]
+    [setPageNumber, fetchNextPage, numLoadedPages],
   );
 
   const changeInitialDay = useCallback(
@@ -79,7 +76,7 @@ export default function HistoryList<Response, Log extends LogEntryWithId>({
       setInitialDay(value ?? dayjs());
       setPageNumber(0);
     },
-    [setPageNumber, setInitialDay]
+    [setPageNumber, setInitialDay],
   );
 
   const updatePageSize = (size: number) => {
@@ -89,7 +86,8 @@ export default function HistoryList<Response, Log extends LogEntryWithId>({
   };
 
   const page = data?.pages[pageNumber];
-  const logEntries = (page && getLogs(page)) ?? [];
+  const logEntries: Array<Log> = page ? getLogs(page as any) : [];
+  const fillerCount = Math.max(0, pageSize - logEntries.length);
 
   return (
     <TableContainer>
@@ -101,9 +99,9 @@ export default function HistoryList<Response, Log extends LogEntryWithId>({
         </TableHead>
         <TableBody>
           {logEntries.map((log) => (
-            <Row key={String(log.logId)} logEntry={log} />
+            <Row key={getRowKey(log)} logEntry={log} />
           ))}
-          {[...Array(pageSize - logEntries.length).fill(0)].map((_, i) => (
+          {[...Array(fillerCount).fill(0)].map((_, i) => (
             <TableRow key={`filler-${i}`}>
               <TableCell colSpan={1000}>
                 {isFetching ? <Skeleton variant="text" /> : " "}
@@ -121,10 +119,11 @@ export default function HistoryList<Response, Log extends LogEntryWithId>({
               count={
                 hasNextPage
                   ? -1
-                  : data?.pages.reduce(
-                      (acc, page) => acc + getLogs(page).length,
-                      0
-                    ) ?? -1
+                  : (data?.pages.reduce(
+                      (acc: number, page) =>
+                        acc + getLogs(page as Response).length,
+                      0,
+                    ) ?? -1)
               }
               rowsPerPageOptions={ALLOWED_PAGE_SIZES}
               rowsPerPage={pageSize}

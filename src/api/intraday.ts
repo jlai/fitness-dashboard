@@ -1,24 +1,26 @@
 import { queryOptions } from "@tanstack/react-query";
-import { Dayjs } from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
+import { groupBy, sumBy } from "es-toolkit";
 
-import { ONE_MINUTE_IN_MILLIS } from "./cache-settings";
-import { formatAsDate, formatHoursMinutes } from "./datetime";
-import { makeRequest } from "./request";
 import {
-  ActiveZoneMinutesTimeSeriesValue,
-  HeartRateZone,
-} from "./times-series";
-import { parseHeartRateZones } from "./heart-rate";
+  ActiveZoneMinutesHeartRateZone,
+  type CivilDateTime,
+  type ObservationTimeInterval,
+} from "@generated/orval/fetch/google-health-api/models";
 
-type IntradayTimeEntry = {
-  time: string; // "08:00:00", does not include date
-  value: number;
-};
-
-type IntradayMinuteEntry<ValueType = number> = {
-  minute: string; // "2020-09-17T17:00:00"
-  value: ValueType;
-};
+import { graduallyStale } from "./cache-settings";
+import {
+  buildDatapointsQuery,
+  buildOneDayDatapointsQuery,
+  buildRollupQuery,
+  getDataPointValue,
+  getRollupValue,
+  type DataPointFor,
+  type RollupDataPointFor,
+  type RollupDataType,
+} from "./datapoints";
+import { parseDailyHeartRateZones } from "./heart-rate";
+import { ActiveZoneMinutesTimeSeriesValue } from "./times-series";
 
 /** Intraday entry converted to a date-time */
 export type IntradayEntry<ValueType = number> = {
@@ -26,169 +28,385 @@ export type IntradayEntry<ValueType = number> = {
   value: ValueType;
 };
 
-type GetIntradayResponse = {
-  [key: string]: {
-    dataset: Array<IntradayTimeEntry>;
-  };
+export type ActivityIntradayResource =
+  "calories" | "distance" | "floors" | "steps";
+
+type ActivityRollupResource = Exclude<ActivityIntradayResource, "steps">;
+
+export type IntradayDetailLevel = "1min" | "5min" | "15min";
+
+const ACTIVITY_INTRADAY_ROLLUP_DATA_TYPES = {
+  calories: "total-calories",
+  distance: "distance",
+  floors: "floors",
+} as const satisfies Record<ActivityRollupResource, RollupDataType>;
+
+const DETAIL_LEVEL_MINUTES: Record<IntradayDetailLevel, number> = {
+  "1min": 1,
+  "5min": 5,
+  "15min": 15,
 };
 
-type GetIntradayMinutesResponse<ValueType = number> = {
-  [key: string]: Array<{
-    minutes: Array<IntradayMinuteEntry<ValueType>>;
-  }>;
-};
+const MILLIMETERS_PER_KILOMETER = 1_000_000;
 
-/** Convert an intraday dataset (time only) to one that has a dateTime */
-export function parseIntradayDataset(
-  startTime: Dayjs,
-  endTime: Dayjs,
-  dataset: Array<IntradayTimeEntry>
-): Array<IntradayEntry> {
-  const startDateStr = formatAsDate(startTime);
-  const endDateStr = formatAsDate(endTime);
-  const earliestStartTimeStr = startTime.format("HH:mm:ss");
-  const timeZoneStr = startTime.format("Z");
+function dateTimeFromCivil(civil?: CivilDateTime) {
+  const date = civil?.date;
+  if (date?.year == null || date.month == null || date.day == null) {
+    return undefined;
+  }
 
-  // Compares time by string; if it occurs before the start time, assume it's on the end day
-  return dataset.map(({ time, ...rest }) => ({
-    dateTime: new Date(
-      `${
-        time < earliestStartTimeStr ? endDateStr : startDateStr
-      }T${time}${timeZoneStr}`
-    ),
-    ...rest,
-  }));
-}
+  const time = civil?.time;
 
-/** Convert an intraday dataset ("minutes" array) to one that has a dateTime */
-export function parseIntradayMinutesDataset<ValueType = number>(
-  response: GetIntradayMinutesResponse<ValueType>,
-  key: string
-): Array<IntradayEntry<ValueType>> {
-  return response[key].flatMap(({ minutes }) =>
-    minutes.map((entry) => ({
-      dateTime: new Date(entry.minute),
-      value: entry.value,
-    }))
+  return new Date(
+    date.year,
+    date.month - 1,
+    date.day,
+    time?.hours ?? 0,
+    time?.minutes ?? 0,
+    time?.seconds ?? 0,
+    time?.nanos != null ? Math.floor(time.nanos / 1_000_000) : 0,
   );
 }
 
-export function buildActivityIntradayQuery(
-  resource: "calories" | "distance" | "elevation" | "floors" | "steps",
-  detailLevel: "1min" | "5min" | "15min",
-  startTime: Dayjs,
-  endTime: Dayjs
+function dateTimePreferringCivil(
+  civil: CivilDateTime | undefined,
+  physical?: string,
 ) {
-  return queryOptions({
-    queryKey: [
-      "activity-intraday",
-      resource,
-      startTime.toISOString(),
-      endTime.toISOString(),
-    ],
-    queryFn: async () => {
-      const response = await makeRequest(
-        `/1/user/-/activities/${resource}/date/${formatAsDate(
-          startTime
-        )}/${formatAsDate(endTime)}/${detailLevel}/time/${formatHoursMinutes(
-          startTime
-        )}/${formatHoursMinutes(endTime)}.json`
+  const fromCivil = dateTimeFromCivil(civil);
+  if (fromCivil && civil?.time) {
+    return fromCivil;
+  }
+
+  if (physical) {
+    return new Date(physical);
+  }
+
+  return fromCivil;
+}
+
+function dateTimeFromInterval(interval?: ObservationTimeInterval) {
+  return dateTimePreferringCivil(interval?.civilStartTime, interval?.startTime);
+}
+
+function finiteNumber(value: unknown) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : undefined;
+}
+
+function alignToDetailLevel(date: Date, detailLevel: IntradayDetailLevel) {
+  const minutes = DETAIL_LEVEL_MINUTES[detailLevel];
+  const aligned = dayjs(date);
+  const alignedMinute = Math.floor(aligned.minute() / minutes) * minutes;
+
+  return aligned.minute(alignedMinute).second(0).millisecond(0).toDate();
+}
+
+export function aggregateIntradayEntries<T>(
+  entries: Array<IntradayEntry<T>>,
+  detailLevel: IntradayDetailLevel,
+  combine: (values: Array<T>) => T,
+): Array<IntradayEntry<T>> {
+  const byBucket = groupBy(entries, (entry) =>
+    alignToDetailLevel(entry.dateTime, detailLevel).toISOString(),
+  );
+
+  return Object.entries(byBucket)
+    .map(([timestamp, bucket]) => ({
+      dateTime: new Date(timestamp),
+      value: combine(bucket.map((entry) => entry.value)),
+    }))
+    .toSorted((a, b) => a.dateTime.getTime() - b.dateTime.getTime());
+}
+
+function sumNumbers(values: Array<number>) {
+  return sumBy(values, (value) => value);
+}
+
+function averageNumbers(values: Array<number>) {
+  return values.length === 0 ? 0 : sumNumbers(values) / values.length;
+}
+
+function sumActiveZoneMinutes(
+  values: Array<ActiveZoneMinutesTimeSeriesValue>,
+): ActiveZoneMinutesTimeSeriesValue {
+  return {
+    activeZoneMinutes: sumBy(values, (value) => value.activeZoneMinutes),
+    fatBurnActiveZoneMinutes: sumBy(
+      values,
+      (value) => value.fatBurnActiveZoneMinutes,
+    ),
+    cardioActiveZoneMinutes: sumBy(
+      values,
+      (value) => value.cardioActiveZoneMinutes,
+    ),
+    peakActiveZoneMinutes: sumBy(
+      values,
+      (value) => value.peakActiveZoneMinutes,
+    ),
+  };
+}
+
+export function toActivityIntradayEntries(
+  resource: "steps",
+  dataPoints: ReadonlyArray<DataPointFor<"steps">>,
+): Array<IntradayEntry> {
+  return dataPoints.flatMap((dataPoint) => {
+    const value = getDataPointValue(resource, dataPoint);
+    const dateTime = dateTimeFromInterval(value.interval);
+    const count = finiteNumber(value.count);
+
+    if (!dateTime || count == null) {
+      return [];
+    }
+
+    return [{ dateTime, value: count }];
+  });
+}
+
+function activityRollupValue<T extends ActivityRollupResource>(
+  resource: T,
+  dataPoint: RollupDataPointFor<
+    (typeof ACTIVITY_INTRADAY_ROLLUP_DATA_TYPES)[T]
+  >,
+): number | undefined {
+  switch (resource) {
+    case "calories":
+      return (
+        finiteNumber(
+          getRollupValue(
+            "total-calories",
+            dataPoint as RollupDataPointFor<"total-calories">,
+          ).kcalSum,
+        ) ?? 0
+      );
+    case "distance": {
+      const millimeters = finiteNumber(
+        getRollupValue("distance", dataPoint as RollupDataPointFor<"distance">)
+          .millimetersSum,
       );
 
-      const intradayData = ((await response.json()) as GetIntradayResponse)[
-        `activities-${resource}-intraday`
-      ];
+      return millimeters == null
+        ? undefined
+        : millimeters / MILLIMETERS_PER_KILOMETER;
+    }
+    case "floors":
+      return finiteNumber(
+        getRollupValue("floors", dataPoint as RollupDataPointFor<"floors">)
+          .countSum,
+      );
+  }
+}
 
-      return parseIntradayDataset(startTime, endTime, intradayData.dataset);
-    },
-    staleTime: ONE_MINUTE_IN_MILLIS,
+export function toActivityRollupIntradayEntries<
+  T extends ActivityRollupResource,
+>(
+  resource: T,
+  rollupDataPoints: ReadonlyArray<
+    RollupDataPointFor<(typeof ACTIVITY_INTRADAY_ROLLUP_DATA_TYPES)[T]>
+  >,
+): Array<IntradayEntry> {
+  return rollupDataPoints
+    .flatMap((dataPoint) => {
+      if (!dataPoint.startTime) {
+        return [];
+      }
+
+      const value = activityRollupValue(resource, dataPoint);
+      if (value == null) {
+        return [];
+      }
+
+      return [
+        {
+          dateTime: new Date(dataPoint.startTime),
+          value,
+        },
+      ];
+    })
+    .toSorted((a, b) => a.dateTime.getTime() - b.dateTime.getTime());
+}
+
+export function toCaloriesIntradayEntries(
+  rollupDataPoints: ReadonlyArray<RollupDataPointFor<"total-calories">>,
+): Array<IntradayEntry> {
+  return toActivityRollupIntradayEntries("calories", rollupDataPoints);
+}
+
+export function toHeartRateIntradayEntries(
+  dataPoints: Array<DataPointFor<"heart-rate">>,
+): Array<IntradayEntry> {
+  return dataPoints.flatMap((dataPoint) => {
+    const value = getDataPointValue("heart-rate", dataPoint);
+    const dateTime = dateTimePreferringCivil(
+      value.sampleTime?.civilTime,
+      value.sampleTime?.physicalTime,
+    );
+    const beatsPerMinute = finiteNumber(value.beatsPerMinute);
+
+    if (!dateTime || beatsPerMinute == null) {
+      return [];
+    }
+
+    return [{ dateTime, value: beatsPerMinute }];
   });
+}
+
+export function toActiveZoneMinutesIntradayEntries(
+  dataPoints: Array<DataPointFor<"active-zone-minutes">>,
+): Array<IntradayEntry<ActiveZoneMinutesTimeSeriesValue>> {
+  return dataPoints.flatMap((dataPoint) => {
+    const value = getDataPointValue("active-zone-minutes", dataPoint);
+    const dateTime = dateTimeFromInterval(value.interval);
+    const minutes = finiteNumber(value.activeZoneMinutes) ?? 0;
+    const zone = value.heartRateZone;
+
+    if (!dateTime) {
+      return [];
+    }
+
+    return [
+      {
+        dateTime,
+        value: {
+          activeZoneMinutes: minutes,
+          fatBurnActiveZoneMinutes:
+            zone === ActiveZoneMinutesHeartRateZone.FAT_BURN ? minutes : 0,
+          cardioActiveZoneMinutes:
+            zone === ActiveZoneMinutesHeartRateZone.CARDIO ? minutes : 0,
+          peakActiveZoneMinutes:
+            zone === ActiveZoneMinutesHeartRateZone.PEAK ? minutes : 0,
+        },
+      },
+    ];
+  });
+}
+
+function buildStepsIntradayQuery(
+  detailLevel: IntradayDetailLevel,
+  startTime: Dayjs,
+  endTime: Dayjs,
+) {
+  return queryOptions({
+    ...buildDatapointsQuery("steps", startTime, endTime, {
+      timeField: "civil",
+    }),
+    select: ({ dataPoints }) =>
+      aggregateIntradayEntries(
+        toActivityIntradayEntries("steps", dataPoints),
+        detailLevel,
+        sumNumbers,
+      ),
+  });
+}
+
+function buildActivityRollupIntradayQuery(
+  resource: ActivityRollupResource,
+  detailLevel: IntradayDetailLevel,
+  startTime: Dayjs,
+  endTime: Dayjs,
+) {
+  const windowSize = `${DETAIL_LEVEL_MINUTES[detailLevel] * 60}s`;
+  const dataType = ACTIVITY_INTRADAY_ROLLUP_DATA_TYPES[resource];
+
+  return queryOptions({
+    ...buildRollupQuery(dataType, startTime, endTime, windowSize),
+    select: ({ rollupDataPoints }) =>
+      toActivityRollupIntradayEntries(resource, rollupDataPoints),
+  });
+}
+
+export function buildActivityIntradayQuery(
+  resource: "steps",
+  detailLevel: IntradayDetailLevel,
+  startTime: Dayjs,
+  endTime: Dayjs,
+): ReturnType<typeof buildStepsIntradayQuery>;
+export function buildActivityIntradayQuery(
+  resource: ActivityRollupResource,
+  detailLevel: IntradayDetailLevel,
+  startTime: Dayjs,
+  endTime: Dayjs,
+): ReturnType<typeof buildActivityRollupIntradayQuery>;
+export function buildActivityIntradayQuery(
+  resource: ActivityIntradayResource,
+  detailLevel: IntradayDetailLevel,
+  startTime: Dayjs,
+  endTime: Dayjs,
+) {
+  if (resource === "steps") {
+    return buildStepsIntradayQuery(detailLevel, startTime, endTime);
+  }
+
+  return buildActivityRollupIntradayQuery(
+    resource,
+    detailLevel,
+    startTime,
+    endTime,
+  );
 }
 
 export function buildActiveZoneMinutesIntradayQuery(
-  detailLevel: "1min" | "5min" | "15min",
+  detailLevel: IntradayDetailLevel,
   startTime: Dayjs,
-  endTime: Dayjs
+  endTime: Dayjs,
 ) {
   return queryOptions({
-    queryKey: [
-      "active-zone-minutes-intraday",
-      startTime.toISOString(),
-      endTime.toISOString(),
-    ],
-    queryFn: async () => {
-      const response = await makeRequest(
-        `/1/user/-/activities/active-zone-minutes/date/${formatAsDate(
-          startTime
-        )}/${formatAsDate(endTime)}/${detailLevel}/time/${formatHoursMinutes(
-          startTime
-        )}/${formatHoursMinutes(endTime)}.json`
-      );
-
-      const intradayData =
-        (await response.json()) as GetIntradayMinutesResponse<ActiveZoneMinutesTimeSeriesValue>;
-
-      return parseIntradayMinutesDataset<ActiveZoneMinutesTimeSeriesValue>(
-        intradayData,
-        "activities-active-zone-minutes-intraday"
-      );
-    },
-    staleTime: ONE_MINUTE_IN_MILLIS,
+    ...buildDatapointsQuery("active-zone-minutes", startTime, endTime, {
+      timeField: "civil",
+    }),
+    select: ({ dataPoints }) =>
+      aggregateIntradayEntries(
+        toActiveZoneMinutesIntradayEntries(dataPoints),
+        detailLevel,
+        sumActiveZoneMinutes,
+      ),
   });
 }
 
-export type GetHeartIntradayResponse = {
-  "activities-heart": Array<{
-    customHeartRateZones: Array<HeartRateZone>;
-    heartRateZones: Array<HeartRateZone>;
-    dateTime: string;
-    value: string;
-  }>;
-  "activities-heart-intraday": {
-    dataset: Array<IntradayTimeEntry>;
-    datasetInterval: number;
-    datasetType: string;
-  };
-};
-
 export function buildHeartRateIntradayQuery(
-  detailLevel: "1min" | "5min" | "15min",
+  detailLevel: IntradayDetailLevel,
   startTime: Dayjs,
-  endTime: Dayjs
+  endTime: Dayjs,
 ) {
+  const samplesQuery = buildDatapointsQuery("heart-rate", startTime, endTime, {
+    timeField: "civil",
+  });
+  const zonesQuery = buildOneDayDatapointsQuery(
+    "daily-heart-rate-zones",
+    startTime,
+  );
+
   return queryOptions({
     queryKey: [
+      "datapoints",
       "heart-rate-intraday",
       startTime.toISOString(),
       endTime.toISOString(),
     ],
-    queryFn: async () => {
-      const response = await makeRequest(
-        `/1/user/-/activities/heart/date/${formatAsDate(
-          startTime
-        )}/${formatAsDate(endTime)}/${detailLevel}/time/${formatHoursMinutes(
-          startTime
-        )}/${formatHoursMinutes(endTime)}.json`,
-        {
-          headers: {
-            "Accept-Language": "fr-FR",
-          },
-        }
-      );
-
-      const responseData = (await response.json()) as GetHeartIntradayResponse;
+    queryFn: async ({ client }) => {
+      const [{ dataPoints }, { dataPoints: zonePoints }] = await Promise.all([
+        client.fetchQuery(samplesQuery),
+        client.fetchQuery(zonesQuery),
+      ]);
 
       return {
-        heartRateZones: parseHeartRateZones(
-          responseData["activities-heart"][0].heartRateZones
+        heartRateZones: parseDailyHeartRateZones(
+          zonePoints[0]
+            ? getDataPointValue("daily-heart-rate-zones", zonePoints[0])
+                .heartRateZones
+            : undefined,
         ),
-        intradayData: parseIntradayDataset(
-          startTime,
-          endTime,
-          responseData["activities-heart-intraday"].dataset
-        ),
+        samples: toHeartRateIntradayEntries(dataPoints),
       };
     },
-    staleTime: ONE_MINUTE_IN_MILLIS,
+    select: ({ heartRateZones, samples }) => ({
+      heartRateZones,
+      intradayData: aggregateIntradayEntries(
+        samples,
+        detailLevel,
+        averageNumbers,
+      ),
+    }),
+    staleTime: graduallyStale(endTime),
   });
 }

@@ -21,18 +21,22 @@ import {
   TimePickerElement,
 } from "react-hook-form-mui/date-pickers";
 
+import { useMissingScopes } from "@/api/auth";
 import {
-  buildCreateActivityLogMutation,
-  CreateActivityLogDistanceUnit,
-} from "@/api/activity/activities";
+  buildCreateExerciseMutation,
+  CreateExerciseDistanceUnit,
+} from "@/api/exercise/exercise";
+import {
+  STEPS_EXERCISE_TYPES,
+  SWIMMING_EXERCISE_TYPES,
+} from "@/api/exercise/helpers";
+import { SettingsDistanceUnit, SettingsSwimUnit } from "@/api/user";
+import { ACTIVITY_AND_FITNESS_WRITEONLY } from "@/config/google-health-scopes";
 import { useUnits } from "@/config/units";
-import {
-  ACTIVITY_TYPES_WITH_STEPS,
-  SWIMMING_ACTIVITY_TYPE,
-} from "@/config/common-ids";
 import { isBeforeToday } from "@/utils/date-utils";
 
 import { DividedStack } from "../layout/flex";
+import { MissingScopesAlert } from "../require-scopes";
 import { showSuccessToast, withErrorToaster } from "../toast";
 
 import { ActivityTypeElement, ActivityTypeOption } from "./activity-type-input";
@@ -80,28 +84,37 @@ function CreateActivityLog({ onSaveSuccess }: { onSaveSuccess?: () => void }) {
   const queryClient = useQueryClient();
 
   const { mutateAsync: createActivityLog } = useMutation(
-    buildCreateActivityLogMutation(queryClient)
+    buildCreateExerciseMutation(queryClient),
   );
 
   const distanceIsRequired = watch("activityType")?.requiresDistance;
-  const supportsSteps = ACTIVITY_TYPES_WITH_STEPS.has(
-    watch("activityType")?.id ?? -1
-  );
-  const isSwimming = watch("activityType")?.id === SWIMMING_ACTIVITY_TYPE;
+  const selectedTypeId = watch("activityType")?.id;
+  const supportsSteps = selectedTypeId
+    ? STEPS_EXERCISE_TYPES.has(selectedTypeId)
+    : false;
+  const isSwimming = selectedTypeId
+    ? SWIMMING_EXERCISE_TYPES.has(selectedTypeId)
+    : false;
   const useSteps = supportsSteps && watch("useSteps");
 
+  const cannotWrite =
+    useMissingScopes([ACTIVITY_AND_FITNESS_WRITEONLY]).length > 0;
+
   const onSubmit = withErrorToaster(async (values: CreateActivityFormData) => {
-    let unit: CreateActivityLogDistanceUnit =
-      distanceUnitSystem === "en_US" ? "mile" : "kilometer";
+    let unit: CreateExerciseDistanceUnit =
+      distanceUnitSystem === SettingsDistanceUnit.DISTANCE_UNIT_MILES
+        ? "mile"
+        : "kilometer";
 
     if (supportsSteps && values.useSteps) {
       unit = "steps";
     } else if (isSwimming) {
-      unit = swimUnitSystem === "en_US" ? "yards" : "meter";
+      unit =
+        swimUnitSystem === SettingsSwimUnit.SWIM_UNIT_YARDS ? "yards" : "meter";
     }
 
     await createActivityLog({
-      activityId: values.activityType!.id,
+      exerciseType: values.activityType!.id,
       startTime: values.startTime,
       durationMinutes: values.durationMinutes,
       distance: values.distance,
@@ -119,89 +132,98 @@ function CreateActivityLog({ onSaveSuccess }: { onSaveSuccess?: () => void }) {
       formContext={formContext}
     >
       <Box marginTop={1}></Box>
-      <DividedStack>
-        <Stack direction="column" rowGap={4}>
-          <ActivityTypeElement name="activityType" rules={{ required: true }} />
-          <DatePickerElement
-            name="startTime"
-            label="Day"
-            disableFuture
-            rules={{ validate: { startTime: validateStartTime } }}
-          />
-          <TimePickerElement
-            name="startTime"
-            label="Time"
-            disableFuture={!isBeforeToday(dayjs(watch("startTime")))}
-            rules={{ validate: { startTime: validateStartTime } }}
-          />
-          <TextFieldElement
-            name="durationMinutes"
-            type="number"
-            label="Duration"
-            autoComplete="off"
-            rules={{ min: 1 }}
-            slotProps={{
-              input: {
-                endAdornment: (
-                  <InputAdornment position="end">mins</InputAdornment>
-                ),
-              },
-            }}
-          />
-        </Stack>
-        <Stack direction="column" rowGap={4}>
-          {supportsSteps && (
-            <CheckboxElement name="useSteps" label="Use steps" />
-          )}
-          {useSteps ? (
-            <TextFieldElement
-              type="number"
-              name="distance"
-              label="Steps"
-              autoComplete="off"
+      <MissingScopesAlert scopes={[ACTIVITY_AND_FITNESS_WRITEONLY]}>
+        <DividedStack>
+          <Stack direction="column" rowGap={4}>
+            <ActivityTypeElement
+              name="activityType"
+              rules={{ required: true }}
+              disabled={cannotWrite}
             />
-          ) : (
+            <DatePickerElement
+              name="startTime"
+              label="Day"
+              disableFuture
+              rules={{ validate: { startTime: validateStartTime } }}
+            />
+            <TimePickerElement
+              name="startTime"
+              label="Time"
+              disableFuture={!isBeforeToday(dayjs(watch("startTime")))}
+              rules={{ validate: { startTime: validateStartTime } }}
+            />
             <TextFieldElement
+              name="durationMinutes"
               type="number"
-              name="distance"
-              label="Distance"
+              label="Duration"
               autoComplete="off"
-              rules={{ required: distanceIsRequired }}
+              rules={{ min: 1 }}
               slotProps={{
                 input: {
                   endAdornment: (
-                    <InputAdornment position="end">
-                      {isSwimming
-                        ? localizedSwimMetersName
-                        : localizedKilometersName}
-                    </InputAdornment>
+                    <InputAdornment position="end">mins</InputAdornment>
                   ),
                 },
               }}
             />
-          )}
-          <TextFieldElement
-            name="manualCalories"
-            type="number"
-            label="Calories"
-            autoComplete="off"
-            rules={{ min: 1 }}
-            slotProps={{
-              input: {
-                endAdornment: (
-                  <InputAdornment position="end">cal</InputAdornment>
-                ),
-              },
-            }}
-          />
-        </Stack>
-      </DividedStack>
+          </Stack>
+          <Stack direction="column" rowGap={4}>
+            {supportsSteps && (
+              <CheckboxElement name="useSteps" label="Use steps" />
+            )}
+            {useSteps ? (
+              <TextFieldElement
+                type="number"
+                name="distance"
+                label="Steps"
+                autoComplete="off"
+              />
+            ) : (
+              <TextFieldElement
+                type="number"
+                name="distance"
+                label="Distance"
+                autoComplete="off"
+                rules={{ required: distanceIsRequired }}
+                slotProps={{
+                  input: {
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        {isSwimming
+                          ? localizedSwimMetersName
+                          : localizedKilometersName}
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+              />
+            )}
+            <TextFieldElement
+              name="manualCalories"
+              type="number"
+              label="Calories"
+              autoComplete="off"
+              rules={{ min: 1 }}
+              slotProps={{
+                input: {
+                  endAdornment: (
+                    <InputAdornment position="end">cal</InputAdornment>
+                  ),
+                },
+              }}
+            />
+          </Stack>
+        </DividedStack>
 
-      <div className="flex flex-row items-center justify-end mt-4">
-        <Button type="submit" disabled={!watch("activityType")}>
-          Save
-        </Button>
-      </div>
+        <div className="flex flex-row items-center justify-end mt-4">
+          <Button
+            type="submit"
+            disabled={cannotWrite || !watch("activityType")}
+          >
+            Save
+          </Button>
+        </div>
+      </MissingScopesAlert>
     </FormContainer>
   );
 }

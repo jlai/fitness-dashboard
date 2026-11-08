@@ -23,20 +23,22 @@ import {
 } from "material-ui-popup-state/hooks";
 import { useQueryClient } from "@tanstack/react-query";
 
-import { logout, useLoggedIn } from "@/api/auth";
+import { useOpenIdSignedIn } from "@/api/auth";
+import { useSignOut } from "@/components/login/use-sign-out";
 import { WHATS_NEW_LINK } from "@/config";
 
 export default function AccountMenu() {
-  const loggedIn = useLoggedIn();
+  const openIdSignedIn = useOpenIdSignedIn();
   const popupState = usePopupState({
     variant: "popover",
     popupId: "account-popup-menu",
   });
   const queryClient = useQueryClient();
+  const signOut = useSignOut();
 
   const handleLogoutClicked = () => {
-    logout();
     popupState.close();
+    signOut();
   };
 
   const handleRefreshClicked = () => {
@@ -55,6 +57,7 @@ export default function AccountMenu() {
             <Link
               href={WHATS_NEW_LINK}
               target="_blank"
+              rel="noopener noreferrer"
               className="flex flex-row"
             >
               <ListItemIcon>
@@ -78,13 +81,13 @@ export default function AccountMenu() {
           </ListItemIcon>
           <ListItemText>Refresh data</ListItemText>
         </MenuItem>
-        {loggedIn && <Divider />}
-        {loggedIn && (
+        {openIdSignedIn && <Divider />}
+        {openIdSignedIn && (
           <MenuItem onClick={handleLogoutClicked}>
             <ListItemIcon>
               <LogoutIcon />
             </ListItemIcon>
-            <ListItemText>Logout</ListItemText>
+            <ListItemText>Sign out</ListItemText>
           </MenuItem>
         )}
       </Menu>

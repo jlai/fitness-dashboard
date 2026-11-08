@@ -39,14 +39,20 @@ export function CalorieBalanceChart() {
     const burnedByDate = keyBy(caloriesBurnedData, ({ dateTime }) => dateTime);
 
     const dates = uniq(
-      [...Object.keys(inByDate), ...Object.keys(burnedByDate)].toSorted()
+      [...Object.keys(inByDate), ...Object.keys(burnedByDate)].toSorted(),
     );
 
     for (const date of dates) {
+      const caloriesInRaw = Number(inByDate[date]?.value);
+      const caloriesBurnedRaw = Number(burnedByDate[date]?.value);
+
       data.push({
         dateTime: date,
-        caloriesIn: Number(inByDate[date]?.value) ?? null,
-        caloriesBurned: Number(burnedByDate[date]?.value) ?? null,
+        // Number(undefined) is NaN; ?? does not replace NaN.
+        caloriesIn: Number.isFinite(caloriesInRaw) ? caloriesInRaw : null,
+        caloriesBurned: Number.isFinite(caloriesBurnedRaw)
+          ? caloriesBurnedRaw
+          : null,
       });
     }
 
@@ -70,7 +76,7 @@ export function CalorieBalanceChart() {
         color: "#ff9e22",
       },
     ],
-    []
+    [],
   );
 
   const props = useAggregation(data, seriesConfigs);

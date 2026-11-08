@@ -27,7 +27,7 @@ export function formatTimeOffset(startTime: Date, time: Date) {
 
 export function SplitsChart({ splits }: { splits: Array<SplitDatum> }) {
   const { localizedKilometers, localizedKilometersName } = useUnits();
-  const bestPace = minBy(splits, ({ paceMillis }) => paceMillis).paceMillis;
+  const bestPace = minBy(splits, ({ paceMillis }) => paceMillis)?.paceMillis;
 
   const activityStart = splits[0].startTime;
 
@@ -58,7 +58,7 @@ export function SplitsChart({ splits }: { splits: Array<SplitDatum> }) {
                 sx={{
                   bgcolor: "#02b2af",
                   height: "100%",
-                  width: `${100 * (bestPace / paceMillis)}%`,
+                  width: bestPace ? `${100 * (bestPace / paceMillis)}%` : "0%",
                   borderRadius: "8px",
                 }}
               ></Box>
@@ -68,13 +68,13 @@ export function SplitsChart({ splits }: { splits: Array<SplitDatum> }) {
             </div>
             <div className="text-end">
               {NumberFormats.FRACTION_DIGITS_2.format(
-                localizedKilometers(distanceCoveredMeters / 1000)
+                localizedKilometers(distanceCoveredMeters / 1000),
               )}{" "}
               {localizedKilometersName}
             </div>
             <div>{formatTimeOffset(activityStart, endTime)}</div>
           </Fragment>
-        )
+        ),
       )}
     </Box>
   );

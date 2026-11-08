@@ -1,3 +1,4 @@
+import { getPairedDeviceId } from "@/api/devices";
 import {
   MOBILE_TRACK_DEVICE,
   TRACKER_DEVICE,
@@ -116,7 +117,7 @@ test.describe("with specific device id", () => {
         type: "trackerStatus",
         w: 1,
         h: 1,
-        settings: { deviceId: TRACKER_DEVICE_2.id },
+        settings: { deviceId: getPairedDeviceId(TRACKER_DEVICE_2) },
       },
     ]);
 

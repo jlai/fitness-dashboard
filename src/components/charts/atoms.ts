@@ -1,7 +1,7 @@
 import { atom } from "jotai";
 import dayjs from "dayjs";
 import { atomEffect } from "jotai-effect";
-import { atomFamily } from "jotai/utils";
+import { atomFamily } from "jotai-family";
 
 import { DayjsRange } from "../calendar/period-navigator";
 
@@ -10,12 +10,7 @@ import { CHART_RESOURCE_CONFIGS, ChartResource } from "./timeseries/resources";
 export const selectedResourceAtom = atom<ChartResource>("steps");
 
 export type DateRangeType =
-  | "day"
-  | "week"
-  | "month"
-  | "quarter"
-  | "year"
-  | "custom";
+  "day" | "week" | "month" | "quarter" | "year" | "custom";
 export const MAX_DAYS_IN_RANGE = {
   day: 1,
   week: 7,
@@ -45,7 +40,7 @@ export const selectedRangeFamily = atomFamily((rangeType: DateRangeType) => {
 export const selectedRangeAtom = atom<DayjsRange, [DayjsRange], void>(
   (get) => get(selectedRangeFamily(get(selectedRangeTypeAtom))),
   (get, set, update) =>
-    set(selectedRangeFamily(get(selectedRangeTypeAtom)), update)
+    set(selectedRangeFamily(get(selectedRangeTypeAtom)), update),
 );
 
 // Reset date range if resource doesn't support it

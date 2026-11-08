@@ -10,6 +10,8 @@ import {
   Meal,
   MealType,
   buildCreateMultipleFoodLogsMutation,
+  nutritionLogFromMealFood,
+  toNutritionLogMealType,
 } from "@/api/nutrition";
 import LinkedDayElement, { DaySelectorSource } from "@/components/linked-day";
 import { selectedDayForPageAtom } from "@/state";
@@ -40,7 +42,7 @@ export default function CreateMealLog() {
 
   const queryClient = useQueryClient();
   const { mutateAsync: logFoods } = useMutation(
-    buildCreateMultipleFoodLogsMutation(queryClient)
+    buildCreateMultipleFoodLogsMutation(queryClient),
   );
 
   const linkedDay = useAtomValue(selectedDayForPageAtom);
@@ -57,12 +59,12 @@ export default function CreateMealLog() {
     const foods = meal.mealFoods.map(
       (food) =>
         ({
-          foodId: food.foodId,
-          mealTypeId: mealType,
-          unitId: food.unit!.id,
-          amount: food.amount,
+          nutritionLog: nutritionLogFromMealFood(
+            food,
+            toNutritionLogMealType(mealType),
+          ),
           day,
-        } as CreateFoodLogOptions)
+        }) as CreateFoodLogOptions,
     );
 
     await logFoods(foods);

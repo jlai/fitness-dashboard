@@ -1,8 +1,10 @@
 "use client";
 
-import { useLoggedIn } from "@/api/auth";
+import { useAtomValue } from "jotai";
 
-import LoginBox from "./login-box";
+import { pendingRememberMeChoiceAtom, useLoggedIn } from "@/api/auth";
+
+import LoginBox from "./login";
 
 export default function RequireLogin({
   children,
@@ -10,8 +12,9 @@ export default function RequireLogin({
   children: React.ReactNode;
 }) {
   const loggedIn = useLoggedIn();
+  const pendingRememberMeChoice = useAtomValue(pendingRememberMeChoiceAtom);
 
-  if (!loggedIn) {
+  if (!loggedIn || pendingRememberMeChoice) {
     return <LoginNotice />;
   }
 

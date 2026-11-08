@@ -10,6 +10,7 @@ import { HeaderBar } from "@/components/layout/rows";
 import CreateSleepLogDialog, {
   createSleepLogDialogOpenAtom,
 } from "@/components/logging/create-sleep-log";
+import { SLEEP_READONLY } from "@/config/google-health-scopes";
 
 import SleepLogList from "./sleep-log-list";
 
@@ -17,7 +18,7 @@ export default function SleepHistoryPage() {
   const setShowingCreateSleepDialog = useSetAtom(createSleepLogDialogOpenAtom);
 
   return (
-    <RequireScopes scopes={["sle"]}>
+    <RequireScopes scopes={[SLEEP_READONLY]}>
       <HeaderBar>
         <Typography variant="h5">Sleep logs</Typography>
         <FlexSpacer />

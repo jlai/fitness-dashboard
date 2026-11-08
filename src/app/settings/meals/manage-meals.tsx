@@ -21,7 +21,7 @@ export default function ManageMeals() {
       setSelectedMeal(meal);
       setDraftMeal(meal);
     },
-    [setDraftMeal, setSelectedMeal]
+    [setDraftMeal, setSelectedMeal],
   );
 
   const createNewMeal = useCallback(() => {
@@ -41,7 +41,7 @@ export default function ManageMeals() {
         setDraftMeal(meal);
       }
     },
-    []
+    [],
   );
 
   return (

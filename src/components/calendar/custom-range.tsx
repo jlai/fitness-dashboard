@@ -63,7 +63,7 @@ const DateRangeInput = React.forwardRef<HTMLButtonElement, DateRangeInputProps>(
         ) : null}
       </>
     );
-  }
+  },
 );
 
 interface CustomRangePickerProps {

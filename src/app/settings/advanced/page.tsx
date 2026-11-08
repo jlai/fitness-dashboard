@@ -1,0 +1,67 @@
+"use client";
+
+import React, { useCallback } from "react";
+import { Button, Switch } from "@mui/material";
+import { useAtom, useSetAtom } from "jotai";
+import { RESET } from "jotai/utils";
+import { useConfirm } from "material-ui-confirm";
+
+import { userTilesAtom } from "@/storage/tiles";
+import { increasedTileLimitsAtom } from "@/storage/settings";
+
+import { SettingsRow, SettingsTable } from "../common";
+
+function AdvancedSettings() {
+  const confirm = useConfirm();
+  const setUserTiles = useSetAtom(userTilesAtom);
+  const [increasedTileLimits, setIncreasedTileLimits] = useAtom(
+    increasedTileLimitsAtom,
+  );
+
+  const resetDashboard = useCallback(() => {
+    confirm({
+      description: "Are you sure you want to reset the dashboard?",
+    }).then(({ confirmed }) => {
+      if (confirmed) {
+        setUserTiles(RESET);
+      }
+    });
+  }, [confirm, setUserTiles]);
+
+  return (
+    <>
+      <SettingsRow title="Advanced settings"></SettingsRow>
+      <SettingsRow
+        title="Ignore tile limit"
+        action={
+          <Switch
+            checked={increasedTileLimits}
+            onChange={(_event, checked) => setIncreasedTileLimits(checked)}
+          />
+        }
+      >
+        Allow increased number of dashboard tiles. This may cause you to exceed
+        the hourly API request limit if you frequently refresh the dashboard or
+        navigate to other days.
+      </SettingsRow>
+      <SettingsRow
+        title="Reset dashboard"
+        action={
+          <Button color="error" onClick={resetDashboard}>
+            Reset dashboard
+          </Button>
+        }
+      >
+        Reset the dashboard grid to the default layout
+      </SettingsRow>
+    </>
+  );
+}
+
+export default function AdvancedSettingsPage() {
+  return (
+    <SettingsTable>
+      <AdvancedSettings />
+    </SettingsTable>
+  );
+}

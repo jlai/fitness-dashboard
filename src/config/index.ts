@@ -1,6 +1,8 @@
 import dayjs from "dayjs";
 import DOMPurify from "dompurify";
 
+export { BASE_PATH, withBasePath } from "./base-path";
+
 export function requiredVar(value?: string) {
   if (!value) {
     throw new Error(`Environment variable missing`);
@@ -20,36 +22,13 @@ function sanitizeHtml(htmlString: string | undefined) {
     : "foo";
 }
 
-export const FITBIT_API_URL = requiredVar(
-  process.env.NEXT_PUBLIC_FITBIT_API_URL
+export const GOOGLE_HEALTH_API_URL =
+  process.env.NEXT_PUBLIC_GOOGLE_HEALTH_API_URL ??
+  "https://health.googleapis.com";
+
+export const GOOGLE_OAUTH_CLIENT_ID = requiredVar(
+  process.env.NEXT_PUBLIC_GOOGLE_OAUTH_CLIENT_ID,
 );
-
-export const OAUTH_CALLBACK_URI = requiredVar(
-  process.env.NEXT_PUBLIC_FITBIT_OAUTH_REDIRECT_URI
-);
-
-export const FITBIT_OAUTH_SERVER = requiredVar(
-  process.env.NEXT_PUBLIC_FITBIT_OAUTH_SERVER
-);
-
-export const FITBIT_OAUTH_CLIENT_ID = requiredVar(
-  process.env.NEXT_PUBLIC_FITBIT_OAUTH_CLIENT_ID
-);
-
-export const FITBIT_OAUTH_AUTHORIZATION_ENDPOINT = requiredVar(
-  process.env.NEXT_PUBLIC_FITBIT_OAUTH_AUTHORIZATION_ENDPOINT
-);
-
-/** Proxy to work around CORS issues. Should be an API that fowards requests to api.fitbit.com */
-export const FITBIT_API_PROXY_URL =
-  process.env.NEXT_PUBLIC_FITBIT_API_PROXY_URL;
-
-/**
- * Whether to enable intraday timeseries requests
- * (see https://dev.fitbit.com/build/reference/web-api/intraday/)
- */
-export const ENABLE_INTRADAY =
-  process.env.NEXT_PUBLIC_ENABLE_INTRADAY === "true";
 
 /** URL for MapLibre style JSON (usually contains API key) */
 export const MAPLIBRE_STYLE_URL = process.env.NEXT_PUBLIC_MAPLIBRE_STYLE_URL;
@@ -98,9 +77,12 @@ export const SURVEY_DATE_RANGE = ((value: string | undefined) => {
 /** URL to send anonymous analytics */
 export const ANALYTICS_PING_URL = process.env.NEXT_PUBLIC_ANALYTICS_PING_URL;
 
-/** Extra content security script-src */
+/** Extra content security script-src URLs (space-separated) */
 export const EXTRA_CSP_SCRIPT_SRC =
   process.env.NEXT_PUBLIC_CSP_EXTRA_SCRIPT_SRC;
 
 /** Site notice to warn about API issues, etc */
 export const SITE_NOTICE_HTML = process.env.NEXT_PUBLIC_SITE_NOTICE_HTML;
+
+/** Show developer settings and other debug UI. Inlined at build time. */
+export const DEV_MODE_ENABLED = process.env.NEXT_PUBLIC_DEV_MODE === "true";

@@ -11,17 +11,22 @@ import { useForm } from "react-hook-form";
 import {
   useQueryClient,
   useMutation,
-  useSuspenseQueries,
+  useSuspenseQuery,
 } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { toast } from "mui-sonner";
+import { useAtomValue } from "jotai";
 
+import { VolumeQuantityUserProvidedUnit } from "@generated/orval/fetch/google-health-api/models";
+
+import { SettingsWaterUnit } from "@/api/user";
 import { useUnits } from "@/config/units";
 import {
   buildCreateWaterLogMutation,
-  buildFoodLogQuery,
-  buildWaterGoalQuery,
+  buildHydrationLogQuery,
 } from "@/api/nutrition";
+import { millilitersFromWaterGoal } from "@/config/units";
+import { getGoalsAtom } from "@/storage/goals";
 
 import NumericStat from "../numeric-stat";
 import { DividedStack } from "../layout/flex";
@@ -101,27 +106,52 @@ function MetricWaterButtons({
   );
 }
 
+function CupWaterButtons({
+  onAddQuantity,
+}: {
+  onAddQuantity: (quantity: number) => void;
+}) {
+  return (
+    <>
+      <QuickWaterButton
+        onClick={() => onAddQuantity(1)}
+        description="1 cup"
+        icon={<Image width={64} height={64} src={glassCupUrl} alt="" />}
+      />
+      <QuickWaterButton
+        onClick={() => onAddQuantity(2)}
+        description="2 cups"
+        icon={<Image width={64} height={64} src={smallBottleUrl} alt="" />}
+      />
+      <QuickWaterButton
+        onClick={() => onAddQuantity(3)}
+        description="3 cups"
+        icon={<Image width={64} height={64} src={largeBottleUrl} alt="" />}
+      />
+    </>
+  );
+}
+
 interface WaterLoggingInput {
   quantity: number;
 }
 
 export default function WaterEntryPanel() {
   const day = dayjs(); // FIXME allow selecting date
-  const { waterUnit } = useUnits();
+  const { waterUnit, localizedWaterVolumeName } = useUnits();
   const { register, handleSubmit, formState, getValues, setValue } =
     useForm<WaterLoggingInput>();
 
-  const isImperial = waterUnit === "en_US";
-
-  // Internal water unit
-  const machineWaterUnit = isImperial ? "fl oz" : "ml";
-
-  // TODO translate
-  const localizedWaterUnit = machineWaterUnit === "fl oz" ? "fl oz" : "ml";
+  const userProvidedUnit =
+    waterUnit === SettingsWaterUnit.WATER_UNIT_FL_OZ
+      ? VolumeQuantityUserProvidedUnit.FLUID_OUNCE_US
+      : waterUnit === SettingsWaterUnit.WATER_UNIT_CUP
+        ? VolumeQuantityUserProvidedUnit.CUP_US
+        : VolumeQuantityUserProvidedUnit.MILLILITER;
 
   const queryClient = useQueryClient();
   const { mutateAsync: createWaterLog } = useMutation(
-    buildCreateWaterLogMutation(queryClient)
+    buildCreateWaterLogMutation(queryClient),
   );
 
   const addQuantity = useCallback(
@@ -131,25 +161,25 @@ export default function WaterEntryPanel() {
         shouldValidate: true,
       });
     },
-    [setValue, getValues]
+    [setValue, getValues],
   );
 
   const onSubmit = useCallback(
     (data: WaterLoggingInput) => {
       createWaterLog({
         amount: data.quantity,
-        unit: machineWaterUnit,
+        unit: userProvidedUnit,
         day,
       }).then(
         () => {
-          toast(`Logged ${data.quantity} ${localizedWaterUnit} water`);
+          toast(`Logged ${data.quantity} ${localizedWaterVolumeName} water`);
         },
         () => {
           toast.error("Error logging water");
-        }
+        },
       );
     },
-    [createWaterLog, day, localizedWaterUnit, machineWaterUnit]
+    [createWaterLog, day, localizedWaterVolumeName, userProvidedUnit],
   );
 
   return (
@@ -162,7 +192,7 @@ export default function WaterEntryPanel() {
                 type="number"
                 endAdornment={
                   <InputAdornment position="end">
-                    {localizedWaterUnit}
+                    {localizedWaterVolumeName}
                   </InputAdornment>
                 }
                 {...register("quantity", {
@@ -177,8 +207,10 @@ export default function WaterEntryPanel() {
             </Button>
           </div>
           <div className="flex flex-row gap-x-8">
-            {isImperial ? (
+            {waterUnit === SettingsWaterUnit.WATER_UNIT_FL_OZ ? (
               <ImperialWaterButtons onAddQuantity={addQuantity} />
+            ) : waterUnit === SettingsWaterUnit.WATER_UNIT_CUP ? (
+              <CupWaterButtons onAddQuantity={addQuantity} />
             ) : (
               <MetricWaterButtons onAddQuantity={addQuantity} />
             )}
@@ -197,25 +229,42 @@ export default function WaterEntryPanel() {
 function WaterToday() {
   const day = dayjs();
   const units = useUnits();
+  const waterGoal = useAtomValue(getGoalsAtom("waterVolume", "daily"));
 
-  const [{ data: foodLog }, { data: waterGoalMl }] = useSuspenseQueries({
-    queries: [buildFoodLogQuery(day), buildWaterGoalQuery()],
-  });
+  const { data: hydrationLog } = useSuspenseQuery(buildHydrationLogQuery(day));
+
+  const waterConsumedMl = (hydrationLog.dataPoints ?? []).reduce(
+    (sum, dataPoint) =>
+      sum + (dataPoint.hydrationLog?.amountConsumed?.milliliters ?? 0),
+    0,
+  );
 
   const { localizedWaterVolumeName, localizedWaterVolume } = units;
 
-  const waterConsumed = localizedWaterVolume(foodLog.summary.water);
-  const waterGoal = localizedWaterVolume(waterGoalMl);
+  const waterConsumed = localizedWaterVolume(waterConsumedMl);
+  const waterGoalMl =
+    waterGoal != null
+      ? millilitersFromWaterGoal(waterGoal.value, waterGoal.unit)
+      : undefined;
+  const waterGoalNumber =
+    waterGoalMl != null ? localizedWaterVolume(waterGoalMl) : undefined;
 
   return (
     <div className="flex flex-col items-center">
       <Typography variant="h5">Today</Typography>
       <div className="flex flex-row items-center gap-x-2">
-        <NumericStat value={waterConsumed} unit={localizedWaterVolumeName} />{" "}
-        <Typography variant="body1" className="text-2xl">
-          /
-        </Typography>
-        <NumericStat value={waterGoal} unit={localizedWaterVolumeName} />
+        <NumericStat value={waterConsumed} unit={localizedWaterVolumeName} />
+        {waterGoalNumber != null && (
+          <>
+            <Typography variant="body1" className="text-2xl">
+              /
+            </Typography>
+            <NumericStat
+              value={waterGoalNumber}
+              unit={localizedWaterVolumeName}
+            />
+          </>
+        )}
       </div>
     </div>
   );

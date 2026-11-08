@@ -16,18 +16,15 @@ import {
 import { bindMenu, usePopupState } from "material-ui-popup-state/hooks";
 import { NestedMenuItem } from "mui-nested-menu";
 import { useMemo, useState } from "react";
-import { useAtomValue } from "jotai";
 import { Dayjs } from "dayjs";
 
 import { TimeSeriesChart } from "@/components/charts/timeseries-graph";
 import {
-  ADVANCED_CHART_RESOURCE_MENU_ITEMS,
   CHART_RESOURCE_CONFIGS,
   CHART_RESOURCE_MENU_ITEMS,
   ChartResource,
 } from "@/components/charts/timeseries/resources";
 import { DateFormats } from "@/utils/date-formats";
-import { enableAdvancedScopesAtom } from "@/storage/settings";
 import { DayjsRange } from "@/components/calendar/period-navigator";
 
 import { useSelectedDay } from "../state";
@@ -73,12 +70,6 @@ export function GraphSettingsMenuButton({
   setPeriod: (period: GraphPeriod) => void;
   canFitGoals: boolean;
 }) {
-  const enableAdvancedScopes = useAtomValue(enableAdvancedScopesAtom);
-
-  const resourceMenuItems = enableAdvancedScopes
-    ? [...CHART_RESOURCE_MENU_ITEMS, "-", ...ADVANCED_CHART_RESOURCE_MENU_ITEMS]
-    : CHART_RESOURCE_MENU_ITEMS;
-
   const popupState = usePopupState({
     variant: "popover",
     popupId: "graph-tile-settings",
@@ -154,7 +145,7 @@ export function GraphSettingsMenuButton({
           </MenuItem>
         )}
         <Divider />
-        {resourceMenuItems.map((id, i) =>
+        {CHART_RESOURCE_MENU_ITEMS.map((id, i) =>
           id === "-" ? (
             <Divider key={i} />
           ) : (
@@ -167,7 +158,7 @@ export function GraphSettingsMenuButton({
             >
               {CHART_RESOURCE_CONFIGS[id].label}
             </MenuItem>
-          )
+          ),
         )}
       </Menu>
     </>
@@ -213,7 +204,7 @@ export default function GraphTileContent() {
   const { w, h } = useTileScale();
   const [settings] = useTileSettings<GraphTileSettings>(DEFAULT_SETTINGS);
   const [resource, setResource] = useState<ChartResource>(
-    settings.chartResource
+    settings.chartResource,
   );
   const [period, setPeriod] = useState<GraphPeriod>(settings.period || "7d");
   const [statsEl, setStatsEl] = useState<HTMLElement | null>(null);

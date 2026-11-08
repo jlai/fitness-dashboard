@@ -1,5 +1,5 @@
 export interface FoodUnit {
-  id: number;
+  id: string;
   name: string;
   plural: string;
 }
@@ -63,7 +63,7 @@ export type NutritionalValues = Partial<{
 
 export interface Food {
   accessLevel: FoodAccessLevel;
-  foodId: number;
+  foodId: string;
   name: string;
   brand?: string;
   locale?: string;
@@ -72,22 +72,14 @@ export interface Food {
   defaultUnit?: FoodUnit;
   defaultServingSize?: number;
   unit?: FoodUnit;
-  units: Array<number>;
+  units: Array<string>;
 
   // Only available on custom (private) foods
   nutritionalValues?: NutritionalValues;
 }
 
-export type FoodLogEntry = {
-  logDate: string;
-  logId: number;
-  loggedFood: Food & {
-    amount: number;
-    mealTypeId: MealType;
-  };
-
-  // Only available on some foods
-  nutritionalValues?: NutritionalValues;
+export type MealFood = Food & {
+  amount: number;
 };
 
 export enum MealType {
@@ -124,15 +116,6 @@ export interface FoodLogSummary {
   water: number /** water in ml */;
 }
 
-// https://dev.fitbit.com/build/reference/web-api/nutrition/get-food-log/
-export interface GetFoodLogResponse {
-  foods: Array<FoodLogEntry>;
-  goals?: {
-    calories: number;
-  };
-  summary: FoodLogSummary;
-}
-
 // https://dev.fitbit.com/build/reference/web-api/nutrition/get-water-goal/
 export interface GetWaterGoalResponse {
   goal: {
@@ -157,10 +140,6 @@ export interface GetFoodGoalResponse {
 export interface SearchFoodsResponse {
   foods: Array<Food>;
 }
-
-export type MealFood = Food & {
-  amount: number;
-};
 
 export interface Meal {
   id: string;

@@ -1,30 +1,93 @@
 import { test as base } from "@playwright/test";
 
+import { REQUESTED_SCOPES } from "@/config/google-health-scopes";
+
 export const MOCK_DATE = "2021-02-01T10:00:00-0700";
 
-function encodeBase64URL(data: Record<string, string>) {
-  return Buffer.from(JSON.stringify(data)).toString("base64url");
+const GRANTED_SCOPE = REQUESTED_SCOPES.join(" ");
+
+function toBase64Url(value: object) {
+  return Buffer.from(JSON.stringify(value))
+    .toString("base64")
+    .replace(/=/g, "")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_");
 }
 
-/** Create a fake JWT token with no signature */
-function encodeFakeToken(data: Record<string, string>) {
-  return `${encodeBase64URL({ alg: "none", typ: "JWT" })}.${encodeBase64URL(
-    data
-  )}.`;
+function fakeIdToken() {
+  return `${toBase64Url({ alg: "none", typ: "JWT" })}.${toBase64Url({
+    sub: "e2e-user",
+    exp: 9999999999,
+  })}.sig`;
 }
 
-const TOKEN_STRING = JSON.stringify({
-  accessToken: encodeFakeToken({
-    scopes: "whr wnut wpro wsle wwei wact wloc wset",
-  }),
-  refreshToken: encodeFakeToken({}),
-  expiresAt: Date.now() + 10 * 365 * 24 * 60 * 60 * 1000,
-});
+function googleIdentityStub(idToken: string) {
+  return `
+    window.google = window.google || {};
+    window.google.accounts = window.google.accounts || {};
+    window.google.accounts.id = {
+      initialize(config) { this._callback = config.callback; },
+      prompt() {
+        const callback = this._callback;
+        queueMicrotask(function () {
+          callback && callback({ credential: ${JSON.stringify(idToken)} });
+        });
+      },
+      cancel() {},
+      disableAutoSelect() {},
+      renderButton() {},
+    };
+    window.google.accounts.oauth2 = {
+      initCodeClient() { return { requestCode() {} }; },
+      revoke(_token, callback) { callback && callback(); },
+    };
+  `;
+}
 
 export const test = base.extend({
   page: async ({ page }, use) => {
     await page.route("https://api.fitbit.com/**", async (route) => {
       await route.fulfill({ status: 404 });
+    });
+
+    await page.route(
+      "https://accounts.google.com/gsi/client**",
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/javascript",
+          body: googleIdentityStub(fakeIdToken()),
+        });
+      },
+    );
+
+    await page.route("**/auth/session", async (route) => {
+      if (route.request().method() === "GET") {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            sub: "e2e-user",
+            exp: 9999999999,
+          }),
+        });
+        return;
+      }
+
+      await route.continue();
+    });
+
+    await page.route("**/auth/health/access", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          accessToken: "FAKE_ACCESS_TOKEN",
+          expiresIn: 3600,
+          scope: GRANTED_SCOPE,
+          encryptedHealthToken: "e2e-encrypted-token",
+        }),
+      });
     });
 
     await page.clock.install({
@@ -40,10 +103,18 @@ export const test = base.extend({
         {
           origin: "http://127.0.0.1:3100",
           localStorage: [
-            { name: "auth:fitbit-token", value: TOKEN_STRING },
-            { name: "unit:distance", value: "en_US" },
-            { name: "unit:water", value: "en_US" },
-            { name: "unit:weight", value: "en_US" },
+            {
+              name: "auth:encrypted-health-token",
+              value: "e2e-encrypted-token",
+            },
+            { name: "units:distance", value: '"DISTANCE_UNIT_MILES"' },
+            { name: "units:swim", value: '"SWIM_UNIT_YARDS"' },
+            {
+              name: "units:temperature",
+              value: '"TEMPERATURE_UNIT_FAHRENHEIT"',
+            },
+            { name: "units:water", value: '"WATER_UNIT_FL_OZ"' },
+            { name: "units:weight", value: '"WEIGHT_UNIT_POUNDS"' },
           ],
         },
       ],

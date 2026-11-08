@@ -8,7 +8,7 @@ export function showSuccessToast(...args: Parameters<typeof toast.success>) {
 /** Run a provided function and show an error toast if the function throws an error. */
 export async function runWithErrorToaster(
   func: () => Promise<void>,
-  errorText: string
+  errorText: string,
 ) {
   try {
     return await func();
@@ -24,7 +24,7 @@ export async function runWithErrorToaster(
  */
 export function withErrorToaster<TArgs extends Array<any> = any[]>(
   func: (...args: TArgs) => Promise<void> | void,
-  errorText: string
+  errorText: string,
 ) {
   return (...args: TArgs) => {
     return runWithErrorToaster(async () => {
