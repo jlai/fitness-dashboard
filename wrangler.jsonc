@@ -2,7 +2,7 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   // Custom worker wraps OpenNext fetch and adds weekly key rotation.
   "main": "cloudflare-worker.ts",
-  "name": "fitness-dashboard",
+  "name": "<CF_PROJECT_NAME>",
   "compatibility_date": "2026-08-04",
   "assets": {
     "directory": ".open-next/assets",
