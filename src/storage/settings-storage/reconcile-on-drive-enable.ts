@@ -126,6 +126,8 @@ export function settingsStorageKeyLabel(key: SettingsStorageKey): string {
       return "meals";
     case "client-only-foods":
       return "custom foods";
+    case "client-only-favorite-foods":
+      return "favorite foods";
     case "settings":
       return "settings";
     default: {

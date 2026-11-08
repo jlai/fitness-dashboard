@@ -132,6 +132,21 @@ export const clientOnlyFoodsDataSchema = z.object({
   clientOnlyFoods: z.array(foodDataPointSchema),
 }) as z.ZodType<ClientOnlyFoodsData>;
 
+export const clientOnlyFavoriteFoodSchema = z
+  .object({ foodId: z.string().regex(/^[a-z0-9-]{4,63}$/) })
+  .passthrough();
+
+export type ClientOnlyFavoriteFood = z.infer<
+  typeof clientOnlyFavoriteFoodSchema
+>;
+export type ClientOnlyFavoriteFoodsData = {
+  clientOnlyFavoriteFoods: ClientOnlyFavoriteFood[];
+};
+
+export const clientOnlyFavoriteFoodsDataSchema = z.object({
+  clientOnlyFavoriteFoods: z.array(clientOnlyFavoriteFoodSchema),
+});
+
 export const nutritionMacroGoalsSchema = z.object({
   calories: z.number(),
   sodium: z.number(),
@@ -199,10 +214,15 @@ export const mealsStoredSchema = storedDataSchema(mealsDataSchema);
 export const clientOnlyFoodsStoredSchema = storedDataSchema(
   clientOnlyFoodsDataSchema,
 );
+export const clientOnlyFavoriteFoodsStoredSchema = storedDataSchema(
+  clientOnlyFavoriteFoodsDataSchema,
+);
 export const settingsStoredSchema = storedDataSchema(settingsDataSchema);
 
 export type StoredDashboards = StoredData<DashboardsData>;
 export type StoredClientOnlyGoals = StoredData<ClientOnlyGoalsData>;
 export type StoredMeals = StoredData<MealsData>;
 export type StoredClientOnlyFoods = StoredData<ClientOnlyFoodsData>;
+export type StoredClientOnlyFavoriteFoods =
+  StoredData<ClientOnlyFavoriteFoodsData>;
 export type StoredSettings = StoredData<SettingsData>;

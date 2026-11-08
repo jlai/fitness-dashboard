@@ -3,18 +3,26 @@ import { queryClientAtom } from "jotai-tanstack-query";
 import { atom, getDefaultStore } from "jotai";
 
 import { clientOnlyFoodsAtom } from "@/storage/client-only-foods";
+import { logError } from "@/utils/log-error";
 
 import { ONE_HOUR_IN_MILLIS } from "../cache-settings";
-import { listDataPoints, listDataPointsPage } from "../datapoints";
+import {
+  getDataPoint,
+  isValidDataPointId,
+  listDataPoints,
+  listDataPointsPage,
+} from "../datapoints";
 
 import {
   mapFoodDataPoint,
   mapFoodDataPoints,
   mapFoodMeasurementUnit,
+  type FoodDataPoint,
 } from "./helpers";
 import { Food, FoodUnit, SearchFoodsResponse } from "./types";
 
 type FoodList = Array<Food>;
+export type FavoriteFood = Food & { unavailable?: boolean };
 
 const ENABLE_FOOD_SEARCH = true;
 const ENABLE_LIST_AVAILABLE_FOODS = false;
@@ -89,10 +97,41 @@ export function buildClientOnlyFoodsQuery() {
   });
 }
 
-export function buildFavoriteFoodsQuery() {
+export function buildFavoriteFoodsQuery(
+  foodIds: string[],
+  clientOnlyFoods: FoodDataPoint[],
+  storageEpoch: number,
+) {
   return queryOptions({
-    queryKey: ["favorite-foods"],
-    queryFn: async (): Promise<FoodList> => [],
+    queryKey: ["favorite-foods", foodIds, clientOnlyFoods, storageEpoch],
+    queryFn: async (): Promise<FavoriteFood[]> => {
+      const localFoods = new Map(
+        clientOnlyFoods.map((food) => [mapFoodDataPoint(food).foodId, food]),
+      );
+      return Promise.all(
+        foodIds.map(async (foodId): Promise<FavoriteFood> => {
+          if (!isValidDataPointId(foodId)) {
+            throw new Error(`Invalid favorite food ID: ${foodId}`);
+          }
+          try {
+            const dataPoint =
+              localFoods.get(foodId) ?? (await getDataPoint("food", foodId));
+            const [food] = await mapFoodDataPoints([dataPoint]);
+            return food;
+          } catch (error) {
+            logError("Failed to load a favorite food", error);
+            return {
+              foodId,
+              name: `Unavailable food (${foodId})`,
+              accessLevel: "PUBLIC",
+              calories: 0,
+              units: [],
+              unavailable: true,
+            };
+          }
+        }),
+      );
+    },
     staleTime: ONE_HOUR_IN_MILLIS,
   });
 }

@@ -2,6 +2,7 @@ import type { UserTile } from "@/storage/tiles";
 
 import type {
   ClientOnlyFoodsData,
+  ClientOnlyFavoriteFoodsData,
   ClientOnlyGoalsData,
   DashboardsData,
   MealsData,
@@ -147,6 +148,10 @@ export function createDefaultMealsData(): MealsData {
 
 export function createDefaultClientOnlyFoodsData(): ClientOnlyFoodsData {
   return { clientOnlyFoods: [] };
+}
+
+export function createDefaultClientOnlyFavoriteFoodsData(): ClientOnlyFavoriteFoodsData {
+  return { clientOnlyFavoriteFoods: [] };
 }
 
 export function createDefaultSettingsData(): SettingsData {

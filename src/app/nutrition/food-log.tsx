@@ -38,7 +38,6 @@ import { toast } from "mui-sonner";
 
 import {
   buildDeleteFoodLogsMutation,
-  buildFavoriteFoodsQuery,
   buildFoodLogQuery,
   getDataPointIdFromName,
 } from "@/api/nutrition";
@@ -48,6 +47,8 @@ import {
 } from "@/storage/settings";
 import { FormActionRow } from "@/components/forms/form-row";
 import { showSuccessToast, withErrorToaster } from "@/components/toast";
+import { clientOnlyFavoriteFoodsAtom } from "@/storage/client-only-favorite-foods";
+import { isValidDataPointId } from "@/api/datapoints";
 
 import { groupByMealType } from "./summarize-day";
 import { selectedFoodLogsAtom } from "./atoms";
@@ -78,6 +79,8 @@ export default function FoodLog({ day }: { day: Dayjs }) {
   const setCreateMealDialogOpen = useSetAtom(createMealDialogOpenAtom);
   const foodLogTotalsPosition = useAtomValue(foodLogTotalsPositionAtom);
   const foodLogGoalsPosition = useAtomValue(foodLogGoalsPositionAtom);
+  const { clientOnlyFavoriteFoods } = useAtomValue(clientOnlyFavoriteFoodsAtom);
+  const setFavoriteFoods = useSetAtom(clientOnlyFavoriteFoodsAtom);
 
   const confirm = useConfirm();
   const queryClient = useQueryClient();
@@ -85,10 +88,9 @@ export default function FoodLog({ day }: { day: Dayjs }) {
     buildDeleteFoodLogsMutation(queryClient),
   );
 
-  const [{ data: foodLogsResponse }, { data: favoriteFoods }] =
-    useSuspenseQueries({
-      queries: [buildFoodLogQuery(day), buildFavoriteFoodsQuery()],
-    });
+  const [{ data: foodLogsResponse }] = useSuspenseQueries({
+    queries: [buildFoodLogQuery(day)],
+  });
   const groupedMealTypes = useMemo(
     () => groupByMealType(foodLogsResponse.dataPoints),
     [foodLogsResponse],
@@ -116,17 +118,50 @@ export default function FoodLog({ day }: { day: Dayjs }) {
     }
   }, "Error deleting food logs");
 
-  const handleAddToFavoritesClick = () => {
+  const handleAddToFavoritesClick = withErrorToaster(async () => {
     menuPopupState.close();
-    toast.error("This functionality is not available right now.");
-  };
+    const ids = [...selectedFoodLogs].map((foodLog) =>
+      getDataPointIdFromName(foodLog.nutritionLog.food),
+    );
+    if (ids.some((id) => !isValidDataPointId(id))) {
+      toast.error(
+        "Only logged foods with a food ID can be added to favorites.",
+      );
+      return;
+    }
+    await setFavoriteFoods((previous) => {
+      const existing = new Set(
+        previous.clientOnlyFavoriteFoods.map(({ foodId }) => foodId),
+      );
+      const additions = [...new Set(ids)]
+        .filter((id) => !existing.has(id))
+        .map((foodId) => ({ foodId }));
+      return {
+        clientOnlyFavoriteFoods: [
+          ...previous.clientOnlyFavoriteFoods,
+          ...additions,
+        ],
+      };
+    });
+  }, "Error adding favorite foods");
 
-  const handleRemoveFromFavoritesClick = () => {
+  const handleRemoveFromFavoritesClick = withErrorToaster(async () => {
     menuPopupState.close();
-    toast.error("This functionality is not available right now.");
-  };
+    const ids = new Set(
+      [...selectedFoodLogs].map((foodLog) =>
+        getDataPointIdFromName(foodLog.nutritionLog.food),
+      ),
+    );
+    await setFavoriteFoods((previous) => ({
+      clientOnlyFavoriteFoods: previous.clientOnlyFavoriteFoods.filter(
+        ({ foodId }) => !ids.has(foodId),
+      ),
+    }));
+  }, "Error removing favorite foods");
 
-  const favoriteFoodIds = new Set(favoriteFoods.map(({ foodId }) => foodId));
+  const favoriteFoodIds = new Set(
+    clientOnlyFavoriteFoods.map(({ foodId }) => foodId),
+  );
   const areSelectedAllFavorites = selectedFoodLogs.every((foodLog) =>
     favoriteFoodIds.has(getDataPointIdFromName(foodLog.nutritionLog.food)),
   );

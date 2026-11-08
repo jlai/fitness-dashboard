@@ -3,8 +3,10 @@ import {
   createDefaultClientOnlyGoalsData,
   createDefaultMealsData,
   createDefaultClientOnlyFoodsData,
+  createDefaultClientOnlyFavoriteFoodsData,
   createDefaultSettingsData,
   clientOnlyFoodsStoredSchema,
+  clientOnlyFavoriteFoodsStoredSchema,
   dashboardsStoredSchema,
   clientOnlyGoalsStoredSchema,
   mealsStoredSchema,
@@ -91,6 +93,13 @@ describe("per-key stored schemas", () => {
       }).success,
     ).toBe(true);
     expect(
+      clientOnlyFavoriteFoodsStoredSchema.safeParse({
+        data: createDefaultClientOnlyFavoriteFoodsData(),
+        version: 1,
+        updateTime,
+      }).success,
+    ).toBe(true);
+    expect(
       settingsStoredSchema.safeParse({
         data: createDefaultSettingsData(),
         version: 1,
@@ -121,6 +130,23 @@ describe("per-key stored schemas", () => {
         data: { clientOnlyFoods: [{ food: { displayName: "Oats" } }] },
         version: 1,
         updateTime: "2026-01-01T00:00:00.000Z",
+      }).success,
+    ).toBe(false);
+  });
+
+  it("preserves extra favorite entry properties and rejects invalid IDs", () => {
+    const envelope = {
+      data: { clientOnlyFavoriteFoods: [{ foodId: "food-123", note: "test" }] },
+      version: 1,
+      updateTime: "2026-01-01T00:00:00.000Z",
+    };
+    expect(clientOnlyFavoriteFoodsStoredSchema.parse(envelope)).toEqual(
+      envelope,
+    );
+    expect(
+      clientOnlyFavoriteFoodsStoredSchema.safeParse({
+        ...envelope,
+        data: { clientOnlyFavoriteFoods: [{ foodId: "../bad" }] },
       }).success,
     ).toBe(false);
   });

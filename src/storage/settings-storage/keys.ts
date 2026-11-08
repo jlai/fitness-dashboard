@@ -4,6 +4,7 @@ export const SETTINGS_STORAGE_KEYS = {
   clientOnlyGoals: "client-only-goals",
   meals: "meals",
   clientOnlyFoods: "client-only-foods",
+  clientOnlyFavoriteFoods: "client-only-favorite-foods",
   settings: "settings",
 } as const;
 

@@ -2,10 +2,9 @@ import { test as base, Page } from "@playwright/test";
 
 import type { DataPoint } from "@generated/orval/fetch/google-health-api/models";
 
-import { Food } from "@/api/nutrition";
-import { SCRAMBLED_EGGS } from "@/e2e/data/nutrition/food-log-list";
-
 const FOOD_LIST_URL = /\/v4\/users\/[^/]+\/dataTypes\/food\/dataPoints(?:\?|$)/;
+const FOOD_GET_URL =
+  /\/v4\/users\/[^/]+\/dataTypes\/food\/dataPoints\/[^/?]+(?:\?|$)/;
 const FOOD_MEASUREMENT_UNIT_LIST_URL =
   /\/v4\/users\/[^/]+\/dataTypes\/food-measurement-unit\/dataPoints(?:\?|$)/;
 const FOOD_MEASUREMENT_UNIT_GET_URL =
@@ -18,8 +17,6 @@ const NUTRITION_LOG_BATCH_DELETE_URL =
   /\/v4\/users\/[^/]+\/dataTypes\/nutrition-log\/dataPoints:batchDelete(?:\?|$)/;
 
 export class NutritionApi {
-  private favorites = new Map<string, Food>();
-
   constructor(private readonly page: Page) {}
 
   async setupDefaults() {
@@ -27,6 +24,20 @@ export class NutritionApi {
 
     await page.route(FOOD_LIST_URL, async (route) => {
       await route.fulfill({ json: { dataPoints: [] } });
+    });
+    await page.route(FOOD_GET_URL, async (route) => {
+      const id = route
+        .request()
+        .url()
+        .match(/dataPoints\/([^/?]+)/)?.[1];
+      await route.fulfill({
+        json: {
+          name: `users/me/dataTypes/food/dataPoints/${id}`,
+          food: {
+            displayName: id === "80850" ? "Scrambled Eggs" : "Orange Juice",
+          },
+        },
+      });
     });
     await page.route(FOOD_MEASUREMENT_UNIT_LIST_URL, async (route) => {
       await route.fulfill({ json: { dataPoints: [] } });
@@ -88,36 +99,6 @@ export class NutritionApi {
 
       await route.fallback();
     });
-
-    // Update or delete favorite
-    await page.route(
-      "**/1/user/-/foods/log/favorite/*.json**",
-      async (route) => {
-        const method = route.request().method();
-        const foodId = route
-          .request()
-          .url()
-          .match(/favorite\/([^/?]+)\.json/)?.[1];
-
-        if (method === "POST") {
-          if (foodId === SCRAMBLED_EGGS.foodId) {
-            this.favorites.set(foodId, SCRAMBLED_EGGS);
-          } else {
-            throw new Error("unknown food id");
-          }
-
-          await route.fulfill({ status: 200 });
-        } else if (method === "DELETE") {
-          if (foodId) {
-            this.favorites.delete(foodId);
-          }
-
-          await route.fulfill({ status: 200 });
-        } else {
-          await route.fallback();
-        }
-      },
-    );
   }
 
   async setFoodLogsResponse(dataPoints: ReadonlyArray<DataPoint>, date = "*") {
@@ -146,22 +127,6 @@ export class NutritionApi {
         json: { dataPoints },
       });
     });
-  }
-
-  waitForAddToFavorites(foodId: string) {
-    return this.page.waitForRequest(
-      (request) =>
-        request.method() === "POST" &&
-        request.url().endsWith(`/1/user/-/foods/log/favorite/${foodId}.json`),
-    );
-  }
-
-  waitForRemoveFromFavorites(foodId: string) {
-    return this.page.waitForRequest(
-      (request) =>
-        request.method() === "DELETE" &&
-        request.url().endsWith(`/1/user/-/foods/log/favorite/${foodId}.json`),
-    );
   }
 }
 

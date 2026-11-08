@@ -17,16 +17,21 @@ import {
   Person as CustomIcon,
 } from "@mui/icons-material";
 import { SyntheticEvent, useCallback, useMemo, useState } from "react";
-import { queryOptions, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useController, UseControllerProps } from "react-hook-form";
 import { uniqBy } from "es-toolkit";
 
-import { buildSearchFoodsQuery } from "@/api/nutrition/search";
+import {
+  buildFavoriteFoodsQuery,
+  buildSearchFoodsQuery,
+} from "@/api/nutrition/search";
 import { Food } from "@/api/nutrition";
 import { mapFoodDataPoint } from "@/api/nutrition/helpers";
 import { formatFoodName } from "@/utils/other-formats";
 import { clientOnlyFoodsAtom } from "@/storage/client-only-foods";
-import { getDefaultStore } from "jotai";
+import { clientOnlyFavoriteFoodsAtom } from "@/storage/client-only-favorite-foods";
+import { settingsStorageEpochAtom } from "@/storage/settings-storage";
+import { useAtomValue } from "jotai";
 
 type FoodOption = Food & {
   recent?: boolean;
@@ -47,17 +52,6 @@ function isSearchOption(
 }
 
 const filterOptions = createFilterOptions<FoodOption | SearchOption | null>();
-
-function buildSavedFoodsQuery() {
-  return queryOptions({
-    queryKey: ["saved-foods"],
-    queryFn: async (): Promise<FoodOption[]> => {
-      const store = getDefaultStore();
-      const { clientOnlyFoods } = await store.get(clientOnlyFoodsAtom);
-      return clientOnlyFoods.map((dataPoint) => mapFoodDataPoint(dataPoint));
-    },
-  });
-}
 
 function ShrinkingChip({
   icon,
@@ -156,7 +150,16 @@ export default function SearchFoods({
   const [inputValue, setInputValue] = useState("");
   const [searchString, setSearchString] = useState<string | null>(null);
 
-  const { data: savedFoods } = useQuery(buildSavedFoodsQuery());
+  const { clientOnlyFavoriteFoods } = useAtomValue(clientOnlyFavoriteFoodsAtom);
+  const { clientOnlyFoods } = useAtomValue(clientOnlyFoodsAtom);
+  const storageEpoch = useAtomValue(settingsStorageEpochAtom);
+  const { data: favoriteFoods, isError: favoriteFoodsError } = useQuery(
+    buildFavoriteFoodsQuery(
+      clientOnlyFavoriteFoods.map(({ foodId }) => foodId),
+      clientOnlyFoods,
+      storageEpoch,
+    ),
+  );
 
   const {
     data: searchResults,
@@ -206,15 +209,25 @@ export default function SearchFoods({
     [setSearchString, inputValue],
   );
 
-  const allOptions = useMemo(
-    () => [...(savedFoods ?? []), ...(searchResults?.foods ?? [])],
-    [savedFoods, searchResults],
-  );
+  const allOptions = useMemo(() => {
+    const favoriteIds = new Set(
+      clientOnlyFavoriteFoods.map(({ foodId }) => foodId),
+    );
+    return [
+      ...(favoriteFoods ?? []).filter((food) => !food.unavailable),
+      ...clientOnlyFoods.map((food) => mapFoodDataPoint(food)),
+      ...(searchResults?.foods ?? []),
+    ].map((food) => ({ ...food, favorite: favoriteIds.has(food.foodId) }));
+  }, [favoriteFoods, clientOnlyFoods, searchResults, clientOnlyFavoriteFoods]);
 
   return (
     <div className={className}>
+      {(favoriteFoodsError ||
+        favoriteFoods?.some((food) => food.unavailable)) && (
+        <Alert severity="error">Could not load favorite foods.</Alert>
+      )}
       <Autocomplete<FoodOption | SearchOption | null>
-        loading={!savedFoods}
+        loading={searchPending}
         value={value}
         onKeyDown={handleEnter}
         inputValue={inputValue}

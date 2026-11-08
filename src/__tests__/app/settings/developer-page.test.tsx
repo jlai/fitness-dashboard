@@ -34,6 +34,7 @@ jest.mock("@/storage/settings-storage", () => {
       clientOnlyGoals: "client-only-goals",
       meals: "meals",
       clientOnlyFoods: "client-only-foods",
+      clientOnlyFavoriteFoods: "client-only-favorite-foods",
       settings: "settings",
     },
     settingsStorageAtom: atom({
@@ -105,6 +106,9 @@ describe("DeveloperSettingsPage", () => {
     expect(screen.getByRole("tab", { name: "client-only-goals" })).toBeTruthy();
     expect(screen.getByRole("tab", { name: "meals" })).toBeTruthy();
     expect(screen.getByRole("tab", { name: "client-only-foods" })).toBeTruthy();
+    expect(
+      screen.getByRole("tab", { name: "client-only-favorite-foods" }),
+    ).toBeTruthy();
     expect(screen.getByRole("tab", { name: "settings" })).toBeTruthy();
 
     fireEvent.click(screen.getByRole("tab", { name: "settings" }));

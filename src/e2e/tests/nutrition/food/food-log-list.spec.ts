@@ -153,15 +153,31 @@ test("can favorite logged foods", async ({
 
   await expect(eggsCheckbox).toBeChecked();
 
-  const addToFavoritesPromise = nutritionApi.waitForAddToFavorites("80850");
-
   // Open more actions menu and click add to favorites
   await foodPage.openMoreActionsMenu();
   await expect(foodPage.addToFavoritesAction).toBeVisible();
 
-  // Favorite list APIs are stubbed, so the UI stays on "add".
   await foodPage.addToFavoritesAction.click();
-  await addToFavoritesPromise;
+  await foodPage.openMoreActionsMenu();
+  await expect(foodPage.removeFromFavoritesAction).toBeVisible();
+  await page.keyboard.press("Escape");
+
+  await page.getByRole("link", { name: "Favorites", exact: true }).click();
+  await expect(page.getByText("Scrambled Eggs")).toBeVisible();
+  await expect(
+    page.getByText(/not synced with the Google Health app/),
+  ).toBeVisible();
+  await page.goBack();
+
+  await expect(eggsCheckbox).toBeVisible();
+  if (!(await eggsCheckbox.isChecked())) {
+    await eggsCheckbox.click();
+  }
+  await foodPage.openMoreActionsMenu();
+  await expect(foodPage.removeFromFavoritesAction).toBeVisible();
+  await foodPage.removeFromFavoritesAction.click();
+  await foodPage.openMoreActionsMenu();
+  await expect(foodPage.addToFavoritesAction).toBeVisible();
 });
 
 test("can copy logged foods to another day", async ({

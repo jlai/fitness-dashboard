@@ -79,6 +79,23 @@ describe("reconcileMemoryAndDriveOnEnable", () => {
     });
   });
 
+  it("includes favorite foods in settings reconciliation", async () => {
+    await getMemorySettingsStorage().set(
+      SETTINGS_STORAGE_KEYS.clientOnlyFavoriteFoods,
+      { clientOnlyFavoriteFoods: [{ foodId: "food-123" }] },
+    );
+    const result = await reconcileMemoryAndDriveOnEnable({
+      resolveConflicts: async () => "memory",
+    });
+    expect(result.memoryOnly).toEqual([
+      SETTINGS_STORAGE_KEYS.clientOnlyFavoriteFoods,
+    ]);
+    expect(createAppDataFile).toHaveBeenCalledWith(
+      "client-only-favorite-foods.json",
+      expect.stringContaining('"foodId":"food-123"'),
+    );
+  });
+
   it("asks once for conflicts and copies the chosen side for all keys", async () => {
     const memory = getMemorySettingsStorage();
     await memory.set(SETTINGS_STORAGE_KEYS.settings, {
