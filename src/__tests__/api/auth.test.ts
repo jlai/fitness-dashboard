@@ -7,12 +7,14 @@ import {
   clearEncryptedDriveAuth,
   applyHealthTokenResponse,
   createSession,
+  DEFAULT_STAY_LOGGED_IN_MINUTES,
   forceTokenRefresh,
   getAccessTokenScopes,
   getDriveAccessTokenScopes,
   getFreshAccessToken,
   getFreshDriveAccessToken,
   getSessionSubject,
+  getStayLoggedInMinutes,
   hasEncryptedDriveToken,
   isLoggedIn,
   logout,
@@ -20,6 +22,8 @@ import {
   persistAuthTokens,
   restoreAccessToken,
   saveEncryptedAuthTokens,
+  setStayLoggedInMinutes,
+  STAY_LOGGED_IN_MINUTES_STORAGE_KEY,
   revokeAuthorization,
   syncAuthTokenEffect,
   useAccessTokenScopes,
@@ -132,20 +136,19 @@ describe("createSession", () => {
       SESSION_PATH,
       expect.objectContaining({
         method: "POST",
-        body: JSON.stringify({
-          idToken: "google-id-token",
-          staySignedIn: false,
-        }),
+        body: JSON.stringify({ idToken: "google-id-token" }),
       }),
     );
     expect(getSessionSubject()).toBe("user-1");
     expect(JSON.stringify(localStorage)).not.toContain("google-id-token");
   });
 
-  it("requests a persistent session when the user has chosen to stay signed in", async () => {
-    fetchMock.mockResolvedValue(sessionClaimsResponse());
+  it("patches the initial session to the selected duration", async () => {
+    fetchMock
+      .mockResolvedValueOnce(sessionClaimsResponse())
+      .mockResolvedValueOnce(sessionClaimsResponse());
 
-    await createSession("google-id-token", true);
+    await createSession("google-id-token", 4320);
 
     expect(fetchMock).toHaveBeenCalledWith(
       SESSION_PATH,
@@ -153,9 +156,82 @@ describe("createSession", () => {
         method: "POST",
         body: JSON.stringify({
           idToken: "google-id-token",
-          staySignedIn: true,
+          sessionLifetimeMinutes: 4320,
         }),
       }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      SESSION_PATH,
+      expect.objectContaining({
+        method: "PATCH",
+        body: JSON.stringify({ sessionLifetimeMinutes: 4320 }),
+      }),
+    );
+  });
+
+  it("surfaces a failed session extension", async () => {
+    fetchMock
+      .mockResolvedValueOnce(sessionClaimsResponse())
+      .mockResolvedValueOnce(new Response(null, { status: 500 }));
+
+    await expect(createSession("google-id-token", 4320)).rejects.toThrow(
+      "session update request failed",
+    );
+  });
+
+  it("extends the session before restoring a persisted health token", async () => {
+    localStorage.setItem(ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY, "encrypted-jwt");
+    fetchMock
+      .mockResolvedValueOnce(sessionClaimsResponse())
+      .mockResolvedValueOnce(sessionClaimsResponse())
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            accessToken: "restored-access-token",
+            expiresIn: 3600,
+            scope: "openid",
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
+      );
+
+    await createSession("google-id-token", 1440);
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      SESSION_PATH,
+      expect.objectContaining({
+        method: "PATCH",
+        body: JSON.stringify({ sessionLifetimeMinutes: 1440 }),
+      }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      HEALTH_ACCESS_PATH,
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({ encryptedHealthToken: "encrypted-jwt" }),
+      }),
+    );
+  });
+
+  it("defaults the stored duration and resets invalid localStorage values", () => {
+    expect(getStayLoggedInMinutes()).toBe(DEFAULT_STAY_LOGGED_IN_MINUTES);
+    expect(localStorage.getItem(STAY_LOGGED_IN_MINUTES_STORAGE_KEY)).toBe(
+      String(DEFAULT_STAY_LOGGED_IN_MINUTES),
+    );
+
+    setStayLoggedInMinutes(1440);
+    expect(getStayLoggedInMinutes()).toBe(1440);
+
+    localStorage.setItem(STAY_LOGGED_IN_MINUTES_STORAGE_KEY, "120");
+    expect(getStayLoggedInMinutes()).toBe(120);
+
+    localStorage.setItem(STAY_LOGGED_IN_MINUTES_STORAGE_KEY, "invalid");
+    expect(getStayLoggedInMinutes()).toBe(DEFAULT_STAY_LOGGED_IN_MINUTES);
+    expect(localStorage.getItem(STAY_LOGGED_IN_MINUTES_STORAGE_KEY)).toBe(
+      String(DEFAULT_STAY_LOGGED_IN_MINUTES),
     );
   });
 
@@ -231,7 +307,9 @@ describe("persistAuthTokens", () => {
           { status: 200, headers: { "Content-Type": "application/json" } },
         ),
       )
-      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+      .mockResolvedValueOnce(
+        sessionClaimsResponse({ exp: exp + 24 * 60 * 60 }),
+      );
 
     await createSession("google-id-token");
 
@@ -243,7 +321,7 @@ describe("persistAuthTokens", () => {
     expect(localStorage.getItem(ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY)).toBeNull();
     expect(isLoggedIn()).toBe(true);
 
-    await persistAuthTokens();
+    await persistAuthTokens(1440);
 
     expect(localStorage.getItem(ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY)).toBe(
       "encrypted-jwt",
@@ -258,7 +336,7 @@ describe("persistAuthTokens", () => {
       (call) => call[1]?.method === "PATCH",
     );
     expect(JSON.parse(patchCall?.[1]?.body as string)).toEqual({
-      maxLifetimeHours: expect.any(Number),
+      sessionLifetimeMinutes: 1440,
     });
   });
 });
@@ -334,6 +412,7 @@ describe("logout", () => {
       return new Response(null, { status: 204 });
     });
 
+    localStorage.setItem(STAY_LOGGED_IN_MINUTES_STORAGE_KEY, "1440");
     await logout();
 
     expect(fetchMock).toHaveBeenCalledWith(
@@ -348,6 +427,7 @@ describe("logout", () => {
     );
     expect(localStorage.getItem(ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY)).toBeNull();
     expect(localStorage.getItem(ENCRYPTED_DRIVE_TOKEN_STORAGE_KEY)).toBeNull();
+    expect(localStorage.getItem(STAY_LOGGED_IN_MINUTES_STORAGE_KEY)).toBeNull();
   });
 
   it("omits health/drive tokens from logout when those tokens are absent", async () => {

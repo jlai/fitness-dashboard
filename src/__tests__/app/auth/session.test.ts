@@ -120,13 +120,31 @@ describe("POST /auth/session", () => {
     expect(payload.exp).toBe(claims.exp);
   });
 
-  it("creates a persistent session cookie when staySignedIn is requested", async () => {
+  it("starts with a two-hour token and persistent cookie even when a longer duration is requested", async () => {
     const response = await POST(
-      makeRequest({ body: { idToken: "google-id-token", staySignedIn: true } }),
+      makeRequest({
+        body: { idToken: "google-id-token", sessionLifetimeMinutes: 1440 },
+      }),
     );
 
     expect(response.status).toBe(200);
     expect(response.headers.get("Set-Cookie")).toContain("Max-Age=7200");
+    const claims = await verifySessionToken(readSessionCookieValue(response));
+    expect(claims.exp).toBe(claims.iat + 2 * 60 * 60);
+  });
+
+  it("caps the initial token at two hours even with a larger configured lifetime", async () => {
+    process.env.SESSION_TOKEN_EXPIRATION_MINUTES = "4320";
+    const response = await POST(
+      makeRequest({
+        body: { idToken: "google-id-token", sessionLifetimeMinutes: 10000 },
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Set-Cookie")).toContain("Max-Age=7200");
+    const claims = await verifySessionToken(readSessionCookieValue(response));
+    expect(claims.exp).toBe(claims.iat + 2 * 60 * 60);
   });
 
   it("rejects requests without an idToken", async () => {
@@ -757,7 +775,7 @@ describe("PATCH /auth/session", () => {
     jest.useRealTimers();
   });
 
-  it("extends the cookie Max-Age up to the JWT exp", async () => {
+  it("updates the JWT and cookie to the selected duration", async () => {
     jest.useFakeTimers();
     jest.setSystemTime(new Date("2026-01-01T00:00:00Z"));
 
@@ -770,23 +788,26 @@ describe("PATCH /auth/session", () => {
       makeRequest({
         method: "PATCH",
         sessionToken,
-        body: { maxLifetimeHours: 24 },
+        body: { sessionLifetimeMinutes: 4320 },
       }),
     );
 
-    expect(response.status).toBe(204);
+    expect(response.status).toBe(200);
     const setCookie = response.headers.get("Set-Cookie")!;
     expect(setCookie).toContain(`${SESSION_COOKIE_NAME}=`);
-    expect(setCookie).toContain("Max-Age=7200");
+    expect(setCookie).toContain("Max-Age=259200");
     expect(setCookie).toContain("HttpOnly");
     expect(setCookie).toContain("Secure");
     expect(setCookie).toContain("SameSite=Strict");
-    expect(readSessionCookieValue(response)).toBe(sessionToken);
+    const claims = await verifySessionToken(readSessionCookieValue(response));
+    expect(claims.sub).toBe("user-1");
+    expect(claims.exp).toBe(claims.iat + 72 * 60 * 60);
+    expect(claims.jti).toBe((await verifySessionToken(sessionToken)).jti);
 
     jest.useRealTimers();
   });
 
-  it("uses the requested hours when shorter than remaining JWT lifetime", async () => {
+  it("sets a shorter JWT lifetime when requested", async () => {
     jest.useFakeTimers();
     jest.setSystemTime(new Date("2026-01-01T00:00:00Z"));
 
@@ -799,17 +820,107 @@ describe("PATCH /auth/session", () => {
       makeRequest({
         method: "PATCH",
         sessionToken,
-        body: { maxLifetimeHours: 1 },
+        body: { sessionLifetimeMinutes: 60 },
       }),
     );
 
-    expect(response.status).toBe(204);
+    expect(response.status).toBe(200);
     expect(response.headers.get("Set-Cookie")).toContain("Max-Age=3600");
+    const claims = await verifySessionToken(readSessionCookieValue(response));
+    expect(claims.exp).toBe(claims.iat + 60 * 60);
 
     jest.useRealTimers();
   });
 
-  it("rejects missing or invalid maxLifetimeHours", async () => {
+  it("caps a patched session duration at 72 hours", async () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date("2026-01-01T00:00:00Z"));
+
+    const sessionToken = await signSessionToken({ sub: "user-1" });
+    const response = await PATCH(
+      makeRequest({
+        method: "PATCH",
+        sessionToken,
+        body: { sessionLifetimeMinutes: 10000 },
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Set-Cookie")).toContain("Max-Age=259200");
+    const claims = await verifySessionToken(readSessionCookieValue(response));
+    expect(claims.exp).toBe(claims.iat + 72 * 60 * 60);
+
+    jest.useRealTimers();
+  });
+
+  it("anchors repeated renewals and cookie expiry to the original issue time", async () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date("2026-01-01T00:00:00Z"));
+    const issuedAt = Math.floor(Date.now() / 1000);
+    const originalToken = await signSessionToken({ sub: "user-1" });
+
+    jest.advanceTimersByTime(60 * 60 * 1000);
+    const first = await PATCH(
+      makeRequest({
+        method: "PATCH",
+        sessionToken: originalToken,
+        body: { sessionLifetimeMinutes: 10000 },
+      }),
+    );
+    expect(first.status).toBe(200);
+    expect(first.headers.get("Set-Cookie")).toContain("Max-Age=255600");
+    const extendedToken = readSessionCookieValue(first);
+
+    jest.advanceTimersByTime(60 * 60 * 1000);
+    const second = await PATCH(
+      makeRequest({
+        method: "PATCH",
+        sessionToken: extendedToken,
+        body: { sessionLifetimeMinutes: 10000 },
+      }),
+    );
+    expect(second.status).toBe(200);
+    expect(second.headers.get("Set-Cookie")).toContain("Max-Age=252000");
+    const claims = await verifySessionToken(readSessionCookieValue(second));
+    expect(claims.iat).toBe(issuedAt);
+    expect(claims.exp).toBe(issuedAt + 72 * 60 * 60);
+  });
+
+  it("rejects renewal after the current token has expired", async () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date("2026-01-01T00:00:00Z"));
+    const sessionToken = await signSessionToken({ sub: "user-1" });
+    jest.advanceTimersByTime(2 * 60 * 60 * 1000);
+
+    const response = await PATCH(
+      makeRequest({
+        method: "PATCH",
+        sessionToken,
+        body: { sessionLifetimeMinutes: 4320 },
+      }),
+    );
+    expect(response.status).toBe(401);
+    expect(response.headers.get("Set-Cookie")).toBeNull();
+  });
+
+  it("rejects a requested duration already elapsed since issue", async () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date("2026-01-01T00:00:00Z"));
+    const sessionToken = await signSessionToken({ sub: "user-1" });
+    jest.advanceTimersByTime(60 * 60 * 1000);
+
+    const response = await PATCH(
+      makeRequest({
+        method: "PATCH",
+        sessionToken,
+        body: { sessionLifetimeMinutes: 30 },
+      }),
+    );
+    expect(response.status).toBe(400);
+    expect(response.headers.get("Set-Cookie")).toBeNull();
+  });
+
+  it("rejects missing or invalid sessionLifetimeMinutes", async () => {
     const sessionToken = await signSessionToken({ sub: "user-1" });
 
     const missing = await PATCH(
@@ -821,19 +932,19 @@ describe("PATCH /auth/session", () => {
       makeRequest({
         method: "PATCH",
         sessionToken,
-        body: { maxLifetimeHours: 0 },
+        body: { sessionLifetimeMinutes: 0 },
       }),
     );
     expect(zero.status).toBe(400);
     await expect(zero.json()).resolves.toEqual({
       error: "invalid_request",
-      errorDescription: "invalid maxLifetimeHours",
+      errorDescription: "invalid sessionLifetimeMinutes",
     });
   });
 
   it("rejects requests without a session cookie", async () => {
     const response = await PATCH(
-      makeRequest({ method: "PATCH", body: { maxLifetimeHours: 1 } }),
+      makeRequest({ method: "PATCH", body: { sessionLifetimeMinutes: 60 } }),
     );
 
     expect(response.status).toBe(401);
@@ -845,7 +956,7 @@ describe("PATCH /auth/session", () => {
       makeRequest({
         method: "PATCH",
         sessionToken,
-        body: { maxLifetimeHours: 1 },
+        body: { sessionLifetimeMinutes: 60 },
         headers: { "Sec-Fetch-Site": "cross-site" },
       }),
     );

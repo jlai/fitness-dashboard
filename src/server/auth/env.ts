@@ -58,7 +58,7 @@ export function getConfiguredRedirectUri() {
 }
 
 const DEFAULT_SESSION_TOKEN_EXPIRATION_MINUTES = 120;
-const MAX_SESSION_TOKEN_EXPIRATION_MINUTES = 72 * 60;
+export const MAX_SESSION_TOKEN_EXPIRATION_MINUTES = 72 * 60;
 
 /** Default and maximum encrypted refresh-token lifetime (15 days). */
 const DEFAULT_ENCRYPTED_REFRESH_TOKEN_EXPIRATION_MINUTES =

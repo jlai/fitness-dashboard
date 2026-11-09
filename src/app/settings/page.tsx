@@ -1,7 +1,13 @@
 "use client";
 
-import React from "react";
-import { Button, Chip } from "@mui/material";
+import {
+  Button,
+  Chip,
+  MenuItem,
+  Select,
+  SelectChangeEvent,
+} from "@mui/material";
+import { useEffect, useState } from "react";
 import { useConfirm } from "material-ui-confirm";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
@@ -9,6 +15,11 @@ import Link from "next/link";
 
 import {
   revokeAuthorization,
+  DEFAULT_STAY_LOGGED_IN_MINUTES,
+  getStayLoggedInMinutes,
+  setStayLoggedInMinutes,
+  STAY_LOGGED_IN_DURATION_OPTIONS,
+  type StayLoggedInMinutes,
   useAccessTokenScopes,
   useDriveAuthEnabled,
   useLoggedIn,
@@ -24,6 +35,48 @@ function LoginSettings() {
   const loggedIn = useLoggedIn();
 
   return loggedIn ? <LoggedInAccountSettings /> : <LoggedOutAccountSettings />;
+}
+
+function StayLoggedInSettings() {
+  const [sessionLifetimeMinutes, setSessionLifetimeMinutes] =
+    useState<StayLoggedInMinutes>(DEFAULT_STAY_LOGGED_IN_MINUTES);
+
+  useEffect(() => {
+    setSessionLifetimeMinutes(getStayLoggedInMinutes());
+  }, []);
+
+  const updateSessionLifetime = (event: SelectChangeEvent<number>) => {
+    const option = STAY_LOGGED_IN_DURATION_OPTIONS.find(
+      (item) => item.minutes === Number(event.target.value),
+    );
+
+    if (option) {
+      setSessionLifetimeMinutes(option.minutes);
+      setStayLoggedInMinutes(option.minutes);
+    }
+  };
+
+  return (
+    <SettingsRow
+      title="Remember me duration"
+      action={
+        <Select
+          SelectDisplayProps={{ "aria-label": "Remember me duration" }}
+          value={sessionLifetimeMinutes}
+          onChange={updateSessionLifetime}
+        >
+          {STAY_LOGGED_IN_DURATION_OPTIONS.map((option) => (
+            <MenuItem key={option.minutes} value={option.minutes}>
+              {option.label}
+            </MenuItem>
+          ))}
+        </Select>
+      }
+    >
+      This setting will take effect the next time you sign in; it will not
+      change your current session.
+    </SettingsRow>
+  );
 }
 
 function LoggedOutAccountSettings() {
@@ -144,6 +197,7 @@ export default function SettingsPage() {
   return (
     <SettingsTable>
       <LoginSettings />
+      <StayLoggedInSettings />
     </SettingsTable>
   );
 }

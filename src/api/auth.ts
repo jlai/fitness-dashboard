@@ -14,7 +14,17 @@ const EXPIRING_SOON_MILLIS = 2 * 60 * 1000;
 
 const ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY = "auth:encrypted-health-token";
 const ENCRYPTED_DRIVE_TOKEN_STORAGE_KEY = "auth:encrypted-drive-token";
+export const STAY_LOGGED_IN_MINUTES_STORAGE_KEY = "auth:stay-logged-in-minutes";
 const AUTH_TOKEN_UPDATE_EVENT_TYPE = "authtokenupdated";
+
+export const STAY_LOGGED_IN_DURATION_OPTIONS = [
+  { minutes: 8 * 60, label: "8 hours" },
+  { minutes: 24 * 60, label: "1 day" },
+  { minutes: 3 * 24 * 60, label: "3 days" },
+] as const;
+export const DEFAULT_STAY_LOGGED_IN_MINUTES = 3 * 24 * 60;
+export type StayLoggedInMinutes =
+  (typeof STAY_LOGGED_IN_DURATION_OPTIONS)[number]["minutes"];
 
 const SESSION_PATH = withBasePath("/auth/session");
 const SESSION_LOGOUT_PATH = withBasePath("/auth/session/logout");
@@ -98,12 +108,48 @@ function isSessionUnexpired(claims: SessionClaims | null = sessionClaims) {
   return !!claims?.sub && claims.exp * 1000 > Date.now();
 }
 
-function remainingSessionLifetimeHours() {
-  if (!sessionClaims || !isSessionUnexpired(sessionClaims)) {
-    return undefined;
+function isStayLoggedInMinutes(value: number): value is StayLoggedInMinutes {
+  return STAY_LOGGED_IN_DURATION_OPTIONS.some(
+    (option) => option.minutes === value,
+  );
+}
+
+export function getStayLoggedInMinutes(): StayLoggedInMinutes {
+  if (typeof localStorage === "undefined") {
+    return DEFAULT_STAY_LOGGED_IN_MINUTES;
   }
 
-  return (sessionClaims.exp - Math.floor(Date.now() / 1000)) / 3600;
+  const stored = localStorage.getItem(STAY_LOGGED_IN_MINUTES_STORAGE_KEY);
+
+  if (stored === null) {
+    localStorage.setItem(
+      STAY_LOGGED_IN_MINUTES_STORAGE_KEY,
+      String(DEFAULT_STAY_LOGGED_IN_MINUTES),
+    );
+    return DEFAULT_STAY_LOGGED_IN_MINUTES;
+  }
+
+  const option = STAY_LOGGED_IN_DURATION_OPTIONS.find(
+    (item) => String(item.minutes) === stored,
+  );
+
+  if (option) {
+    return option.minutes;
+  }
+
+  localStorage.setItem(
+    STAY_LOGGED_IN_MINUTES_STORAGE_KEY,
+    String(DEFAULT_STAY_LOGGED_IN_MINUTES),
+  );
+  return DEFAULT_STAY_LOGGED_IN_MINUTES;
+}
+
+export function setStayLoggedInMinutes(minutes: number) {
+  if (!isStayLoggedInMinutes(minutes)) {
+    throw new RangeError("invalid stay-logged-in duration");
+  }
+
+  localStorage.setItem(STAY_LOGGED_IN_MINUTES_STORAGE_KEY, String(minutes));
 }
 
 export function getEncryptedHealthTokenFromStorage() {
@@ -268,11 +314,10 @@ export function saveEncryptedAuthTokens({
   }
 }
 
-/**
- * Persist encrypted health/drive tokens and extend the session cookie so the
- * user can resume on return visits.
- */
-export async function persistAuthTokens() {
+/** Persist encrypted tokens and apply the selected session lifetime. */
+export async function persistAuthTokens(sessionLifetimeMinutes: number) {
+  await updateSessionLifetime(sessionLifetimeMinutes);
+
   const encryptedHealthToken = getEncryptedHealthTokenFromStorage();
   const encryptedDriveToken = getEncryptedDriveTokenFromStorage();
 
@@ -290,28 +335,34 @@ export async function persistAuthTokens() {
     );
   }
 
-  const maxLifetimeHours = remainingSessionLifetimeHours();
+  notifyAuthChanged();
+}
 
-  if (maxLifetimeHours !== undefined && maxLifetimeHours > 0) {
-    try {
-      const response = await fetch(SESSION_PATH, {
-        method: "PATCH",
-        mode: "same-origin",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ maxLifetimeHours }),
-      });
+async function updateSessionLifetime(sessionLifetimeMinutes: number) {
+  requireActiveSession();
+  const response = await fetch(SESSION_PATH, {
+    method: "PATCH",
+    mode: "same-origin",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ sessionLifetimeMinutes }),
+  });
 
-      if (response.status === 401 || response.status === 403) {
-        forceSignOut();
-      }
-    } catch (error) {
-      logError("error extending session", error);
-    }
+  if (response.status === 401 || response.status === 403) {
+    forceSignOut();
   }
 
-  notifyAuthChanged();
+  if (!response.ok) {
+    throw new Error("session update request failed");
+  }
+
+  const payload: TokenEndpointResponse = await response.json();
+  if (!payload.sub || typeof payload.exp !== "number") {
+    throw new Error("invalid session update response");
+  }
+
+  saveSessionClaims({ sub: payload.sub, exp: payload.exp });
 }
 
 function cacheGrantedScope(scope?: string) {
@@ -441,14 +492,22 @@ export function applyDriveTokenResponse(
   saveEncryptedDriveToken(payload.encryptedDriveToken);
 }
 
-export async function createSession(idToken: string, staySignedIn = false) {
+export async function createSession(
+  idToken: string,
+  sessionLifetimeMinutes?: number,
+) {
   const response = await fetch(SESSION_PATH, {
     method: "POST",
     mode: "same-origin",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ idToken, staySignedIn }),
+    body: JSON.stringify({
+      idToken,
+      ...(sessionLifetimeMinutes === undefined
+        ? {}
+        : { sessionLifetimeMinutes }),
+    }),
   });
 
   const payload: TokenEndpointResponse = await response.json();
@@ -469,6 +528,10 @@ export async function createSession(idToken: string, staySignedIn = false) {
   setGrantedHealthScope(undefined);
   setGrantedDriveScope(undefined);
   saveSessionClaims({ sub: payload.sub, exp: payload.exp });
+
+  if (sessionLifetimeMinutes !== undefined) {
+    await updateSessionLifetime(sessionLifetimeMinutes);
+  }
 
   // Session JWTs can expire while the encrypted health refresh token remains.
   // After Sign In With Google recreates the session, restore an access token
@@ -533,7 +596,7 @@ export async function logout() {
       encryptedDriveToken,
     });
   } finally {
-    clearAllAuthTokens();
+    clearAllAuthTokens(true);
   }
 }
 
@@ -551,7 +614,7 @@ export async function revokeAuthorization() {
       unlink: true,
     });
   } finally {
-    clearAllAuthTokens();
+    clearAllAuthTokens(true);
   }
 }
 
@@ -621,7 +684,7 @@ export function isLoggedIn() {
   return isSessionUnexpired() && !!getEncryptedHealthTokenFromStorage();
 }
 
-function clearAllAuthTokens() {
+function clearAllAuthTokens(clearStayLoggedInPreference = false) {
   currentHealthAccessToken = null;
   currentDriveAccessToken = null;
   sessionClaims = null;
@@ -634,6 +697,9 @@ function clearAllAuthTokens() {
   if (typeof localStorage !== "undefined") {
     localStorage.removeItem(ENCRYPTED_HEALTH_TOKEN_STORAGE_KEY);
     localStorage.removeItem(ENCRYPTED_DRIVE_TOKEN_STORAGE_KEY);
+    if (clearStayLoggedInPreference) {
+      localStorage.removeItem(STAY_LOGGED_IN_MINUTES_STORAGE_KEY);
+    }
   }
 
   notifyAuthChanged();

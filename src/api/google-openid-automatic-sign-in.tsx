@@ -9,6 +9,7 @@ import { logError } from "@/utils/log-error";
 
 import {
   createSession,
+  getStayLoggedInMinutes,
   hasPersistedEncryptedHealthToken,
   useOpenIdSignedIn,
 } from "./auth";
@@ -27,7 +28,9 @@ export function GoogleOpenIdAutomaticSignIn() {
 
       void createSession(
         response.credential,
-        hasPersistedEncryptedHealthToken(),
+        hasPersistedEncryptedHealthToken()
+          ? getStayLoggedInMinutes()
+          : undefined,
       ).catch((error) => {
         logError("error creating session", error);
         toast.error("Unable to reach Google to sign in");

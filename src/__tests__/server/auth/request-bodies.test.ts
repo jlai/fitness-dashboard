@@ -9,27 +9,28 @@ import {
 } from "@/server/auth/request-bodies";
 
 describe("auth request body schemas", () => {
-  it("requires a positive finite maxLifetimeHours", () => {
+  it("requires a positive finite sessionLifetimeMinutes", () => {
     expect(
-      patchSessionBodySchema.safeParse({ maxLifetimeHours: 2 }).success,
+      patchSessionBodySchema.safeParse({ sessionLifetimeMinutes: 120 }).success,
     ).toBe(true);
     expect(
-      patchSessionBodySchema.safeParse({ maxLifetimeHours: 0.5 }).success,
+      patchSessionBodySchema.safeParse({ sessionLifetimeMinutes: 0.5 }).success,
     ).toBe(true);
     expect(patchSessionBodySchema.safeParse({}).success).toBe(false);
     expect(
-      patchSessionBodySchema.safeParse({ maxLifetimeHours: 0 }).success,
+      patchSessionBodySchema.safeParse({ sessionLifetimeMinutes: 0 }).success,
     ).toBe(false);
     expect(
-      patchSessionBodySchema.safeParse({ maxLifetimeHours: -1 }).success,
+      patchSessionBodySchema.safeParse({ sessionLifetimeMinutes: -1 }).success,
     ).toBe(false);
     expect(
-      patchSessionBodySchema.safeParse({ maxLifetimeHours: "2" }).success,
+      patchSessionBodySchema.safeParse({ sessionLifetimeMinutes: "120" })
+        .success,
     ).toBe(false);
     expect(
-      patchSessionBodySchema.safeParse({ maxLifetimeHours: Number.NaN }).error
-        ?.issues[0]?.message,
-    ).toBe("invalid maxLifetimeHours");
+      patchSessionBodySchema.safeParse({ sessionLifetimeMinutes: Number.NaN })
+        .error?.issues[0]?.message,
+    ).toBe("invalid sessionLifetimeMinutes");
   });
 
   it("requires a non-empty idToken", () => {
@@ -39,13 +40,13 @@ describe("auth request body schemas", () => {
     expect(
       createSessionBodySchema.safeParse({
         idToken: "tok",
-        staySignedIn: true,
+        sessionLifetimeMinutes: 4320,
       }).success,
     ).toBe(true);
     expect(
       createSessionBodySchema.safeParse({
         idToken: "tok",
-        staySignedIn: "true",
+        sessionLifetimeMinutes: "4320",
       }).success,
     ).toBe(false);
     expect(createSessionBodySchema.safeParse({}).success).toBe(false);

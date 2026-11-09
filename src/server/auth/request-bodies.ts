@@ -6,13 +6,16 @@ function nonEmptyString(error: string) {
 
 export const createSessionBodySchema = z.object({
   idToken: nonEmptyString("missing idToken"),
-  staySignedIn: z.boolean({ error: "invalid staySignedIn" }).optional(),
+  sessionLifetimeMinutes: z
+    .number({ error: "invalid sessionLifetimeMinutes" })
+    .positive({ error: "invalid sessionLifetimeMinutes" })
+    .optional(),
 });
 
 export const patchSessionBodySchema = z.object({
-  maxLifetimeHours: z
-    .number({ error: "invalid maxLifetimeHours" })
-    .positive({ error: "invalid maxLifetimeHours" }),
+  sessionLifetimeMinutes: z
+    .number({ error: "invalid sessionLifetimeMinutes" })
+    .positive({ error: "invalid sessionLifetimeMinutes" }),
 });
 
 export const sessionLogoutBodySchema = z.object({

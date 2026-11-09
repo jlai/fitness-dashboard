@@ -1,10 +1,15 @@
-import { getSessionTokenExpirationSeconds } from "@/server/auth/env";
-import { TokenValidationError } from "@/server/auth/errors";
+import {
+  getSessionTokenExpirationSeconds,
+  MAX_SESSION_TOKEN_EXPIRATION_MINUTES,
+} from "@/server/auth/env";
+import {
+  RequestValidationError,
+  TokenValidationError,
+} from "@/server/auth/errors";
 import { verifyGoogleIdToken } from "@/server/auth/google-id-token";
 import {
   getHTTPErrorResponse,
   jsonResponse,
-  noContentResponse,
   readJsonBody,
 } from "@/server/auth/http";
 import {
@@ -17,7 +22,6 @@ import {
 } from "@/server/auth/require-session";
 import {
   applySessionCookie,
-  readSessionCookie,
   sessionCookieMaxAgeSeconds,
 } from "@/server/auth/session-cookie";
 import { signSessionToken } from "@/server/auth/session-token";
@@ -43,7 +47,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     validateSecFetch(request);
-    const { idToken, staySignedIn } = await readJsonBody(
+    const { idToken, sessionLifetimeMinutes } = await readJsonBody(
       request,
       createSessionBodySchema,
     );
@@ -58,7 +62,10 @@ export async function POST(request: Request) {
     }
 
     const iat = Math.floor(Date.now() / 1000);
-    const sessionLifetimeSeconds = getSessionTokenExpirationSeconds();
+    const sessionLifetimeSeconds = Math.min(
+      getSessionTokenExpirationSeconds(),
+      2 * 60 * 60,
+    );
     const exp = iat + sessionLifetimeSeconds;
     const sessionToken = await signSessionToken({
       sub: claims.sub,
@@ -69,7 +76,7 @@ export async function POST(request: Request) {
     return applySessionCookie(
       jsonResponse({ sub: claims.sub, exp }),
       sessionToken,
-      staySignedIn
+      sessionLifetimeMinutes !== undefined
         ? sessionCookieMaxAgeSeconds(sessionLifetimeSeconds / 3600, exp, iat)
         : undefined,
     );
@@ -79,25 +86,41 @@ export async function POST(request: Request) {
 }
 
 /**
- * Extend the session cookie lifetime up to the remaining JWT exp time.
+ * Update the JWT and session cookie lifetime for the selected duration.
  */
 export async function PATCH(request: Request) {
   try {
     validateSecFetch(request);
     const session = await isValidSession(request);
-    const { maxLifetimeHours } = await readJsonBody(
+    const { sessionLifetimeMinutes } = await readJsonBody(
       request,
       patchSessionBodySchema,
     );
-    const sessionToken = readSessionCookie(request);
+    const now = Math.floor(Date.now() / 1000);
+    const boundedLifetimeMinutes = Math.min(
+      sessionLifetimeMinutes,
+      MAX_SESSION_TOKEN_EXPIRATION_MINUTES,
+    );
+    const exp =
+      session.iat + Math.max(1, Math.floor(boundedLifetimeMinutes * 60));
 
-    if (!sessionToken) {
-      throw new TokenValidationError("missing session token");
+    if (exp <= now) {
+      throw new RequestValidationError(
+        "requested session lifetime has elapsed",
+      );
     }
+    const sessionToken = await signSessionToken({
+      sub: session.sub,
+      iat: session.iat,
+      exp,
+      jti: session.jti,
+    });
 
-    const maxAge = sessionCookieMaxAgeSeconds(maxLifetimeHours, session.exp);
-
-    return applySessionCookie(noContentResponse(), sessionToken, maxAge);
+    return applySessionCookie(
+      jsonResponse({ sub: session.sub, exp }),
+      sessionToken,
+      sessionCookieMaxAgeSeconds(boundedLifetimeMinutes / 60, exp, now),
+    );
   } catch (error) {
     return getHTTPErrorResponse(error);
   }

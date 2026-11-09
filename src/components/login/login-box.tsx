@@ -6,9 +6,13 @@ import {
   AccordionSummary,
   Button,
   Container,
+  FormControl,
   FormControlLabel,
+  MenuItem,
   Radio,
   RadioGroup,
+  Select,
+  SelectChangeEvent,
   Step,
   StepContent,
   StepLabel,
@@ -19,18 +23,24 @@ import {
   TableRow,
   Typography,
 } from "@mui/material";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowDropDown } from "@mui/icons-material";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useRouter } from "next/navigation";
 import dayjs from "dayjs";
+import { toast } from "mui-sonner";
 
 import {
   hasPersistedEncryptedHealthToken,
   hasTokenScope,
+  getStayLoggedInMinutes,
+  DEFAULT_STAY_LOGGED_IN_MINUTES,
+  STAY_LOGGED_IN_DURATION_OPTIONS,
   pendingRememberMeChoiceAtom,
   persistAuthTokens,
+  setStayLoggedInMinutes,
+  type StayLoggedInMinutes,
   useDriveAuthEnabled,
   useLoggedIn,
   useOpenIdSignedIn,
@@ -43,6 +53,7 @@ import { firstLoginDateAtom } from "@/storage/analytics";
 import { needsFitbitMigrationRedirect } from "@/storage/db/fitbitmigrationdb";
 import { allUnitsConfiguredAtom } from "@/storage/settings";
 import { useEnableGoogleDriveSettings } from "@/storage/settings-storage";
+import { logError } from "@/utils/log-error";
 
 import { GoogleSignInButton } from "./google-sign-in-button";
 
@@ -146,9 +157,15 @@ export function LoginStepper({
   grantAccessReady: boolean;
   onAuthorizeDrive: () => void;
   driveAuthReady: boolean;
-  onFinish: (rememberMe: boolean) => void;
+  onFinish: (sessionLifetimeMinutes: StayLoggedInMinutes | null) => void;
 }) {
   const [rememberMeChoice, setRememberMeChoice] = useState("dont-stay");
+  const [sessionLifetimeMinutes, setSessionLifetimeMinutes] =
+    useState<StayLoggedInMinutes>(DEFAULT_STAY_LOGGED_IN_MINUTES);
+
+  useEffect(() => {
+    setSessionLifetimeMinutes(getStayLoggedInMinutes());
+  }, []);
 
   return (
     <Stepper activeStep={activeStep} orientation="vertical" className="mt-8">
@@ -213,7 +230,7 @@ export function LoginStepper({
               <StaySignedInOption
                 value="dont-stay"
                 label="Don't stay signed in"
-                description="Select this option if you're using a shared or public computer. You will need to sign in every time you open this page."
+                description="Select this option if you're using a shared or public computer. You will need to sign in again when you return."
               />
               <StaySignedInOption
                 value="remember"
@@ -221,9 +238,45 @@ export function LoginStepper({
                 description="Stay logged in and quickly log in again when returning to this page in the future."
               />
             </RadioGroup>
+            {rememberMeChoice === "remember" && (
+              <div className="flex flex-row mt-1 ms-8 gap-2 items-center">
+                <Typography variant="body1" marginTop={2} marginBottom={2}>
+                  Stay logged in for
+                </Typography>
+                <FormControl size="small">
+                  <Select
+                    SelectDisplayProps={{
+                      "aria-label": "Remember me duration",
+                    }}
+                    size="small"
+                    value={sessionLifetimeMinutes}
+                    onChange={(event: SelectChangeEvent<number>) => {
+                      const option = STAY_LOGGED_IN_DURATION_OPTIONS.find(
+                        (item) => item.minutes === Number(event.target.value),
+                      );
+                      if (option) {
+                        setSessionLifetimeMinutes(option.minutes);
+                      }
+                    }}
+                  >
+                    {STAY_LOGGED_IN_DURATION_OPTIONS.map((option) => (
+                      <MenuItem key={option.minutes} value={option.minutes}>
+                        {option.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </div>
+            )}
             <Button
               variant="contained"
-              onClick={() => onFinish(rememberMeChoice === "remember")}
+              onClick={() =>
+                onFinish(
+                  rememberMeChoice === "remember"
+                    ? sessionLifetimeMinutes
+                    : null,
+                )
+              }
               className="mt-4"
             >
               Finish
@@ -276,10 +329,11 @@ export default function LoginBox() {
   }, [enableGoogleDriveSettings]);
 
   const finishLogin = useCallback(
-    (rememberMe: boolean) => {
+    (sessionLifetimeMinutes: StayLoggedInMinutes | null) => {
       void (async () => {
-        if (rememberMe) {
-          await persistAuthTokens();
+        if (sessionLifetimeMinutes !== null) {
+          await persistAuthTokens(sessionLifetimeMinutes);
+          setStayLoggedInMinutes(sessionLifetimeMinutes);
         }
 
         setPendingRememberMeChoice(false);
@@ -293,7 +347,10 @@ export default function LoginBox() {
         } else if (!hasTokenScope(SETTINGS_READONLY) && !allUnitsConfigured) {
           router.replace("/settings/locale");
         }
-      })();
+      })().catch((error) => {
+        logError("error updating session duration", error);
+        toast.error("Unable to update your session. Please try again.");
+      });
     },
     [
       allUnitsConfigured,
