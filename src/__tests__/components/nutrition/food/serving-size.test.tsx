@@ -1,4 +1,8 @@
-import { extractServingSize } from "@/components/nutrition/food/serving-size";
+import {
+  extractServingSize,
+  getConfiguredServingOptions,
+} from "@/components/nutrition/food/serving-size";
+import type { Food } from "@/api/nutrition";
 
 describe("extractServingSize", () => {
   it("returns undefined when no leading number", () => {
@@ -10,6 +14,43 @@ describe("extractServingSize", () => {
     expect(extractServingSize("")).toEqual({
       quantity: undefined,
       unitName: undefined,
+    });
+  });
+
+  describe("getConfiguredServingOptions", () => {
+    const defaultUnit = { id: "serving", name: "serving", plural: "servings" };
+    const otherUnit = { id: "grams", name: "gram", plural: "grams" };
+
+    it("defaults a missing multiplier for the default serving and hides other missing multipliers", () => {
+      const food: Food = {
+        accessLevel: "PRIVATE",
+        foodId: "template",
+        name: "Template",
+        calories: 50,
+        defaultUnit,
+        defaultServingSize: 1,
+        units: ["serving", "grams"],
+        servings: [
+          { servingSize: 1, unit: defaultUnit },
+          { servingSize: 100, unit: otherUnit },
+          { servingSize: 50, multiplier: 0.05, unit: otherUnit },
+        ],
+      };
+
+      expect(getConfiguredServingOptions(food)).toEqual([
+        {
+          amount: 1,
+          servingAmount: 1,
+          multiplier: 1,
+          unit: defaultUnit,
+        },
+        {
+          amount: 50,
+          servingAmount: 50,
+          multiplier: 0.05,
+          unit: otherUnit,
+        },
+      ]);
     });
   });
 

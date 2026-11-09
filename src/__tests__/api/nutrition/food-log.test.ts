@@ -132,4 +132,43 @@ describe("nutritionLogFromMealFood", () => {
       ],
     });
   });
+
+  it("scales private food nutrients by the selected serving ratio", () => {
+    expect(
+      nutritionLogFromMealFood(
+        {
+          ...publicFood,
+          accessLevel: "PRIVATE",
+          amount: 2,
+          defaultServingSize: 1,
+          nutritionalValues: { protein: 10 },
+        },
+        NutritionLogMealType.BREAKFAST,
+        2,
+      ),
+    ).toMatchObject({
+      energy: { kcal: 294 },
+      nutrients: [{ nutrient: "PROTEIN", quantity: { grams: 20 } }],
+    });
+  });
+
+  it("applies the serving multiplier before scaling by the entered amount", () => {
+    expect(
+      nutritionLogFromMealFood(
+        {
+          ...publicFood,
+          accessLevel: "PRIVATE",
+          calories: 50,
+          amount: 200,
+          defaultServingSize: 100,
+          nutritionalValues: { protein: 10 },
+        },
+        NutritionLogMealType.BREAKFAST,
+        (200 / 100) * 0.1,
+      ),
+    ).toMatchObject({
+      energy: { kcal: 10 },
+      nutrients: [{ nutrient: "PROTEIN", quantity: { grams: 2 } }],
+    });
+  });
 });

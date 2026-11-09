@@ -5,7 +5,7 @@ export interface FoodUnit {
 }
 
 export interface Serving {
-  multiplier: number;
+  multiplier?: number;
   servingSize: number;
   unit: FoodUnit;
 }

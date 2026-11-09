@@ -24,7 +24,31 @@ import { loadable } from "jotai/utils";
 
 import { Food, foodUnitsByIdAtom } from "@/api/nutrition";
 import { formatServing, ServingSize } from "@/utils/food-amounts";
-import { commonFoodUnits } from "@/config/common-ids";
+
+export function getConfiguredServingOptions(food: Food): Array<ServingSize> {
+  return (
+    food.servings?.flatMap((serving) => {
+      const isDefaultServing =
+        serving.unit.id === (food.defaultUnit ?? food.unit)?.id &&
+        serving.servingSize === (food.defaultServingSize ?? 1);
+      const multiplier =
+        serving.multiplier ?? (isDefaultServing ? 1 : undefined);
+
+      if (food.accessLevel === "PRIVATE" && multiplier === undefined) {
+        return [];
+      }
+
+      return [
+        {
+          amount: serving.servingSize,
+          servingAmount: serving.servingSize,
+          multiplier,
+          unit: serving.unit,
+        },
+      ];
+    }) ?? []
+  );
+}
 
 function useServingOptions(food: Food | null) {
   const loadingFoodUnitsById = useAtomValue(loadable(foodUnitsByIdAtom));
@@ -37,10 +61,7 @@ function useServingOptions(food: Food | null) {
     }
 
     if (food.servings) {
-      options = food.servings.map((serving) => ({
-        amount: serving.servingSize,
-        unit: serving.unit,
-      }));
+      options = getConfiguredServingOptions(food);
     } else {
       if (loadingFoodUnitsById.state !== "hasData") {
         return undefined;
@@ -54,13 +75,6 @@ function useServingOptions(food: Food | null) {
           options.push({ amount: 1, unit });
         }
       }
-    }
-
-    const seenUnitIds = new Set(options.map((option) => option.unit.id));
-
-    // Add generic units like lbs, kg
-    for (const unit of commonFoodUnits) {
-      if (!seenUnitIds.has(unit.id)) options.push({ amount: 1, unit });
     }
 
     return options;
@@ -120,7 +134,17 @@ export function FoodServingSizeInput({
       const defaultUnit = food?.defaultUnit ?? options?.[0]?.unit;
 
       if (defaultUnit) {
-        const autoServing = { amount: parsed.quantity, unit: defaultUnit };
+        const defaultServing =
+          options?.find(
+            (option) =>
+              option.unit.id === defaultUnit.id &&
+              option.servingAmount === food?.defaultServingSize,
+          ) ?? options?.find((option) => option.unit.id === defaultUnit.id);
+        const autoServing = {
+          ...defaultServing,
+          amount: parsed.quantity,
+          unit: defaultUnit,
+        };
 
         onChange(autoServing);
       }

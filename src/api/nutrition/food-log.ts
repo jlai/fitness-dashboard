@@ -75,6 +75,7 @@ export function nutritionLogServing(amount: number, unitId: string): Serving {
 export function nutritionLogFromMealFood(
   food: MealFood,
   mealType: NutritionLogMealType,
+  nutritionFactor?: number,
 ): NutritionLog {
   const unitId = food.unit?.id ?? food.defaultUnit?.id ?? "";
   const serving = nutritionLogServing(food.amount, unitId);
@@ -87,7 +88,8 @@ export function nutritionLogFromMealFood(
     };
   }
 
-  const factor = food.amount / (food.defaultServingSize || 1);
+  const factor =
+    nutritionFactor ?? food.amount / (food.defaultServingSize || 1);
   const fields = nutritionalValuesToHealthFields(
     scaleNutritionalValues(
       {

@@ -225,7 +225,7 @@ function mapFoodServing(
 
   if (lookedUp && servingNeedsUnitLookup(serving)) {
     return {
-      multiplier: serving.multiplier ?? 1,
+      ...(serving.multiplier != null ? { multiplier: serving.multiplier } : {}),
       servingSize: serving.amount ?? 1,
       unit: lookedUp,
     };
@@ -234,7 +234,7 @@ function mapFoodServing(
   const name = serving.foodMeasurementUnitDisplayName ?? lookedUp?.name ?? "";
 
   return {
-    multiplier: serving.multiplier ?? 1,
+    ...(serving.multiplier != null ? { multiplier: serving.multiplier } : {}),
     servingSize: serving.amount ?? 1,
     unit: {
       id: lookedUp?.id ?? getDataPointIdFromName(serving.foodMeasurementUnit),
@@ -567,7 +567,7 @@ function healthServingsFromFood(food: Food): HealthFoodServing[] {
     return food.servings.map((serving) =>
       toHealthFoodServing(
         serving.servingSize,
-        serving.multiplier,
+        serving.multiplier ?? 1,
         serving.unit,
       ),
     );

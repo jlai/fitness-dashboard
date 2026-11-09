@@ -67,6 +67,10 @@ export function CreateFoodLogForm() {
       nutritionLog: nutritionLogFromMealFood(
         { ...food, amount: servingSize.amount, unit: servingSize.unit },
         toNutritionLogMealType(mealType),
+        servingSize.servingAmount !== undefined
+          ? (servingSize.amount / servingSize.servingAmount) *
+              (servingSize.multiplier ?? 1)
+          : undefined,
       ),
       day: daySource === "today" ? dayjs() : linkedDay,
     });

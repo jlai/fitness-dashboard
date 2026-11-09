@@ -3,6 +3,8 @@ import { FoodUnit } from "@/api/nutrition";
 export interface ServingSize {
   amount: number;
   unit: FoodUnit;
+  servingAmount?: number;
+  multiplier?: number;
 }
 
 export function formatServing(option: ServingSize | string | null) {
