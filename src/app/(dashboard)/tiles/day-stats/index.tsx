@@ -99,7 +99,7 @@ export function GaugeCaloriesBurnedTileContent() {
     >
       <StatGauge
         iconSrc={fireIconUrl}
-        value={burned}
+        value={Math.round(burned)}
         valueMax={goal?.value}
         valueUnits="calories"
       />
