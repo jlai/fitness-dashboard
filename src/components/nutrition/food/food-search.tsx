@@ -335,8 +335,21 @@ export default function SearchFoods({
   );
 }
 
-export function SearchFoodsElement(controllerProps: UseControllerProps) {
+export function SearchFoodsElement({
+  onChange,
+  ...controllerProps
+}: UseControllerProps & {
+  onChange?: (food: Food | null) => void;
+}) {
   const { field } = useController(controllerProps);
 
-  return <SearchFoods value={field.value} onChange={field.onChange} />;
+  return (
+    <SearchFoods
+      value={field.value}
+      onChange={(food) => {
+        field.onChange(food);
+        onChange?.(food);
+      }}
+    />
+  );
 }

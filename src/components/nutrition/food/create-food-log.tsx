@@ -22,7 +22,10 @@ import { DividedStack } from "@/components/layout/flex";
 import { showSuccessToast, withErrorToaster } from "@/components/toast";
 
 import { SearchFoodsElement } from "./food-search";
-import { FoodServingSizeElement } from "./serving-size";
+import {
+  FoodServingSizeElement,
+  getDefaultFoodServingSize,
+} from "./serving-size";
 import { MealTypeElement } from "./meal-type-element";
 
 interface CreateFoodLogFormData {
@@ -91,7 +94,20 @@ export function CreateFoodLogForm() {
       formContext={formContext}
     >
       <FormRows>
-        <SearchFoodsElement name="food" rules={{ required: true }} />
+        <SearchFoodsElement
+          name="food"
+          rules={{ required: true }}
+          onChange={(food) => {
+            formContext.setValue(
+              "servingSize",
+              food ? getDefaultFoodServingSize(food) : null,
+              { shouldValidate: !!food },
+            );
+            if (!food) {
+              formContext.clearErrors("servingSize");
+            }
+          }}
+        />
         <FormRow>
           <FoodServingSizeElement
             name="servingSize"

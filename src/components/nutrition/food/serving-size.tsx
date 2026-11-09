@@ -25,6 +25,23 @@ import { loadable } from "jotai/utils";
 import { Food, foodUnitsByIdAtom } from "@/api/nutrition";
 import { formatServing, ServingSize } from "@/utils/food-amounts";
 
+export function getDefaultFoodServingSize(food: Food): ServingSize | null {
+  const defaultAmount = food.defaultServingSize ?? 1;
+  const defaultUnit = food.defaultUnit ?? food.unit;
+  const configuredDefault = getConfiguredServingOptions(food).find(
+    (serving) =>
+      serving.unit.id === defaultUnit?.id &&
+      serving.servingAmount === defaultAmount,
+  );
+
+  if (configuredDefault) {
+    return configuredDefault;
+  }
+
+  const unit = defaultUnit ?? food.servings?.[0]?.unit;
+  return unit ? { amount: defaultAmount, unit } : null;
+}
+
 export function getConfiguredServingOptions(food: Food): Array<ServingSize> {
   return (
     food.servings?.flatMap((serving) => {

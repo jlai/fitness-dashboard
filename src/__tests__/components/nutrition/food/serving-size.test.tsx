@@ -1,6 +1,7 @@
 import {
   extractServingSize,
   getConfiguredServingOptions,
+  getDefaultFoodServingSize,
 } from "@/components/nutrition/food/serving-size";
 import type { Food } from "@/api/nutrition";
 
@@ -51,6 +52,26 @@ describe("extractServingSize", () => {
           unit: otherUnit,
         },
       ]);
+    });
+
+    it("returns the configured default serving including its multiplier", () => {
+      const food: Food = {
+        accessLevel: "PRIVATE",
+        foodId: "template",
+        name: "Template",
+        calories: 50,
+        defaultUnit,
+        defaultServingSize: 100,
+        units: ["serving"],
+        servings: [{ servingSize: 100, multiplier: 0.1, unit: defaultUnit }],
+      };
+
+      expect(getDefaultFoodServingSize(food)).toEqual({
+        amount: 100,
+        servingAmount: 100,
+        multiplier: 0.1,
+        unit: defaultUnit,
+      });
     });
   });
 
