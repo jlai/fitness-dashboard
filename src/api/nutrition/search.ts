@@ -8,6 +8,7 @@ import { logError } from "@/utils/log-error";
 
 import { ONE_HOUR_IN_MILLIS } from "../cache-settings";
 import { formatAsCivilDateTime } from "../datetime";
+import { buildUserSettingsQuery } from "../user";
 import {
   getDataPoint,
   isValidDataPointId,
@@ -35,6 +36,11 @@ const ENABLE_FOOD_SEARCH = true;
 const ENABLE_LIST_AVAILABLE_FOODS = false;
 const FOOD_SEARCH_PAGE_SIZE = 50;
 const RECENT_FOODS_PAGE_SIZE = 20;
+const DEFAULT_FOOD_LANGUAGE = "en_US";
+
+function normalizeFoodLanguage(language?: string) {
+  return (language || DEFAULT_FOOD_LANGUAGE).replaceAll("-", "_");
+}
 
 async function listAvailableFoods() {
   if (!ENABLE_LIST_AVAILABLE_FOODS) {
@@ -61,15 +67,25 @@ async function searchAvailableFoods(
     return { foods: [] };
   }
 
-  const { dataPoints } = await listDataPointsPage(
-    "food",
-    foodDisplayNameFilter(needle),
-    undefined,
-    FOOD_SEARCH_PAGE_SIZE,
-  );
+  const queryClient = getDefaultStore().get(queryClientAtom);
+  const [settings, { dataPoints }] = await Promise.all([
+    queryClient.fetchQuery(buildUserSettingsQuery()),
+    listDataPointsPage(
+      "food",
+      foodDisplayNameFilter(needle),
+      undefined,
+      FOOD_SEARCH_PAGE_SIZE,
+    ),
+  ]);
+  const foodLanguage = normalizeFoodLanguage(settings.foodLanguageCode);
+  const foods = await mapFoodDataPoints(dataPoints);
 
   return {
-    foods: await mapFoodDataPoints(dataPoints),
+    foods: foods.filter(
+      (food) =>
+        Boolean(food.locale) &&
+        normalizeFoodLanguage(food.locale) === foodLanguage,
+    ),
   };
 }
 
