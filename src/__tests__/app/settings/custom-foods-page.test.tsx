@@ -320,18 +320,7 @@ describe("Food template editor", () => {
         target: { value: "  Oatmeal  " },
       },
     );
-    fireEvent.change(
-      screen.getByRole("textbox", { name: /^Serving unit(?: \*)?$/ }),
-      {
-        target: { value: "bowl" },
-      },
-    );
-    fireEvent.change(
-      screen.getByRole("textbox", { name: /Serving unit \(plural\)/ }),
-      {
-        target: { value: "bowls" },
-      },
-    );
+    expect(screen.queryByLabelText(/^Serving unit/)).toBeNull();
     fireEvent.change(screen.getByLabelText(/Default serving amount/), {
       target: { value: "2" },
     });
@@ -362,9 +351,21 @@ describe("Food template editor", () => {
               accessLevel: "FOOD_ACCESS_LEVEL_PRIVATE",
               defaultServing: {
                 amount: 2,
-                foodMeasurementUnitDisplayName: "bowl",
-                foodMeasurementUnitDisplayNamePlural: "bowls",
+                foodMeasurementUnit:
+                  "users/me/dataTypes/food-measurement-unit/dataPoints/304",
+                foodMeasurementUnitDisplayName: "serving",
+                foodMeasurementUnitDisplayNamePlural: "servings",
               },
+              servings: [
+                {
+                  amount: 2,
+                  multiplier: 1,
+                  foodMeasurementUnit:
+                    "users/me/dataTypes/food-measurement-unit/dataPoints/304",
+                  foodMeasurementUnitDisplayName: "serving",
+                  foodMeasurementUnitDisplayNamePlural: "servings",
+                },
+              ],
               energyAvg: { kcal: 240 },
               nutrients: [
                 { nutrient: "PROTEIN", quantity: { grams: 8 } },
@@ -384,8 +385,13 @@ describe("Food template editor", () => {
       name: "Oatmeal",
       accessLevel: "PRIVATE",
       defaultServingSize: 2,
-      defaultUnit: { name: "bowl", plural: "bowls" },
-      servings: [{ servingSize: 2, unit: { name: "bowl" } }],
+      defaultUnit: { id: "304", name: "serving", plural: "servings" },
+      servings: [
+        {
+          servingSize: 2,
+          unit: { id: "304", name: "serving", plural: "servings" },
+        },
+      ],
     });
     expect(
       nutritionLogFromMealFood(
@@ -394,6 +400,11 @@ describe("Food template editor", () => {
       ),
     ).toMatchObject({
       foodDisplayName: "Oatmeal",
+      serving: {
+        amount: 1,
+        foodMeasurementUnit:
+          "users/me/dataTypes/food-measurement-unit/dataPoints/304",
+      },
       energy: { kcal: 120 },
       nutrients: [
         { nutrient: "PROTEIN", quantity: { grams: 4 } },
@@ -415,19 +426,13 @@ describe("Food template editor", () => {
     uuidSpy.mockRestore();
   });
 
-  it("requires a valid name, serving amount, and serving unit when creating", async () => {
+  it("requires a valid name and serving amount when creating", async () => {
     await renderPage(new QueryClient());
     fireEvent.click(
       screen.getByRole("button", { name: "Create new template" }),
     );
     fireEvent.change(
       await screen.findByRole("textbox", { name: /Food name/ }),
-      {
-        target: { value: " " },
-      },
-    );
-    fireEvent.change(
-      screen.getByRole("textbox", { name: /^Serving unit(?: \*)?$/ }),
       {
         target: { value: " " },
       },
@@ -439,7 +444,6 @@ describe("Food template editor", () => {
       screen.getByRole("button", { name: "Create food" }).closest("form")!,
     );
     expect(await screen.findByText("Enter a food name")).toBeTruthy();
-    expect(screen.getByText("Enter a serving unit")).toBeTruthy();
     expect(screen.getByText("Enter a positive number")).toBeTruthy();
     expect(
       (await getDefaultStore().get(clientOnlyFoodsAtom)).clientOnlyFoods,

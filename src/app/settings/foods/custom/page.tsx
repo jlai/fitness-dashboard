@@ -33,11 +33,15 @@ import { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 
 import {
+  DEFAULT_SERVING_UNIT_ID,
   getDataPointIdFromName,
   mapFoodDataPoint,
   type FoodDataPoint,
 } from "@/api/nutrition/helpers";
-import { foodResourceName } from "@/api/nutrition/food-log";
+import {
+  foodMeasurementUnitResourceName,
+  foodResourceName,
+} from "@/api/nutrition/food-log";
 import type { Food, NutritionMacroGoals } from "@/api/nutrition";
 import { HeaderBar, FooterActionBar } from "@/components/layout/rows";
 import NutritionPopover, {
@@ -106,8 +110,6 @@ type FormValues = {
   brand: string;
   description: string;
   servingAmount: string;
-  servingUnit: string;
-  servingUnitPlural: string;
   calories: string;
   caloriesFromFat: string;
   fat: string;
@@ -142,9 +144,6 @@ function initialValues(dataPoint: FoodDataPoint): FormValues {
     brand: food.brand ?? "",
     description: food.description ?? "",
     servingAmount: numberString(food.defaultServing?.amount),
-    servingUnit: food.defaultServing?.foodMeasurementUnitDisplayName ?? "",
-    servingUnitPlural:
-      food.defaultServing?.foodMeasurementUnitDisplayNamePlural ?? "",
     calories: numberString(food.energyAvg?.kcal),
     caloriesFromFat: numberString(food.energyFromFat?.kcal),
     fat: numberString(food.totalFat?.grams),
@@ -286,6 +285,9 @@ export default function ManageCustomFoods() {
               accessLevel: FoodAccessLevel.FOOD_ACCESS_LEVEL_PRIVATE,
               defaultServing: {
                 amount: 1,
+                foodMeasurementUnit: foodMeasurementUnitResourceName(
+                  DEFAULT_SERVING_UNIT_ID,
+                ),
                 foodMeasurementUnitDisplayName: "serving",
                 foodMeasurementUnitDisplayNamePlural: "servings",
               },
@@ -341,13 +343,7 @@ function EditCustomFood({
     value != null && value !== "" && Number.isFinite(Number(value))
       ? Number(value)
       : undefined;
-  const unit = creating
-    ? {
-        id: "",
-        name: values.servingUnit ?? "",
-        plural: values.servingUnitPlural ?? "",
-      }
-    : mapFoodDataPoint(dataPoint).defaultUnit;
+  const unit = mapFoodDataPoint(dataPoint).defaultUnit;
   const servingText =
     unit && parsed(values.servingAmount)
       ? formatServing({ amount: Number(values.servingAmount), unit })
@@ -388,9 +384,11 @@ function EditCustomFood({
         if (creating) {
           food.defaultServing = {
             ...food.defaultServing,
-            foodMeasurementUnitDisplayName: values.servingUnit.trim(),
-            foodMeasurementUnitDisplayNamePlural:
-              values.servingUnitPlural.trim(),
+            foodMeasurementUnit: foodMeasurementUnitResourceName(
+              DEFAULT_SERVING_UNIT_ID,
+            ),
+            foodMeasurementUnitDisplayName: "serving",
+            foodMeasurementUnitDisplayNamePlural: "servings",
           };
           food.servings = [{ ...food.defaultServing, multiplier: 1 }];
         }
@@ -480,33 +478,6 @@ function EditCustomFood({
               error={!!errors.name}
               helperText={errors.name?.message}
             />
-            {creating && (
-              <>
-                <TextField
-                  label="Serving unit"
-                  required
-                  {...register("servingUnit", {
-                    validate: (value) =>
-                      !!value.trim() || "Enter a serving unit",
-                  })}
-                  error={!!errors.servingUnit}
-                  helperText={
-                    errors.servingUnit?.message ||
-                    "Unit names are used by the dashboard and may not appear in Google Health logs."
-                  }
-                />
-                <TextField
-                  label="Serving unit (plural)"
-                  required
-                  {...register("servingUnitPlural", {
-                    validate: (value) =>
-                      !!value.trim() || "Enter a plural serving unit",
-                  })}
-                  error={!!errors.servingUnitPlural}
-                  helperText={errors.servingUnitPlural?.message}
-                />
-              </>
-            )}
             <TextField label="Brand" {...register("brand")} />
             <TextField label="Description" {...register("description")} />
             <TextField
