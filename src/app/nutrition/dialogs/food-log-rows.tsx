@@ -45,6 +45,7 @@ import { selectedFoodLogsAtom, updateSelectedFoodLogAtom } from "../atoms";
 import { MealTypeSummary } from "../summarize-day";
 
 import { EditServingSize } from "./edit-serving-size";
+import { FoodLogSourceButton } from "./food-log-source";
 
 const NUTRIENT_FORMAT = NumberFormats.FRACTION_DIGITS_1;
 const NUTRIENT_PROPS = ["carbs", "fat", "fiber", "protein", "sodium"];
@@ -144,7 +145,7 @@ function FoodLogRow({ foodLog }: { foodLog: NutritionLogDataPoint }) {
   return (
     <TableRow key={foodLog.name}>
       <TableCell>
-        <div className="flex flex-row items-center">
+        <div className="group flex flex-row items-center">
           <FormControlLabel
             control={
               <Checkbox
@@ -155,6 +156,7 @@ function FoodLogRow({ foodLog }: { foodLog: NutritionLogDataPoint }) {
             }
             label={formatFoodName(name)}
           />
+          <FoodLogSourceButton foodLog={foodLog} />
         </div>
       </TableCell>
       <TableCell className="group min-w-max">
