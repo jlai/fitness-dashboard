@@ -91,6 +91,9 @@ const CUSTOM_NUTRIENT_FIELDS = [
   { key: "fat", label: "Total fat (g)" },
   { key: "saturatedFat", label: "Saturated fat (g)" },
   { key: "transFat", label: "Trans fat (g)" },
+  { key: "monounsaturatedFat", label: "Monounsaturated fat (g)" },
+  { key: "polyunsaturatedFat", label: "Polyunsaturated fat (g)" },
+  { key: "unsaturatedFat", label: "Unsaturated fat (g)" },
   { key: "cholesterol", label: "Cholesterol (mg)" },
   { key: "sodium", label: "Sodium (mg)" },
   { key: "carbs", label: "Carbs (g)" },
@@ -106,7 +109,9 @@ const OTHER_NUTRIENT_FIELDS = [
   { key: "vitaminC", label: "Vitamin C (mg)" },
   { key: "vitaminD", label: "Vitamin D (mg)" },
   { key: "vitaminE", label: "Vitamin E (mg)" },
+  { key: "vitaminK", label: "Vitamin K (mg)" },
   { key: "biotin", label: "Biotin (mg)" },
+  { key: "folate", label: "Folate (mg)" },
   { key: "folicAcid", label: "Folic acid (mg)" },
   { key: "niacin", label: "Niacin (mg)" },
   { key: "pantothenicAcid", label: "Pantothenic acid (mg)" },
@@ -120,6 +125,12 @@ const OTHER_NUTRIENT_FIELDS = [
   { key: "phosphorus", label: "Phosphorus (mg)" },
   { key: "potassium", label: "Potassium (mg)" },
   { key: "zinc", label: "Zinc (mg)" },
+  { key: "caffeine", label: "Caffeine (mg)" },
+  { key: "chloride", label: "Chloride (mg)" },
+  { key: "chromium", label: "Chromium (mg)" },
+  { key: "manganese", label: "Manganese (mg)" },
+  { key: "molybdenum", label: "Molybdenum (mg)" },
+  { key: "selenium", label: "Selenium (mg)" },
 ] as const;
 
 const ALL_CUSTOM_NUTRIENT_FIELDS = [
@@ -221,6 +232,17 @@ export function CreateFoodLogForm() {
       phosphorus: scaled(base.phosphorus),
       potassium: scaled(base.potassium),
       zinc: scaled(base.zinc),
+      vitaminK: scaled(base.vitaminK),
+      folate: scaled(base.folate),
+      caffeine: scaled(base.caffeine),
+      chloride: scaled(base.chloride),
+      chromium: scaled(base.chromium),
+      manganese: scaled(base.manganese),
+      molybdenum: scaled(base.molybdenum),
+      selenium: scaled(base.selenium),
+      monounsaturatedFat: scaled(base.monounsaturatedFat),
+      polyunsaturatedFat: scaled(base.polyunsaturatedFat),
+      unsaturatedFat: scaled(base.unsaturatedFat),
     };
 
     formContext.setValue("customName", food.name);

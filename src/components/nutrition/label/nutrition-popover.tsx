@@ -105,11 +105,9 @@ const NutritionPopover = function ({
           }
         : logMacros
           ? {
+              ...logMacros,
               totalCarbohydrate: logMacros.carbs,
               dietaryFiber: logMacros.fiber,
-              calories: logMacros.calories,
-              protein: logMacros.protein,
-              sodium: logMacros.sodium,
               totalFat: logMacros.fat,
             }
           : {};

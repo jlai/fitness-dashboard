@@ -59,6 +59,17 @@ export type NutritionalValues = Partial<{
   vitaminD: number;
   vitaminE: number;
   zinc: number;
+  caffeine: number;
+  chloride: number;
+  chromium: number;
+  folate: number;
+  manganese: number;
+  molybdenum: number;
+  monounsaturatedFat: number;
+  polyunsaturatedFat: number;
+  selenium: number;
+  unsaturatedFat: number;
+  vitaminK: number;
 }>;
 
 export interface Food {

@@ -5,6 +5,48 @@ import NutrientRow from "./nutrient-row";
 
 const NUTRIENT_INDENT = "0.33rem";
 
+// Order follows 21 CFR 101.9(c): mandatory vitamins/minerals, then voluntary ones
+const MICRONUTRIENT_ROWS = [
+  { key: "vitaminD", label: "Vitamin D", unit: "mg" },
+  { key: "calcium", label: "Calcium", unit: "mg" },
+  { key: "iron", label: "Iron", unit: "mg" },
+  { key: "potassium", label: "Potassium", unit: "mg", alwaysShow: true },
+  { key: "vitaminA", label: "Vitamin A", unit: "mg" },
+  { key: "vitaminC", label: "Vitamin C", unit: "mg" },
+  { key: "vitaminE", label: "Vitamin E", unit: "mg" },
+  { key: "vitaminK", label: "Vitamin K", unit: "mg" },
+  { key: "thiamin", label: "Thiamin", unit: "mg" },
+  { key: "riboflavin", label: "Riboflavin", unit: "mg" },
+  { key: "niacin", label: "Niacin", unit: "mg" },
+  { key: "vitaminB6", label: "Vitamin B6", unit: "mg" },
+  { key: "folate", label: "Folate", unit: "mg" },
+  { key: "folicAcid", label: "Folic Acid", unit: "mg" },
+  { key: "vitaminB12", label: "Vitamin B12", unit: "mg" },
+  { key: "biotin", label: "Biotin", unit: "mg" },
+  { key: "pantothenicAcid", label: "Pantothenic Acid", unit: "mg" },
+  { key: "phosphorus", label: "Phosphorus", unit: "mg" },
+  { key: "iodine", label: "Iodine", unit: "mg" },
+  { key: "magnesium", label: "Magnesium", unit: "mg" },
+  { key: "zinc", label: "Zinc", unit: "mg" },
+  { key: "selenium", label: "Selenium", unit: "mg" },
+  { key: "copper", label: "Copper", unit: "mg" },
+  { key: "manganese", label: "Manganese", unit: "mg" },
+  { key: "chromium", label: "Chromium", unit: "mg" },
+  { key: "molybdenum", label: "Molybdenum", unit: "mg" },
+  { key: "chloride", label: "Chloride", unit: "mg" },
+  { key: "caffeine", label: "Caffeine", unit: "mg" },
+] as const;
+
+const EXTRA_FAT_ROWS = [
+  { key: "polyunsaturatedFat", label: "Polyunsaturated Fat" },
+  { key: "monounsaturatedFat", label: "Monounsaturated Fat" },
+  { key: "unsaturatedFat", label: "Unsaturated Fat" },
+] as const;
+
+type OtherNutrientKey =
+  | (typeof MICRONUTRIENT_ROWS)[number]["key"]
+  | (typeof EXTRA_FAT_ROWS)[number]["key"];
+
 interface LabelContainerProps {
   backgroundColor?: string;
   width?: string;
@@ -115,7 +157,7 @@ function NutritionLabel({
     sugars?: number;
     protein?: number;
     vitamins?: Array<string>;
-  };
+  } & Partial<Record<OtherNutrientKey, number>>;
   recommendedValues?: {
     calories?: number;
     caloriesFromFat?: number;
@@ -133,6 +175,15 @@ function NutritionLabel({
   if (digits === undefined || digits < 0) {
     digits = 1;
   }
+
+  const extraFatRows = EXTRA_FAT_ROWS.filter(
+    ({ key }) => (nutritionValues[key] ?? 0) > 0,
+  );
+  const micronutrientRows = MICRONUTRIENT_ROWS.filter(
+    (row) =>
+      ("alwaysShow" in row && row.alwaysShow) ||
+      (nutritionValues[row.key] ?? 0) > 0,
+  );
 
   return (
     <LabelContainer
@@ -194,6 +245,16 @@ function NutritionLabel({
         unit="g"
         indent={NUTRIENT_INDENT}
       />
+      {extraFatRows.map(({ key, label }) => (
+        <NutrientRow
+          key={key}
+          label={label}
+          value={nutritionValues[key] ?? 0}
+          unit="g"
+          digits={digits}
+          indent={NUTRIENT_INDENT}
+        />
+      ))}
       <NutrientRow
         label={"Cholesterol"}
         value={nutritionValues.cholesterol || 0}
@@ -208,14 +269,6 @@ function NutritionLabel({
         unit="mg"
         boldLabel
         recommended={recommendedValues?.sodium || 2300}
-        digits={digits}
-      />
-      <NutrientRow
-        label={"Potassium"}
-        value={nutritionValues.potassium || 0}
-        unit="mg"
-        boldLabel
-        recommended={recommendedValues?.potassium || 0}
         digits={digits}
       />
       <NutrientRow
@@ -250,6 +303,20 @@ function NutritionLabel({
         recommended={recommendedValues?.protein || 50}
         digits={digits}
       />
+
+      {micronutrientRows.length > 0 && (
+        <SeparatorBar height={"7px"} color={backgroundColor} />
+      )}
+      {micronutrientRows.map(({ key, label, unit }) => (
+        <NutrientRow
+          key={key}
+          label={label}
+          value={nutritionValues[key] ?? 0}
+          unit={unit}
+          recommended={key === "potassium" ? recommendedValues?.potassium : 0}
+          digits={digits}
+        />
+      ))}
 
       {nutritionValues.vitamins && nutritionValues.vitamins.length > 0 && (
         <SeparatorBar height={"7px"} color={backgroundColor} />

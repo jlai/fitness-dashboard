@@ -128,6 +128,47 @@ const NUTRIENT_MAPPINGS: Partial<
     toFitbit: milligrams,
   },
   [NutrientQuantityNutrient.ZINC]: { field: "zinc", toFitbit: milligrams },
+  [NutrientQuantityNutrient.CAFFEINE]: {
+    field: "caffeine",
+    toFitbit: milligrams,
+  },
+  [NutrientQuantityNutrient.CHLORIDE]: {
+    field: "chloride",
+    toFitbit: milligrams,
+  },
+  [NutrientQuantityNutrient.CHROMIUM]: {
+    field: "chromium",
+    toFitbit: milligrams,
+  },
+  [NutrientQuantityNutrient.FOLATE]: { field: "folate", toFitbit: milligrams },
+  [NutrientQuantityNutrient.MANGANESE]: {
+    field: "manganese",
+    toFitbit: milligrams,
+  },
+  [NutrientQuantityNutrient.MOLYBDENUM]: {
+    field: "molybdenum",
+    toFitbit: milligrams,
+  },
+  [NutrientQuantityNutrient.MONOUNSATURATED_FAT]: {
+    field: "monounsaturatedFat",
+    toFitbit: grams,
+  },
+  [NutrientQuantityNutrient.POLYUNSATURATED_FAT]: {
+    field: "polyunsaturatedFat",
+    toFitbit: grams,
+  },
+  [NutrientQuantityNutrient.SELENIUM]: {
+    field: "selenium",
+    toFitbit: milligrams,
+  },
+  [NutrientQuantityNutrient.UNSATURATED_FAT]: {
+    field: "unsaturatedFat",
+    toFitbit: grams,
+  },
+  [NutrientQuantityNutrient.VITAMIN_K]: {
+    field: "vitaminK",
+    toFitbit: milligrams,
+  },
 };
 
 export function getDataPointIdFromName(resourceName?: string) {
@@ -476,6 +517,61 @@ const NUTRIENT_TO_HEALTH: Array<ReverseNutrientMapping> = [
   {
     field: "zinc",
     nutrient: NutrientQuantityNutrient.ZINC,
+    toGrams: milligramsToGrams,
+  },
+  {
+    field: "caffeine",
+    nutrient: NutrientQuantityNutrient.CAFFEINE,
+    toGrams: milligramsToGrams,
+  },
+  {
+    field: "chloride",
+    nutrient: NutrientQuantityNutrient.CHLORIDE,
+    toGrams: milligramsToGrams,
+  },
+  {
+    field: "chromium",
+    nutrient: NutrientQuantityNutrient.CHROMIUM,
+    toGrams: milligramsToGrams,
+  },
+  {
+    field: "folate",
+    nutrient: NutrientQuantityNutrient.FOLATE,
+    toGrams: milligramsToGrams,
+  },
+  {
+    field: "manganese",
+    nutrient: NutrientQuantityNutrient.MANGANESE,
+    toGrams: milligramsToGrams,
+  },
+  {
+    field: "molybdenum",
+    nutrient: NutrientQuantityNutrient.MOLYBDENUM,
+    toGrams: milligramsToGrams,
+  },
+  {
+    field: "monounsaturatedFat",
+    nutrient: NutrientQuantityNutrient.MONOUNSATURATED_FAT,
+    toGrams: grams,
+  },
+  {
+    field: "polyunsaturatedFat",
+    nutrient: NutrientQuantityNutrient.POLYUNSATURATED_FAT,
+    toGrams: grams,
+  },
+  {
+    field: "selenium",
+    nutrient: NutrientQuantityNutrient.SELENIUM,
+    toGrams: milligramsToGrams,
+  },
+  {
+    field: "unsaturatedFat",
+    nutrient: NutrientQuantityNutrient.UNSATURATED_FAT,
+    toGrams: grams,
+  },
+  {
+    field: "vitaminK",
+    nutrient: NutrientQuantityNutrient.VITAMIN_K,
     toGrams: milligramsToGrams,
   },
 ];
