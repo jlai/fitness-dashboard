@@ -241,9 +241,10 @@ function FoodLogRow({ foodLog }: { foodLog: NutritionLogDataPoint }) {
           </TableCell>
         ))
       ) : (
-        <TableCell colSpan={NUTRIENT_PROPS.length} className="text-center">
-          Not available due to Fitbit API limitations
-        </TableCell>
+        <TableCell
+          colSpan={NUTRIENT_PROPS.length}
+          className="text-center"
+        ></TableCell>
       )}
     </TableRow>
   );

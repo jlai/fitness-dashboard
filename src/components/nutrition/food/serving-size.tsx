@@ -116,13 +116,19 @@ export function FoodServingSizeInput({
   value,
   onChange,
   error,
+  label = "Amount",
+  options: optionsOverride,
 }: {
   food: Food | null;
   value: ServingSize | null;
   onChange: (servingSize: ServingSize | null) => void;
   error?: FieldError;
+  label?: string;
+  /** Use these options instead of deriving them from the food */
+  options?: Array<ServingSize>;
 }) {
-  const options = useServingOptions(food);
+  const foodOptions = useServingOptions(food);
+  const options = optionsOverride ?? foodOptions;
   const [lastValue, setLastValue] = useState(value);
   const [inputValue, setInputValue] = useState(formatServing(value));
 
@@ -198,7 +204,7 @@ export function FoodServingSizeInput({
         renderInput={(props) => (
           <TextField
             {...props}
-            label="Amount"
+            label={label}
             error={!!error}
             helperText={error?.message ?? ""}
           />

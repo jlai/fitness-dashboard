@@ -18,6 +18,7 @@ export const commonFoodUnits: Array<FoodUnit> = [
   { id: "226", name: "oz", plural: "oz" },
   { id: "180", name: "lb", plural: "lbs" },
   { id: "389", name: "kg", plural: "kg" },
+  { id: "304", name: "serving", plural: "servings" },
 ];
 
 // Common activities
