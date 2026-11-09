@@ -114,6 +114,7 @@ export function FoodLogTableHeaderRows() {
 function FoodLogRow({ foodLog }: { foodLog: NutritionLogDataPoint }) {
   const { nutritionLog } = foodLog;
   const isOwned = isDataPointFromThisApp(foodLog);
+  const canEditServing = isOwned && !!nutritionLog.food;
   const name = nutritionLog.foodDisplayName ?? "";
   const amount = nutritionLog.serving?.amount ?? 1;
   const unit = nutritionLogServingUnit(nutritionLog);
@@ -170,16 +171,18 @@ function FoodLogRow({ foodLog }: { foodLog: NutritionLogDataPoint }) {
           <Toolbar className="invisible group-hover:visible p-1 max-h-3 min-h-2">
             <span
               title={
-                isOwned
-                  ? undefined
-                  : "Only foods logged by this app can be edited."
+                !nutritionLog.food
+                  ? "Serving size cannot be edited for custom food logs."
+                  : isOwned
+                    ? undefined
+                    : "Only foods logged by this app can be edited."
               }
             >
               <IconButton
                 size="small"
                 className="text-slate-500"
-                title={isOwned ? "Edit serving" : undefined}
-                disabled={!isOwned}
+                title={canEditServing ? "Edit serving" : undefined}
+                disabled={!canEditServing}
                 onClick={editPopupState.open}
               >
                 <EditIcon />
@@ -211,12 +214,14 @@ function FoodLogRow({ foodLog }: { foodLog: NutritionLogDataPoint }) {
           placement="top"
           offset={[0, 5]}
         />
-        <Popper {...bindPopper(editPopupState)}>
-          <EditServingSize
-            foodLog={foodLog}
-            closePopover={editPopupState.close}
-          />
-        </Popper>
+        {canEditServing && (
+          <Popper {...bindPopper(editPopupState)}>
+            <EditServingSize
+              foodLog={foodLog}
+              closePopover={editPopupState.close}
+            />
+          </Popper>
+        )}
       </TableCell>
       <TableCell className="text-end">
         {NUTRIENT_FORMAT.format(calories)}
