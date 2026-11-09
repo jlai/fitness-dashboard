@@ -31,6 +31,7 @@
     "@emotion/cache": "^11.11.0",
     "@emotion/react": "^11.11.4",
     "@emotion/styled": "^11.11.5",
+    "@material-symbols-svg/react": "^0.17.0",
     "@mui/icons-material": "^6.4.2",
     "@mui/lab": "^6.0.0-beta.25",
     "@mui/material": "^6.4.2",

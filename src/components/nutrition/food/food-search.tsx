@@ -16,6 +16,7 @@ import {
   Repeat as RepeatIcon,
   Person as CustomIcon,
 } from "@mui/icons-material";
+import { ChefHat as ChefHatIcon } from "@material-symbols-svg/react/icons/chef-hat";
 import { SyntheticEvent, useCallback, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useController, UseControllerProps } from "react-hook-form";
@@ -98,7 +99,7 @@ function FoodOptionDisplay({
           <ShrinkingChip label="Favorite" icon={<FavoriteIcon />} />
         )}
         {option.template && (
-          <ShrinkingChip label="Template" icon={<CustomIcon />} />
+          <ShrinkingChip label="Template" icon={<ChefHatIcon />} />
         )}
         {option.accessLevel === "PRIVATE" && !option.template && (
           <ShrinkingChip label="Custom" icon={<CustomIcon />} />
