@@ -26,14 +26,28 @@ export const THIRD_PARTY_CLIENT_NAMES: Record<string, string> = {
     "MyFitnessPal",
 };
 
-function describeSource(foodLog: NutritionLogDataPoint): string {
-  const source = getLogSource(foodLog);
-  if (source === "app") return `Logged from ${WEBSITE_NAME}`;
-  if (source === "google-health") return "Logged from Google Health";
+/** Known 3rd party Fitbit Web API client ids and their app names. */
+export const FITBIT_WEB_API_CLIENT_NAMES: Record<string, string> = {
+  "229HT3": "Cronometer (Fitbit API)",
+  "23PKGH": "Fitness Dashboard (Fitbit API)",
+};
 
-  const clientId = foodLog.dataSource?.application?.googleWebClientId;
-  const appName = clientId ? THIRD_PARTY_CLIENT_NAMES[clientId] : undefined;
-  return `Logged from ${appName ?? "a 3rd party app"}`;
+function getAppName(foodLog: NutritionLogDataPoint): string {
+  const source = getLogSource(foodLog);
+  if (source === "app") return WEBSITE_NAME;
+  if (source === "google-health") return "Google Health";
+
+  const application = foodLog.dataSource?.application;
+  const appName =
+    (application?.googleWebClientId &&
+      THIRD_PARTY_CLIENT_NAMES[application.googleWebClientId]) ||
+    (application?.webClientId &&
+      FITBIT_WEB_API_CLIENT_NAMES[application.webClientId]);
+  return appName || "a 3rd party app";
+}
+
+function describeSource(foodLog: NutritionLogDataPoint): string {
+  return `Logged from ${getAppName(foodLog)}`;
 }
 
 function SourceIcon({ source }: { source: LogSource }) {
@@ -67,7 +81,11 @@ export function FoodLogSourceButton({
         <IconButton
           size="small"
           className="text-slate-500"
-          title="Log details"
+          title={
+            startTime
+              ? `Logged by ${getAppName(foodLog)} at ${dayjs(startTime).format("h:mm A")}`
+              : `Logged by ${getAppName(foodLog)}`
+          }
           onClick={popupState.open}
         >
           <SourceIcon source={source} />
