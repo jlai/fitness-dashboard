@@ -6,11 +6,10 @@ import {
   ClickAwayListener,
   Paper,
   Popper,
-  Tooltip,
   Typography,
 } from "@mui/material";
 import { Placement } from "@floating-ui/utils";
-import { ArticleOutlined, WarningOutlined } from "@mui/icons-material";
+import { ArticleOutlined } from "@mui/icons-material";
 import { useSetAtom } from "jotai/index";
 import { GridActionsCellItem } from "@mui/x-data-grid";
 
@@ -125,7 +124,7 @@ const NutritionPopover = function ({
 
   return (
     <Box>
-      {food && food.defaultUnit && food.defaultServingSize && (
+      {food && (
         <Popper
           {...bindPopper(popupState)}
           placement={placement || "left"}
@@ -153,11 +152,6 @@ const NutritionPopover = function ({
             mouseEvent="onMouseDown"
           >
             <Paper className="bg-slate-50 dark:bg-slate-900 p-2">
-              {food.accessLevel == "PUBLIC" && context.nutritionLog && (
-                <Tooltip title="Public food entry: limited nutrition data">
-                  <WarningOutlined className="float-right p-1" />
-                </Tooltip>
-              )}
               <Typography
                 variant="subtitle1"
                 sx={{
@@ -165,10 +159,7 @@ const NutritionPopover = function ({
                   textOverflow: "ellipsis",
                   overflow: "hidden",
                   whiteSpace: "nowrap",
-                  maxWidth:
-                    food.accessLevel == "PUBLIC" && context.nutritionLog
-                      ? "17rem"
-                      : "18.75rem",
+                  maxWidth: "18.75rem",
                 }}
                 title={food.name}
               >
@@ -179,11 +170,15 @@ const NutritionPopover = function ({
                 servingText={formatServing({
                   amount:
                     context.nutritionLog?.serving?.amount ||
-                    food.defaultServingSize,
-                  unit:
-                    (context.nutritionLog &&
-                      nutritionLogServingUnit(context.nutritionLog)) ||
-                    food.defaultUnit,
+                    food.defaultServingSize ||
+                    1,
+                  unit: (context.nutritionLog &&
+                    nutritionLogServingUnit(context.nutritionLog)) ||
+                    food.defaultUnit || {
+                      id: "",
+                      name: "serving",
+                      plural: "servings",
+                    },
                 })}
                 nutritionValues={getNutritionValues(food, context.nutritionLog)}
                 recommendedValues={macroGoals}

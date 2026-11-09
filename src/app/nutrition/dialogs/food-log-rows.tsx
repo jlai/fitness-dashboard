@@ -25,6 +25,7 @@ import {
   NutritionLogDataPoint,
   NutritionLogsResult,
   NutritionMacroGoals,
+  foodFromNutritionLog,
   mapNutritionLogMealType,
   getDataPointIdFromName,
   nutritionLogMacros,
@@ -198,6 +199,9 @@ function FoodLogRow({ foodLog }: { foodLog: NutritionLogDataPoint }) {
                   nutritionLog:
                     event.ctrlKey || event.altKey ? null : nutritionLog,
                   foodId: getDataPointIdFromName(nutritionLog.food),
+                  ...(!nutritionLog.food
+                    ? { food: foodFromNutritionLog(nutritionLog) }
+                    : {}),
                 });
                 if (!nutritionPopupState.isOpen) {
                   nutritionPopupState.open(event);
