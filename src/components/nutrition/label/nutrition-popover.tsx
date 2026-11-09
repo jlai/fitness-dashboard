@@ -54,14 +54,16 @@ export function ShowLabelAction({
   return (
     <GridActionsCellItem
       onClick={(event) => {
-        if (!popupState.isOpen) {
-          setFood({
-            foodId: food.foodId,
-            nutritionLog: null,
-            ...(useProvidedFood ? { food } : {}),
-          });
-          popupState.open(event);
+        if (popupState.isOpen) {
+          popupState.close();
+          return;
         }
+        setFood({
+          foodId: food.foodId,
+          nutritionLog: null,
+          ...(useProvidedFood ? { food } : {}),
+        });
+        popupState.open(event);
       }}
       icon={<ArticleOutlined />}
       label="Nutrition facts"
@@ -151,15 +153,35 @@ const NutritionPopover = function ({
           ]}
         >
           <ClickAwayListener
-            onClickAway={() => popupState.close()}
+            onClickAway={(event) => {
+              // The trigger button toggles the popup itself; closing here on
+              // mousedown would make its click reopen it.
+              const anchor = popupState.anchorEl;
+              if (
+                anchor instanceof Element &&
+                event.target instanceof Node &&
+                anchor.contains(event.target)
+              ) {
+                return;
+              }
+              popupState.close();
+            }}
             touchEvent="onTouchStart"
             mouseEvent="onMouseDown"
           >
-            <Paper className="p-2" sx={{ backgroundColor: "#fff" }}>
+            <Paper
+              className="p-2"
+              elevation={3}
+              sx={{ backgroundColor: "#fff" }}
+            >
               <Typography
-                variant="subtitle1"
+                variant="h6"
+                component="h2"
                 sx={{
-                  margin: "0 0 0.4rem 0.25rem",
+                  fontWeight: 700,
+                  textAlign: "center",
+                  lineHeight: 1.3,
+                  margin: "0 0 0.5rem 0",
                   textOverflow: "ellipsis",
                   overflow: "hidden",
                   whiteSpace: "nowrap",

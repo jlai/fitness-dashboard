@@ -466,12 +466,19 @@ describe("Food template editor", () => {
     ).toBe(200);
   });
 
-  it("opens local nutrition facts without a remote food request", async () => {
+  it("toggles local nutrition facts without a remote food request", async () => {
     const getFood = jest.mocked(datapoints.getDataPoint);
     await renderPage(new QueryClient());
-    fireEvent.click(screen.getByRole("button", { name: "Nutrition facts" }));
+    const nutritionFactsButton = screen.getByRole("button", {
+      name: "Nutrition facts",
+    });
+    fireEvent.click(nutritionFactsButton);
     expect(await screen.findByText("Nutrition Facts")).toBeTruthy();
     expect(getFood).not.toHaveBeenCalled();
+    fireEvent.click(nutritionFactsButton);
+    await waitFor(() =>
+      expect(screen.queryByText("Nutrition Facts")).toBeNull(),
+    );
   });
 
   it("still fetches nutrition details for remote food actions", async () => {

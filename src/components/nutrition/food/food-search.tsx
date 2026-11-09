@@ -17,7 +17,13 @@ import {
   Person as CustomIcon,
 } from "@mui/icons-material";
 import { ChefHat as ChefHatIcon } from "@material-symbols-svg/react/icons/chef-hat";
-import { SyntheticEvent, useCallback, useMemo, useState } from "react";
+import {
+  SyntheticEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useController, UseControllerProps } from "react-hook-form";
 import { uniqBy } from "es-toolkit";
@@ -155,6 +161,13 @@ export default function SearchFoods({
 }) {
   const [inputValue, setInputValue] = useState("");
   const [searchString, setSearchString] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!value) {
+      setInputValue("");
+      setSearchString(null);
+    }
+  }, [value]);
 
   const { clientOnlyFavoriteFoods } = useAtomValue(clientOnlyFavoriteFoodsAtom);
   const { clientOnlyFoods } = useAtomValue(clientOnlyFoodsAtom);

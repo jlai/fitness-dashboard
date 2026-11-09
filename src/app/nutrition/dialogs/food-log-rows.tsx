@@ -194,6 +194,10 @@ function FoodLogRow({ foodLog }: { foodLog: NutritionLogDataPoint }) {
               className="text-slate-500"
               title="Nutrition facts"
               onClick={(event) => {
+                if (nutritionPopupState.isOpen) {
+                  nutritionPopupState.close();
+                  return;
+                }
                 setFood({
                   // display the info for the default serving if CTRL or ALT is pressed
                   nutritionLog:
@@ -203,9 +207,7 @@ function FoodLogRow({ foodLog }: { foodLog: NutritionLogDataPoint }) {
                     ? { food: foodFromNutritionLog(nutritionLog) }
                     : {}),
                 });
-                if (!nutritionPopupState.isOpen) {
-                  nutritionPopupState.open(event);
-                }
+                nutritionPopupState.open(event);
               }}
             >
               <ArticleOutlined />

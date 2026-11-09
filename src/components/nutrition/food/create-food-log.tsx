@@ -369,7 +369,7 @@ export function CreateFoodLogForm() {
           <IconButton
             aria-label="Nutrition info"
             title="Nutrition info"
-            disabled={!food || !servingSize}
+            disabled={!nutritionPopupState.isOpen && (!food || !servingSize)}
             onClick={(event) => {
               if (nutritionPopupState.isOpen) {
                 nutritionPopupState.close();
@@ -549,9 +549,20 @@ export function CreateFoodLogForm() {
         <DialogActions>
           <Button onClick={() => setPromptOpen(false)}>Cancel</Button>
           <Button
+            color="warning"
             onClick={() => {
               setPromptOpen(false);
               resetCustomServing();
+              setShowMoreNutrients(false);
+              setShowOtherNutrients(false);
+              reset({
+                ...formContext.getValues(),
+                food: null,
+                servingSize: null,
+                customName: "",
+                customCalories: "",
+                customNutrients: {},
+              });
               setCustomMode(true);
             }}
           >

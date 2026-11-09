@@ -223,6 +223,10 @@ function FoodRow({
                 <IconButton
                   title={"Nutrition facts"}
                   onClick={(event) => {
+                    if (popupState.isOpen) {
+                      popupState.close();
+                      return;
+                    }
                     setFood({
                       // display the info for the default serving if CTRL or ALT is pressed
                       nutritionLog:
@@ -239,9 +243,7 @@ function FoodRow({
                       foodId: food.foodId,
                     });
 
-                    if (!popupState.isOpen) {
-                      popupState.open(event);
-                    }
+                    popupState.open(event);
                   }}
                 >
                   <ArticleOutlined />
