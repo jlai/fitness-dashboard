@@ -441,14 +441,14 @@ export function applyDriveTokenResponse(
   saveEncryptedDriveToken(payload.encryptedDriveToken);
 }
 
-export async function createSession(idToken: string) {
+export async function createSession(idToken: string, staySignedIn = false) {
   const response = await fetch(SESSION_PATH, {
     method: "POST",
     mode: "same-origin",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ idToken }),
+    body: JSON.stringify({ idToken, staySignedIn }),
   });
 
   const payload: TokenEndpointResponse = await response.json();

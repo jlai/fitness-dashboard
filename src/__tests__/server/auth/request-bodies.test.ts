@@ -36,6 +36,18 @@ describe("auth request body schemas", () => {
     expect(createSessionBodySchema.safeParse({ idToken: "tok" }).success).toBe(
       true,
     );
+    expect(
+      createSessionBodySchema.safeParse({
+        idToken: "tok",
+        staySignedIn: true,
+      }).success,
+    ).toBe(true);
+    expect(
+      createSessionBodySchema.safeParse({
+        idToken: "tok",
+        staySignedIn: "true",
+      }).success,
+    ).toBe(false);
     expect(createSessionBodySchema.safeParse({}).success).toBe(false);
     expect(createSessionBodySchema.safeParse({ idToken: "" }).success).toBe(
       false,

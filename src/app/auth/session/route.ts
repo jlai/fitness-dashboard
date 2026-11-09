@@ -43,7 +43,10 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     validateSecFetch(request);
-    const { idToken } = await readJsonBody(request, createSessionBodySchema);
+    const { idToken, staySignedIn } = await readJsonBody(
+      request,
+      createSessionBodySchema,
+    );
 
     let claims;
 
@@ -55,7 +58,8 @@ export async function POST(request: Request) {
     }
 
     const iat = Math.floor(Date.now() / 1000);
-    const exp = iat + getSessionTokenExpirationSeconds();
+    const sessionLifetimeSeconds = getSessionTokenExpirationSeconds();
+    const exp = iat + sessionLifetimeSeconds;
     const sessionToken = await signSessionToken({
       sub: claims.sub,
       iat,
@@ -65,6 +69,9 @@ export async function POST(request: Request) {
     return applySessionCookie(
       jsonResponse({ sub: claims.sub, exp }),
       sessionToken,
+      staySignedIn
+        ? sessionCookieMaxAgeSeconds(sessionLifetimeSeconds / 3600, exp, iat)
+        : undefined,
     );
   } catch (error) {
     return getHTTPErrorResponse(error);

@@ -120,6 +120,15 @@ describe("POST /auth/session", () => {
     expect(payload.exp).toBe(claims.exp);
   });
 
+  it("creates a persistent session cookie when staySignedIn is requested", async () => {
+    const response = await POST(
+      makeRequest({ body: { idToken: "google-id-token", staySignedIn: true } }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Set-Cookie")).toContain("Max-Age=7200");
+  });
+
   it("rejects requests without an idToken", async () => {
     const response = await POST(makeRequest({ body: {} }));
 

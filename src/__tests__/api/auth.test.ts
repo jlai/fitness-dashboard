@@ -132,11 +132,31 @@ describe("createSession", () => {
       SESSION_PATH,
       expect.objectContaining({
         method: "POST",
-        body: JSON.stringify({ idToken: "google-id-token" }),
+        body: JSON.stringify({
+          idToken: "google-id-token",
+          staySignedIn: false,
+        }),
       }),
     );
     expect(getSessionSubject()).toBe("user-1");
     expect(JSON.stringify(localStorage)).not.toContain("google-id-token");
+  });
+
+  it("requests a persistent session when the user has chosen to stay signed in", async () => {
+    fetchMock.mockResolvedValue(sessionClaimsResponse());
+
+    await createSession("google-id-token", true);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      SESSION_PATH,
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({
+          idToken: "google-id-token",
+          staySignedIn: true,
+        }),
+      }),
+    );
   });
 
   it("restores an access token when an encrypted health token is already stored", async () => {

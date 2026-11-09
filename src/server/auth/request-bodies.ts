@@ -6,6 +6,7 @@ function nonEmptyString(error: string) {
 
 export const createSessionBodySchema = z.object({
   idToken: nonEmptyString("missing idToken"),
+  staySignedIn: z.boolean({ error: "invalid staySignedIn" }).optional(),
 });
 
 export const patchSessionBodySchema = z.object({

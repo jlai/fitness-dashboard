@@ -7,7 +7,11 @@ import { GoogleOneTap } from "@/components/login/google-identity";
 
 import { logError } from "@/utils/log-error";
 
-import { createSession, useOpenIdSignedIn } from "./auth";
+import {
+  createSession,
+  hasPersistedEncryptedHealthToken,
+  useOpenIdSignedIn,
+} from "./auth";
 import { setGoogleIdTokenCallback } from "./google-identity";
 
 /** Initialize Google One Tap once on page load. */
@@ -21,7 +25,10 @@ export function GoogleOpenIdAutomaticSignIn() {
         return;
       }
 
-      void createSession(response.credential).catch((error) => {
+      void createSession(
+        response.credential,
+        hasPersistedEncryptedHealthToken(),
+      ).catch((error) => {
         logError("error creating session", error);
         toast.error("Unable to reach Google to sign in");
       });
