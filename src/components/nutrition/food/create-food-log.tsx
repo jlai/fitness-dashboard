@@ -1,9 +1,11 @@
 "use client";
 
-import { Button, Stack } from "@mui/material";
+import { ArticleOutlined } from "@mui/icons-material";
+import { Button, IconButton, Stack } from "@mui/material";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { FormContainer, useForm } from "react-hook-form-mui";
-import { useAtomValue } from "jotai";
+import { useAtomValue, useSetAtom } from "jotai";
+import { usePopupState } from "material-ui-popup-state/hooks";
 import dayjs from "dayjs";
 import NextLink from "next/link";
 
@@ -20,6 +22,10 @@ import { FormRow, FormRows } from "@/components/forms/form-row";
 import { ServingSize } from "@/utils/food-amounts";
 import { DividedStack } from "@/components/layout/flex";
 import { showSuccessToast, withErrorToaster } from "@/components/toast";
+import NutritionPopover, {
+  nutritionPopoverFoodAtom,
+} from "@/components/nutrition/label/nutrition-popover";
+import { macroGoalsAtom } from "@/storage/settings";
 
 import { SearchFoodsElement } from "./food-search";
 import {
@@ -58,6 +64,14 @@ export function CreateFoodLogForm() {
   );
 
   const linkedDay = useAtomValue(selectedDayForPageAtom);
+  const macroGoals = useAtomValue(macroGoalsAtom);
+  const setPopoverFood = useSetAtom(nutritionPopoverFoodAtom);
+  const nutritionPopupState = usePopupState({
+    popupId: "food-logger-nutrition-info",
+    variant: "popper",
+  });
+  const food = watch("food");
+  const servingSize = watch("servingSize");
 
   const logFood = withErrorToaster(async (values: CreateFoodLogFormData) => {
     const { food, servingSize, mealType, daySource } = values;
@@ -94,20 +108,43 @@ export function CreateFoodLogForm() {
       formContext={formContext}
     >
       <FormRows>
-        <SearchFoodsElement
-          name="food"
-          rules={{ required: true }}
-          onChange={(food) => {
-            formContext.setValue(
-              "servingSize",
-              food ? getDefaultFoodServingSize(food) : null,
-              { shouldValidate: !!food },
-            );
-            if (!food) {
-              formContext.clearErrors("servingSize");
-            }
-          }}
-        />
+        <FormRow flexWrap="nowrap" className="gap-x-2">
+          <div className="flex-1 min-w-0">
+            <SearchFoodsElement
+              name="food"
+              rules={{ required: true }}
+              onChange={(food) => {
+                formContext.setValue(
+                  "servingSize",
+                  food ? getDefaultFoodServingSize(food) : null,
+                  { shouldValidate: !!food },
+                );
+                if (!food) {
+                  formContext.clearErrors("servingSize");
+                }
+              }}
+            />
+          </div>
+          <IconButton
+            aria-label="Nutrition info"
+            title="Nutrition info"
+            disabled={!food || !servingSize}
+            onClick={(event) => {
+              if (!food || !servingSize) return;
+              setPopoverFood({
+                foodId: food.foodId,
+                food,
+                nutritionLog: null,
+                servingSize,
+              });
+              if (!nutritionPopupState.isOpen) {
+                nutritionPopupState.open(event);
+              }
+            }}
+          >
+            <ArticleOutlined />
+          </IconButton>
+        </FormRow>
         <FormRow>
           <FoodServingSizeElement
             name="servingSize"
@@ -130,6 +167,11 @@ export function CreateFoodLogForm() {
           </Button>
         </FormRow>
       </FormRows>
+      <NutritionPopover
+        macroGoals={macroGoals}
+        popupState={nutritionPopupState}
+        placement="bottom"
+      />
     </FormContainer>
   );
 }

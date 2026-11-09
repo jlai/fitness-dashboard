@@ -23,12 +23,13 @@ import {
   nutritionLogMacros,
   nutritionLogServingUnit,
 } from "@/api/nutrition";
-import { formatServing } from "@/utils/food-amounts";
+import { formatServing, ServingSize } from "@/utils/food-amounts";
 
 export interface NutritionPopoverContext {
   nutritionLog: NutritionLog | null;
   foodId: string;
   food?: Food;
+  servingSize?: ServingSize;
 }
 
 const EMPTY_CONTEXT: NutritionPopoverContext = {
@@ -91,13 +92,17 @@ const NutritionPopover = function ({
   function getNutritionValues(
     food: Food,
     nutritionLog: NutritionLog | null,
+    servingSize?: ServingSize,
   ): NutritionalValues {
     const logMacros = nutritionLog
       ? nutritionLogMacros(nutritionLog)
       : undefined;
-    const foodValues: { [index: string]: number } =
+    const foodValues: NutritionalValues =
       food.nutritionalValues && (!nutritionLog || food.accessLevel == "PRIVATE")
-        ? { ...food.nutritionalValues }
+        ? {
+            ...food.nutritionalValues,
+            calories: food.nutritionalValues.calories ?? food.calories,
+          }
         : logMacros
           ? {
               totalCarbohydrate: logMacros.carbs,
@@ -108,18 +113,19 @@ const NutritionPopover = function ({
               totalFat: logMacros.fat,
             }
           : {};
-    const multiplier =
-      food.calories && food.accessLevel == "PRIVATE" && nutritionLog
+    const multiplier = servingSize
+      ? servingSize.servingAmount !== undefined
+        ? (servingSize.amount / servingSize.servingAmount) *
+          (servingSize.multiplier ?? 1)
+        : servingSize.amount / (food.defaultServingSize || 1)
+      : food.calories && food.accessLevel == "PRIVATE" && nutritionLog
         ? (nutritionLog.energy?.kcal ?? 0) / (food.calories || 1)
         : 1;
-    const result = Object.keys(foodValues).map((key: string) => {
-      return [
-        key,
-        (foodValues.hasOwnProperty(key) ? foodValues[key] : 0) * multiplier,
-      ];
-    });
-
-    return Object.fromEntries(result);
+    return Object.fromEntries(
+      Object.entries(foodValues).flatMap(([key, value]) =>
+        typeof value === "number" ? [[key, value * multiplier]] : [],
+      ),
+    );
   }
 
   return (
@@ -151,7 +157,7 @@ const NutritionPopover = function ({
             touchEvent="onTouchStart"
             mouseEvent="onMouseDown"
           >
-            <Paper className="bg-slate-50 dark:bg-slate-900 p-2">
+            <Paper className="p-2" sx={{ backgroundColor: "#fff" }}>
               <Typography
                 variant="subtitle1"
                 sx={{
@@ -169,18 +175,24 @@ const NutritionPopover = function ({
                 width="18.75rem"
                 servingText={formatServing({
                   amount:
+                    context.servingSize?.amount ||
                     context.nutritionLog?.serving?.amount ||
                     food.defaultServingSize ||
                     1,
-                  unit: (context.nutritionLog &&
-                    nutritionLogServingUnit(context.nutritionLog)) ||
+                  unit: context.servingSize?.unit ||
+                    (context.nutritionLog &&
+                      nutritionLogServingUnit(context.nutritionLog)) ||
                     food.defaultUnit || {
                       id: "",
                       name: "serving",
                       plural: "servings",
                     },
                 })}
-                nutritionValues={getNutritionValues(food, context.nutritionLog)}
+                nutritionValues={getNutritionValues(
+                  food,
+                  context.nutritionLog,
+                  context.servingSize,
+                )}
                 recommendedValues={macroGoals}
               />
             </Paper>
