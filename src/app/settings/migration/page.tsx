@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ChangeEvent } from "react";
 import { Alert, Button, Paper, Typography } from "@mui/material";
 import { useConfirm } from "material-ui-confirm";
 import Link from "next/link";
@@ -13,9 +13,13 @@ import {
   clearFitbitAuthToken,
   clearMigrationBackupStorage,
   hasMigrationBackupStorage,
+  parseMigrationBackupFile,
 } from "@/storage/db/fitbitmigrationdb";
 import { useEnableGoogleDriveSettings } from "@/storage/settings-storage";
-import { importLegacySettings } from "@/storage/settings-storage/migrate-from-legacy";
+import {
+  importFitbitMigrationFile,
+  importLegacySettings,
+} from "@/storage/settings-storage/migrate-from-legacy";
 
 function MigrationContent() {
   const router = useRouter();
@@ -43,6 +47,29 @@ function MigrationContent() {
       setImporting(false);
     }
   }, "Failed to import settings");
+
+  const handleFileImport = withErrorToaster(async (file: File) => {
+    setImporting(true);
+    try {
+      const backup = parseMigrationBackupFile(await file.text());
+      await importFitbitMigrationFile(backup);
+      clearFitbitAuthToken();
+      showSuccessToast("Imported Fitbit backup from file");
+      router.replace("/");
+    } finally {
+      setImporting(false);
+    }
+  }, "Failed to import Fitbit backup");
+
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (file) {
+      void handleFileImport(file).catch(() => {
+        // The error has already been reported by the toaster.
+      });
+    }
+  };
 
   const handleSkip = () => {
     clearFitbitAuthToken();
@@ -127,6 +154,14 @@ function MigrationContent() {
           files.
         </Alert>
       )}
+      {!hasMigrationBackup && (
+        <Typography>
+          You can import a Fitbit migration JSON backup. This replaces your
+          current food templates, meals, and goals. Dashboard tiles saved in
+          this browser will also replace your current dashboard tiles; other
+          settings are unchanged.
+        </Typography>
+      )}
 
       <div className="flex flex-wrap gap-2">
         {!driveEnabled && (
@@ -145,6 +180,22 @@ function MigrationContent() {
             disabled={importing || !driveEnabled}
           >
             {importing ? "Importing…" : "Import old settings"}
+          </Button>
+        )}
+        {!hasMigrationBackup && (
+          <Button
+            component="label"
+            variant="contained"
+            disabled={importing || !driveEnabled}
+          >
+            {importing ? "Importing…" : "Import from JSON file"}
+            <input
+              type="file"
+              accept=".json,application/json"
+              hidden
+              onChange={handleFileChange}
+              disabled={importing || !driveEnabled}
+            />
           </Button>
         )}
         <Button onClick={handleSkip} disabled={importing}>

@@ -1,4 +1,5 @@
 import type { NutritionalValues } from "@/api/nutrition/types";
+import { z } from "zod";
 
 /** localStorage key written by the Fitbit app's migration backup. */
 export const MIGRATION_BACKUP_STORAGE_KEY = "migration:fitbit-to-google";
@@ -103,6 +104,72 @@ export interface MigrationBackup {
   meals: Array<MigrationMeal>;
   customFoods: Array<MigrationFood>;
   goals: Array<MigrationGoal>;
+}
+
+const unitSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  plural: z.string(),
+});
+
+const foodSchema = z.object({
+  accessLevel: z.enum(["PUBLIC", "PRIVATE"]),
+  foodId: z.number(),
+  name: z.string(),
+  brand: z.string().optional(),
+  locale: z.string().optional(),
+  calories: z.number(),
+  servings: z
+    .array(
+      z.object({
+        multiplier: z.number(),
+        servingSize: z.number(),
+        unit: unitSchema,
+      }),
+    )
+    .optional(),
+  defaultUnit: unitSchema.optional(),
+  defaultServingSize: z.number().optional(),
+  unit: unitSchema.optional(),
+  units: z.array(unitSchema),
+  nutritionalValues: z.record(z.string(), z.number()).optional(),
+});
+
+const migrationBackupSchema = z.object({
+  customFoods: z.array(foodSchema),
+  meals: z.array(
+    z.object({
+      id: z.union([z.string(), z.number()]).transform(String),
+      name: z.string(),
+      description: z.string(),
+      mealFoods: z.array(foodSchema.extend({ amount: z.number() })),
+    }),
+  ),
+  goals: z.array(
+    z.object({
+      metric: z.string(),
+      period: z.enum(["daily", "weekly", "target"]),
+      value: z.number(),
+      units: z.string().optional(),
+    }),
+  ),
+});
+
+export function parseMigrationBackupFile(text: string): MigrationBackup {
+  let document: unknown;
+  try {
+    document = JSON.parse(text);
+  } catch {
+    throw new Error("The selected file is not valid JSON.");
+  }
+
+  const result = migrationBackupSchema.safeParse(document);
+  if (!result.success) {
+    throw new Error(
+      "The selected file is not a valid Fitbit migration backup.",
+    );
+  }
+  return result.data;
 }
 
 const EMPTY_BACKUP: MigrationBackup = {

@@ -10,18 +10,21 @@ import {
   parseWeightUnit,
 } from "@/api/user";
 import { readFitbitMigrationSettings } from "@/storage/db/import-from-fitbit-migration";
+import type { MigrationBackup } from "@/storage/db/fitbitmigrationdb";
 import { clientOnlyFoodsAtom } from "@/storage/client-only-foods";
 import { clientOnlyGoalsAtom } from "@/storage/goals";
 import { mealsAtom } from "@/storage/meals";
 import { settingsBlobAtom, DEFAULT_FDA_MACRO_GOALS } from "@/storage/settings";
-import { dashboardsAtom, type UserTile } from "@/storage/tiles";
+import { dashboardsAtom, userTilesAtom, type UserTile } from "@/storage/tiles";
 import {
   createDefaultDashboardsData,
   createDefaultSettingsData,
+  userTileSchema,
   type DashboardsData,
   type SettingsData,
   type SettingsPrefs,
 } from "@/storage/settings-storage";
+import { z } from "zod";
 
 function readJsonLocalStorage(key: string): unknown {
   if (typeof localStorage === "undefined") {
@@ -167,15 +170,26 @@ function readLegacySettingsPrefs(): SettingsPrefs {
   return prefs;
 }
 
-function readLegacyDashboards(): DashboardsData {
+function readLegacyTiles(): UserTile[] | undefined {
   const tiles = readJsonLocalStorage("dashboard-tiles");
-  if (Array.isArray(tiles) && tiles.length > 0) {
+  if (tiles === undefined) {
+    return undefined;
+  }
+  const parsed = z.array(userTileSchema).safeParse(tiles);
+  if (!parsed.success) {
+    throw new Error("The dashboard tiles saved in this browser are invalid.");
+  }
+  return parsed.data;
+}
+
+function readLegacyDashboards(tiles: UserTile[] | undefined): DashboardsData {
+  if (tiles !== undefined) {
     return {
       dashboards: [
         {
           id: crypto.randomUUID(),
           name: "Main",
-          tiles: tiles as UserTile[],
+          tiles,
         },
       ],
     };
@@ -195,13 +209,27 @@ export async function importLegacySettings() {
       ...readLegacySettingsPrefs(),
     },
   };
-  const dashboards = readLegacyDashboards();
+  const dashboards = readLegacyDashboards(readLegacyTiles());
   const { clientOnlyGoals, meals, clientOnlyFoods } =
     readFitbitMigrationSettings();
 
   const store = getDefaultStore();
   await store.set(settingsBlobAtom, settingsData);
   await store.set(dashboardsAtom, dashboards);
+  await store.set(clientOnlyGoalsAtom, clientOnlyGoals);
+  await store.set(mealsAtom, meals);
+  await store.set(clientOnlyFoodsAtom, clientOnlyFoods);
+}
+
+/** Import a downloaded Fitbit backup and any dashboard tiles saved locally. */
+export async function importFitbitMigrationFile(backup: MigrationBackup) {
+  const tiles = readLegacyTiles();
+  const { clientOnlyGoals, meals, clientOnlyFoods } =
+    readFitbitMigrationSettings(backup);
+  const store = getDefaultStore();
+  if (tiles !== undefined) {
+    await store.set(userTilesAtom, tiles);
+  }
   await store.set(clientOnlyGoalsAtom, clientOnlyGoals);
   await store.set(mealsAtom, meals);
   await store.set(clientOnlyFoodsAtom, clientOnlyFoods);

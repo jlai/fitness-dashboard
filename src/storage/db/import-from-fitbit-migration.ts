@@ -1,5 +1,6 @@
 import {
   readMigrationBackup,
+  type MigrationBackup,
   type MigrationGoal,
 } from "@/storage/db/fitbitmigrationdb";
 import type {
@@ -29,12 +30,14 @@ export function migrationGoalToClientGoal(goal: MigrationGoal): ClientGoal {
  * SettingsStorage blob shapes. Private foods referenced by meals are included
  * even if they were not in the backup customFoods list.
  */
-export function readFitbitMigrationSettings(): {
+export function readFitbitMigrationSettings(
+  backup: MigrationBackup = readMigrationBackup(),
+): {
   clientOnlyGoals: ClientOnlyGoalsData;
   meals: MealsData;
   clientOnlyFoods: ClientOnlyFoodsData;
 } {
-  const { customFoods, meals, goals } = readMigrationBackup();
+  const { customFoods, meals, goals } = backup;
 
   const foodDataPointsByName = new Map(
     [

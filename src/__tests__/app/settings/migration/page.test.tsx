@@ -8,8 +8,11 @@ import {
 } from "@/storage/db/fitbitmigrationdb";
 
 const importLegacySettings = jest.fn();
+const importFitbitMigrationFile = jest.fn();
 const replace = jest.fn();
 const confirm = jest.fn();
+const reportError = jest.fn();
+let driveEnabled = true;
 
 jest.mock("@/components/require-login", () => ({
   __esModule: true,
@@ -25,7 +28,7 @@ jest.mock("material-ui-confirm", () => ({
 }));
 
 jest.mock("@/api/auth", () => ({
-  useDriveAuthEnabled: () => true,
+  useDriveAuthEnabled: () => driveEnabled,
 }));
 
 jest.mock("@/storage/settings-storage", () => ({
@@ -37,29 +40,35 @@ jest.mock("@/storage/settings-storage", () => ({
 
 jest.mock("@/storage/settings-storage/migrate-from-legacy", () => ({
   importLegacySettings: () => importLegacySettings(),
+  importFitbitMigrationFile: (backup: unknown) =>
+    importFitbitMigrationFile(backup),
 }));
 
 jest.mock("@/components/toast", () => ({
   showSuccessToast: jest.fn(),
-  withErrorToaster: (fn: () => Promise<void>) => async () => {
-    try {
-      await fn();
-    } catch {
-      // The real helper toasts and rethrows; swallow here so the click
-      // handler's discarded promise does not fail the test.
-    }
-  },
+  withErrorToaster:
+    (fn: (...args: never[]) => Promise<void>, message: string) =>
+    async (...args: never[]) => {
+      try {
+        await fn(...args);
+      } catch (error) {
+        reportError(message, error);
+      }
+    },
 }));
 
 describe("SettingsMigrationPage", () => {
   beforeEach(() => {
     localStorage.clear();
     importLegacySettings.mockReset().mockResolvedValue(undefined);
+    importFitbitMigrationFile.mockReset().mockResolvedValue(undefined);
+    driveEnabled = true;
     replace.mockReset();
+    reportError.mockReset();
     confirm.mockReset().mockResolvedValue({ confirmed: true });
   });
 
-  it("hides import when the Fitbit migration backup is missing", async () => {
+  it("offers a file import when the Fitbit migration backup is missing", async () => {
     render(<SettingsMigrationPage />);
 
     expect(
@@ -69,6 +78,94 @@ describe("SettingsMigrationPage", () => {
       screen.queryByRole("button", { name: "Import old settings" }),
     ).toBeNull();
     expect(screen.queryByRole("button", { name: "Don't import" })).toBeNull();
+    expect(screen.getByLabelText("Import from JSON file")).toBeTruthy();
+  });
+
+  it("imports a selected JSON backup and clears the Fitbit auth token", async () => {
+    localStorage.setItem(FITBIT_AUTH_TOKEN_STORAGE_KEY, "legacy-token");
+    const backup = {
+      customFoods: [],
+      meals: [],
+      goals: [{ metric: "steps", period: "daily", value: 5000 }],
+    };
+    const file = new File([""], "backup.json", { type: "application/json" });
+    file.text = jest.fn().mockResolvedValue(JSON.stringify(backup));
+
+    render(<SettingsMigrationPage />);
+    fireEvent.change(screen.getByLabelText("Import from JSON file"), {
+      target: { files: [file] },
+    });
+
+    await waitFor(() => {
+      expect(importFitbitMigrationFile).toHaveBeenCalledWith(backup);
+      expect(replace).toHaveBeenCalledWith("/");
+    });
+    expect(localStorage.getItem(FITBIT_AUTH_TOKEN_STORAGE_KEY)).toBeNull();
+    expect(showSuccessToast).toHaveBeenCalledWith(
+      "Imported Fitbit backup from file",
+    );
+  });
+
+  it.each([
+    "not-json",
+    '{"customFoods":[]}',
+    '{"customFoods":[],"meals":[],"goals":[{}]}',
+  ])("does not import an invalid file", async (contents) => {
+    localStorage.setItem(FITBIT_AUTH_TOKEN_STORAGE_KEY, "legacy-token");
+    const file = new File([""], "backup.json");
+    file.text = jest.fn().mockResolvedValue(contents);
+    render(<SettingsMigrationPage />);
+    fireEvent.change(screen.getByLabelText("Import from JSON file"), {
+      target: { files: [file] },
+    });
+
+    await waitFor(() =>
+      expect(reportError).toHaveBeenCalledWith(
+        "Failed to import Fitbit backup",
+        expect.any(Error),
+      ),
+    );
+    expect(importFitbitMigrationFile).not.toHaveBeenCalled();
+    expect(localStorage.getItem(FITBIT_AUTH_TOKEN_STORAGE_KEY)).toBe(
+      "legacy-token",
+    );
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it("does not clear the token or redirect if file import fails", async () => {
+    localStorage.setItem(FITBIT_AUTH_TOKEN_STORAGE_KEY, "legacy-token");
+    importFitbitMigrationFile.mockRejectedValue(new Error("import failed"));
+    const file = new File([""], "backup.json");
+    file.text = jest
+      .fn()
+      .mockResolvedValue(
+        JSON.stringify({ customFoods: [], meals: [], goals: [] }),
+      );
+    render(<SettingsMigrationPage />);
+    fireEvent.change(screen.getByLabelText("Import from JSON file"), {
+      target: { files: [file] },
+    });
+
+    await waitFor(() => expect(importFitbitMigrationFile).toHaveBeenCalled());
+    await waitFor(() =>
+      expect(reportError).toHaveBeenCalledWith(
+        "Failed to import Fitbit backup",
+        expect.any(Error),
+      ),
+    );
+    expect(localStorage.getItem(FITBIT_AUTH_TOKEN_STORAGE_KEY)).toBe(
+      "legacy-token",
+    );
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it("disables file import without Google Drive access", () => {
+    driveEnabled = false;
+    render(<SettingsMigrationPage />);
+    expect(
+      (screen.getByLabelText("Import from JSON file") as HTMLInputElement)
+        .disabled,
+    ).toBe(true);
   });
 
   it("imports settings and clears the Fitbit backup and auth token", async () => {
@@ -77,6 +174,7 @@ describe("SettingsMigrationPage", () => {
 
     render(<SettingsMigrationPage />);
 
+    expect(screen.queryByLabelText("Import from JSON file")).toBeNull();
     fireEvent.click(
       await screen.findByRole("button", { name: "Import old settings" }),
     );
