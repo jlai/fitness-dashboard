@@ -23,7 +23,7 @@ CSRF/XSS and injection attacks but this is an easy point of defense.
 
 # Testing
 
-Make sure that `npm build` works before you're done. Output to a temporary directory under `.temp` to avoid conflicting with other commands.
+Make sure that `npm build` works before you're done. Only do this for large changes. Output to a temporary directory under `.temp` to avoid conflicting with other commands.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

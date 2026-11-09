@@ -21,7 +21,7 @@ import {
 } from "./types";
 
 /** Delay before persisting a settings key to Drive after the last write. */
-export const DRIVE_SETTINGS_WRITE_DEBOUNCE_MS = 5_000;
+export const DRIVE_SETTINGS_WRITE_DEBOUNCE_MS = 500;
 
 type CacheEntry =
   | { kind: "present"; value: StoredData<unknown>; fileId?: string }
