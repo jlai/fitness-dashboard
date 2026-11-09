@@ -45,6 +45,11 @@ export function getDefaultFoodServingSize(food: Food): ServingSize | null {
 export function getConfiguredServingOptions(food: Food): Array<ServingSize> {
   return (
     food.servings?.flatMap((serving) => {
+      // Servings without a unit id can't be logged
+      if (!serving.unit.id) {
+        return [];
+      }
+
       const isDefaultServing =
         serving.unit.id === (food.defaultUnit ?? food.unit)?.id &&
         serving.servingSize === (food.defaultServingSize ?? 1);

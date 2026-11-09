@@ -255,6 +255,9 @@ export async function lookupFoodMeasurementUnits(
   );
 }
 
+/** Food measurement unit id for "serving", used when none is specified */
+export const DEFAULT_SERVING_UNIT_ID = "304";
+
 function mapFoodServing(
   serving: HealthFoodServing,
   unitsByResourceName?: Map<string, FoodUnit>,
@@ -326,12 +329,37 @@ export function mapFoodDataPoint(
   unitsByResourceName?: Map<string, FoodUnit>,
 ): Food {
   const food = getDataPointValue("food", dataPoint);
-  const defaultServing = food.defaultServing
+  const mappedDefaultServing = food.defaultServing
     ? mapFoodServing(food.defaultServing, unitsByResourceName)
     : undefined;
-  const servings = food.servings?.map((serving) =>
-    mapFoodServing(serving, unitsByResourceName),
-  );
+  const defaultServing = mappedDefaultServing
+    ? {
+        ...mappedDefaultServing,
+        unit: {
+          ...mappedDefaultServing.unit,
+          id: mappedDefaultServing.unit.id || DEFAULT_SERVING_UNIT_ID,
+        },
+      }
+    : undefined;
+  const servings = food.servings?.map((serving) => {
+    const mapped = mapFoodServing(serving, unitsByResourceName);
+
+    // A serving without a unit id that is the default serving gets the same fallback id
+    if (
+      !mapped.unit.id &&
+      defaultServing &&
+      !mappedDefaultServing?.unit.id &&
+      mapped.servingSize === defaultServing.servingSize &&
+      mapped.unit.name === defaultServing.unit.name
+    ) {
+      return {
+        ...mapped,
+        unit: { ...mapped.unit, id: defaultServing.unit.id },
+      };
+    }
+
+    return mapped;
+  });
   const nutritionalValues: NutritionalValues = {
     ...mapNutrientQuantities(food.nutrients),
     ...(food.energyAvg?.kcal != null ? { calories: food.energyAvg.kcal } : {}),

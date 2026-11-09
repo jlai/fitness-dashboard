@@ -17,6 +17,7 @@ import { formatAsDate } from "../datetime";
 import mutationOptions from "../mutation-options";
 
 import {
+  DEFAULT_SERVING_UNIT_ID,
   getDataPointIdFromName,
   nutritionalValuesToHealthFields,
   scaleNutritionalValues,
@@ -136,11 +137,20 @@ function writableServing(serving?: Serving): Serving | undefined {
     return undefined;
   }
 
+  let foodMeasurementUnit = serving.foodMeasurementUnit;
+
+  if (!foodMeasurementUnit) {
+    console.warn(
+      `Nutrition log serving is missing a food measurement unit; using ${DEFAULT_SERVING_UNIT_ID}`,
+    );
+    foodMeasurementUnit = foodMeasurementUnitResourceName(
+      DEFAULT_SERVING_UNIT_ID,
+    );
+  }
+
   return {
     amount: serving.amount,
-    ...(serving.foodMeasurementUnit
-      ? { foodMeasurementUnit: serving.foodMeasurementUnit }
-      : {}),
+    foodMeasurementUnit,
   };
 }
 
