@@ -1,16 +1,21 @@
 import { SelectElement } from "react-hook-form-mui";
 
-import { MealType } from "@/api/nutrition";
+import { MEAL_TYPE_NAMES, NutritionLogMealType } from "@/api/nutrition";
 
 const options = [
-  { id: MealType.Anytime, label: "Anytime" },
-  { id: MealType.Breakfast, label: "Breakfast" },
-  { id: MealType.MorningSnack, label: "Morning snack" },
-  { id: MealType.Lunch, label: "Lunch" },
-  { id: MealType.AfternoonSnack, label: "Afternoon snack" },
-  { id: MealType.Dinner, label: "Dinner" },
-  { id: MealType.EveningSnack, label: "Evening snack" },
-];
+  NutritionLogMealType.ANYTIME,
+  NutritionLogMealType.BEFORE_BREAKFAST,
+  NutritionLogMealType.BREAKFAST,
+  NutritionLogMealType.BEFORE_LUNCH,
+  NutritionLogMealType.LUNCH,
+  NutritionLogMealType.BEFORE_DINNER,
+  NutritionLogMealType.DINNER,
+  NutritionLogMealType.AFTER_DINNER,
+  NutritionLogMealType.SNACK,
+].map((id) => ({
+  id,
+  label: MEAL_TYPE_NAMES[id],
+}));
 
 export function MealTypeElement({
   name,

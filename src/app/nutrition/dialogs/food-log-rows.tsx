@@ -266,12 +266,13 @@ export function MealTypeRows({ summary }: { summary: MealTypeSummary }) {
     foods.map((foodLog) => updateSelectedFoodLog(foodLog, checked));
   };
   const selectedFoodLogs = useAtomValue(selectedFoodLogsAtom);
-  const displayedFoods = summary.id == -1 ? [] : summary.foods;
+  const isTotal = summary.id === "total";
+  const displayedFoods = isTotal ? [] : summary.foods;
   const checked =
     selectedFoodLogs.filter(
       (foodLog) =>
-        mapNutritionLogMealType(foodLog.nutritionLog.mealType) == summary.id ||
-        summary.id == -1,
+        mapNutritionLogMealType(foodLog.nutritionLog.mealType) === summary.id ||
+        isTotal,
     ).size > 0;
   const indeterminate =
     checked && !summary.foods.every((foodLog) => selectedFoodLogs.has(foodLog));
@@ -344,7 +345,7 @@ export function TotalsRow({
   foodLogsResponse: NutritionLogsResult;
 }) {
   const summary: MealTypeSummary = {
-    id: -1,
+    id: "total",
     name: "Total",
     foods: foodLogsResponse.dataPoints,
     ...foodLogsResponse.summary,

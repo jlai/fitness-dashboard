@@ -4,7 +4,6 @@ import {
   NutritionLogMealType,
 } from "@generated/orval/fetch/google-health-api/models";
 
-import { MealType } from "@/api/nutrition/types";
 import {
   mapFoodDataPoint,
   mapFoodMeasurementUnit,
@@ -14,9 +13,9 @@ import {
   nutritionLogDay,
   nutritionLogMacros,
   nutritionLogServingUnit,
+  mapNutritionLogMealType,
   summarizeNutritionLogs,
   toNutrientQuantities,
-  toNutritionLogMealType,
 } from "@/api/nutrition/helpers";
 
 describe("getDataPointIdFromName", () => {
@@ -375,29 +374,21 @@ describe("nutritionLogDay", () => {
   });
 });
 
-describe("toNutritionLogMealType", () => {
-  it("maps Fitbit meal types onto nutrition-log meal types", () => {
-    expect(toNutritionLogMealType(MealType.Breakfast)).toBe(
-      NutritionLogMealType.BREAKFAST,
-    );
-    expect(toNutritionLogMealType(MealType.MorningSnack)).toBe(
+describe("mapNutritionLogMealType", () => {
+  it("preserves Google Health meal types", () => {
+    expect(mapNutritionLogMealType(NutritionLogMealType.BEFORE_LUNCH)).toBe(
       NutritionLogMealType.BEFORE_LUNCH,
     );
-    expect(toNutritionLogMealType(MealType.Lunch)).toBe(
-      NutritionLogMealType.LUNCH,
+    expect(mapNutritionLogMealType(NutritionLogMealType.SNACK)).toBe(
+      NutritionLogMealType.SNACK,
     );
-    expect(toNutritionLogMealType(MealType.AfternoonSnack)).toBe(
-      NutritionLogMealType.BEFORE_DINNER,
-    );
-    expect(toNutritionLogMealType(MealType.Dinner)).toBe(
-      NutritionLogMealType.DINNER,
-    );
-    expect(toNutritionLogMealType(MealType.EveningSnack)).toBe(
-      NutritionLogMealType.AFTER_DINNER,
-    );
-    expect(toNutritionLogMealType(MealType.Anytime)).toBe(
-      NutritionLogMealType.ANYTIME,
-    );
+  });
+
+  it("defaults missing and unspecified meal types to Anytime", () => {
+    expect(mapNutritionLogMealType()).toBe(NutritionLogMealType.ANYTIME);
+    expect(
+      mapNutritionLogMealType(NutritionLogMealType.MEAL_TYPE_UNSPECIFIED),
+    ).toBe(NutritionLogMealType.ANYTIME);
   });
 });
 

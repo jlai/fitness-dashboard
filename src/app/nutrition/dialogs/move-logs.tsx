@@ -12,10 +12,9 @@ import { FormContainer } from "react-hook-form-mui";
 
 import { MealTypeElement } from "@/components/nutrition/food/meal-type-element";
 import {
-  MealType,
+  NutritionLogMealType,
   buildUpdateFoodLogsMutation,
   nutritionLogDay,
-  toNutritionLogMealType,
 } from "@/api/nutrition";
 import { showSuccessToast, withErrorToaster } from "@/components/toast";
 import { MissingScopesAlert } from "@/components/require-scopes";
@@ -27,7 +26,7 @@ import { selectedFoodLogsAtom } from "../atoms";
 import { moveDialogOpenAtom } from "./atoms";
 
 interface MoveFoodLogsFormData {
-  mealType: MealType;
+  mealType: NutritionLogMealType;
 }
 
 export function MoveFoodLogsDialog() {
@@ -47,7 +46,7 @@ export function MoveFoodLogsDialog() {
         name: foodLog.name!,
         nutritionLog: {
           ...foodLog.nutritionLog,
-          mealType: toNutritionLogMealType(values.mealType),
+          mealType: values.mealType,
         },
         day: nutritionLogDay(foodLog.nutritionLog),
       })),
@@ -61,7 +60,7 @@ export function MoveFoodLogsDialog() {
     <Dialog open={open} onClose={() => setOpen(false)}>
       <FormContainer
         onSuccess={onSubmit}
-        defaultValues={{ mealType: MealType.Anytime }}
+        defaultValues={{ mealType: NutritionLogMealType.ANYTIME }}
       >
         <DialogTitle>Move to a different time?</DialogTitle>
         <DialogContent>

@@ -1,13 +1,13 @@
 import {
-  MealType,
   MEAL_TYPE_NAMES,
   mapNutritionLogMealType,
   nutritionLogMacros,
   NutritionLogDataPoint,
+  NutritionLogMealType,
 } from "@/api/nutrition";
 
 export interface MealTypeSummary {
-  id: number;
+  id: NutritionLogMealType | "total";
   name: string;
   foods: NutritionLogDataPoint[];
   calories: number;
@@ -19,7 +19,7 @@ export interface MealTypeSummary {
 }
 
 export function groupByMealType(dataPoints: Array<NutritionLogDataPoint>) {
-  const mealTypeSummaries = new Map<number, MealTypeSummary>();
+  const mealTypeSummaries = new Map<NutritionLogMealType, MealTypeSummary>();
 
   const defaultNutrients = {
     calories: 0,
@@ -31,17 +31,19 @@ export function groupByMealType(dataPoints: Array<NutritionLogDataPoint>) {
   };
 
   for (const mealType of [
-    MealType.Breakfast,
-    MealType.MorningSnack,
-    MealType.Lunch,
-    MealType.AfternoonSnack,
-    MealType.Dinner,
-    MealType.EveningSnack,
-    MealType.Anytime,
+    NutritionLogMealType.BEFORE_BREAKFAST,
+    NutritionLogMealType.BREAKFAST,
+    NutritionLogMealType.BEFORE_LUNCH,
+    NutritionLogMealType.LUNCH,
+    NutritionLogMealType.BEFORE_DINNER,
+    NutritionLogMealType.DINNER,
+    NutritionLogMealType.AFTER_DINNER,
+    NutritionLogMealType.SNACK,
+    NutritionLogMealType.ANYTIME,
   ]) {
     mealTypeSummaries.set(mealType, {
       id: mealType,
-      name: MEAL_TYPE_NAMES[mealType]!,
+      name: MEAL_TYPE_NAMES[mealType],
       foods: [],
       ...defaultNutrients,
     });

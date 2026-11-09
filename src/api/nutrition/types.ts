@@ -1,3 +1,7 @@
+import { NutritionLogMealType } from "@generated/orval/fetch/google-health-api/models";
+
+export { NutritionLogMealType };
+
 export interface FoodUnit {
   id: string;
   name: string;
@@ -94,24 +98,17 @@ export type MealFood = Food & {
   amount: number;
 };
 
-export enum MealType {
-  Breakfast = 1,
-  MorningSnack = 2,
-  Lunch = 3,
-  AfternoonSnack = 4,
-  Dinner = 5,
-  EveningSnack = 6,
-  Anytime = 7,
-}
-
-export const MEAL_TYPE_NAMES = {
-  [MealType.Breakfast]: "Breakfast",
-  [MealType.MorningSnack]: "Morning Snack",
-  [MealType.Lunch]: "Lunch",
-  [MealType.AfternoonSnack]: "Afternoon Snack",
-  [MealType.Dinner]: "Dinner",
-  [MealType.EveningSnack]: "Evening Snack",
-  [MealType.Anytime]: "Anytime",
+export const MEAL_TYPE_NAMES: Record<NutritionLogMealType, string> = {
+  [NutritionLogMealType.MEAL_TYPE_UNSPECIFIED]: "Unspecified",
+  [NutritionLogMealType.BEFORE_BREAKFAST]: "Before breakfast",
+  [NutritionLogMealType.BREAKFAST]: "Breakfast",
+  [NutritionLogMealType.BEFORE_LUNCH]: "Morning Snack",
+  [NutritionLogMealType.LUNCH]: "Lunch",
+  [NutritionLogMealType.BEFORE_DINNER]: "Afternoon Snack",
+  [NutritionLogMealType.DINNER]: "Dinner",
+  [NutritionLogMealType.AFTER_DINNER]: "Evening Snack",
+  [NutritionLogMealType.SNACK]: "Snack",
+  [NutritionLogMealType.ANYTIME]: "Anytime",
 };
 
 export interface GetFoodResponse {

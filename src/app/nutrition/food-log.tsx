@@ -186,7 +186,7 @@ export default function FoodLog({ day }: { day: Dayjs }) {
             )}
             {[...groupedMealTypes.values()]
               .filter(
-                (summary) => summary.foods.length > 0 || summary.id === -1,
+                (summary) => summary.foods.length > 0 || summary.id === "total",
               )
               .map((summary) => (
                 <MealTypeRows key={summary.id} summary={summary} />

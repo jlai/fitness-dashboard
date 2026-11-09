@@ -12,7 +12,6 @@ import type { DataPointFor } from "../datapoints";
 import { getDataPoint, getDataPointValue } from "../datapoints";
 
 import {
-  MealType,
   type Food,
   type FoodAccessLevel,
   type FoodLogSummary,
@@ -755,49 +754,20 @@ export function foodToDataPoint(food: Food): FoodDataPoint {
   };
 }
 
-const NUTRITION_LOG_MEAL_TYPES: Record<NutritionLogMealType, MealType> = {
-  [NutritionLogMealType.MEAL_TYPE_UNSPECIFIED]: MealType.Anytime,
-  [NutritionLogMealType.BEFORE_BREAKFAST]: MealType.Anytime,
-  [NutritionLogMealType.BREAKFAST]: MealType.Breakfast,
-  [NutritionLogMealType.BEFORE_LUNCH]: MealType.MorningSnack,
-  [NutritionLogMealType.LUNCH]: MealType.Lunch,
-  [NutritionLogMealType.BEFORE_DINNER]: MealType.AfternoonSnack,
-  [NutritionLogMealType.DINNER]: MealType.Dinner,
-  [NutritionLogMealType.AFTER_DINNER]: MealType.EveningSnack,
-  [NutritionLogMealType.SNACK]: MealType.Anytime,
-  [NutritionLogMealType.ANYTIME]: MealType.Anytime,
-};
+const NUTRITION_LOG_MEAL_TYPES = new Set(Object.values(NutritionLogMealType));
 
 export function mapNutritionLogMealType(
   mealType?: NutritionLogMealType,
-): MealType {
-  if (!mealType) {
-    return MealType.Anytime;
-  }
-
-  return NUTRITION_LOG_MEAL_TYPES[mealType] ?? MealType.Anytime;
-}
-
-export function toNutritionLogMealType(
-  mealType: MealType,
 ): NutritionLogMealType {
-  switch (mealType) {
-    case MealType.Breakfast:
-      return NutritionLogMealType.BREAKFAST;
-    case MealType.MorningSnack:
-      return NutritionLogMealType.BEFORE_LUNCH;
-    case MealType.Lunch:
-      return NutritionLogMealType.LUNCH;
-    case MealType.AfternoonSnack:
-      return NutritionLogMealType.BEFORE_DINNER;
-    case MealType.Dinner:
-      return NutritionLogMealType.DINNER;
-    case MealType.EveningSnack:
-      return NutritionLogMealType.AFTER_DINNER;
-    case MealType.Anytime:
-    default:
-      return NutritionLogMealType.ANYTIME;
+  if (
+    !mealType ||
+    mealType === NutritionLogMealType.MEAL_TYPE_UNSPECIFIED ||
+    !NUTRITION_LOG_MEAL_TYPES.has(mealType)
+  ) {
+    return NutritionLogMealType.ANYTIME;
   }
+
+  return mealType;
 }
 
 export function nutritionLogDay(log: NutritionLog) {

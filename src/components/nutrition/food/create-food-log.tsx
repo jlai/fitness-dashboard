@@ -28,13 +28,12 @@ import NextLink from "next/link";
 
 import {
   Food,
-  MealType,
+  NutritionLogMealType,
   buildCreateFoodLogMutation,
   nutritionLogFromMealFood,
   nutritionLogServing,
   nutritionalValuesToHealthFields,
   NutritionalValues,
-  toNutritionLogMealType,
 } from "@/api/nutrition";
 import LinkedDayElement, { DaySelectorSource } from "@/components/linked-day";
 import { selectedDayForPageAtom } from "@/state";
@@ -59,7 +58,7 @@ import { commonFoodUnits } from "@/config/common-ids";
 interface CreateFoodLogFormData {
   daySource: DaySelectorSource;
   food: Food | null;
-  mealType: MealType;
+  mealType: NutritionLogMealType;
   servingSize: ServingSize | null;
   customName: string;
   customCalories: string;
@@ -159,7 +158,7 @@ export function CreateFoodLogForm() {
     defaultValues: {
       daySource: "today",
       food: null,
-      mealType: MealType.Anytime,
+      mealType: NutritionLogMealType.ANYTIME,
       servingSize: null,
       customName: "",
       customCalories: "",
@@ -288,7 +287,7 @@ export function CreateFoodLogForm() {
       await createFood({
         nutritionLog: {
           foodDisplayName: name,
-          mealType: toNutritionLogMealType(mealType),
+          mealType,
           serving: nutritionLogServing(
             customServing?.amount ?? 1,
             (customServing ?? DEFAULT_CUSTOM_SERVING).unit.id,
@@ -321,7 +320,7 @@ export function CreateFoodLogForm() {
     await createFood({
       nutritionLog: nutritionLogFromMealFood(
         { ...food, amount: servingSize.amount, unit: servingSize.unit },
-        toNutritionLogMealType(mealType),
+        mealType,
         servingSize.servingAmount !== undefined
           ? (servingSize.amount / servingSize.servingAmount) *
               (servingSize.multiplier ?? 1)

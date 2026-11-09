@@ -241,7 +241,7 @@ export default function ManageCustomFoods() {
       </HeaderBar>
       <Typography className="m-4">
         Food templates let you quickly log foods that are not in Google
-        Health&amp;s food database. Food templates are stored by the dashboard
+        Health&apos;s food database. Food templates are stored by the dashboard
         and are not synced with the Google Health app. Changes affect future
         logs and saved meals, not existing food logs.
       </Typography>
