@@ -10,6 +10,7 @@ import { userTilesAtom } from "@/storage/tiles";
 import { increasedTileLimitsAtom } from "@/storage/settings";
 
 import { SettingsRow, SettingsTable } from "../common";
+import { TroubleshootingSettings } from "./troubleshooting-settings";
 
 function AdvancedSettings() {
   const confirm = useConfirm();
@@ -60,8 +61,13 @@ function AdvancedSettings() {
 
 export default function AdvancedSettingsPage() {
   return (
-    <SettingsTable>
-      <AdvancedSettings />
-    </SettingsTable>
+    <>
+      <SettingsTable>
+        <AdvancedSettings />
+      </SettingsTable>
+      <SettingsTable>
+        <TroubleshootingSettings />
+      </SettingsTable>
+    </>
   );
 }
