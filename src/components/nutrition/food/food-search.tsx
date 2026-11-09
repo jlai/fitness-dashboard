@@ -282,6 +282,11 @@ export default function SearchFoods({
             type="search"
             label="Select a food"
             placeholder="Type to search ..."
+            sx={{
+              "input[type='search']::-webkit-search-cancel-button": {
+                display: "none",
+              },
+            }}
             {...params}
           />
         )}
