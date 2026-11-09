@@ -38,6 +38,7 @@ type FoodOption = Food & {
   recent?: boolean;
   favorite?: boolean;
   frequent?: boolean;
+  template?: boolean;
 };
 
 type SearchOption = {
@@ -96,7 +97,10 @@ function FoodOptionDisplay({
         {option.favorite && (
           <ShrinkingChip label="Favorite" icon={<FavoriteIcon />} />
         )}
-        {option.accessLevel === "PRIVATE" && (
+        {option.template && (
+          <ShrinkingChip label="Template" icon={<CustomIcon />} />
+        )}
+        {option.accessLevel === "PRIVATE" && !option.template && (
           <ShrinkingChip label="Custom" icon={<CustomIcon />} />
         )}
         {option.recent && (
@@ -218,6 +222,9 @@ export default function SearchFoods({
       clientOnlyFavoriteFoods.map(({ foodId }) => foodId),
     );
     const recentIds = new Set((recentFoods ?? []).map(({ foodId }) => foodId));
+    const templateIds = new Set(
+      clientOnlyFoods.map((food) => mapFoodDataPoint(food).foodId),
+    );
     return [
       ...(favoriteFoods ?? []).filter((food) => !food.unavailable),
       ...clientOnlyFoods.map((food) => mapFoodDataPoint(food)),
@@ -227,6 +234,7 @@ export default function SearchFoods({
       ...food,
       favorite: favoriteIds.has(food.foodId),
       recent: recentIds.has(food.foodId),
+      template: templateIds.has(food.foodId),
     }));
   }, [
     favoriteFoods,

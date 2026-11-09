@@ -126,7 +126,7 @@ async function renderPage(client: QueryClient) {
   });
 }
 
-describe("Dashboard custom food editor", () => {
+describe("Food template editor", () => {
   beforeEach(async () => {
     jest.clearAllMocks();
     jest.restoreAllMocks();
@@ -265,7 +265,7 @@ describe("Dashboard custom food editor", () => {
       await getDefaultStore().set(clientOnlyFoodsAtom, { clientOnlyFoods: [] });
     });
     expect(
-      screen.getByText("There are no Dashboard custom foods to edit."),
+      screen.getByText("There are no food templates to edit."),
     ).toBeTruthy();
   });
 
@@ -311,7 +311,9 @@ describe("Dashboard custom food editor", () => {
     const client = new QueryClient();
     await client.fetchQuery(buildClientOnlyFoodsQuery());
     await renderPage(client);
-    fireEvent.click(screen.getByRole("button", { name: "Create new food" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Create new template" }),
+    );
     fireEvent.change(
       await screen.findByRole("textbox", { name: /Food name/ }),
       {
@@ -408,13 +410,16 @@ describe("Dashboard custom food editor", () => {
       );
     });
     fireEvent.click(screen.getByRole("button", { name: "Open" }));
-    expect(await screen.findByRole("option", { name: /Oatmeal/ })).toBeTruthy();
+    const option = await screen.findByRole("option", { name: /Oatmeal/ });
+    expect(option.textContent).toContain("Template");
     uuidSpy.mockRestore();
   });
 
   it("requires a valid name, serving amount, and serving unit when creating", async () => {
     await renderPage(new QueryClient());
-    fireEvent.click(screen.getByRole("button", { name: "Create new food" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Create new template" }),
+    );
     fireEvent.change(
       await screen.findByRole("textbox", { name: /Food name/ }),
       {
@@ -544,7 +549,7 @@ describe("Dashboard custom food editor", () => {
     fireEvent.click(screen.getByRole("checkbox", { name: "Soup" }));
     fireEvent.click(screen.getByRole("checkbox", { name: "Rice" }));
     fireEvent.click(
-      screen.getByRole("button", { name: "Delete custom foods" }),
+      screen.getByRole("button", { name: "Delete food templates" }),
     );
     await waitFor(() =>
       expect(mockToastError).toHaveBeenCalledWith(
@@ -569,14 +574,14 @@ describe("Dashboard custom food editor", () => {
     fireEvent.click(screen.getByRole("checkbox", { name: "Soup" }));
     mockConfirm.mockResolvedValueOnce({ confirmed: false });
     fireEvent.click(
-      screen.getByRole("button", { name: "Delete custom foods" }),
+      screen.getByRole("button", { name: "Delete food templates" }),
     );
     await waitFor(() => expect(mockConfirm).toHaveBeenCalledTimes(1));
     expect((await store.get(clientOnlyFoodsAtom)).clientOnlyFoods).toHaveLength(
       1,
     );
     fireEvent.click(
-      screen.getByRole("button", { name: "Delete custom foods" }),
+      screen.getByRole("button", { name: "Delete food templates" }),
     );
     await waitFor(async () =>
       expect(
@@ -596,7 +601,7 @@ describe("Dashboard custom food editor", () => {
     expect(await client.fetchQuery(buildClientOnlyFoodsQuery())).toEqual([]);
     expect(
       screen
-        .getByRole("button", { name: "Delete custom foods" })
+        .getByRole("button", { name: "Delete food templates" })
         .hasAttribute("disabled"),
     ).toBe(true);
   });

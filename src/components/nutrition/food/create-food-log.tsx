@@ -125,7 +125,7 @@ export default function CreateFoodLog() {
           Favorites
         </Button>
         <Button href="/settings/foods/custom" LinkComponent={NextLink}>
-          Dashboard custom foods
+          Food templates
         </Button>
       </Stack>
     </DividedStack>

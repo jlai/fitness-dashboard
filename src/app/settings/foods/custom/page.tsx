@@ -196,7 +196,7 @@ export default function ManageCustomFoods() {
     setDeleting(true);
     try {
       const { confirmed } = await confirm({
-        title: "Delete Dashboard custom foods?",
+        title: "Delete food templates?",
         description: "Selected foods will also be removed from favorites.",
         confirmationText: "Delete",
       });
@@ -215,28 +215,28 @@ export default function ManageCustomFoods() {
         queryClient.invalidateQueries({ queryKey: ["client-only-foods"] }),
         queryClient.invalidateQueries({ queryKey: ["favorite-foods"] }),
       ]);
-      showSuccessToast("Deleted Dashboard custom foods");
+      showSuccessToast("Deleted food templates");
     } finally {
       setDeleting(false);
     }
-  }, "Error deleting Dashboard custom foods");
+  }, "Error deleting food templates");
 
   return (
     <div>
       <HeaderBar className="pt-4">
-        <Typography variant="h5">Dashboard custom foods</Typography>
+        <Typography variant="h5">Food templates</Typography>
         <div className="flex-1" />
-        <Button onClick={() => setEditing("new")}>Create new food</Button>
+        <Button onClick={() => setEditing("new")}>Create new template</Button>
       </HeaderBar>
       <Typography className="m-4">
-        These foods are stored by the dashboard and are not synced with the
-        Google Health app, which has its own custom foods (which we do not have
-        access to). Changes affect future logs and saved meals, not existing
-        food logs.
+        Food templates let you quickly log foods that are not in Google
+        Health&amp;s food database. Food templates are stored by the dashboard
+        and are not synced with the Google Health app. Changes affect future
+        logs and saved meals, not existing food logs.
       </Typography>
       {clientOnlyFoods.length === 0 ? (
         <Alert severity="info" className="m-4">
-          There are no Dashboard custom foods to edit.
+          There are no food templates to edit.
         </Alert>
       ) : null}
       <DataGrid<Food>
@@ -258,7 +258,7 @@ export default function ManageCustomFoods() {
           disabled={!selection.length || deleting}
           onClick={deleteSelected}
         >
-          Delete custom foods
+          Delete food templates
         </Button>
       </FooterActionBar>
       <NutritionPopover
@@ -441,11 +441,9 @@ function EditCustomFood({
         queryClient.invalidateQueries({ queryKey: ["client-only-foods"] }),
       ]);
       onClose();
-      showSuccessToast(
-        `${creating ? "Created" : "Updated"} Dashboard custom food`,
-      );
+      showSuccessToast(`${creating ? "Created" : "Updated"} food template`);
     },
-    `Error ${creating ? "creating" : "updating"} Dashboard custom food`,
+    `Error ${creating ? "creating" : "updating"} food template`,
   );
 
   return (
@@ -458,9 +456,7 @@ function EditCustomFood({
     >
       <form onSubmit={handleSubmit(save)}>
         <DialogTitle id="custom-food-dialog-title">
-          {creating
-            ? "Create Dashboard custom food"
-            : "Edit Dashboard custom food"}
+          {creating ? "Create food template" : "Edit food template"}
         </DialogTitle>
         <DialogContent>
           <Stack spacing={2} className="pt-2">

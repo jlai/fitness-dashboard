@@ -79,13 +79,6 @@ npm run dev
 
 To connect, open your web browser to http://localhost:3000
 
-## Dashboard custom foods
-
-Use **Dashboard custom foods** below **Favorites** on the food logging page to
-create, edit, or delete dashboard-stored foods. Changes affect saved meals and
-future logs, not existing logs, and are not synced to the Google Health app.
-Custom serving unit names may not appear in Google Health logs. Deleting foods
-also removes them from favorites; remove them from saved meals before deleting.
 
 ## Building for deployment
 

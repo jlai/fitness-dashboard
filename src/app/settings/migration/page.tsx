@@ -102,9 +102,9 @@ function MigrationContent() {
         </li>
         <li>
           Custom foods are no longer synced with the Google Health app. If you
-          previously backed up your custom foods, they will be available as
-          &quot;dashboard only&quot; foods, which are only available on this
-          website and not in the Google Health app.
+          previously backed up your custom foods, they will be available as food
+          templates, which are only available on this website and not in the
+          Google Health app.
         </li>
         <li>
           Only logs created from the dashboard can be edited or deleted. If you
