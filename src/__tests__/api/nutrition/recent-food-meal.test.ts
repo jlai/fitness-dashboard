@@ -1,14 +1,19 @@
 import { QueryClient } from "@tanstack/react-query";
 import { getDefaultStore } from "jotai";
+import { queryClientAtom } from "jotai-tanstack-query";
 
 import { getDataPoint } from "@/api/datapoints";
 import {
   buildMealDetailsQuery,
   buildCreateMealMutation,
   buildMealsQuery,
+  refreshMealDescriptions,
 } from "@/api/nutrition/meals";
 import { foodResourceName } from "@/api/nutrition/food-log";
-import { clientOnlyFoodsAtom } from "@/storage/client-only-foods";
+import {
+  clientOnlyFoodsAtom,
+  type FoodDataPoint,
+} from "@/storage/client-only-foods";
 import { mealsAtom } from "@/storage/meals";
 import {
   getMemorySettingsStorage,
@@ -112,6 +117,129 @@ it("marks a meal food as missing when its server food returns 404", async () => 
     name: "abcd",
     foodNotFound: true,
   });
+});
+
+it("refreshes missing meal food names and preserves newer meal edits", async () => {
+  resetSettingsStorageSingletonsForTests();
+  const store = getDefaultStore();
+  store.set(settingsStorageEpochAtom, (epoch) => epoch + 1);
+  const queryClient = new QueryClient();
+  store.set(queryClientAtom, queryClient);
+  await store.set(mealsAtom, {
+    meals: [
+      {
+        id: "meal-refresh",
+        name: "Lunch",
+        description: "",
+        foods: [
+          { food: foodResourceName("abcd"), serving: { amount: 1 } },
+          { food: foodResourceName("efgh"), serving: { amount: 1 } },
+        ],
+      },
+    ],
+  });
+  queryClient.setQueryData(["meals"], []);
+  mockGetDataPoint.mockImplementation(async (_type, foodId) => {
+    await store.set(mealsAtom, (current) => ({
+      meals: current.meals.map((meal) =>
+        meal.id === "meal-refresh" ? { ...meal, name: "Updated lunch" } : meal,
+      ),
+    }));
+    if (foodId === "efgh") {
+      throw Object.assign(new Error("Not found"), { status: 404 });
+    }
+    return {
+      name: foodResourceName(foodId),
+      food: { displayName: "Oatmeal" },
+    };
+  });
+
+  const result = await refreshMealDescriptions();
+
+  expect(result).toEqual({ updated: 2, failed: 0, remaining: 0 });
+  expect(mockGetDataPoint).toHaveBeenCalledTimes(2);
+  expect((await store.get(mealsAtom)).meals[0]).toMatchObject({
+    name: "Updated lunch",
+    foods: [
+      { cachedDisplayName: "Oatmeal" },
+      { cachedDisplayName: "[missing]" },
+    ],
+  });
+  expect(queryClient.getQueryState(["meals"])?.isInvalidated).toBe(true);
+});
+
+it("refreshes names from local food templates without fetching template ids", async () => {
+  resetSettingsStorageSingletonsForTests();
+  const store = getDefaultStore();
+  store.set(settingsStorageEpochAtom, (epoch) => epoch + 1);
+  store.set(queryClientAtom, new QueryClient());
+  await store.set(clientOnlyFoodsAtom, {
+    clientOnlyFoods: [
+      {
+        id: "template-123",
+        name: foodResourceName("local-123"),
+        food: {
+          displayName: "Oatmeal",
+          accessLevel: "FOOD_ACCESS_LEVEL_PRIVATE",
+        },
+      } as FoodDataPoint & { id: string },
+    ],
+  });
+  await store.set(mealsAtom, {
+    meals: [
+      {
+        id: "meal-template-refresh",
+        name: "Breakfast",
+        description: "",
+        foods: [
+          { foodTemplateId: "template-123", serving: { amount: 1 } },
+          { foodTemplateId: "missing-template", serving: { amount: 1 } },
+        ],
+      },
+    ],
+  });
+
+  const result = await refreshMealDescriptions();
+
+  expect(result).toEqual({ updated: 1, failed: 0, remaining: 0 });
+  expect(mockGetDataPoint).not.toHaveBeenCalled();
+  expect((await store.get(mealsAtom)).meals[0].foods).toEqual([
+    {
+      foodTemplateId: "template-123",
+      serving: { amount: 1 },
+      cachedDisplayName: "Oatmeal",
+    },
+    { foodTemplateId: "missing-template", serving: { amount: 1 } },
+  ]);
+});
+
+it("requests no more than 50 distinct missing meal foods at a time", async () => {
+  resetSettingsStorageSingletonsForTests();
+  const store = getDefaultStore();
+  store.set(settingsStorageEpochAtom, (epoch) => epoch + 1);
+  store.set(queryClientAtom, new QueryClient());
+  await store.set(mealsAtom, {
+    meals: [
+      {
+        id: "meal-limit",
+        name: "Meal",
+        description: "",
+        foods: Array.from({ length: 51 }, (_, index) => ({
+          food: foodResourceName(`food-${String(index).padStart(3, "0")}`),
+          serving: { amount: 1 },
+        })),
+      },
+    ],
+  });
+  mockGetDataPoint.mockImplementation(async (_type, foodId) => ({
+    name: foodResourceName(foodId),
+    food: { displayName: "Food" },
+  }));
+
+  const result = await refreshMealDescriptions();
+
+  expect(mockGetDataPoint).toHaveBeenCalledTimes(50);
+  expect(result).toEqual({ updated: 50, failed: 0, remaining: 1 });
 });
 
 it("resolves legacy meal food templates while migrating stored settings", async () => {

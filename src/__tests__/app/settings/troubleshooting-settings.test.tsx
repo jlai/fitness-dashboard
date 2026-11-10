@@ -7,17 +7,41 @@ import {
   waitFor,
   within,
 } from "@testing-library/react";
+import { getDefaultStore } from "jotai";
 import { toast } from "mui-sonner";
 
 import { TroubleshootingSettings } from "@/app/settings/advanced/troubleshooting-settings";
 import { SettingsTable } from "@/app/settings/common";
+import { mealsAtom } from "@/storage/meals";
 
 const mockGet = jest.fn();
+const mockRefreshMeals = jest.fn();
 
 const dataByKey: Record<string, unknown> = {
   dashboards: { dashboards: [{ tiles: [{}, {}] }, { tiles: [{}] }] },
   "client-only-goals": { clientOnlyGoals: [{}] },
-  meals: { meals: [{}, {}] },
+  meals: {
+    meals: [
+      {
+        id: "meal-missing",
+        name: "Meal with missing food name",
+        description: "",
+        foods: [{ food: "food-1", serving: { amount: 1 } }],
+      },
+      {
+        id: "meal-cached",
+        name: "Meal with cached food name",
+        description: "",
+        foods: [
+          {
+            food: "food-2",
+            cachedDisplayName: "Cached food",
+            serving: { amount: 1 },
+          },
+        ],
+      },
+    ],
+  },
   "client-only-foods": { clientOnlyFoods: [{}] },
   "client-only-favorite-foods": { clientOnlyFavoriteFoods: [{}, {}, {}] },
   settings: { settings: { mapStyle: "white" } },
@@ -35,6 +59,10 @@ jest.mock("@/storage/settings-storage", () => {
     settingsStorageAtom: atom(() => ({ get: mockGet })),
   };
 });
+
+jest.mock("@/api/nutrition/meals", () => ({
+  refreshMealDescriptions: () => mockRefreshMeals(),
+}));
 
 function readBlob(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -75,6 +103,11 @@ describe("Troubleshooting settings", () => {
 
   beforeEach(() => {
     mockGet.mockReset();
+    mockRefreshMeals.mockReset().mockResolvedValue({
+      updated: 1,
+      failed: 0,
+      remaining: 0,
+    });
     mockGet.mockImplementation(async (key: string) => stored(dataByKey[key]));
     click = jest
       .spyOn(HTMLAnchorElement.prototype, "click")
@@ -115,6 +148,56 @@ describe("Troubleshooting settings", () => {
     expect(description.contains(dropdown)).toBe(true);
     expect(description.contains(button)).toBe(true);
     await act(async () => {});
+  });
+
+  it("refreshes meal descriptions from the troubleshooting row", async () => {
+    await getDefaultStore().set(mealsAtom, {
+      meals: [
+        {
+          id: "meal-missing",
+          name: "Meal with missing food name",
+          description: "",
+          foods: [{ food: "food-1", serving: { amount: 1 } }],
+        },
+        {
+          id: "meal-cached",
+          name: "Meal with cached food name",
+          description: "",
+          foods: [
+            {
+              food: "food-2",
+              cachedDisplayName: "Cached food",
+              serving: { amount: 1 },
+            },
+          ],
+        },
+      ],
+    });
+    mockRefreshMeals.mockImplementation(
+      () =>
+        new Promise((resolve) =>
+          setTimeout(() => resolve({ updated: 1, failed: 0, remaining: 0 }), 0),
+        ),
+    );
+    render(
+      <SettingsTable>
+        <TroubleshootingSettings />
+      </SettingsTable>,
+    );
+    const description = screen.getByText(
+      /Missing food names in the meal search/,
+    );
+    const button = screen.getByRole("button", { name: "Refresh" });
+    expect(button.closest("tr")).toBe(description.closest("tr"));
+    await waitFor(() =>
+      expect(screen.getByText("1 meal missing food names")).toBeTruthy(),
+    );
+
+    await act(async () => {});
+    fireEvent.click(button);
+    expect(button.hasAttribute("disabled")).toBe(true);
+    await waitFor(() => expect(mockRefreshMeals).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(button.hasAttribute("disabled")).toBe(false));
   });
 
   it.each([

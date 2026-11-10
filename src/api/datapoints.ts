@@ -296,13 +296,13 @@ function pageSizeFor(dataType: DataType) {
 /**
  * Whether `dataPointId` is a valid last segment of a DataPoint name.
  *
- * Client-provided IDs must be a string of 4-63 characters containing only
+ * Client-provided IDs must be a string of 1-63 characters containing only
  * lowercase letters, numbers, and hyphens.
  *
  * @see https://developers.google.com/health/reference/rest/v4/users.dataTypes.dataPoints#DataPoint
  */
 export function isValidDataPointId(dataPointId: string) {
-  return /^[a-z0-9-]{4,63}$/.test(dataPointId);
+  return /^[a-z0-9-]{1,63}$/.test(dataPointId);
 }
 
 export function isDataPointFromThisApp(

@@ -1,5 +1,6 @@
 import { queryOptions, QueryClient } from "@tanstack/react-query";
 import { getDefaultStore } from "jotai";
+import { queryClientAtom } from "jotai-tanstack-query";
 
 import type { ClientOnlyMeal, ClientOnlyMealFood } from "@/storage/meals";
 import {
@@ -23,6 +24,9 @@ import {
   type FoodDataPoint,
 } from "./helpers";
 import { Meal, MealFood, MealSummary } from "./types";
+import { logError } from "@/utils/log-error";
+
+const MEAL_DESCRIPTION_REFRESH_LIMIT = 50;
 
 function placeholderFood(foodId: string): MealFood {
   return {
@@ -145,6 +149,114 @@ async function listMeals(): Promise<MealSummary[]> {
   const store = getDefaultStore();
   const { meals } = await store.get(mealsAtom);
   return meals.map(mealSummaryFromStoredMeal);
+}
+
+function storedMealFoodId(food: ClientOnlyMealFood): string {
+  return (
+    food.foodTemplateId ||
+    food.foodId ||
+    getDataPointIdFromName(food.food) ||
+    ""
+  );
+}
+
+export async function refreshMealDescriptions() {
+  const store = getDefaultStore();
+  const queryClient = store.get(queryClientAtom);
+  const [{ meals }, { clientOnlyFoods }] = await Promise.all([
+    store.get(mealsAtom),
+    store.get(clientOnlyFoodsAtom),
+  ]);
+  const missingFoods = meals.flatMap((meal) =>
+    meal.foods.filter((food) => !food.cachedDisplayName),
+  );
+  const foodIds = [
+    ...new Set(
+      missingFoods
+        .map(storedMealFoodId)
+        .filter((foodId) => isValidDataPointId(foodId)),
+    ),
+  ];
+  const requestedFoodIds = foodIds.slice(0, MEAL_DESCRIPTION_REFRESH_LIMIT);
+  let updated = 0;
+  let failed = 0;
+
+  try {
+    for (const foodId of requestedFoodIds) {
+      const food = missingFoods.find(
+        (item) => storedMealFoodId(item) === foodId,
+      );
+      if (!food) {
+        continue;
+      }
+
+      let displayName: string;
+      const localFood = findLocalFood(clientOnlyFoods, food);
+      if (localFood) {
+        displayName = mapFoodDataPoint(localFood).name;
+        if (!displayName.trim()) {
+          failed++;
+          logError(`Food template "${foodId}" has no display name`);
+          continue;
+        }
+      } else if (food.foodTemplateId) {
+        continue;
+      } else {
+        try {
+          const dataPoint = await getDataPoint("food", foodId);
+          displayName = mapFoodDataPoint(dataPoint).name;
+          if (!displayName.trim()) {
+            throw new Error(`Food ${foodId} has no display name`);
+          }
+        } catch (error) {
+          if (isNotFoundError(error)) {
+            displayName = "[missing]";
+          } else {
+            failed++;
+            logError(`Failed to refresh meal food "${foodId}"`, error);
+            continue;
+          }
+        }
+      }
+
+      const latest = await store.get(mealsAtom);
+      if (
+        !latest.meals.some((meal) =>
+          meal.foods.some(
+            (item) =>
+              storedMealFoodId(item) === foodId && !item.cachedDisplayName,
+          ),
+        )
+      ) {
+        continue;
+      }
+
+      let updatedCount = 0;
+      await store.set(mealsAtom, (current) => ({
+        meals: current.meals.map((meal) => {
+          let mealUpdated = false;
+          const foods = meal.foods.map((item) => {
+            if (storedMealFoodId(item) !== foodId || item.cachedDisplayName) {
+              return item;
+            }
+            mealUpdated = true;
+            updatedCount++;
+            return { ...item, cachedDisplayName: displayName };
+          });
+          return mealUpdated ? { ...meal, foods } : meal;
+        }),
+      }));
+      updated += updatedCount;
+    }
+  } finally {
+    await queryClient.invalidateQueries({ queryKey: ["meals"] });
+  }
+
+  return {
+    updated,
+    failed,
+    remaining: foodIds.length - requestedFoodIds.length,
+  };
 }
 
 async function getMealDetails(mealId: string): Promise<Meal> {

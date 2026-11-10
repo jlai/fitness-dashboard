@@ -1,11 +1,20 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Button, ListItemText, MenuItem, Select, Stack } from "@mui/material";
+import {
+  Button,
+  Chip,
+  ListItemText,
+  MenuItem,
+  Select,
+  Stack,
+} from "@mui/material";
 import { useAtomValue } from "jotai";
+import { unwrap } from "jotai/utils";
 import { toast } from "mui-sonner";
 import { z } from "zod";
 
+import { refreshMealDescriptions } from "@/api/nutrition/meals";
 import {
   SETTINGS_STORAGE_KEYS,
   settingsStorageAtom,
@@ -13,6 +22,7 @@ import {
   type SettingsStorageKey,
   type StoredData,
 } from "@/storage/settings-storage";
+import { getMealsWithMissingFoodNames, mealsAtom } from "@/storage/meals";
 import { logError } from "@/utils/log-error";
 
 import { SettingsRow } from "../common";
@@ -25,6 +35,8 @@ const EXPORT_LABELS = {
   [SETTINGS_STORAGE_KEYS.clientOnlyFavoriteFoods]: "Favorite foods",
   [SETTINGS_STORAGE_KEYS.settings]: "Settings",
 } satisfies Record<SettingsStorageKey, string>;
+
+const mealsWithoutSuspenseAtom = unwrap(mealsAtom);
 
 const countSchemas = {
   [SETTINGS_STORAGE_KEYS.dashboards]: z.object({
@@ -88,11 +100,13 @@ type CountState = { count: number | null } | { error: true };
 export function TroubleshootingSettings() {
   const storage = useAtomValue(settingsStorageAtom);
   const epoch = useAtomValue(settingsStorageEpochAtom);
+  const meals = useAtomValue(mealsWithoutSuspenseAtom);
   const [key, setKey] = useState<SettingsStorageKey | "">("");
   const [counts, setCounts] = useState<
     Partial<Record<SettingsStorageKey, CountState>>
   >({});
   const [downloading, setDownloading] = useState(false);
+  const [refreshingMeals, setRefreshingMeals] = useState(false);
   const requestId = useRef(0);
 
   const refreshCounts = useCallback(async () => {
@@ -135,6 +149,18 @@ export function TroubleshootingSettings() {
     !!selectedState &&
     "count" in selectedState &&
     selectedState.count !== 0;
+  const mealsWithMissingFoodNames =
+    meals === undefined ? null : getMealsWithMissingFoodNames(meals.meals);
+  const missingMealCount =
+    mealsWithMissingFoodNames === null
+      ? null
+      : mealsWithMissingFoodNames.length;
+  const missingMealCountLabel =
+    missingMealCount === null
+      ? "Loading meal count"
+      : `${missingMealCount} ${
+          missingMealCount === 1 ? "meal" : "meals"
+        } missing food names`;
 
   const download = async () => {
     if (!key || !canDownload) return;
@@ -168,6 +194,31 @@ export function TroubleshootingSettings() {
       toast.error("Failed to export troubleshooting data.");
     } finally {
       setDownloading(false);
+    }
+  };
+
+  const refreshMeals = async () => {
+    setRefreshingMeals(true);
+    try {
+      const result = await refreshMealDescriptions();
+      if (result.failed > 0) {
+        toast.error(
+          `Refreshed ${result.updated} meal food descriptions; ${result.failed} could not be refreshed.`,
+        );
+      } else if (result.remaining > 0) {
+        toast.success(
+          `Refreshed ${result.updated} meal food descriptions. Click Refresh again to continue.`,
+        );
+      } else if (result.updated > 0) {
+        toast.success(`Refreshed ${result.updated} meal food descriptions.`);
+      } else {
+        toast.success("Meal descriptions are already up to date.");
+      }
+    } catch (error) {
+      logError("Failed to refresh meal descriptions", error);
+      toast.error("Failed to refresh meal descriptions.");
+    } finally {
+      setRefreshingMeals(false);
     }
   };
 
@@ -232,6 +283,32 @@ export function TroubleshootingSettings() {
           <Button onClick={download} disabled={downloading || !canDownload}>
             Download
           </Button>
+        </Stack>
+      </SettingsRow>
+      <SettingsRow
+        title="Refresh meal food listing"
+        action={
+          <Button onClick={refreshMeals} disabled={refreshingMeals}>
+            Refresh
+          </Button>
+        }
+        component="div"
+      >
+        <Stack
+          direction="row"
+          spacing={1}
+          alignItems="center"
+          flexWrap="wrap"
+          useFlexGap
+        >
+          <span>
+            The meal search box shows the names of the meals along with the
+            foods used in each meal. If these are missing, you can try to
+            restore them here. Due to rate limits, if it doesn&apos;t finish in
+            one pass, you may need to do this multiple times, waiting 60 seconds
+            between each attempt.
+          </span>
+          <Chip size="small" label={missingMealCountLabel} />
         </Stack>
       </SettingsRow>
     </>

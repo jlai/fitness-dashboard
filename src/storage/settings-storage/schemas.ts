@@ -140,7 +140,7 @@ export const clientOnlyFoodsDataSchema = z.object({
 }) as z.ZodType<ClientOnlyFoodsData>;
 
 export const clientOnlyFavoriteFoodSchema = z
-  .object({ foodId: z.string().regex(/^[a-z0-9-]{4,63}$/) })
+  .object({ foodId: z.string().regex(/^[a-z0-9-]{1,63}$/) })
   .passthrough();
 
 export type ClientOnlyFavoriteFood = z.infer<
