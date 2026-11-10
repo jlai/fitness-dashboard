@@ -5,6 +5,7 @@ import { Button, Tab, TextField } from "@mui/material";
 import { TabContext, TabList, TabPanel } from "@mui/lab";
 import { useAtomValue } from "jotai";
 import { toast } from "mui-sonner";
+import type { ZodType } from "zod";
 
 import {
   createSession,
@@ -25,13 +26,68 @@ import {
   SETTINGS_STORAGE_KEYS,
   settingsStorageAtom,
   settingsStorageEpochAtom,
+  type SettingsStorage,
   type SettingsStorageKey,
   type StoredData,
 } from "@/storage/settings-storage";
+import {
+  clientOnlyFavoriteFoodsStoredSchema,
+  clientOnlyFoodsStoredSchema,
+  clientOnlyGoalsStoredSchema,
+  dashboardsStoredSchema,
+  mealsStoredSchema,
+  settingsStoredSchema,
+} from "@/storage/settings-storage/schemas";
+import {
+  migrateClientOnlyFoodsData,
+  migrateMealsStoredData,
+} from "@/storage/settings-storage/migrations";
+import { isStoredDataEnvelope } from "@/storage/settings-storage/types";
 
 import { SettingsRow, SettingsTable } from "../common";
 
 const settingsStorageKeys = Object.values(SETTINGS_STORAGE_KEYS);
+
+type BlobMigration = (
+  stored: StoredData<unknown>,
+  storage: SettingsStorage,
+) => StoredData<unknown> | Promise<StoredData<unknown>>;
+
+const settingsBlobDefinitions: Record<
+  SettingsStorageKey,
+  {
+    schema: ZodType<StoredData<unknown>>;
+    version: number;
+    migrate?: BlobMigration;
+  }
+> = {
+  [SETTINGS_STORAGE_KEYS.dashboards]: {
+    schema: dashboardsStoredSchema,
+    version: 1,
+  },
+  [SETTINGS_STORAGE_KEYS.clientOnlyGoals]: {
+    schema: clientOnlyGoalsStoredSchema,
+    version: 1,
+  },
+  [SETTINGS_STORAGE_KEYS.meals]: {
+    schema: mealsStoredSchema,
+    version: 2,
+    migrate: migrateMealsStoredData,
+  },
+  [SETTINGS_STORAGE_KEYS.clientOnlyFoods]: {
+    schema: clientOnlyFoodsStoredSchema,
+    version: 2,
+    migrate: migrateClientOnlyFoodsData,
+  },
+  [SETTINGS_STORAGE_KEYS.clientOnlyFavoriteFoods]: {
+    schema: clientOnlyFavoriteFoodsStoredSchema,
+    version: 1,
+  },
+  [SETTINGS_STORAGE_KEYS.settings]: {
+    schema: settingsStoredSchema,
+    version: 1,
+  },
+};
 
 function DeveloperSettings() {
   const loggedIn = useLoggedIn();
@@ -89,8 +145,12 @@ function StoredSettingsBlobs() {
   const [blobs, setBlobs] = useState<
     Partial<Record<SettingsStorageKey, StoredData<unknown> | null>>
   >({});
+  const [drafts, setDrafts] = useState<
+    Partial<Record<SettingsStorageKey, string>>
+  >({});
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string>();
+  const [saving, setSaving] = useState(false);
 
   React.useEffect(() => {
     let active = true;
@@ -105,6 +165,20 @@ function StoredSettingsBlobs() {
       .then((entries) => {
         if (active) {
           setBlobs(Object.fromEntries(entries));
+          setDrafts(
+            Object.fromEntries(
+              entries
+                .filter(
+                  (
+                    entry,
+                  ): entry is readonly [
+                    SettingsStorageKey,
+                    StoredData<unknown>,
+                  ] => entry[1] !== null,
+                )
+                .map(([key, blob]) => [key, JSON.stringify(blob, null, 2)]),
+            ),
+          );
         }
       })
       .catch((error: unknown) => {
@@ -127,6 +201,60 @@ function StoredSettingsBlobs() {
     };
   }, [storage, storageEpoch]);
 
+  const handleUpdate = async () => {
+    const key = currentTab;
+    const definition = settingsBlobDefinitions[key];
+    setSaving(true);
+
+    try {
+      const parsedJson: unknown = JSON.parse(drafts[key] ?? "");
+      if (!isStoredDataEnvelope(parsedJson)) {
+        throw new Error("The value must be a stored settings envelope.");
+      }
+
+      if (parsedJson.version > definition.version) {
+        throw new Error(
+          `Version ${parsedJson.version} is newer than the supported version ${definition.version}.`,
+        );
+      }
+
+      let candidate: StoredData<unknown> = parsedJson;
+      if (candidate.version < definition.version) {
+        if (!definition.migrate) {
+          throw new Error(
+            `No migration is available from version ${candidate.version}.`,
+          );
+        }
+        candidate = await definition.migrate(candidate, storage);
+      }
+
+      const validated = definition.schema.safeParse(candidate);
+      if (!validated.success) {
+        const details = validated.error.issues
+          .map((issue) => `${issue.path.join(".") || "blob"}: ${issue.message}`)
+          .join("; ");
+        throw new Error(`Schema validation failed: ${details}`);
+      }
+
+      const updated = await storage.set(
+        key,
+        validated.data.data,
+        definition.version,
+      );
+      setBlobs((previous) => ({ ...previous, [key]: updated }));
+      setDrafts((previous) => ({
+        ...previous,
+        [key]: JSON.stringify(updated, null, 2),
+      }));
+      showSuccessToast(`Updated stored settings: ${key}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      toast.error(`Failed to update stored settings: ${message}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <SettingsTable>
       <SettingsRow title="Stored settings blobs" component="div">
@@ -141,6 +269,7 @@ function StoredSettingsBlobs() {
                 key={key}
                 label={key}
                 value={key}
+                disabled={saving}
                 sx={{ textTransform: "none" }}
               />
             ))}
@@ -152,9 +281,29 @@ function StoredSettingsBlobs() {
               ) : loadError ? (
                 `Unable to load stored settings: ${loadError}`
               ) : blobs[key] ? (
-                <pre className="max-h-96 overflow-auto rounded bg-gray-100 p-4 text-sm">
-                  {JSON.stringify(blobs[key], null, 2)}
-                </pre>
+                <>
+                  <textarea
+                    className="mt-2 h-[500px] w-full resize-y rounded border border-gray-300 bg-white p-3 font-mono text-sm"
+                    aria-label={`Stored settings ${key}`}
+                    value={drafts[key] ?? ""}
+                    onChange={(event) =>
+                      setDrafts((previous) => ({
+                        ...previous,
+                        [key]: event.target.value,
+                      }))
+                    }
+                    autoComplete="off"
+                    spellCheck={false}
+                  />
+                  <div className="mt-2 flex justify-end">
+                    <Button
+                      onClick={() => void handleUpdate()}
+                      disabled={saving}
+                    >
+                      Update
+                    </Button>
+                  </div>
+                </>
               ) : (
                 "No stored data for this key."
               )}

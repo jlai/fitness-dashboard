@@ -7,7 +7,11 @@ import { mealsAtom } from "@/storage/meals";
 
 function mealFoodCustomFoodId(
   mealFood: { food?: string; foodId?: string; foodTemplateId?: string },
-  clientOnlyFoods: Array<{ id?: string; name: string; customFoodId?: string }>,
+  clientOnlyFoods: Array<{
+    id?: string;
+    name?: string;
+    customFoodId?: string;
+  }>,
 ): string | undefined {
   if (mealFood.foodTemplateId) {
     const template = clientOnlyFoods.find(

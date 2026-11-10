@@ -1,0 +1,101 @@
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { getDefaultStore } from "jotai";
+import { Suspense } from "react";
+
+import * as datapoints from "@/api/datapoints";
+import { EditMeal } from "@/components/nutrition/meal/edit-meal";
+import type { Meal } from "@/api/nutrition";
+import {
+  resetSettingsStorageSingletonsForTests,
+  settingsStorageEpochAtom,
+} from "@/storage/settings-storage";
+
+jest.mock("@/api/datapoints", () => ({
+  ...jest.requireActual("@/api/datapoints"),
+  listDataPointsPage: jest.fn().mockResolvedValue({ dataPoints: [] }),
+}));
+jest.mock("@/components/nutrition/food/food-search", () => ({
+  __esModule: true,
+  default: () => {
+    const { createElement } = jest.requireActual("react");
+    return createElement("input", { "aria-label": "Select a food" });
+  },
+}));
+jest.mock("@/components/nutrition/food/serving-size", () => ({
+  FoodServingSizeInput: () => null,
+}));
+
+describe("EditMeal missing-food recovery", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    resetSettingsStorageSingletonsForTests();
+    const store = getDefaultStore();
+    store.set(settingsStorageEpochAtom, (epoch) => epoch + 1);
+    jest
+      .mocked(datapoints.listDataPointsPage)
+      .mockResolvedValue({ dataPoints: [] });
+  });
+
+  it("shows the warning before delete and reveals replacement options", async () => {
+    const meal: Meal = {
+      id: "meal-123",
+      name: "Lunch",
+      description: "",
+      mealFoods: [
+        {
+          accessLevel: "PUBLIC",
+          foodId: "missing-food",
+          name: "missing-food",
+          calories: 0,
+          units: [],
+          amount: 1,
+          unit: { id: "304", name: "serving", plural: "servings" },
+          foodNotFound: true,
+        },
+      ],
+    };
+
+    await act(async () => {
+      render(
+        <QueryClientProvider client={new QueryClient()}>
+          <Suspense fallback="Loading">
+            <EditMeal
+              draftMeal={meal}
+              onDeleteMeal={jest.fn()}
+              onSaveMeal={jest.fn()}
+            />
+          </Suspense>
+        </QueryClientProvider>,
+      );
+    });
+
+    const warningButton = await screen.findByRole("button", {
+      name: "Replace missing food",
+    });
+    const buttons = warningButton.parentElement?.querySelectorAll("button");
+    expect(buttons).toHaveLength(2);
+    expect(buttons?.[0]).toBe(warningButton);
+    expect(screen.getAllByLabelText("Select a food")).toHaveLength(1);
+
+    fireEvent.click(warningButton);
+
+    expect(
+      await screen.findByText(
+        "The associated food could not be found. Replace with another food?",
+      ),
+    ).toBeTruthy();
+    expect(screen.getAllByLabelText("Select a food")).toHaveLength(2);
+    const templateSection = screen.getByText(
+      "Create a new food template",
+    ).parentElement;
+    if (!templateSection) {
+      throw new Error("Missing food template section");
+    }
+    const templateFields = within(templateSection);
+    expect(templateFields.getByLabelText(/Name/)).toBeTruthy();
+    expect(templateFields.getByLabelText(/Calories/)).toBeTruthy();
+    expect(templateFields.queryByLabelText(/Brand/)).toBeNull();
+    expect(templateFields.queryByLabelText(/Description/)).toBeNull();
+  });
+});

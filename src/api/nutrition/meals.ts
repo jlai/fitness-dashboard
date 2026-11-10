@@ -35,6 +35,15 @@ function placeholderFood(foodId: string): MealFood {
   };
 }
 
+function isNotFoundError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "status" in error &&
+    error.status === 404
+  );
+}
+
 function findLocalFood(
   clientOnlyFoods: FoodDataPoint[],
   item: ClientOnlyMealFood,
@@ -82,8 +91,14 @@ async function resolveMealFood(
       const dataPoint = await getDataPoint("food", foodId);
       const [food] = await mapFoodDataPoints([dataPoint]);
       return mealFoodFromResolvedFood(food, item);
-    } catch {
+    } catch (error) {
       // Public catalog foods may be unavailable offline or after id changes.
+      if (isNotFoundError(error)) {
+        return {
+          ...mealFoodFromResolvedFood(placeholderFood(foodId), item),
+          foodNotFound: true,
+        };
+      }
     }
   }
 

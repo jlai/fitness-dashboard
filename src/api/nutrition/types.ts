@@ -96,6 +96,7 @@ export interface Food {
 
 export type MealFood = Food & {
   amount: number;
+  foodNotFound?: boolean;
 };
 
 export const MEAL_TYPE_NAMES: Record<NutritionLogMealType, string> = {

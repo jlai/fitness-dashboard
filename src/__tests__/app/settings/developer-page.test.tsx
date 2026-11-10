@@ -1,4 +1,10 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { ConfirmProvider } from "material-ui-confirm";
 
 import DeveloperSettingsPage from "@/app/settings/developer/developer-page";
@@ -14,6 +20,7 @@ const restoreAccessToken = jest.fn();
 const restoreDriveAccessToken = jest.fn();
 const forceTokenRefresh = jest.fn();
 const useLoggedIn = jest.fn(() => false);
+const mockStorageSet = jest.fn();
 
 jest.mock("@/api/auth", () => ({
   createSession: (...args: Array<unknown>) => createSession(...args),
@@ -45,7 +52,14 @@ jest.mock("@/storage/settings-storage", () => {
               version: 1,
               updateTime: "2026-01-01T00:00:00.000Z",
             }
-          : null,
+          : key === "client-only-foods"
+            ? {
+                data: { clientOnlyFoods: [] },
+                version: 1,
+                updateTime: "2026-01-01T00:00:00.000Z",
+              }
+            : null,
+      set: (...args: Array<unknown>) => mockStorageSet(...args),
     }),
     settingsStorageEpochAtom: atom(0),
   };
@@ -67,6 +81,13 @@ function renderPage() {
   );
 }
 
+async function renderPageAndLoadStorage() {
+  await act(async () => {
+    renderPage();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+}
+
 describe("DeveloperSettingsPage", () => {
   beforeEach(() => {
     resetGoogleIdentityState();
@@ -75,6 +96,15 @@ describe("DeveloperSettingsPage", () => {
     restoreAccessToken.mockReset().mockResolvedValue(undefined);
     restoreDriveAccessToken.mockReset().mockResolvedValue(undefined);
     forceTokenRefresh.mockReset().mockResolvedValue("token");
+    mockStorageSet
+      .mockReset()
+      .mockImplementation(
+        async (_key: string, data: unknown, version: number) => ({
+          data,
+          version,
+          updateTime: "2026-01-02T00:00:00.000Z",
+        }),
+      );
     useLoggedIn.mockReturnValue(false);
   });
 
@@ -118,6 +148,158 @@ describe("DeveloperSettingsPage", () => {
     expect(
       await screen.findByText("No stored data for this key."),
     ).toBeTruthy();
+  });
+
+  it("validates and saves an edited stored settings blob", async () => {
+    await renderPageAndLoadStorage();
+    fireEvent.click(await screen.findByRole("tab", { name: "settings" }));
+
+    const editor = await screen.findByRole("textbox", {
+      name: "Stored settings settings",
+    });
+    fireEvent.change(editor, {
+      target: {
+        value: JSON.stringify({
+          data: { settings: { theme: "light" } },
+          version: 1,
+          updateTime: "2026-01-01T00:00:00.000Z",
+        }),
+      },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Update" }));
+
+    await waitFor(() => {
+      expect(mockStorageSet).toHaveBeenCalledWith(
+        "settings",
+        { settings: { theme: "light" } },
+        1,
+      );
+    });
+    expect((editor as HTMLTextAreaElement).value).toBe(
+      JSON.stringify(
+        {
+          data: { settings: { theme: "light" } },
+          version: 1,
+          updateTime: "2026-01-02T00:00:00.000Z",
+        },
+        null,
+        2,
+      ),
+    );
+  });
+
+  it("does not save a blob that fails schema validation", async () => {
+    await renderPageAndLoadStorage();
+    fireEvent.click(await screen.findByRole("tab", { name: "settings" }));
+
+    fireEvent.change(
+      await screen.findByRole("textbox", {
+        name: "Stored settings settings",
+      }),
+      {
+        target: {
+          value: JSON.stringify({
+            data: { settings: { foodLogTotalsPosition: "sideways" } },
+            version: 1,
+            updateTime: "2026-01-01T00:00:00.000Z",
+          }),
+        },
+      },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Update" }));
+
+    expect(mockStorageSet).not.toHaveBeenCalled();
+  });
+
+  it("migrates an old blob before validating and saving it", async () => {
+    await renderPageAndLoadStorage();
+    fireEvent.click(
+      await screen.findByRole("tab", { name: "client-only-foods" }),
+    );
+
+    fireEvent.change(
+      await screen.findByRole("textbox", {
+        name: "Stored settings client-only-foods",
+      }),
+      {
+        target: {
+          value: JSON.stringify({
+            data: { clientOnlyFoods: [{ name: "Sample Food" }] },
+            version: 1,
+            updateTime: "2026-01-01T00:00:00.000Z",
+          }),
+        },
+      },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Update" }));
+
+    await waitFor(() => {
+      expect(mockStorageSet).toHaveBeenCalledWith(
+        "client-only-foods",
+        {
+          clientOnlyFoods: [
+            expect.objectContaining({
+              name: "Sample Food",
+              id: expect.any(String),
+            }),
+          ],
+        },
+        2,
+      );
+    });
+  });
+
+  it("replaces edits made while an update is in progress with the saved blob", async () => {
+    let finishSave:
+      | ((value: {
+          data: { settings: { theme: string } };
+          version: number;
+          updateTime: string;
+        }) => void)
+      | undefined;
+    mockStorageSet.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          finishSave = resolve;
+        }),
+    );
+
+    await renderPageAndLoadStorage();
+    fireEvent.click(await screen.findByRole("tab", { name: "settings" }));
+    const editor = await screen.findByRole("textbox", {
+      name: "Stored settings settings",
+    });
+    fireEvent.change(editor, {
+      target: {
+        value: JSON.stringify({
+          data: { settings: { theme: "light" } },
+          version: 1,
+          updateTime: "2026-01-01T00:00:00.000Z",
+        }),
+      },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Update" }));
+    fireEvent.change(editor, { target: { value: "user's later edit" } });
+
+    await act(async () => {
+      finishSave?.({
+        data: { settings: { theme: "light" } },
+        version: 1,
+        updateTime: "2026-01-02T00:00:00.000Z",
+      });
+    });
+
+    expect((editor as HTMLTextAreaElement).value).toBe(
+      JSON.stringify(
+        {
+          data: { settings: { theme: "light" } },
+          version: 1,
+          updateTime: "2026-01-02T00:00:00.000Z",
+        },
+        null,
+        2,
+      ),
+    );
   });
 
   it("creates a session and saves health/drive tokens on submit", async () => {
