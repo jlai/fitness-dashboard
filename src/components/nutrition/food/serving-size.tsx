@@ -20,10 +20,12 @@ import {
   UseControllerProps,
   useFormContext,
 } from "react-hook-form";
-import { loadable } from "jotai/utils";
+import { unwrap } from "jotai/utils";
 
 import { Food, foodUnitsByIdAtom } from "@/api/nutrition";
 import { formatServing, ServingSize } from "@/utils/food-amounts";
+
+const foodUnitsByIdValueAtom = unwrap(foodUnitsByIdAtom);
 
 export function getDefaultFoodServingSize(food: Food): ServingSize | null {
   const defaultAmount = food.defaultServingSize ?? 1;
@@ -73,7 +75,7 @@ export function getConfiguredServingOptions(food: Food): Array<ServingSize> {
 }
 
 function useServingOptions(food: Food | null) {
-  const loadingFoodUnitsById = useAtomValue(loadable(foodUnitsByIdAtom));
+  const foodUnitsById = useAtomValue(foodUnitsByIdValueAtom);
 
   return useMemo(() => {
     let options: Array<ServingSize> = [];
@@ -85,11 +87,9 @@ function useServingOptions(food: Food | null) {
     if (food.servings) {
       options = getConfiguredServingOptions(food);
     } else {
-      if (loadingFoodUnitsById.state !== "hasData") {
+      if (!foodUnitsById) {
         return undefined;
       }
-
-      const foodUnitsById = loadingFoodUnitsById.data;
 
       for (const unitId of food.units) {
         const unit = foodUnitsById.get(unitId);
@@ -100,7 +100,7 @@ function useServingOptions(food: Food | null) {
     }
 
     return options;
-  }, [food, loadingFoodUnitsById]);
+  }, [food, foodUnitsById]);
 }
 
 /**
