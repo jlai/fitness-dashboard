@@ -13,6 +13,8 @@ import {
   SETTINGS_STORAGE_KEYS,
 } from "@/storage/settings-storage";
 import { createDefaultClientOnlyGoalsData } from "@/storage/settings-storage/defaults";
+import { clientOnlyFoodsAtom } from "@/storage/client-only-foods";
+import { mealsAtom } from "@/storage/meals";
 
 jest.mock("@/api/auth", () => {
   const actual = jest.requireActual("@/api/auth");
@@ -143,5 +145,76 @@ describe("createSettingsBlobAtom validation", () => {
         { metric: "steps", period: "daily", value: 8000, unit: "" },
       ],
     });
+  });
+
+  it("shares migrated food IDs when meals and foods load concurrently", async () => {
+    const storage = getMemorySettingsStorage();
+    storage.seedSync(SETTINGS_STORAGE_KEYS.clientOnlyFoods, {
+      clientOnlyFoods: [
+        {
+          name: "users/me/dataTypes/food/dataPoints/local-123",
+          food: { displayName: "Oatmeal" },
+        },
+      ],
+    });
+    storage.seedSync(SETTINGS_STORAGE_KEYS.meals, {
+      meals: [
+        {
+          id: "breakfast",
+          name: "Breakfast",
+          description: "",
+          foods: [{ foodId: "local-123", serving: { amount: 1 } }],
+        },
+      ],
+    });
+
+    const store = createStore();
+    const [foods, meals] = await Promise.all([
+      store.get(clientOnlyFoodsAtom),
+      store.get(mealsAtom),
+    ]);
+
+    expect(meals.meals[0].foods[0].food).toBe(
+      `foodTemplate:${foods.clientOnlyFoods[0].id}`,
+    );
+    expect(
+      (await storage.get(SETTINGS_STORAGE_KEYS.clientOnlyFoods))?.data,
+    ).toEqual(foods);
+  });
+
+  it("waits for the new backend instead of returning a warm cache from the old one", async () => {
+    const goalsAtom = createSettingsBlobAtom({
+      key: SETTINGS_STORAGE_KEYS.clientOnlyGoals,
+      schema: clientOnlyGoalsStoredSchema,
+      defaultData: createDefaultClientOnlyGoalsData,
+    });
+    const store = createStore();
+    await store.set(goalsAtom, {
+      clientOnlyGoals: [
+        { metric: "steps", period: "daily", value: 8000, unit: "" },
+      ],
+    });
+    expect(store.get(goalsAtom)).not.toBeInstanceOf(Promise);
+
+    const drive = getGoogleDriveSettingsStorage();
+    const read = jest.spyOn(drive, "get").mockResolvedValue({
+      data: { clientOnlyGoals: [] },
+      version: 1,
+      updateTime: new Date().toISOString(),
+    });
+    auth.isLoggedIn.mockReturnValue(true);
+    auth.hasEncryptedDriveToken.mockReturnValue(true);
+    auth.getGrantedDriveScopesRaw.mockReturnValue(DRIVE_APPDATA);
+    store.set(authSessionAtom, {
+      encryptedHealthToken: "health-session",
+      encryptedDriveToken: "drive-session",
+    });
+
+    try {
+      expect(await store.get(goalsAtom)).toEqual({ clientOnlyGoals: [] });
+      expect(read).toHaveBeenCalled();
+    } finally {
+      read.mockRestore();
+    }
   });
 });

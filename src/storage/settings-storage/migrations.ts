@@ -5,12 +5,24 @@ import {
 } from "@/api/nutrition/food-references";
 
 import { SETTINGS_STORAGE_KEYS } from "./keys";
+import { loadSettingsBlob, type SettingsBlobOptions } from "./blob-storage";
+import { createDefaultClientOnlyFoodsData } from "./defaults";
+import { clientOnlyFoodsStoredSchema } from "./schemas";
 import type { SettingsStorage, StoredData } from "./types";
 import type {
   ClientOnlyFoodsData,
   ClientOnlyMealFood,
   MealsData,
 } from "./schemas";
+
+export const clientOnlyFoodsBlobOptions: SettingsBlobOptions<ClientOnlyFoodsData> =
+  {
+    key: SETTINGS_STORAGE_KEYS.clientOnlyFoods,
+    schema: clientOnlyFoodsStoredSchema,
+    defaultData: createDefaultClientOnlyFoodsData,
+    version: 3,
+    migrate: migrateClientOnlyFoodsData,
+  };
 
 function isLegacyServerFoodReference(value: string): boolean {
   const foodId = foodIdFromReference(value);
@@ -192,20 +204,9 @@ export async function migrateMealsStoredData(
   stored: StoredData<unknown>,
   storage: SettingsStorage,
 ): Promise<StoredData<MealsData>> {
-  const customFoodsStored = await storage.get(
-    SETTINGS_STORAGE_KEYS.clientOnlyFoods,
+  const customFoods = await loadSettingsBlob(
+    storage,
+    clientOnlyFoodsBlobOptions,
   );
-  const nextCustomFoods = migrateClientOnlyFoodsData(
-    customFoodsStored ?? { data: { clientOnlyFoods: [] } },
-  ).data.clientOnlyFoods;
-
-  await storage.set(
-    SETTINGS_STORAGE_KEYS.clientOnlyFoods,
-    {
-      clientOnlyFoods: nextCustomFoods,
-    },
-    3,
-  );
-
-  return migrateMealsData(stored, { clientOnlyFoods: nextCustomFoods });
+  return migrateMealsData(stored, customFoods);
 }

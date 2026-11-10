@@ -72,12 +72,12 @@ const settingsBlobDefinitions: Record<
   },
   [SETTINGS_STORAGE_KEYS.meals]: {
     schema: mealsStoredSchema,
-    version: 2,
+    version: 3,
     migrate: migrateMealsStoredData,
   },
   [SETTINGS_STORAGE_KEYS.clientOnlyFoods]: {
     schema: clientOnlyFoodsStoredSchema,
-    version: 2,
+    version: 3,
     migrate: migrateClientOnlyFoodsData,
   },
   [SETTINGS_STORAGE_KEYS.clientOnlyFavoriteFoods]: {

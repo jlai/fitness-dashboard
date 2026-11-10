@@ -224,7 +224,14 @@ describe("DeveloperSettingsPage", () => {
       {
         target: {
           value: JSON.stringify({
-            data: { clientOnlyFoods: [{ name: "Sample Food" }] },
+            data: {
+              clientOnlyFoods: [
+                {
+                  name: "users/me/dataTypes/food/dataPoints/sample-food",
+                  food: { displayName: "Sample Food" },
+                },
+              ],
+            },
             version: 1,
             updateTime: "2026-01-01T00:00:00.000Z",
           }),
@@ -239,12 +246,13 @@ describe("DeveloperSettingsPage", () => {
         {
           clientOnlyFoods: [
             expect.objectContaining({
-              name: "Sample Food",
+              customFood: "users/me/dataTypes/food/dataPoints/sample-food",
+              food: { displayName: "Sample Food" },
               id: expect.any(String),
             }),
           ],
         },
-        2,
+        3,
       );
     });
   });
