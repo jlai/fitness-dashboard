@@ -127,6 +127,7 @@ describe("readFitbitMigrationSettings", () => {
         foods: [
           {
             food: "users/me/dataTypes/food/dataPoints/80850",
+            cachedDisplayName: "Scrambled Eggs",
             serving: {
               amount: 1,
               foodMeasurementUnit:
@@ -136,6 +137,7 @@ describe("readFitbitMigrationSettings", () => {
           },
           {
             food: "users/me/dataTypes/food/dataPoints/9001",
+            cachedDisplayName: "Homemade Scramble",
             serving: {
               amount: 2,
               foodMeasurementUnit:

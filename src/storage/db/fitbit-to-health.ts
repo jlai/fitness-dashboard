@@ -100,6 +100,7 @@ export function migrationMealToClientOnlyMeal(
     description: meal.description,
     foods: meal.mealFoods.map((food) => ({
       food: `users/me/dataTypes/food/dataPoints/${String(food.foodId)}`,
+      cachedDisplayName: food.name,
       serving: servingFromMigrationMealFood(food),
     })),
   };
