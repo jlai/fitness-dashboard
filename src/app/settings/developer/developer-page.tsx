@@ -39,6 +39,7 @@ import {
   settingsStoredSchema,
 } from "@/storage/settings-storage/schemas";
 import {
+  migrateClientOnlyFavoriteFoodsData,
   migrateClientOnlyFoodsData,
   migrateMealsStoredData,
 } from "@/storage/settings-storage/migrations";
@@ -81,7 +82,8 @@ const settingsBlobDefinitions: Record<
   },
   [SETTINGS_STORAGE_KEYS.clientOnlyFavoriteFoods]: {
     schema: clientOnlyFavoriteFoodsStoredSchema,
-    version: 1,
+    version: 2,
+    migrate: migrateClientOnlyFavoriteFoodsData,
   },
   [SETTINGS_STORAGE_KEYS.settings]: {
     schema: settingsStoredSchema,
@@ -201,7 +203,7 @@ function StoredSettingsBlobs() {
     };
   }, [storage, storageEpoch]);
 
-  const handleUpdate = async () => {
+  const handleUpdate = async (migrate: boolean) => {
     const key = currentTab;
     const definition = settingsBlobDefinitions[key];
     setSaving(true);
@@ -212,41 +214,49 @@ function StoredSettingsBlobs() {
         throw new Error("The value must be a stored settings envelope.");
       }
 
-      if (parsedJson.version > definition.version) {
-        throw new Error(
-          `Version ${parsedJson.version} is newer than the supported version ${definition.version}.`,
-        );
-      }
-
       let candidate: StoredData<unknown> = parsedJson;
-      if (candidate.version < definition.version) {
-        if (!definition.migrate) {
+      if (migrate) {
+        if (candidate.version > definition.version) {
           throw new Error(
-            `No migration is available from version ${candidate.version}.`,
+            `Version ${candidate.version} is newer than the supported version ${definition.version}.`,
           );
         }
-        candidate = await definition.migrate(candidate, storage);
-      }
 
-      const validated = definition.schema.safeParse(candidate);
-      if (!validated.success) {
-        const details = validated.error.issues
-          .map((issue) => `${issue.path.join(".") || "blob"}: ${issue.message}`)
-          .join("; ");
-        throw new Error(`Schema validation failed: ${details}`);
+        if (candidate.version < definition.version) {
+          if (!definition.migrate) {
+            throw new Error(
+              `No migration is available from version ${candidate.version}.`,
+            );
+          }
+          candidate = await definition.migrate(candidate, storage);
+        }
+
+        const validated = definition.schema.safeParse(candidate);
+        if (!validated.success) {
+          const details = validated.error.issues
+            .map(
+              (issue) => `${issue.path.join(".") || "blob"}: ${issue.message}`,
+            )
+            .join("; ");
+          throw new Error(`Schema validation failed: ${details}`);
+        }
+
+        candidate = validated.data;
       }
 
       const updated = await storage.set(
         key,
-        validated.data.data,
-        definition.version,
+        candidate.data,
+        migrate ? definition.version : candidate.version,
       );
       setBlobs((previous) => ({ ...previous, [key]: updated }));
       setDrafts((previous) => ({
         ...previous,
         [key]: JSON.stringify(updated, null, 2),
       }));
-      showSuccessToast(`Updated stored settings: ${key}`);
+      showSuccessToast(
+        `Updated stored settings${migrate ? "" : " without migration"}: ${key}`,
+      );
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       toast.error(`Failed to update stored settings: ${message}`);
@@ -295,9 +305,15 @@ function StoredSettingsBlobs() {
                     autoComplete="off"
                     spellCheck={false}
                   />
-                  <div className="mt-2 flex justify-end">
+                  <div className="mt-2 flex justify-end gap-2">
                     <Button
-                      onClick={() => void handleUpdate()}
+                      onClick={() => void handleUpdate(false)}
+                      disabled={saving}
+                    >
+                      Update without migration
+                    </Button>
+                    <Button
+                      onClick={() => void handleUpdate(true)}
                       disabled={saving}
                     >
                       Update

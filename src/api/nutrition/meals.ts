@@ -4,6 +4,10 @@ import { queryClientAtom } from "jotai-tanstack-query";
 
 import type { ClientOnlyMeal, ClientOnlyMealFood } from "@/storage/meals";
 import {
+  foodTemplateToFood,
+  type FoodTemplate,
+} from "@/api/nutrition/food-templates";
+import {
   mealFoodFromResolvedFood,
   mealToClientOnlyMeal,
   servingFromMealFood,
@@ -17,11 +21,15 @@ import { ONE_DAY_IN_MILLIS } from "../cache-settings";
 
 import { foodResourceName } from "./food-log";
 import {
+  foodIdFromReference,
+  isFoodReference,
+  foodTemplateIdFromReference,
+  foodTemplateReference,
+} from "./food-references";
+import {
   foodToDataPoint,
-  getDataPointIdFromName,
   mapFoodDataPoint,
   mapFoodDataPoints,
-  type FoodDataPoint,
 } from "./helpers";
 import { Meal, MealFood, MealSummary } from "./types";
 import { logError } from "@/utils/log-error";
@@ -49,55 +57,37 @@ function isNotFoundError(error: unknown): boolean {
 }
 
 function findLocalFood(
-  clientOnlyFoods: FoodDataPoint[],
+  clientOnlyFoods: FoodTemplate[],
   item: ClientOnlyMealFood,
-): FoodDataPoint | undefined {
-  if (item.foodTemplateId) {
-    return clientOnlyFoods.find(
-      (food) =>
-        (food as FoodDataPoint & { id?: string; customFoodId?: string }).id ===
-          item.foodTemplateId ||
-        (food as FoodDataPoint & { id?: string; customFoodId?: string })
-          .customFoodId === item.foodTemplateId,
-    );
+): FoodTemplate | undefined {
+  const templateId = foodTemplateIdFromReference(item.food);
+  if (templateId) {
+    return clientOnlyFoods.find((food) => food.id === templateId);
   }
-
-  const foodId =
-    item.foodId ?? (item.food ? getDataPointIdFromName(item.food) : undefined);
-  if (!foodId) {
-    return undefined;
-  }
-
-  return clientOnlyFoods.find((food) => {
-    const customFoodId =
-      (food as FoodDataPoint & { customFoodId?: string }).customFoodId ??
-      getDataPointIdFromName(food.name);
-    return customFoodId === foodId || food.name === foodResourceName(foodId);
-  });
+  return undefined;
 }
 
 async function resolveMealFood(
   item: ClientOnlyMealFood,
-  clientOnlyFoods: FoodDataPoint[],
+  clientOnlyFoods: FoodTemplate[],
 ): Promise<MealFood> {
   const local = findLocalFood(clientOnlyFoods, item);
 
   if (local) {
-    return mealFoodFromResolvedFood(mapFoodDataPoint(local), item);
+    return mealFoodFromResolvedFood(foodTemplateToFood(local), item);
   }
 
-  // Template IDs identify data saved locally, never Google Health foods.
-  // A deleted template should be replaceable in the meal editor rather than
-  // issuing a request for its opaque local ID.
-  if (item.foodTemplateId) {
+  // Local templates are never requested from Google Health. A deleted template
+  // remains replaceable in the meal editor.
+  const templateId = foodTemplateIdFromReference(item.food);
+  if (templateId) {
     return {
-      ...mealFoodFromResolvedFood(placeholderFood(item.foodTemplateId), item),
+      ...mealFoodFromResolvedFood(placeholderFood(templateId), item),
       foodNotFound: true,
     };
   }
 
-  const foodId =
-    item.foodId ?? (item.food ? getDataPointIdFromName(item.food) : undefined);
+  const foodId = foodIdFromReference(item.food);
 
   if (foodId && isValidDataPointId(foodId)) {
     try {
@@ -120,7 +110,7 @@ async function resolveMealFood(
 
 async function hydrateMeal(
   meal: ClientOnlyMeal,
-  clientOnlyFoods: FoodDataPoint[],
+  clientOnlyFoods: FoodTemplate[],
 ): Promise<Meal> {
   return {
     id: meal.id,
@@ -161,12 +151,7 @@ async function listMeals(): Promise<MealSummary[]> {
 }
 
 function storedMealFoodId(food: ClientOnlyMealFood): string {
-  return (
-    food.foodTemplateId ||
-    food.foodId ||
-    getDataPointIdFromName(food.food) ||
-    ""
-  );
+  return food.food;
 }
 
 export async function refreshMealDescriptions() {
@@ -179,21 +164,20 @@ export async function refreshMealDescriptions() {
   const missingFoods = meals.flatMap((meal) =>
     meal.foods.filter((food) => !food.cachedDisplayName),
   );
-  const foodIds = [
-    ...new Set(
-      missingFoods
-        .map(storedMealFoodId)
-        .filter((foodId) => isValidDataPointId(foodId)),
-    ),
+  const foodReferences = [
+    ...new Set(missingFoods.map(storedMealFoodId).filter(isFoodReference)),
   ];
-  const requestedFoodIds = foodIds.slice(0, MEAL_DESCRIPTION_REFRESH_LIMIT);
+  const requestedFoodReferences = foodReferences.slice(
+    0,
+    MEAL_DESCRIPTION_REFRESH_LIMIT,
+  );
   let updated = 0;
   let failed = 0;
 
   try {
-    for (const foodId of requestedFoodIds) {
+    for (const foodReference of requestedFoodReferences) {
       const food = missingFoods.find(
-        (item) => storedMealFoodId(item) === foodId,
+        (item) => storedMealFoodId(item) === foodReference,
       );
       if (!food) {
         continue;
@@ -202,27 +186,29 @@ export async function refreshMealDescriptions() {
       let displayName: string;
       const localFood = findLocalFood(clientOnlyFoods, food);
       if (localFood) {
-        displayName = mapFoodDataPoint(localFood).name;
+        displayName = foodTemplateToFood(localFood).name;
         if (!displayName.trim()) {
           failed++;
-          logError(`Food template "${foodId}" has no display name`);
+          logError(`Food template "${foodReference}" has no display name`);
           continue;
         }
-      } else if (food.foodTemplateId) {
+      } else if (foodTemplateIdFromReference(food.food)) {
         continue;
       } else {
+        const foodId = foodIdFromReference(food.food);
+        if (!foodId) continue;
         try {
           const dataPoint = await getDataPoint("food", foodId);
           displayName = mapFoodDataPoint(dataPoint).name;
           if (!displayName.trim()) {
-            throw new Error(`Food ${foodId} has no display name`);
+            throw new Error(`Food ${foodReference} has no display name`);
           }
         } catch (error) {
           if (isNotFoundError(error)) {
             displayName = "[missing]";
           } else {
             failed++;
-            logError(`Failed to refresh meal food "${foodId}"`, error);
+            logError(`Failed to refresh meal food "${foodReference}"`, error);
             continue;
           }
         }
@@ -233,7 +219,8 @@ export async function refreshMealDescriptions() {
         !latest.meals.some((meal) =>
           meal.foods.some(
             (item) =>
-              storedMealFoodId(item) === foodId && !item.cachedDisplayName,
+              storedMealFoodId(item) === foodReference &&
+              !item.cachedDisplayName,
           ),
         )
       ) {
@@ -245,7 +232,10 @@ export async function refreshMealDescriptions() {
         meals: current.meals.map((meal) => {
           let mealUpdated = false;
           const foods = meal.foods.map((item) => {
-            if (storedMealFoodId(item) !== foodId || item.cachedDisplayName) {
+            if (
+              storedMealFoodId(item) !== foodReference ||
+              item.cachedDisplayName
+            ) {
               return item;
             }
             mealUpdated = true;
@@ -264,7 +254,7 @@ export async function refreshMealDescriptions() {
   return {
     updated,
     failed,
-    remaining: foodIds.length - requestedFoodIds.length,
+    remaining: foodReferences.length - requestedFoodReferences.length,
   };
 }
 
@@ -281,25 +271,32 @@ async function getMealDetails(mealId: string): Promise<Meal> {
   return hydrateMeal(meal, clientOnlyFoods);
 }
 
-function privateFoodDataPoints(meal: Meal): FoodDataPoint[] {
+function privateFoodTemplates(meal: Meal): FoodTemplate[] {
   return meal.mealFoods
     .filter((food) => food.accessLevel === "PRIVATE")
-    .map((food) => foodToDataPoint(food));
+    .map((food) => ({
+      id: /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+        String(food.foodId),
+      )
+        ? String(food.foodId)
+        : crypto.randomUUID(),
+      food: foodToDataPoint(food).food!,
+    }));
 }
 
 function mergeClientOnlyFoods(
-  existing: FoodDataPoint[],
-  additions: FoodDataPoint[],
-): FoodDataPoint[] {
+  existing: FoodTemplate[],
+  additions: FoodTemplate[],
+): FoodTemplate[] {
   if (additions.length === 0) {
     return existing;
   }
 
-  const byName = new Map(existing.map((food) => [food.name, food]));
+  const byId = new Map(existing.map((food) => [food.id, food]));
   for (const food of additions) {
-    byName.set(food.name, food);
+    byId.set(food.id, food);
   }
-  return [...byName.values()];
+  return [...byId.values()];
 }
 
 function newMealId() {
@@ -328,22 +325,26 @@ async function saveMeal(meal: Meal): Promise<Meal> {
     store.get(mealsAtom),
     store.get(clientOnlyFoodsAtom),
   ]);
+  const privateFoods = privateFoodTemplates(savedMeal);
+  const availableLocalFoods = mergeClientOnlyFoods(
+    clientOnlyFoods,
+    privateFoods,
+  );
 
   const stored = {
     ...mealToClientOnlyMeal(savedMeal),
     foods: savedMeal.mealFoods.map((food) => {
-      const customFood = clientOnlyFoods.find(
+      const customFood = availableLocalFoods.find(
         (entry) =>
-          getDataPointIdFromName(entry.name) === String(food.foodId) ||
-          (entry as FoodDataPoint & { customFoodId?: string }).customFoodId ===
-            String(food.foodId),
+          entry.id === String(food.foodId) ||
+          entry.customFood === foodResourceName(String(food.foodId)),
       );
       const serving = servingFromMealFood(food);
 
       if (customFood) {
         return {
           serving,
-          foodTemplateId: (customFood as FoodDataPoint & { id?: string }).id,
+          food: foodTemplateReference(customFood.id),
           cachedDisplayName: food.cachedDisplayName,
         };
       }
@@ -355,8 +356,6 @@ async function saveMeal(meal: Meal): Promise<Meal> {
       };
     }),
   };
-  const privateFoods = privateFoodDataPoints(savedMeal);
-
   const mealIndex = meals.findIndex((entry) => entry.id === id);
   const nextMeals =
     mealIndex >= 0
@@ -366,7 +365,7 @@ async function saveMeal(meal: Meal): Promise<Meal> {
   await store.set(mealsAtom, { meals: nextMeals });
   if (privateFoods.length > 0) {
     await store.set(clientOnlyFoodsAtom, {
-      clientOnlyFoods: mergeClientOnlyFoods(clientOnlyFoods, privateFoods),
+      clientOnlyFoods: availableLocalFoods,
     });
   }
 

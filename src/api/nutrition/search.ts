@@ -4,6 +4,8 @@ import { atom, getDefaultStore } from "jotai";
 import dayjs from "dayjs";
 
 import { clientOnlyFoodsAtom } from "@/storage/client-only-foods";
+import { foodTemplateToFood } from "@/api/nutrition/food-templates";
+import type { FoodTemplate } from "@/api/nutrition/food-templates";
 import { logError } from "@/utils/log-error";
 
 import { ONE_HOUR_IN_MILLIS } from "../cache-settings";
@@ -18,19 +20,24 @@ import {
 } from "../datapoints";
 
 import {
-  mapFoodDataPoint,
   mapFoodDataPoints,
   mapFoodMeasurementUnit,
   foodFromNutritionLog,
   getDataPointIdFromName,
   resolveNutritionLogServingUnits,
-  type FoodDataPoint,
   type NutritionLogDataPoint,
 } from "./helpers";
+import {
+  foodIdFromReference,
+  foodTemplateIdFromReference,
+} from "./food-references";
 import { Food, FoodUnit, SearchFoodsResponse } from "./types";
 
 type FoodList = Array<Food>;
-export type FavoriteFood = Food & { unavailable?: boolean };
+export type FavoriteFood = Food & {
+  unavailable?: boolean;
+  foodReference: string;
+};
 
 const ENABLE_FOOD_SEARCH = true;
 const ENABLE_LIST_AVAILABLE_FOODS = false;
@@ -103,9 +110,7 @@ export function buildClientOnlyFoodsQuery() {
     queryFn: async () => {
       const store = getDefaultStore();
       const { clientOnlyFoods } = await store.get(clientOnlyFoodsAtom);
-      const fromStorage = clientOnlyFoods.map((dataPoint) =>
-        mapFoodDataPoint(dataPoint),
-      );
+      const fromStorage = clientOnlyFoods.map(foodTemplateToFood);
 
       if (!ENABLE_LIST_AVAILABLE_FOODS) {
         return fromStorage;
@@ -122,35 +127,50 @@ export function buildClientOnlyFoodsQuery() {
 }
 
 export function buildFavoriteFoodsQuery(
-  foodIds: string[],
-  clientOnlyFoods: FoodDataPoint[],
+  foodReferences: string[],
+  clientOnlyFoods: FoodTemplate[],
   storageEpoch: number,
 ) {
   return queryOptions({
-    queryKey: ["favorite-foods", foodIds, clientOnlyFoods, storageEpoch],
+    queryKey: ["favorite-foods", foodReferences, clientOnlyFoods, storageEpoch],
     queryFn: async (): Promise<FavoriteFood[]> => {
       const localFoods = new Map(
-        clientOnlyFoods.map((food) => [mapFoodDataPoint(food).foodId, food]),
+        clientOnlyFoods.flatMap((food) => {
+          return [[food.id, food] as const];
+        }),
       );
       return Promise.all(
-        foodIds.map(async (foodId): Promise<FavoriteFood> => {
-          if (!isValidDataPointId(foodId)) {
-            throw new Error(`Invalid favorite food ID: ${foodId}`);
+        foodReferences.map(async (foodReference): Promise<FavoriteFood> => {
+          const templateId = foodTemplateIdFromReference(foodReference);
+          const foodId = foodIdFromReference(foodReference);
+          if (!templateId && !foodId) {
+            throw new Error(
+              `Invalid favorite food reference: ${foodReference}`,
+            );
           }
           try {
-            const dataPoint =
-              localFoods.get(foodId) ?? (await getDataPoint("food", foodId));
-            const [food] = await mapFoodDataPoints([dataPoint]);
-            return food;
+            const template = templateId
+              ? localFoods.get(templateId)
+              : undefined;
+            if (templateId && !template) {
+              throw new Error("Favorite food template not found");
+            }
+            const food = template
+              ? foodTemplateToFood(template)
+              : (
+                  await mapFoodDataPoints([await getDataPoint("food", foodId!)])
+                )[0];
+            return { ...food, foodReference };
           } catch (error) {
             logError("Failed to load a favorite food", error);
             return {
-              foodId,
-              name: `Unavailable food (${foodId})`,
+              foodId: foodId ?? templateId!,
+              name: `Unavailable food (${foodReference})`,
               accessLevel: "PUBLIC",
               calories: 0,
               units: [],
               unavailable: true,
+              foodReference,
             };
           }
         }),

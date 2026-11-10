@@ -32,16 +32,12 @@ import { toast } from "mui-sonner";
 import { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 
+import { DEFAULT_SERVING_UNIT_ID } from "@/api/nutrition/helpers";
 import {
-  DEFAULT_SERVING_UNIT_ID,
-  getDataPointIdFromName,
-  mapFoodDataPoint,
-  type FoodDataPoint,
-} from "@/api/nutrition/helpers";
-import {
-  foodMeasurementUnitResourceName,
-  foodResourceName,
-} from "@/api/nutrition/food-log";
+  foodTemplateToFood,
+  type FoodTemplate,
+} from "@/api/nutrition/food-templates";
+import { foodMeasurementUnitResourceName } from "@/api/nutrition/food-log";
 import type { Food, NutritionMacroGoals } from "@/api/nutrition";
 import { HeaderBar, FooterActionBar } from "@/components/layout/rows";
 import NutritionPopover, {
@@ -120,9 +116,9 @@ function numberString(value: number | undefined) {
   return value == null ? "" : String(value);
 }
 
-function initialValues(dataPoint: FoodDataPoint): FormValues {
+function initialValues(dataPoint: FoodTemplate): FormValues {
   const food = dataPoint.food;
-  const mapped = mapFoodDataPoint(dataPoint);
+  const mapped = foodTemplateToFood(dataPoint);
   const nutrientValues = Object.fromEntries(
     nutrients.map(([key, , unit]) => {
       const grams = food.nutrients?.find((item) => item.nutrient === key)
@@ -170,7 +166,7 @@ export default function ManageCustomFoods() {
     popupId: "custom-food-nutrition",
     variant: "popper",
   });
-  const selected = clientOnlyFoods.find((food) => food.name === editing);
+  const selected = clientOnlyFoods.find((food) => food.id === editing);
   const columns: GridColDef<Food>[] = [
     { field: "name", headerName: "Food", flex: 2, minWidth: 140 },
     { field: "brand", headerName: "Brand", flex: 1, minWidth: 100 },
@@ -191,10 +187,8 @@ export default function ManageCustomFoods() {
           icon={<Edit />}
           label={`Edit ${row.name}`}
           onClick={() => {
-            const dataPoint = clientOnlyFoods.find(
-              (item) => getDataPointIdFromName(item.name) === id,
-            );
-            if (dataPoint?.name) setEditing(dataPoint.name);
+            const dataPoint = clientOnlyFoods.find((item) => item.id === id);
+            if (dataPoint) setEditing(dataPoint.id);
           }}
         />,
       ],
@@ -250,7 +244,7 @@ export default function ManageCustomFoods() {
         </Alert>
       ) : null}
       <DataGrid<Food>
-        rows={clientOnlyFoods.map((food) => mapFoodDataPoint(food))}
+        rows={clientOnlyFoods.map(foodTemplateToFood)}
         columns={columns}
         getRowId={(food) => food.foodId}
         checkboxSelection
@@ -280,7 +274,7 @@ export default function ManageCustomFoods() {
         <EditCustomFood
           key="new"
           dataPoint={{
-            name: "",
+            id: "",
             food: {
               accessLevel: FoodAccessLevel.FOOD_ACCESS_LEVEL_PRIVATE,
               defaultServing: {
@@ -302,7 +296,7 @@ export default function ManageCustomFoods() {
       ) : (
         selected && (
           <EditCustomFood
-            key={selected.name}
+            key={selected.id}
             dataPoint={selected}
             onClose={() => setEditing(null)}
             macroGoals={macroGoals}
@@ -323,7 +317,7 @@ function EditCustomFood({
   showNutritionLabel,
   useNutritionGoals,
 }: {
-  dataPoint: FoodDataPoint;
+  dataPoint: FoodTemplate;
   creating?: boolean;
   onClose: () => void;
   macroGoals: NutritionMacroGoals;
@@ -343,7 +337,7 @@ function EditCustomFood({
     value != null && value !== "" && Number.isFinite(Number(value))
       ? Number(value)
       : undefined;
-  const unit = mapFoodDataPoint(dataPoint).defaultUnit;
+  const unit = foodTemplateToFood(dataPoint).defaultUnit;
   const servingText =
     unit && parsed(values.servingAmount)
       ? formatServing({ amount: Number(values.servingAmount), unit })
@@ -352,18 +346,17 @@ function EditCustomFood({
 
   const save = withErrorToaster(
     async (values: FormValues) => {
-      const newName = creating ? foodResourceName(crypto.randomUUID()) : null;
       await setFoods((previous) => {
-        const current =
-          newName !== null
-            ? { ...dataPoint, name: newName }
-            : previous.clientOnlyFoods.find(
-                (food) => food.name === dataPoint.name,
-              );
+        const current = creating
+          ? {
+              ...dataPoint,
+              id: crypto.randomUUID(),
+            }
+          : previous.clientOnlyFoods.find((food) => food.id === dataPoint.id);
         if (!current) throw new Error("The food no longer exists");
         if (
           creating &&
-          previous.clientOnlyFoods.some((food) => food.name === newName)
+          previous.clientOnlyFoods.some((food) => food.id === current.id)
         )
           throw new Error("A food with the generated ID already exists");
         const food = { ...current.food };
@@ -441,7 +434,7 @@ function EditCustomFood({
           clientOnlyFoods: creating
             ? [...previous.clientOnlyFoods, { ...current, food }]
             : previous.clientOnlyFoods.map((item) =>
-                item.name === dataPoint.name ? { ...current, food } : item,
+                item.id === dataPoint.id ? { ...current, food } : item,
               ),
         };
       });
@@ -496,7 +489,7 @@ function EditCustomFood({
                 errors.servingAmount?.message ||
                 (creating
                   ? undefined
-                  : `Unit: ${mapFoodDataPoint(dataPoint).defaultUnit?.name || "not specified"}`)
+                  : `Unit: ${foodTemplateToFood(dataPoint).defaultUnit?.name || "not specified"}`)
               }
             />
             {([["calories", "Calories (kcal)"]] as const).map(

@@ -40,7 +40,7 @@ import {
   settingsStorageEpochAtom,
 } from "@/storage/settings-storage";
 
-const name = "users/me/dataTypes/food/dataPoints/local-123";
+const templateId = "123e4567-e89b-42d3-a456-426614174000";
 const mockConfirm = jest.fn();
 const mockToastError = jest.fn();
 
@@ -138,7 +138,7 @@ describe("Food template editor", () => {
     await store.set(clientOnlyFoodsAtom, {
       clientOnlyFoods: [
         {
-          name,
+          id: templateId,
           food: {
             displayName: "Soup",
             brand: "Brand",
@@ -167,7 +167,9 @@ describe("Food template editor", () => {
       ],
     });
     await store.set(clientOnlyFavoriteFoodsAtom, {
-      clientOnlyFavoriteFoods: [{ foodId: "local-123" }],
+      clientOnlyFavoriteFoods: [
+        { food: "users/me/dataTypes/food/dataPoints/local-123" },
+      ],
     });
     await store.set(mealsAtom, {
       meals: [
@@ -175,7 +177,12 @@ describe("Food template editor", () => {
           id: "meal-123",
           name: "Lunch",
           description: "",
-          foods: [{ foodId: "local-123", serving: { amount: 1 } }],
+          foods: [
+            {
+              food: "users/me/dataTypes/food/dataPoints/local-123",
+              serving: { amount: 1 },
+            },
+          ],
         },
       ],
     });
@@ -543,7 +550,7 @@ describe("Food template editor", () => {
       clientOnlyFoods: [
         ...prev.clientOnlyFoods,
         {
-          name: "users/me/dataTypes/food/dataPoints/local-456",
+          id: "123e4567-e89b-42d3-a456-426614174001",
           food: {
             displayName: "Rice",
             accessLevel: "FOOD_ACCESS_LEVEL_PRIVATE",
@@ -553,8 +560,8 @@ describe("Food template editor", () => {
     }));
     await store.set(clientOnlyFavoriteFoodsAtom, {
       clientOnlyFavoriteFoods: [
-        { foodId: "local-123" },
-        { foodId: "local-456" },
+        { food: `foodTemplate:${templateId}` },
+        { food: "foodTemplate:123e4567-e89b-42d3-a456-426614174001" },
       ],
     });
     await renderPage(new QueryClient());

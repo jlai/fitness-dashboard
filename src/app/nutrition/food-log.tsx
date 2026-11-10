@@ -49,6 +49,7 @@ import { FormActionRow } from "@/components/forms/form-row";
 import { showSuccessToast, withErrorToaster } from "@/components/toast";
 import { clientOnlyFavoriteFoodsAtom } from "@/storage/client-only-favorite-foods";
 import { isDataPointFromThisApp, isValidDataPointId } from "@/api/datapoints";
+import { foodResourceName } from "@/api/nutrition/food-log";
 
 import { groupByMealType } from "./summarize-day";
 import { selectedFoodLogsAtom } from "./atoms";
@@ -120,22 +121,32 @@ export default function FoodLog({ day }: { day: Dayjs }) {
 
   const handleAddToFavoritesClick = withErrorToaster(async () => {
     menuPopupState.close();
-    const ids = [...selectedFoodLogs].map((foodLog) =>
-      getDataPointIdFromName(foodLog.nutritionLog.food),
+    const foodPaths = [...selectedFoodLogs].flatMap((foodLog) =>
+      typeof foodLog.nutritionLog.food === "string"
+        ? [foodLog.nutritionLog.food]
+        : [],
     );
-    if (ids.some((id) => !isValidDataPointId(id))) {
+    if (
+      foodPaths.length !== selectedFoodLogs.size ||
+      foodPaths.some(
+        (food) => !isValidDataPointId(getDataPointIdFromName(food)),
+      )
+    ) {
       toast.error(
         "Only logged foods with a food ID can be added to favorites.",
       );
       return;
     }
+    const foods = foodPaths.map((food) =>
+      foodResourceName(getDataPointIdFromName(food)),
+    );
     await setFavoriteFoods((previous) => {
       const existing = new Set(
-        previous.clientOnlyFavoriteFoods.map(({ foodId }) => foodId),
+        previous.clientOnlyFavoriteFoods.map(({ food }) => food),
       );
-      const additions = [...new Set(ids)]
-        .filter((id) => !existing.has(id))
-        .map((foodId) => ({ foodId }));
+      const additions = [...new Set(foods)]
+        .filter((food) => !existing.has(food))
+        .map((food) => ({ food }));
       return {
         clientOnlyFavoriteFoods: [
           ...previous.clientOnlyFavoriteFoods,
@@ -147,20 +158,26 @@ export default function FoodLog({ day }: { day: Dayjs }) {
 
   const handleRemoveFromFavoritesClick = withErrorToaster(async () => {
     menuPopupState.close();
-    const ids = new Set(
-      [...selectedFoodLogs].map((foodLog) =>
-        getDataPointIdFromName(foodLog.nutritionLog.food),
+    const foods = new Set(
+      [...selectedFoodLogs].flatMap((foodLog) =>
+        typeof foodLog.nutritionLog.food === "string"
+          ? [
+              foodResourceName(
+                getDataPointIdFromName(foodLog.nutritionLog.food),
+              ),
+            ]
+          : [],
       ),
     );
     await setFavoriteFoods((previous) => ({
       clientOnlyFavoriteFoods: previous.clientOnlyFavoriteFoods.filter(
-        ({ foodId }) => !ids.has(foodId),
+        ({ food }) => !foods.has(food),
       ),
     }));
   }, "Error removing favorite foods");
 
-  const favoriteFoodIds = new Set(
-    clientOnlyFavoriteFoods.map(({ foodId }) => foodId),
+  const favoriteFoods = new Set(
+    clientOnlyFavoriteFoods.map(({ food }) => food),
   );
   const hasNonOwnedSelected = selectedFoodLogs.some(
     (foodLog) => !isDataPointFromThisApp(foodLog),
@@ -168,8 +185,12 @@ export default function FoodLog({ day }: { day: Dayjs }) {
   const hasAnonymousSelected = selectedFoodLogs.some(
     (foodLog) => !foodLog.nutritionLog.food,
   );
-  const areSelectedAllFavorites = selectedFoodLogs.every((foodLog) =>
-    favoriteFoodIds.has(getDataPointIdFromName(foodLog.nutritionLog.food)),
+  const areSelectedAllFavorites = selectedFoodLogs.every(
+    (foodLog) =>
+      typeof foodLog.nutritionLog.food === "string" &&
+      favoriteFoods.has(
+        foodResourceName(getDataPointIdFromName(foodLog.nutritionLog.food)),
+      ),
   );
 
   return (

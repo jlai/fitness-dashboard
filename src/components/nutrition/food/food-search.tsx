@@ -3,7 +3,6 @@
 import {
   Alert,
   Autocomplete,
-  AutocompleteChangeReason,
   Chip,
   CircularProgress,
   Fade,
@@ -34,7 +33,8 @@ import {
   buildSearchFoodsQuery,
 } from "@/api/nutrition/search";
 import { Food } from "@/api/nutrition";
-import { mapFoodDataPoint } from "@/api/nutrition/helpers";
+import { foodTemplateToFood } from "@/api/nutrition/food-templates";
+import { foodReferenceForFoodId } from "@/api/nutrition/food-references";
 import { formatFoodName } from "@/utils/other-formats";
 import { clientOnlyFoodsAtom } from "@/storage/client-only-foods";
 import { clientOnlyFavoriteFoodsAtom } from "@/storage/client-only-favorite-foods";
@@ -174,7 +174,7 @@ export default function SearchFoods({
   const storageEpoch = useAtomValue(settingsStorageEpochAtom);
   const { data: favoriteFoods, isError: favoriteFoodsError } = useQuery(
     buildFavoriteFoodsQuery(
-      clientOnlyFavoriteFoods.map(({ foodId }) => foodId),
+      clientOnlyFavoriteFoods.map(({ food }) => food),
       clientOnlyFoods,
       storageEpoch,
     ),
@@ -193,11 +193,7 @@ export default function SearchFoods({
   });
 
   const handleChange = useCallback(
-    (
-      event: SyntheticEvent,
-      value: FoodOption | SearchOption | null,
-      reason: AutocompleteChangeReason,
-    ) => {
+    (event: SyntheticEvent, value: FoodOption | SearchOption | null) => {
       if (isSearchOption(value)) {
         setInputValue(inputValue);
         setSearchString(inputValue);
@@ -232,21 +228,21 @@ export default function SearchFoods({
   );
 
   const allOptions = useMemo(() => {
-    const favoriteIds = new Set(
-      clientOnlyFavoriteFoods.map(({ foodId }) => foodId),
+    const favoriteReferences = new Set(
+      clientOnlyFavoriteFoods.map(({ food }) => food),
     );
     const recentIds = new Set((recentFoods ?? []).map(({ foodId }) => foodId));
-    const templateIds = new Set(
-      clientOnlyFoods.map((food) => mapFoodDataPoint(food).foodId),
-    );
+    const templateIds = new Set(clientOnlyFoods.map((food) => food.id));
     return [
       ...(favoriteFoods ?? []).filter((food) => !food.unavailable),
-      ...clientOnlyFoods.map((food) => mapFoodDataPoint(food)),
+      ...clientOnlyFoods.map(foodTemplateToFood),
       ...(recentFoods ?? []),
       ...(searchResults?.foods ?? []),
     ].map((food) => ({
       ...food,
-      favorite: favoriteIds.has(food.foodId),
+      favorite: favoriteReferences.has(
+        foodReferenceForFoodId(food.foodId, clientOnlyFoods),
+      ),
       recent: recentIds.has(food.foodId),
       template: templateIds.has(food.foodId),
     }));

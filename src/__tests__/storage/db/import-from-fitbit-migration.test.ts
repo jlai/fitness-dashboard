@@ -147,10 +147,10 @@ describe("readFitbitMigrationSettings", () => {
       },
     ]);
 
-    const names = result.clientOnlyFoods.clientOnlyFoods.map(
-      (food) => food.name,
-    );
-    expect(names).toContain("users/me/dataTypes/food/dataPoints/9001");
-    expect(names).toHaveLength(1);
+    expect(result.clientOnlyFoods.clientOnlyFoods).toEqual([
+      expect.objectContaining({
+        customFood: "users/me/dataTypes/food/dataPoints/9001",
+      }),
+    ]);
   });
 });

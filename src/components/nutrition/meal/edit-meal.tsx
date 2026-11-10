@@ -40,8 +40,8 @@ import {
   buildUpdateMealMutation,
   DEFAULT_SERVING_UNIT_ID,
   foodToDataPoint,
-  mapFoodDataPoint,
 } from "@/api/nutrition";
+import { foodTemplateToFood } from "@/api/nutrition/food-templates";
 import { clientOnlyFoodsAtom } from "@/storage/client-only-foods";
 import { formatFoodName } from "@/utils/other-formats";
 import NutritionPopover, {
@@ -328,9 +328,10 @@ function MissingFoodReplacement({
       name: "serving",
       plural: "servings",
     };
+    const templateId = crypto.randomUUID();
     const dataPoint = foodToDataPoint({
       accessLevel: "PRIVATE",
-      foodId: crypto.randomUUID(),
+      foodId: templateId,
       name: trimmedName,
       calories: caloriesValue,
       defaultServingSize: 1,
@@ -341,12 +342,18 @@ function MissingFoodReplacement({
     });
 
     await setClientOnlyFoods((previous) => ({
-      clientOnlyFoods: [...previous.clientOnlyFoods, dataPoint],
+      clientOnlyFoods: [
+        ...previous.clientOnlyFoods,
+        { id: templateId, food: dataPoint.food! },
+      ],
     }));
     await queryClient.invalidateQueries({
       queryKey: ["client-only-foods"],
     });
-    onReplace({ ...mapFoodDataPoint(dataPoint), amount: 1 });
+    onReplace({
+      ...foodTemplateToFood({ id: templateId, food: dataPoint.food! }),
+      amount: 1,
+    });
     showSuccessToast(`Created food template ${trimmedName}`);
   }, "Error creating food template");
 

@@ -37,15 +37,15 @@ describe("favorite foods in food search", () => {
     await store.set(clientOnlyFoodsAtom, {
       clientOnlyFoods: [
         {
-          name: "users/me/dataTypes/food/dataPoints/local-123",
+          id: "123e4567-e89b-42d3-a456-426614174000",
           food: { displayName: "Local food" },
         },
       ],
     });
     await store.set(clientOnlyFavoriteFoodsAtom, {
       clientOnlyFavoriteFoods: [
-        { foodId: "local-123" },
-        { foodId: "public-123" },
+        { food: "foodTemplate:123e4567-e89b-42d3-a456-426614174000" },
+        { food: "users/me/dataTypes/food/dataPoints/public-123" },
       ],
     });
     jest.mocked(datapoints.getDataPoint).mockResolvedValue({

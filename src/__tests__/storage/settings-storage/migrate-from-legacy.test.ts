@@ -111,7 +111,7 @@ describe("importLegacySettings", () => {
         ],
       },
     ]);
-    expect(foods.clientOnlyFoods.map((food) => food.name)).toEqual([
+    expect(foods.clientOnlyFoods.map((food) => food.customFood)).toEqual([
       "users/me/dataTypes/food/dataPoints/9001",
     ]);
   });

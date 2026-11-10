@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import "@/config/zod";
 
-import type { FoodDataPoint } from "@/api/nutrition/helpers";
+import type { FoodTemplate } from "@/api/nutrition/food-templates";
 import type { NutritionMacroGoals } from "@/api/nutrition/types";
 import type {
   DistanceUnitSystem,
@@ -26,9 +26,7 @@ export interface ClientGoal {
 }
 
 export interface ClientOnlyMealFood {
-  food?: string;
-  foodId?: string;
-  foodTemplateId?: string;
+  food: string;
   cachedDisplayName?: string;
   serving: Serving;
 }
@@ -104,9 +102,11 @@ export const mealServingSchema = z
 
 export const clientOnlyMealFoodSchema = z
   .object({
-    foodId: z.string().optional(),
-    food: z.string().optional(),
-    foodTemplateId: z.string().optional(),
+    food: z
+      .string()
+      .regex(
+        /^(users\/me\/dataTypes\/food\/dataPoints\/[a-z0-9-]{1,63}|foodTemplate:[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i,
+      ),
     serving: mealServingSchema,
   })
   .passthrough();
@@ -127,12 +127,23 @@ export const mealsDataSchema = z.object({
 }) as z.ZodType<MealsData>;
 
 /** Pragmatic FoodDataPoint schema — keyed by resource `name`. */
-export const foodDataPointSchema = z
-  .object({ name: z.string() })
-  .passthrough() as unknown as z.ZodType<FoodDataPoint>;
+export const foodTemplateSchema = z
+  .object({
+    id: z.uuid(),
+    food: z.unknown(),
+    customFood: z
+      .string()
+      .regex(/^users\/me\/dataTypes\/food\/dataPoints\/[a-z0-9-]{1,63}$/)
+      .optional(),
+  })
+  .strict() as z.ZodType<FoodTemplate>;
+
+/** @deprecated Use foodTemplateSchema. */
+export const foodDataPointSchema = foodTemplateSchema;
+export type { FoodTemplate } from "@/api/nutrition/food-templates";
 
 export type ClientOnlyFoodsData = {
-  clientOnlyFoods: FoodDataPoint[];
+  clientOnlyFoods: FoodTemplate[];
 };
 
 export const clientOnlyFoodsDataSchema = z.object({
@@ -140,7 +151,13 @@ export const clientOnlyFoodsDataSchema = z.object({
 }) as z.ZodType<ClientOnlyFoodsData>;
 
 export const clientOnlyFavoriteFoodSchema = z
-  .object({ foodId: z.string().regex(/^[a-z0-9-]{1,63}$/) })
+  .object({
+    food: z
+      .string()
+      .regex(
+        /^(users\/me\/dataTypes\/food\/dataPoints\/[a-z0-9-]{1,63}|foodTemplate:[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i,
+      ),
+  })
   .passthrough();
 
 export type ClientOnlyFavoriteFood = z.infer<

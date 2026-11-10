@@ -104,8 +104,8 @@ export function createSettingsBlobAtom<TData>(opts: {
         const migrated =
           stored && opts.migrate ? await opts.migrate(stored, storage) : stored;
 
-        if (migrated && migrated.version !== version) {
-          await storage.set(opts.key, migrated.data, migrated.version);
+        if (migrated && stored?.version !== version) {
+          await storage.set(opts.key, migrated.data, version);
         }
 
         return validateOrDefault(

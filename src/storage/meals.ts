@@ -27,6 +27,6 @@ export const mealsAtom = createSettingsBlobAtom({
   key: SETTINGS_STORAGE_KEYS.meals,
   schema: mealsStoredSchema,
   defaultData: createDefaultMealsData,
-  version: 2,
+  version: 3,
   migrate: migrateMealsStoredData,
 });

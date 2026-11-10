@@ -13,6 +13,10 @@ import {
   Food,
   foodToDataPoint,
 } from "@/api/nutrition";
+import {
+  foodReferenceForFoodId,
+  foodTemplateReference,
+} from "@/api/nutrition/food-references";
 import SearchFoods from "@/components/nutrition/food/food-search";
 import { FooterActionBar } from "@/components/layout/rows";
 import { FormRow } from "@/components/forms/form-row";
@@ -40,7 +44,7 @@ export default function ManageFavoriteFoods() {
     isError,
   } = useQuery(
     buildFavoriteFoodsQuery(
-      clientOnlyFavoriteFoods.map(({ foodId }) => foodId),
+      clientOnlyFavoriteFoods.map(({ food }) => food),
       clientOnlyFoods,
       storageEpoch,
     ),
@@ -77,7 +81,7 @@ export default function ManageFavoriteFoods() {
                 key={id}
                 food={food}
                 useProvidedFood={clientOnlyFoods.some(
-                  (entry) => entry.name?.split("/").pop() === food.foodId,
+                  (entry) => entry.id === food.foodId,
                 )}
               />,
             ]
@@ -87,6 +91,7 @@ export default function ManageFavoriteFoods() {
   ];
 
   const handleAddFavoriteFood = withErrorToaster(async (food: Food) => {
+    let foodReference = foodReferenceForFoodId(food.foodId, clientOnlyFoods);
     if (food.sourceNutritionLogName) {
       const sourceName = food.sourceNutritionLogName;
       const foodId =
@@ -97,10 +102,15 @@ export default function ManageFavoriteFoods() {
         foodId,
         sourceNutritionLogName: undefined,
       };
-      const dataPoint = foodToDataPoint(food);
+      const templateId = crypto.randomUUID();
+      const dataPoint = {
+        id: templateId,
+        food: foodToDataPoint(food).food!,
+      };
+      foodReference = foodTemplateReference(templateId);
       await setClientOnlyFoods((previous) => ({
         clientOnlyFoods: previous.clientOnlyFoods.some(
-          (existing) => existing.name === dataPoint.name,
+          (existing) => existing.id === dataPoint.id,
         )
           ? previous.clientOnlyFoods
           : [...previous.clientOnlyFoods, dataPoint],
@@ -108,10 +118,10 @@ export default function ManageFavoriteFoods() {
     }
     await setFavoriteFoods((previous) => ({
       clientOnlyFavoriteFoods: previous.clientOnlyFavoriteFoods.some(
-        (entry) => entry.foodId === food.foodId,
+        (entry) => entry.food === foodReference,
       )
         ? previous.clientOnlyFavoriteFoods
-        : [...previous.clientOnlyFavoriteFoods, { foodId: food.foodId }],
+        : [...previous.clientOnlyFavoriteFoods, { food: foodReference }],
     }));
   }, "Error adding favorite food");
 
@@ -119,7 +129,7 @@ export default function ManageFavoriteFoods() {
     const selected = new Set(selectedRows);
     await setFavoriteFoods((previous) => ({
       clientOnlyFavoriteFoods: previous.clientOnlyFavoriteFoods.filter(
-        ({ foodId }) => !selected.has(foodId),
+        (entry) => !selected.has(entry.food),
       ),
     }));
     setSelectedRows([]);
@@ -160,7 +170,7 @@ export default function ManageFavoriteFoods() {
           setSelectedRows(rows as Array<string>);
         }}
         checkboxSelection
-        getRowId={(food) => food.foodId}
+        getRowId={(food) => food.foodReference}
         rows={favoriteFoods ?? []}
         columns={favoriteFoodsColumns}
       />

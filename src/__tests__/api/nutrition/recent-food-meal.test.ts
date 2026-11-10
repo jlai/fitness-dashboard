@@ -12,7 +12,7 @@ import {
 import { foodResourceName } from "@/api/nutrition/food-log";
 import {
   clientOnlyFoodsAtom,
-  type FoodDataPoint,
+  type FoodTemplate,
 } from "@/storage/client-only-foods";
 import { mealsAtom } from "@/storage/meals";
 import {
@@ -126,8 +126,7 @@ it("resolves food templates locally without requesting their IDs from the server
   await store.set(clientOnlyFoodsAtom, {
     clientOnlyFoods: [
       {
-        id: "template-123",
-        name: foodResourceName("local-123"),
+        id: "123e4567-e89b-42d3-a456-426614174000",
         food: {
           displayName: "Oatmeal",
           accessLevel: "FOOD_ACCESS_LEVEL_PRIVATE",
@@ -135,7 +134,7 @@ it("resolves food templates locally without requesting their IDs from the server
           totalCarbohydrate: { grams: 27 },
           totalFat: { grams: 3 },
         },
-      } as FoodDataPoint & { id: string },
+      } as FoodTemplate,
     ],
   });
   await store.set(mealsAtom, {
@@ -145,8 +144,14 @@ it("resolves food templates locally without requesting their IDs from the server
         name: "Breakfast",
         description: "",
         foods: [
-          { foodTemplateId: "template-123", serving: { amount: 2 } },
-          { foodTemplateId: "deleted-template", serving: { amount: 1 } },
+          {
+            food: "foodTemplate:123e4567-e89b-42d3-a456-426614174000",
+            serving: { amount: 2 },
+          },
+          {
+            food: "foodTemplate:123e4567-e89b-42d3-a456-426614174001",
+            serving: { amount: 1 },
+          },
         ],
       },
     ],
@@ -160,7 +165,7 @@ it("resolves food templates locally without requesting their IDs from the server
   expect(meal.mealFoods).toEqual(
     expect.arrayContaining([
       expect.objectContaining({
-        foodId: "local-123",
+        foodId: "123e4567-e89b-42d3-a456-426614174000",
         name: "Oatmeal",
         accessLevel: "PRIVATE",
         calories: 150,
@@ -172,7 +177,7 @@ it("resolves food templates locally without requesting their IDs from the server
         amount: 2,
       }),
       expect.objectContaining({
-        foodId: "deleted-template",
+        foodId: "123e4567-e89b-42d3-a456-426614174001",
         foodNotFound: true,
       }),
     ]),
@@ -236,13 +241,12 @@ it("refreshes names from local food templates without fetching template ids", as
   await store.set(clientOnlyFoodsAtom, {
     clientOnlyFoods: [
       {
-        id: "template-123",
-        name: foodResourceName("local-123"),
+        id: "123e4567-e89b-42d3-a456-426614174000",
         food: {
           displayName: "Oatmeal",
           accessLevel: "FOOD_ACCESS_LEVEL_PRIVATE",
         },
-      } as FoodDataPoint & { id: string },
+      } as FoodTemplate,
     ],
   });
   await store.set(mealsAtom, {
@@ -252,8 +256,14 @@ it("refreshes names from local food templates without fetching template ids", as
         name: "Breakfast",
         description: "",
         foods: [
-          { foodTemplateId: "template-123", serving: { amount: 1 } },
-          { foodTemplateId: "missing-template", serving: { amount: 1 } },
+          {
+            food: "foodTemplate:123e4567-e89b-42d3-a456-426614174000",
+            serving: { amount: 1 },
+          },
+          {
+            food: "foodTemplate:123e4567-e89b-42d3-a456-426614174001",
+            serving: { amount: 1 },
+          },
         ],
       },
     ],
@@ -265,11 +275,14 @@ it("refreshes names from local food templates without fetching template ids", as
   expect(mockGetDataPoint).not.toHaveBeenCalled();
   expect((await store.get(mealsAtom)).meals[0].foods).toEqual([
     {
-      foodTemplateId: "template-123",
+      food: "foodTemplate:123e4567-e89b-42d3-a456-426614174000",
       serving: { amount: 1 },
       cachedDisplayName: "Oatmeal",
     },
-    { foodTemplateId: "missing-template", serving: { amount: 1 } },
+    {
+      food: "foodTemplate:123e4567-e89b-42d3-a456-426614174001",
+      serving: { amount: 1 },
+    },
   ]);
 });
 

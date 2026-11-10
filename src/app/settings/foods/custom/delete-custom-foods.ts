@@ -1,39 +1,29 @@
 import { getDefaultStore } from "jotai";
 
-import { getDataPointIdFromName } from "@/api/nutrition/helpers";
+import { foodTemplateIdFromReference } from "@/api/nutrition/food-references";
 import { clientOnlyFavoriteFoodsAtom } from "@/storage/client-only-favorite-foods";
 import { clientOnlyFoodsAtom } from "@/storage/client-only-foods";
 import { mealsAtom } from "@/storage/meals";
 
 function mealFoodCustomFoodId(
-  mealFood: { food?: string; foodId?: string; foodTemplateId?: string },
+  mealFood: { food: string },
   clientOnlyFoods: Array<{
     id?: string;
-    name?: string;
-    customFoodId?: string;
+    customFood?: string;
   }>,
 ): string | undefined {
-  if (mealFood.foodTemplateId) {
-    const template = clientOnlyFoods.find(
-      (food) =>
-        food.id === mealFood.foodTemplateId ||
-        food.customFoodId === mealFood.foodTemplateId,
-    );
+  const templateId = foodTemplateIdFromReference(mealFood.food);
+  if (templateId) {
+    const template = clientOnlyFoods.find((food) => food.id === templateId);
     if (!template) {
       return undefined;
     }
-    return template.customFoodId ?? getDataPointIdFromName(template.name);
+    return template.id;
   }
 
-  if (mealFood.food) {
-    return getDataPointIdFromName(mealFood.food);
-  }
-
-  if (mealFood.foodId) {
-    return mealFood.foodId;
-  }
-
-  return undefined;
+  return clientOnlyFoods.find(
+    (template) => template.customFood === mealFood.food,
+  )?.id;
 }
 
 export async function deleteCustomFoods(foodIds: string[]): Promise<string[]> {
@@ -53,13 +43,14 @@ export async function deleteCustomFoods(foodIds: string[]): Promise<string[]> {
 
   await store.set(clientOnlyFavoriteFoodsAtom, (previous) => ({
     clientOnlyFavoriteFoods: previous.clientOnlyFavoriteFoods.filter(
-      ({ foodId }) => !ids.has(foodId),
+      (favorite) =>
+        !ids.has(mealFoodCustomFoodId(favorite, clientOnlyFoods) ?? ""),
     ),
   }));
   try {
     await store.set(clientOnlyFoodsAtom, (previous) => ({
       clientOnlyFoods: previous.clientOnlyFoods.filter(
-        (food) => !ids.has(getDataPointIdFromName(food.name)),
+        (food) => !ids.has(food.id),
       ),
     }));
   } catch (error) {

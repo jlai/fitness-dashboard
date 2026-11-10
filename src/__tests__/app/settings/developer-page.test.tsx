@@ -249,6 +249,39 @@ describe("DeveloperSettingsPage", () => {
     });
   });
 
+  it("saves an old blob without migrating or validating it against the latest schema", async () => {
+    await renderPageAndLoadStorage();
+    fireEvent.click(
+      await screen.findByRole("tab", { name: "client-only-foods" }),
+    );
+
+    fireEvent.change(
+      await screen.findByRole("textbox", {
+        name: "Stored settings client-only-foods",
+      }),
+      {
+        target: {
+          value: JSON.stringify({
+            data: { clientOnlyFoods: [{ name: "Sample Food" }] },
+            version: 1,
+            updateTime: "2026-01-01T00:00:00.000Z",
+          }),
+        },
+      },
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Update without migration" }),
+    );
+
+    await waitFor(() => {
+      expect(mockStorageSet).toHaveBeenCalledWith(
+        "client-only-foods",
+        { clientOnlyFoods: [{ name: "Sample Food" }] },
+        1,
+      );
+    });
+  });
+
   it("replaces edits made while an update is in progress with the saved blob", async () => {
     let finishSave:
       | ((value: {

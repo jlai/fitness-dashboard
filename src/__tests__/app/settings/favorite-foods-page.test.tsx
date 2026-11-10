@@ -44,7 +44,7 @@ jest.mock("@/components/nutrition/food/food-search", () => ({
       <button
         onClick={() =>
           onChange({
-            foodId: "local-123",
+            foodId: "123e4567-e89b-42d3-a456-426614174000",
             name: "Local food",
             accessLevel: "PRIVATE",
             calories: 0,
@@ -76,15 +76,17 @@ jest.mock("@mui/x-data-grid", () => ({
   DataGrid: ({
     rows,
     onRowSelectionModelChange,
+    getRowId,
   }: {
-    rows: Array<{ foodId: string; name: string }>;
+    rows: Array<{ foodId: string; name: string; foodReference: string }>;
     onRowSelectionModelChange: (rows: string[]) => void;
+    getRowId: (row: { foodReference: string }) => string;
   }) => (
     <div>
       {rows.map((row) => (
         <button
-          key={row.foodId}
-          onClick={() => onRowSelectionModelChange([row.foodId])}
+          key={getRowId(row)}
+          onClick={() => onRowSelectionModelChange([getRowId(row)])}
         >
           {row.name}
         </button>
@@ -102,7 +104,7 @@ describe("favorite foods management", () => {
     await store.set(clientOnlyFoodsAtom, {
       clientOnlyFoods: [
         {
-          name: "users/me/dataTypes/food/dataPoints/local-123",
+          id: "123e4567-e89b-42d3-a456-426614174000",
           food: { displayName: "Local food" },
         },
       ],
@@ -117,7 +119,9 @@ describe("favorite foods management", () => {
       .mocked(datapoints.getDataPoint)
       .mockRejectedValue(new Error("offline"));
     await getDefaultStore().set(clientOnlyFavoriteFoodsAtom, {
-      clientOnlyFavoriteFoods: [{ foodId: "public-123" }],
+      clientOnlyFavoriteFoods: [
+        { food: "users/me/dataTypes/food/dataPoints/public-123" },
+      ],
     });
     await act(async () => {
       render(
@@ -130,7 +134,9 @@ describe("favorite foods management", () => {
     });
     expect(await screen.findByText(/could not be loaded/)).toBeTruthy();
     fireEvent.click(
-      screen.getByRole("button", { name: "Unavailable food (public-123)" }),
+      screen.getByRole("button", {
+        name: "Unavailable food (users/me/dataTypes/food/dataPoints/public-123)",
+      }),
     );
     fireEvent.click(screen.getByRole("button", { name: "Remove favorites" }));
     await waitFor(async () => {
@@ -165,7 +171,11 @@ describe("favorite foods management", () => {
           SETTINGS_STORAGE_KEYS.clientOnlyFavoriteFoods,
         ),
       ).toMatchObject({
-        data: { clientOnlyFavoriteFoods: [{ foodId: "local-123" }] },
+        data: {
+          clientOnlyFavoriteFoods: [
+            { food: "foodTemplate:123e4567-e89b-42d3-a456-426614174000" },
+          ],
+        },
       });
     });
     fireEvent.click(screen.getByRole("button", { name: "Local food" }));
@@ -205,11 +215,13 @@ describe("favorite foods management", () => {
       const { clientOnlyFoods } =
         await getDefaultStore().get(clientOnlyFoodsAtom);
       expect(clientOnlyFavoriteFoods).toEqual([
-        { foodId: "12345678-1234-4123-8123-123456789abc" },
+        {
+          food: "foodTemplate:12345678-1234-4123-8123-123456789abc",
+        },
       ]);
       expect(clientOnlyFoods).toHaveLength(2);
       expect(clientOnlyFoods[1]).toMatchObject({
-        name: "users/me/dataTypes/food/dataPoints/12345678-1234-4123-8123-123456789abc",
+        id: "12345678-1234-4123-8123-123456789abc",
         food: { displayName: "Homemade soup", energyAvg: { kcal: 200 } },
       });
     });

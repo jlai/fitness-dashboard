@@ -108,12 +108,12 @@ describe("per-key stored schemas", () => {
     ).toBe(true);
   });
 
-  it("accepts food datapoints with passthrough fields", () => {
+  it("accepts food templates without a datapoint name", () => {
     const result = clientOnlyFoodsStoredSchema.safeParse({
       data: {
         clientOnlyFoods: [
           {
-            name: "users/me/dataTypes/food/dataPoints/abc",
+            id: "123e4567-e89b-42d3-a456-426614174000",
             food: { displayName: "Oats" },
           },
         ],
@@ -124,10 +124,18 @@ describe("per-key stored schemas", () => {
     expect(result.success).toBe(true);
   });
 
-  it("rejects food datapoints without name", () => {
+  it("rejects food templates with a datapoint name", () => {
     expect(
       clientOnlyFoodsStoredSchema.safeParse({
-        data: { clientOnlyFoods: [{ food: { displayName: "Oats" } }] },
+        data: {
+          clientOnlyFoods: [
+            {
+              id: "123e4567-e89b-42d3-a456-426614174000",
+              name: "users/me/dataTypes/food/dataPoints/abc",
+              food: { displayName: "Oats" },
+            },
+          ],
+        },
         version: 1,
         updateTime: "2026-01-01T00:00:00.000Z",
       }).success,
@@ -136,7 +144,14 @@ describe("per-key stored schemas", () => {
 
   it("preserves extra favorite entry properties and rejects invalid IDs", () => {
     const envelope = {
-      data: { clientOnlyFavoriteFoods: [{ foodId: "food-123", note: "test" }] },
+      data: {
+        clientOnlyFavoriteFoods: [
+          {
+            food: "users/me/dataTypes/food/dataPoints/food-123",
+            note: "test",
+          },
+        ],
+      },
       version: 1,
       updateTime: "2026-01-01T00:00:00.000Z",
     };
@@ -146,7 +161,7 @@ describe("per-key stored schemas", () => {
     expect(
       clientOnlyFavoriteFoodsStoredSchema.safeParse({
         ...envelope,
-        data: { clientOnlyFavoriteFoods: [{ foodId: "../bad" }] },
+        data: { clientOnlyFavoriteFoods: [{ food: "../bad" }] },
       }).success,
     ).toBe(false);
   });

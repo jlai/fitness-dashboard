@@ -1,7 +1,8 @@
 import {
-  getDataPointIdFromName,
-  type FoodDataPoint,
-} from "@/api/nutrition/helpers";
+  foodIdFromReference,
+  foodTemplateReference,
+  isFoodResourceReference,
+} from "@/api/nutrition/food-references";
 
 import { SETTINGS_STORAGE_KEYS } from "./keys";
 import type { SettingsStorage, StoredData } from "./types";
@@ -10,6 +11,16 @@ import type {
   ClientOnlyMealFood,
   MealsData,
 } from "./schemas";
+
+function isLegacyServerFoodReference(value: string): boolean {
+  const foodId = foodIdFromReference(value);
+  return (
+    foodId !== undefined &&
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      foodId,
+    )
+  );
+}
 
 export function migrateClientOnlyFoodsData(stored: {
   data: unknown;
@@ -21,25 +32,42 @@ export function migrateClientOnlyFoodsData(stored: {
   return {
     ...stored,
     data: {
-      clientOnlyFoods: (rawData.clientOnlyFoods ?? []).map((food) => {
+      clientOnlyFoods: (rawData.clientOnlyFoods ?? []).flatMap((food) => {
         const record = { ...(food ?? {}) } as Record<string, unknown>;
-        const existingId =
-          typeof record.id === "string" ? record.id : undefined;
-        const customFoodId =
-          typeof record.customFoodId === "string"
-            ? record.customFoodId
-            : getDataPointIdFromName(
-                typeof record.name === "string" ? record.name : "",
-              );
+        if (typeof record.food !== "object" || record.food === null) return [];
+        const legacyCustomFood =
+          typeof record.customFood === "string"
+            ? record.customFood
+            : typeof record.customFoodId === "string"
+              ? isFoodResourceReference(record.customFoodId)
+                ? record.customFoodId
+                : `users/me/dataTypes/food/dataPoints/${record.customFoodId}`
+              : typeof record.name === "string"
+                ? record.name
+                : undefined;
+        delete record.name;
+        delete record.customFoodId;
+        delete record.customFood;
 
-        return {
-          ...record,
-          ...(customFoodId ? { customFoodId } : {}),
-          id: existingId ?? crypto.randomUUID(),
-        } as FoodDataPoint & { id: string; customFoodId: string };
+        return [
+          {
+            id:
+              typeof record.id === "string" &&
+              /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+                record.id,
+              )
+                ? record.id
+                : crypto.randomUUID(),
+            food: record.food as ClientOnlyFoodsData["clientOnlyFoods"][number]["food"],
+            ...(legacyCustomFood &&
+            isLegacyServerFoodReference(legacyCustomFood)
+              ? { customFood: legacyCustomFood }
+              : {}),
+          },
+        ];
       }),
     },
-    version: 2,
+    version: 3,
     updateTime: new Date().toISOString(),
   };
 }
@@ -64,17 +92,14 @@ function migrateMealsData(
     )?.clientOnlyFoods ?? [];
 
   for (const food of clientOnlyFoods) {
-    const customFoodId =
-      typeof food.customFoodId === "string"
-        ? food.customFoodId
-        : getDataPointIdFromName(
-            typeof food.name === "string" ? food.name : "",
-          );
+    const customFood =
+      typeof food.customFood === "string" ? food.customFood : undefined;
     const templateId =
       typeof food.id === "string" ? food.id : crypto.randomUUID();
 
-    if (customFoodId) {
-      customFoodMap.set(customFoodId, templateId);
+    const foodId = customFood ? foodIdFromReference(customFood) : undefined;
+    if (foodId) {
+      customFoodMap.set(foodId, templateId);
     }
   }
 
@@ -87,21 +112,76 @@ function migrateMealsData(
           const record = { ...item };
           const foodId =
             typeof record.foodId === "string" ? record.foodId : undefined;
-          if (foodId) {
-            const templateId = customFoodMap.get(foodId);
-            if (templateId) {
-              delete record.foodId;
-              return { ...record, foodTemplateId: templateId };
-            }
-            delete record.foodId;
-            return {
-              ...record,
-              food: `users/me/dataTypes/food/dataPoints/${foodId}`,
-            };
+          const templateId =
+            typeof record.foodTemplateId === "string"
+              ? record.foodTemplateId
+              : foodId
+                ? customFoodMap.get(foodId)
+                : undefined;
+          delete record.foodId;
+          delete record.foodTemplateId;
+
+          if (templateId) {
+            return { ...record, food: foodTemplateReference(templateId) };
           }
-          return record;
+          if (typeof record.food === "string") {
+            return record;
+          }
+          return foodId
+            ? {
+                ...record,
+                food: `users/me/dataTypes/food/dataPoints/${foodId}`,
+              }
+            : record;
         }),
       })),
+    },
+    version: 3,
+    updateTime: new Date().toISOString(),
+  };
+}
+
+export function migrateClientOnlyFavoriteFoodsData(
+  stored: StoredData<unknown>,
+): StoredData<{ clientOnlyFavoriteFoods: Array<{ food: string }> }> {
+  const rawData = (stored.data ?? { clientOnlyFavoriteFoods: [] }) as {
+    clientOnlyFavoriteFoods?: Array<Record<string, unknown>>;
+  };
+
+  return {
+    ...stored,
+    data: {
+      clientOnlyFavoriteFoods: (rawData.clientOnlyFavoriteFoods ?? []).flatMap(
+        (entry) => {
+          const record = { ...entry };
+          if (typeof record.food === "string") {
+            delete record.foodId;
+            return [record as { food: string }];
+          }
+          const foodId = record.foodId;
+          delete record.foodId;
+
+          if (
+            typeof foodId === "string" &&
+            /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+              foodId,
+            )
+          ) {
+            return [{ ...record, food: foodTemplateReference(foodId) }];
+          }
+
+          if (typeof foodId !== "number" || !Number.isInteger(foodId)) {
+            return [];
+          }
+
+          return [
+            {
+              ...record,
+              food: `users/me/dataTypes/food/dataPoints/${foodId}`,
+            },
+          ];
+        },
+      ),
     },
     version: 2,
     updateTime: new Date().toISOString(),
@@ -115,39 +195,16 @@ export async function migrateMealsStoredData(
   const customFoodsStored = await storage.get(
     SETTINGS_STORAGE_KEYS.clientOnlyFoods,
   );
-  const customFoods =
-    (
-      customFoodsStored?.data as
-        { clientOnlyFoods?: Array<Record<string, unknown>> } | undefined
-    )?.clientOnlyFoods ?? [];
-
-  const nextCustomFoods = customFoods.map((food) => {
-    const customFoodId =
-      typeof food.customFoodId === "string"
-        ? food.customFoodId
-        : getDataPointIdFromName(
-            typeof food.name === "string" ? food.name : "",
-          );
-    const templateId =
-      typeof food.id === "string" ? food.id : crypto.randomUUID();
-
-    if (!customFoodId) {
-      return food;
-    }
-
-    return {
-      ...food,
-      customFoodId,
-      id: templateId,
-    };
-  });
+  const nextCustomFoods = migrateClientOnlyFoodsData(
+    customFoodsStored ?? { data: { clientOnlyFoods: [] } },
+  ).data.clientOnlyFoods;
 
   await storage.set(
     SETTINGS_STORAGE_KEYS.clientOnlyFoods,
     {
       clientOnlyFoods: nextCustomFoods,
     },
-    2,
+    3,
   );
 
   return migrateMealsData(stored, { clientOnlyFoods: nextCustomFoods });

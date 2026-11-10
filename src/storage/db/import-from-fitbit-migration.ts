@@ -15,6 +15,7 @@ import {
   migrationMealToClientOnlyMeal,
   privateMigrationFoodsFromMeal,
 } from "./fitbit-to-health";
+import { getDataPointIdFromName } from "@/api/nutrition/helpers";
 
 export function migrationGoalToClientGoal(goal: MigrationGoal): ClientGoal {
   return {
@@ -52,7 +53,11 @@ export function readFitbitMigrationSettings(
 
   return {
     clientOnlyFoods: {
-      clientOnlyFoods: [...foodDataPointsByName.values()],
+      clientOnlyFoods: [...foodDataPointsByName.values()].map((food) => ({
+        id: crypto.randomUUID(),
+        food: food.food!,
+        customFood: `users/me/dataTypes/food/dataPoints/${getDataPointIdFromName(food.name)}`,
+      })),
     },
     meals: { meals: meals.map(migrationMealToClientOnlyMeal) },
     clientOnlyGoals: { clientOnlyGoals: goals.map(migrationGoalToClientGoal) },
