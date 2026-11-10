@@ -5,6 +5,7 @@ import type { ClientOnlyMeal, ClientOnlyMealFood } from "@/storage/meals";
 import {
   mealFoodFromResolvedFood,
   mealToClientOnlyMeal,
+  servingFromMealFood,
 } from "@/storage/db/fitbit-to-health";
 import { clientOnlyFoodsAtom } from "@/storage/client-only-foods";
 import { mealsAtom } from "@/storage/meals";
@@ -16,6 +17,7 @@ import { ONE_DAY_IN_MILLIS } from "../cache-settings";
 import { foodResourceName } from "./food-log";
 import {
   foodToDataPoint,
+  getDataPointIdFromName,
   mapFoodDataPoint,
   mapFoodDataPoints,
   type FoodDataPoint,
@@ -35,24 +37,47 @@ function placeholderFood(foodId: string): MealFood {
 
 function findLocalFood(
   clientOnlyFoods: FoodDataPoint[],
-  foodName: string,
+  item: ClientOnlyMealFood,
 ): FoodDataPoint | undefined {
-  return clientOnlyFoods.find((food) => food.name === foodName);
+  if (item.foodTemplateId) {
+    return clientOnlyFoods.find(
+      (food) =>
+        (food as FoodDataPoint & { id?: string; customFoodId?: string }).id ===
+          item.foodTemplateId ||
+        (food as FoodDataPoint & { id?: string; customFoodId?: string })
+          .customFoodId === item.foodTemplateId,
+    );
+  }
+
+  const foodId =
+    item.foodId ?? (item.food ? getDataPointIdFromName(item.food) : undefined);
+  if (!foodId) {
+    return undefined;
+  }
+
+  return clientOnlyFoods.find((food) => {
+    const customFoodId =
+      (food as FoodDataPoint & { customFoodId?: string }).customFoodId ??
+      getDataPointIdFromName(food.name);
+    return customFoodId === foodId || food.name === foodResourceName(foodId);
+  });
 }
 
 async function resolveMealFood(
   item: ClientOnlyMealFood,
   clientOnlyFoods: FoodDataPoint[],
 ): Promise<MealFood> {
-  const foodId = item.foodId;
-  const foodName = foodResourceName(foodId);
-  const local = findLocalFood(clientOnlyFoods, foodName);
+  const foodId =
+    item.foodId ??
+    (item.food ? getDataPointIdFromName(item.food) : undefined) ??
+    (item.foodTemplateId ? item.foodTemplateId : undefined);
+  const local = findLocalFood(clientOnlyFoods, item);
 
   if (local) {
     return mealFoodFromResolvedFood(mapFoodDataPoint(local), item);
   }
 
-  if (isValidDataPointId(foodId)) {
+  if (foodId && isValidDataPointId(foodId)) {
     try {
       const dataPoint = await getDataPoint("food", foodId);
       const [food] = await mapFoodDataPoints([dataPoint]);
@@ -62,7 +87,7 @@ async function resolveMealFood(
     }
   }
 
-  return mealFoodFromResolvedFood(placeholderFood(foodId), item);
+  return mealFoodFromResolvedFood(placeholderFood(foodId ?? "unknown"), item);
 }
 
 async function hydrateMeal(
@@ -129,13 +154,37 @@ async function saveMeal(meal: Meal): Promise<Meal> {
         : food,
     ),
   };
-  const stored = mealToClientOnlyMeal(savedMeal);
-  const privateFoods = privateFoodDataPoints(savedMeal);
 
   const [{ meals }, { clientOnlyFoods }] = await Promise.all([
     store.get(mealsAtom),
     store.get(clientOnlyFoodsAtom),
   ]);
+
+  const stored = {
+    ...mealToClientOnlyMeal(savedMeal),
+    foods: savedMeal.mealFoods.map((food) => {
+      const customFood = clientOnlyFoods.find(
+        (entry) =>
+          getDataPointIdFromName(entry.name) === String(food.foodId) ||
+          (entry as FoodDataPoint & { customFoodId?: string }).customFoodId ===
+            String(food.foodId),
+      );
+      const serving = servingFromMealFood(food);
+
+      if (customFood) {
+        return {
+          serving,
+          foodTemplateId: (customFood as FoodDataPoint & { id?: string }).id,
+        };
+      }
+
+      return {
+        serving,
+        food: foodResourceName(String(food.foodId)),
+      };
+    }),
+  };
+  const privateFoods = privateFoodDataPoints(savedMeal);
 
   const mealIndex = meals.findIndex((entry) => entry.id === id);
   const nextMeals =

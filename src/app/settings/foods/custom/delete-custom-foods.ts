@@ -5,12 +5,45 @@ import { clientOnlyFavoriteFoodsAtom } from "@/storage/client-only-favorite-food
 import { clientOnlyFoodsAtom } from "@/storage/client-only-foods";
 import { mealsAtom } from "@/storage/meals";
 
+function mealFoodCustomFoodId(
+  mealFood: { food?: string; foodId?: string; foodTemplateId?: string },
+  clientOnlyFoods: Array<{ id?: string; name: string; customFoodId?: string }>,
+): string | undefined {
+  if (mealFood.foodTemplateId) {
+    const template = clientOnlyFoods.find(
+      (food) =>
+        food.id === mealFood.foodTemplateId ||
+        food.customFoodId === mealFood.foodTemplateId,
+    );
+    if (!template) {
+      return undefined;
+    }
+    return template.customFoodId ?? getDataPointIdFromName(template.name);
+  }
+
+  if (mealFood.food) {
+    return getDataPointIdFromName(mealFood.food);
+  }
+
+  if (mealFood.foodId) {
+    return mealFood.foodId;
+  }
+
+  return undefined;
+}
+
 export async function deleteCustomFoods(foodIds: string[]): Promise<string[]> {
   const ids = new Set(foodIds);
   const store = getDefaultStore();
-  const { meals } = await store.get(mealsAtom);
+  const [{ meals }, { clientOnlyFoods }] = await Promise.all([
+    store.get(mealsAtom),
+    store.get(clientOnlyFoodsAtom),
+  ]);
   const usedBy = meals.filter((meal) =>
-    meal.foods.some(({ foodId }) => ids.has(foodId)),
+    meal.foods.some((mealFood) => {
+      const customFoodId = mealFoodCustomFoodId(mealFood, clientOnlyFoods);
+      return customFoodId !== undefined && ids.has(customFoodId);
+    }),
   );
   if (usedBy.length) return usedBy.map((meal) => meal.name);
 

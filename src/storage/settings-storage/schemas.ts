@@ -26,7 +26,9 @@ export interface ClientGoal {
 }
 
 export interface ClientOnlyMealFood {
-  foodId: string;
+  food?: string;
+  foodId?: string;
+  foodTemplateId?: string;
   serving: Serving;
 }
 
@@ -99,10 +101,14 @@ export const mealServingSchema = z
   })
   .passthrough();
 
-export const clientOnlyMealFoodSchema = z.object({
-  foodId: z.string(),
-  serving: mealServingSchema,
-});
+export const clientOnlyMealFoodSchema = z
+  .object({
+    foodId: z.string().optional(),
+    food: z.string().optional(),
+    foodTemplateId: z.string().optional(),
+    serving: mealServingSchema,
+  })
+  .passthrough();
 
 export const clientOnlyMealSchema = z.object({
   id: z.string(),

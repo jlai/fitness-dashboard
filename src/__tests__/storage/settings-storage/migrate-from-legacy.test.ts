@@ -100,7 +100,7 @@ describe("importLegacySettings", () => {
         description: "Eggs",
         foods: [
           {
-            foodId: "9001",
+            food: "users/me/dataTypes/food/dataPoints/9001",
             serving: {
               amount: 1,
               foodMeasurementUnit:
@@ -196,7 +196,12 @@ describe("importLegacySettings", () => {
     expect(await store.get(dashboardsAtom)).toEqual(dashboardsBefore);
     expect((await store.get(mealsAtom)).meals[0]).toMatchObject({
       id: "123",
-      foods: [{ foodId: "9001", serving: { amount: 2 } }],
+      foods: [
+        {
+          food: "users/me/dataTypes/food/dataPoints/9001",
+          serving: { amount: 2 },
+        },
+      ],
     });
     expect((await store.get(clientOnlyFoodsAtom)).clientOnlyFoods).toHaveLength(
       1,

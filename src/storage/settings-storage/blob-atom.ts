@@ -89,6 +89,10 @@ export function createSettingsBlobAtom<TData>(opts: {
   schema: ZodType<StoredData<TData>>;
   defaultData: DefaultData<TData>;
   version?: number;
+  migrate?: (
+    stored: StoredData<unknown>,
+    storage: SettingsStorage,
+  ) => Promise<StoredData<TData>> | StoredData<TData>;
 }): WritableAtom<TData | Promise<TData>, [Update<TData>], Promise<void>> {
   const version = opts.version ?? 1;
   const cacheAtom = atom<CacheEntry<TData> | null>(null);
@@ -97,8 +101,15 @@ export function createSettingsBlobAtom<TData>(opts: {
     dedupedLoad(storage, opts.key, async () => {
       try {
         const stored = await storage.get(opts.key);
+        const migrated =
+          stored && opts.migrate ? await opts.migrate(stored, storage) : stored;
+
+        if (migrated && migrated.version !== version) {
+          await storage.set(opts.key, migrated.data, migrated.version);
+        }
+
         return validateOrDefault(
-          stored,
+          migrated,
           opts.schema,
           opts.defaultData,
           opts.key,

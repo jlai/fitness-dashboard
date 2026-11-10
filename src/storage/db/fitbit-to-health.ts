@@ -99,7 +99,7 @@ export function migrationMealToClientOnlyMeal(
     name: meal.name,
     description: meal.description,
     foods: meal.mealFoods.map((food) => ({
-      foodId: String(food.foodId),
+      food: `users/me/dataTypes/food/dataPoints/${String(food.foodId)}`,
       serving: servingFromMigrationMealFood(food),
     })),
   };
@@ -154,7 +154,7 @@ export function mealToClientOnlyMeal(meal: Meal): ClientOnlyMeal {
     name: meal.name,
     description: meal.description,
     foods: meal.mealFoods.map((food) => ({
-      foodId: String(food.foodId),
+      food: `users/me/dataTypes/food/dataPoints/${String(food.foodId)}`,
       serving: servingFromMealFood(food),
     })),
   };

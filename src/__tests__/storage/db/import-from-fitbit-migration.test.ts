@@ -126,7 +126,7 @@ describe("readFitbitMigrationSettings", () => {
         description: "Eggs",
         foods: [
           {
-            foodId: "80850",
+            food: "users/me/dataTypes/food/dataPoints/80850",
             serving: {
               amount: 1,
               foodMeasurementUnit:
@@ -135,7 +135,7 @@ describe("readFitbitMigrationSettings", () => {
             },
           },
           {
-            foodId: "9001",
+            food: "users/me/dataTypes/food/dataPoints/9001",
             serving: {
               amount: 2,
               foodMeasurementUnit:
