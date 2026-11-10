@@ -96,6 +96,7 @@ export interface Food {
 
 export type MealFood = Food & {
   amount: number;
+  cachedDisplayName?: string;
   foodNotFound?: boolean;
 };
 
@@ -156,6 +157,13 @@ export interface Meal {
   name: string;
   description: string;
   mealFoods: Array<MealFood>;
+}
+
+export interface MealSummary {
+  id: string;
+  name: string;
+  description: string;
+  foodNames: Array<string>;
 }
 
 // https://dev.fitbit.com/build/reference/web-api/nutrition/get-meals/

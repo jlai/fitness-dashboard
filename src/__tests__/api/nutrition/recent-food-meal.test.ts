@@ -3,6 +3,7 @@ import { getDefaultStore } from "jotai";
 
 import { getDataPoint } from "@/api/datapoints";
 import {
+  buildMealDetailsQuery,
   buildCreateMealMutation,
   buildMealsQuery,
 } from "@/api/nutrition/meals";
@@ -54,10 +55,18 @@ it("persists an anonymous recent food as a local food when saving a meal", async
       ],
     });
   expect(saved.mealFoods[0].foodId).not.toContain("recent-log:");
-  const [meal] = await client.fetchQuery(buildMealsQuery());
+  expect(saved.mealFoods[0].cachedDisplayName).toBe("Soup");
+  const { meals } = await store.get(mealsAtom);
+  expect(meals[0].foods[0].cachedDisplayName).toBe("Soup");
+  const [summary] = await client.fetchQuery(buildMealsQuery());
+  expect(summary.foodNames).toEqual(["Soup"]);
+  expect(mockGetDataPoint).not.toHaveBeenCalled();
+
+  const meal = await client.fetchQuery(buildMealDetailsQuery(summary.id));
   expect(meal.mealFoods[0]).toMatchObject({
     foodId: saved.mealFoods[0].foodId,
     name: "Soup",
+    cachedDisplayName: "Soup",
     accessLevel: "PRIVATE",
     calories: 200,
     nutritionalValues: { protein: 20 },
@@ -89,7 +98,12 @@ it("marks a meal food as missing when its server food returns 404", async () => 
     Object.assign(new Error("Not found"), { status: 404 }),
   );
 
-  const [meal] = await new QueryClient().fetchQuery(buildMealsQuery());
+  const client = new QueryClient();
+  const [summary] = await client.fetchQuery(buildMealsQuery());
+  expect(summary.foodNames).toEqual([]);
+  expect(mockGetDataPoint).not.toHaveBeenCalled();
+
+  const meal = await client.fetchQuery(buildMealDetailsQuery(summary.id));
 
   expect(mockGetDataPoint).toHaveBeenCalledWith("food", "abcd");
   expect(meal.mealFoods[0]).toMatchObject({

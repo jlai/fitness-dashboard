@@ -22,7 +22,7 @@ import {
   mapFoodDataPoints,
   type FoodDataPoint,
 } from "./helpers";
-import { Meal, MealFood } from "./types";
+import { Meal, MealFood, MealSummary } from "./types";
 
 function placeholderFood(foodId: string): MealFood {
   return {
@@ -119,13 +119,47 @@ async function hydrateMeal(
   };
 }
 
-async function listMeals(): Promise<Meal[]> {
+function mealSummaryFromStoredMeal(meal: ClientOnlyMeal): MealSummary {
+  return {
+    id: meal.id,
+    name: meal.name,
+    description: meal.description,
+    foodNames: meal.foods.flatMap((food) =>
+      food.cachedDisplayName ? [food.cachedDisplayName] : [],
+    ),
+  };
+}
+
+export function mealSummaryFromMeal(meal: Meal): MealSummary {
+  return {
+    id: meal.id,
+    name: meal.name,
+    description: meal.description,
+    foodNames: meal.mealFoods.map(
+      (food) => food.cachedDisplayName ?? food.name,
+    ),
+  };
+}
+
+async function listMeals(): Promise<MealSummary[]> {
+  const store = getDefaultStore();
+  const { meals } = await store.get(mealsAtom);
+  return meals.map(mealSummaryFromStoredMeal);
+}
+
+async function getMealDetails(mealId: string): Promise<Meal> {
   const store = getDefaultStore();
   const [{ meals }, { clientOnlyFoods }] = await Promise.all([
     store.get(mealsAtom),
     store.get(clientOnlyFoodsAtom),
   ]);
-  return Promise.all(meals.map((meal) => hydrateMeal(meal, clientOnlyFoods)));
+  const meal = meals.find((item) => item.id === mealId);
+
+  if (!meal) {
+    throw new Error(`Meal not found: ${mealId}`);
+  }
+
+  return hydrateMeal(meal, clientOnlyFoods);
 }
 
 function privateFoodDataPoints(meal: Meal): FoodDataPoint[] {
@@ -159,15 +193,16 @@ async function saveMeal(meal: Meal): Promise<Meal> {
   const savedMeal = {
     ...meal,
     id,
-    mealFoods: meal.mealFoods.map((food) =>
-      food.sourceNutritionLogName
+    mealFoods: meal.mealFoods.map((food) => ({
+      ...food,
+      cachedDisplayName: food.name,
+      ...(food.sourceNutritionLogName
         ? {
-            ...food,
             foodId: crypto.randomUUID(),
             sourceNutritionLogName: undefined,
           }
-        : food,
-    ),
+        : {}),
+    })),
   };
 
   const [{ meals }, { clientOnlyFoods }] = await Promise.all([
@@ -190,12 +225,14 @@ async function saveMeal(meal: Meal): Promise<Meal> {
         return {
           serving,
           foodTemplateId: (customFood as FoodDataPoint & { id?: string }).id,
+          cachedDisplayName: food.cachedDisplayName,
         };
       }
 
       return {
         serving,
         food: foodResourceName(String(food.foodId)),
+        cachedDisplayName: food.cachedDisplayName,
       };
     }),
   };
@@ -225,6 +262,14 @@ export function buildMealsQuery() {
   });
 }
 
+export function buildMealDetailsQuery(mealId: string) {
+  return queryOptions({
+    queryKey: ["meals", "detail", mealId],
+    queryFn: () => getMealDetails(mealId),
+    staleTime: ONE_DAY_IN_MILLIS,
+  });
+}
+
 function invalidateMealQueries(queryClient: QueryClient) {
   queryClient.invalidateQueries({ queryKey: ["meals"] });
   queryClient.invalidateQueries({ queryKey: ["saved-foods"] });
@@ -235,12 +280,16 @@ export function buildCreateMealMutation(queryClient: QueryClient) {
   return mutationOptions({
     mutationFn: async (meal: Meal) => saveMeal(meal),
     onSuccess: (data) => {
-      const meals = queryClient.getQueryData<Array<Meal>>(["meals"]);
+      const meals = queryClient.getQueryData<Array<MealSummary>>(["meals"]);
 
       if (meals) {
-        queryClient.setQueryData(["meals"], [...meals, data]);
+        queryClient.setQueryData(
+          ["meals"],
+          [...meals, mealSummaryFromMeal(data)],
+        );
       }
 
+      queryClient.setQueryData(["meals", "detail", data.id], data);
       invalidateMealQueries(queryClient);
     },
   });
@@ -250,17 +299,23 @@ export function buildUpdateMealMutation(queryClient: QueryClient) {
   return mutationOptions({
     mutationFn: async (meal: Meal) => saveMeal(meal),
     onSuccess: (updatedMeal) => {
-      const meals = queryClient.getQueryData<Array<Meal>>(["meals"]);
+      const meals = queryClient.getQueryData<Array<MealSummary>>(["meals"]);
 
       if (meals) {
         queryClient.setQueryData(
           ["meals"],
           meals.map((meal) =>
-            meal.id === updatedMeal.id ? updatedMeal : meal,
+            meal.id === updatedMeal.id
+              ? mealSummaryFromMeal(updatedMeal)
+              : meal,
           ),
         );
       }
 
+      queryClient.setQueryData(
+        ["meals", "detail", updatedMeal.id],
+        updatedMeal,
+      );
       invalidateMealQueries(queryClient);
     },
   });
@@ -276,7 +331,7 @@ export function buildDeleteMealMutation(queryClient: QueryClient) {
       });
     },
     onSuccess: (_data, mealId) => {
-      const meals = queryClient.getQueryData<Array<Meal>>(["meals"]);
+      const meals = queryClient.getQueryData<Array<MealSummary>>(["meals"]);
 
       if (meals) {
         queryClient.setQueryData(

@@ -102,7 +102,7 @@ export const warnOnRateLimitExceededEffect = atomEffect((get, set) => {
   // Events fired from dispatchEvent
   const listener = () => {
     if (Date.now() - lastWarning > 60 * 1000) {
-      toast.error("Fitbit API rate limit exceeded");
+      toast.error("Google Health API rate limit exceeded");
       lastWarning = Date.now();
     }
   };

@@ -1,9 +1,15 @@
 "use client";
 
-import { Button, Divider, Paper, Typography } from "@mui/material";
+import { Alert, Button, Divider, Paper, Typography } from "@mui/material";
 import { useState, useCallback, Suspense } from "react";
+import { useQuery } from "@tanstack/react-query";
 
-import { Meal } from "@/api/nutrition";
+import {
+  Meal,
+  MealSummary,
+  buildMealDetailsQuery,
+  mealSummaryFromMeal,
+} from "@/api/nutrition";
 import SearchMeals from "@/components/nutrition/meal/meal-search";
 import { useUnits } from "@/config/units";
 import { CreateOrEditMeal } from "@/components/nutrition/meal/edit-meal";
@@ -13,13 +19,18 @@ export default function ManageMeals() {
   // Don't need this, just preload for now
   useUnits();
 
-  const [selectedMeal, setSelectedMeal] = useState<Meal | null>(null);
+  const [selectedMeal, setSelectedMeal] = useState<MealSummary | null>(null);
   const [draftMeal, setDraftMeal] = useState<Meal | null>(null);
+  const mealDetailsQuery = useQuery({
+    ...buildMealDetailsQuery(selectedMeal?.id ?? ""),
+    enabled: selectedMeal !== null && draftMeal?.id !== selectedMeal.id,
+  });
+  const mealToEdit = draftMeal ?? mealDetailsQuery.data ?? null;
 
   const selectMeal = useCallback(
-    (meal: Meal | null) => {
+    (meal: MealSummary | null) => {
       setSelectedMeal(meal);
-      setDraftMeal(meal);
+      setDraftMeal(null);
     },
     [setDraftMeal, setSelectedMeal],
   );
@@ -37,8 +48,11 @@ export default function ManageMeals() {
   const onUpdateMeal = useCallback(
     (meal: Meal | null, { created }: { created?: boolean } = {}) => {
       if (meal) {
-        setSelectedMeal(meal);
+        setSelectedMeal(mealSummaryFromMeal(meal));
         setDraftMeal(meal);
+      } else {
+        setSelectedMeal(null);
+        setDraftMeal(null);
       }
     },
     [],
@@ -61,13 +75,20 @@ export default function ManageMeals() {
         </div>
         <Button onClick={createNewMeal}>Create new</Button>
       </DividedStack>
-      {draftMeal && (
+      {selectedMeal && mealDetailsQuery.error && (
+        <Alert severity="error" className="mt-4">
+          {mealDetailsQuery.error instanceof Error
+            ? mealDetailsQuery.error.message
+            : "Unable to load meal details."}
+        </Alert>
+      )}
+      {mealToEdit && (
         <>
           <Divider className="my-8" />
           <Suspense>
-            {draftMeal && (
+            {mealToEdit && (
               <CreateOrEditMeal
-                initialMeal={draftMeal}
+                initialMeal={mealToEdit}
                 onUpdateMeal={onUpdateMeal}
               />
             )}

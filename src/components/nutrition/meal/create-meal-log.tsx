@@ -7,9 +7,10 @@ import NextLink from "next/link";
 
 import {
   CreateFoodLogOptions,
-  Meal,
+  MealSummary,
   NutritionLogMealType,
   buildCreateMultipleFoodLogsMutation,
+  buildMealDetailsQuery,
   nutritionLogFromMealFood,
 } from "@/api/nutrition";
 import LinkedDayElement, { DaySelectorSource } from "@/components/linked-day";
@@ -23,7 +24,7 @@ import { MealTypeElement } from "../food/meal-type-element";
 import { SearchMealsElement } from "./meal-search";
 
 interface CreateMealLogFormData {
-  meal: Meal | null;
+  meal: MealSummary | null;
   mealType: NutritionLogMealType;
   daySource: DaySelectorSource;
 }
@@ -55,7 +56,10 @@ export default function CreateMealLog() {
 
     const day = daySource === "today" ? dayjs() : linkedDay;
 
-    const foods = meal.mealFoods.map(
+    const mealDetails = await queryClient.fetchQuery(
+      buildMealDetailsQuery(meal.id),
+    );
+    const foods = mealDetails.mealFoods.map(
       (food) =>
         ({
           nutritionLog: nutritionLogFromMealFood(food, mealType),

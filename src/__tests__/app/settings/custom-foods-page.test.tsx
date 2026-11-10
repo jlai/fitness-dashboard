@@ -14,6 +14,7 @@ import { deleteCustomFoods } from "@/app/settings/foods/custom/delete-custom-foo
 import {
   buildClientOnlyFoodsQuery,
   buildFavoriteFoodsQuery,
+  buildMealDetailsQuery,
   buildMealsQuery,
   nutritionLogFromMealFood,
 } from "@/api/nutrition";
@@ -237,9 +238,9 @@ describe("Food template editor", () => {
     const favorites = await client.fetchQuery(
       buildFavoriteFoodsQuery(["local-123"], clientOnlyFoods, 0),
     );
-    const meals = await client.fetchQuery(buildMealsQuery());
+    const meal = await client.fetchQuery(buildMealDetailsQuery("meal-123"));
     expect(favorites[0].name).toBe("New soup");
-    expect(meals[0].mealFoods[0]).toMatchObject({
+    expect(meal.mealFoods[0]).toMatchObject({
       name: "New soup",
       calories: 150,
     });

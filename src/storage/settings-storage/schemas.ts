@@ -29,6 +29,7 @@ export interface ClientOnlyMealFood {
   food?: string;
   foodId?: string;
   foodTemplateId?: string;
+  cachedDisplayName?: string;
   serving: Serving;
 }
 

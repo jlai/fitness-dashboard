@@ -2,14 +2,7 @@ import { Autocomplete, ListItem, ListItemText, TextField } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { UseControllerProps, useController } from "react-hook-form";
 
-import { Meal, buildMealsQuery } from "@/api/nutrition";
-import { formatFoodName } from "@/utils/other-formats";
-
-function getMealFoodNames(meal: Meal) {
-  return meal.mealFoods
-    .map((food) => formatFoodName(food.name, food.brand))
-    .join(", ");
-}
+import { MealSummary, buildMealsQuery } from "@/api/nutrition";
 
 export default function SearchMeals({
   className,
@@ -18,8 +11,8 @@ export default function SearchMeals({
   fullWidth = true,
 }: {
   className?: string;
-  value: Meal | null;
-  onChange: (meal: Meal | null) => void;
+  value: MealSummary | null;
+  onChange: (meal: MealSummary | null) => void;
   fullWidth?: boolean;
 }) {
   const { data: meals } = useQuery(buildMealsQuery());
@@ -41,7 +34,7 @@ export default function SearchMeals({
         <ListItem {...props} key={(props as any)["key"]}>
           <ListItemText
             primary={option.name}
-            secondary={getMealFoodNames(option)}
+            secondary={option.foodNames.join(", ")}
           />
         </ListItem>
       )}

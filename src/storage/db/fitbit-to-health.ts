@@ -166,6 +166,7 @@ export function mealFoodFromResolvedFood(
 ): MealFood {
   return {
     ...food,
+    cachedDisplayName: item.cachedDisplayName,
     amount: item.serving.amount ?? food.defaultServingSize ?? 1,
     unit: foodUnitFromNutritionLogServing(item.serving, food),
   };
