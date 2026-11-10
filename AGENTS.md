@@ -7,6 +7,11 @@ using the [Google Health API](https://developers.google.com/health).
 
 All data is stored on the client side or accessed from / written to the Google Health API, with settings stored in Google Drive.
 
+# Code style
+
+Prefer breaking out React component trees into their own function over deeply nesting. For example, a table row for displaying an
+object could be a component function.
+
 # Security
 
 This application is intended to comply with [CASA](https://github.com/appdefensealliance/ASA-WG/blob/main/CASA/CASA%20Specification.md)
