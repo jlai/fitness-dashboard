@@ -149,10 +149,8 @@ async function listMeals(): Promise<MealSummary[]> {
 
 async function getMealDetails(mealId: string): Promise<Meal> {
   const store = getDefaultStore();
-  const [{ meals }, { clientOnlyFoods }] = await Promise.all([
-    store.get(mealsAtom),
-    store.get(clientOnlyFoodsAtom),
-  ]);
+  const { meals } = await store.get(mealsAtom);
+  const { clientOnlyFoods } = await store.get(clientOnlyFoodsAtom);
   const meal = meals.find((item) => item.id === mealId);
 
   if (!meal) {

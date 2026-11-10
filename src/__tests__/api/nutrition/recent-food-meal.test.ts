@@ -11,7 +11,9 @@ import { foodResourceName } from "@/api/nutrition/food-log";
 import { clientOnlyFoodsAtom } from "@/storage/client-only-foods";
 import { mealsAtom } from "@/storage/meals";
 import {
+  getMemorySettingsStorage,
   resetSettingsStorageSingletonsForTests,
+  SETTINGS_STORAGE_KEYS,
   settingsStorageEpochAtom,
 } from "@/storage/settings-storage";
 
@@ -110,4 +112,61 @@ it("marks a meal food as missing when its server food returns 404", async () => 
     name: "abcd",
     foodNotFound: true,
   });
+});
+
+it("resolves legacy meal food templates while migrating stored settings", async () => {
+  resetSettingsStorageSingletonsForTests();
+  const store = getDefaultStore();
+  store.set(settingsStorageEpochAtom, (epoch) => epoch + 1);
+  const storage = getMemorySettingsStorage();
+  storage.seedSync(
+    SETTINGS_STORAGE_KEYS.clientOnlyFoods,
+    {
+      clientOnlyFoods: [
+        {
+          name: "users/me/dataTypes/food/dataPoints/local-123",
+          food: {
+            displayName: "Oatmeal",
+            accessLevel: "FOOD_ACCESS_LEVEL_PRIVATE",
+          },
+        },
+      ],
+    },
+    1,
+  );
+  storage.seedSync(
+    SETTINGS_STORAGE_KEYS.meals,
+    {
+      meals: [
+        {
+          id: "meal-template",
+          name: "Breakfast",
+          description: "",
+          foods: [{ foodId: "local-123", serving: { amount: 1 } }],
+        },
+      ],
+    },
+    1,
+  );
+
+  const originalGet = storage.get.bind(storage);
+  let firstFoodRead = true;
+  jest.spyOn(storage, "get").mockImplementation(async (key) => {
+    const result = await originalGet(key);
+    if (key === SETTINGS_STORAGE_KEYS.clientOnlyFoods && firstFoodRead) {
+      firstFoodRead = false;
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
+    return result;
+  });
+
+  const meal = await new QueryClient().fetchQuery(
+    buildMealDetailsQuery("meal-template"),
+  );
+
+  expect(meal.mealFoods[0]).toMatchObject({
+    name: "Oatmeal",
+    accessLevel: "PRIVATE",
+  });
+  expect(mockGetDataPoint).not.toHaveBeenCalled();
 });
