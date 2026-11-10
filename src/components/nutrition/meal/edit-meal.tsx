@@ -42,7 +42,6 @@ import {
   foodToDataPoint,
   mapFoodDataPoint,
 } from "@/api/nutrition";
-import { foodMeasurementUnitResourceName } from "@/api/nutrition/food-log";
 import { clientOnlyFoodsAtom } from "@/storage/client-only-foods";
 import { formatFoodName } from "@/utils/other-formats";
 import NutritionPopover, {
@@ -54,11 +53,14 @@ import { showSuccessToast, withErrorToaster } from "@/components/toast";
 import SearchFoods from "../food/food-search";
 import { FoodServingSizeInput } from "../food/serving-size";
 
-interface MealFormData {
+export interface MealFoodListFormData {
+  foods: Array<MealFood>;
+}
+
+interface MealFormData extends MealFoodListFormData {
   id: string;
   name: string;
   description: string;
-  foods: Array<MealFood>;
 }
 
 export function CreateOrEditMeal({
@@ -177,7 +179,7 @@ export function EditMeal({
           <Typography variant="h5" className="mb-4">
             Foods in meal
           </Typography>
-          <EditFoodList />
+          <MealFoodListEditor />
         </div>
         <div className="flex flex-row items-center mt-8 justify-end gap-x-4">
           {showDelete && (
@@ -256,6 +258,7 @@ function FoodRow({
                                 },
                               },
                         foodId: food.foodId,
+                        food,
                       });
 
                       popupState.open(event);
@@ -409,8 +412,8 @@ function MissingFoodReplacement({
   );
 }
 
-function EditFoodList() {
-  const { fields, append, remove } = useFieldArray<MealFormData>({
+export function MealFoodListEditor() {
+  const { fields, append, remove } = useFieldArray<MealFoodListFormData>({
     name: "foods",
     rules: {
       minLength: 1,

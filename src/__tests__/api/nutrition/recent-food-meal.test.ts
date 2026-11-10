@@ -119,6 +119,66 @@ it("marks a meal food as missing when its server food returns 404", async () => 
   });
 });
 
+it("resolves food templates locally without requesting their IDs from the server", async () => {
+  resetSettingsStorageSingletonsForTests();
+  const store = getDefaultStore();
+  store.set(settingsStorageEpochAtom, (epoch) => epoch + 1);
+  await store.set(clientOnlyFoodsAtom, {
+    clientOnlyFoods: [
+      {
+        id: "template-123",
+        name: foodResourceName("local-123"),
+        food: {
+          displayName: "Oatmeal",
+          accessLevel: "FOOD_ACCESS_LEVEL_PRIVATE",
+          energyAvg: { kcal: 150 },
+          totalCarbohydrate: { grams: 27 },
+          totalFat: { grams: 3 },
+        },
+      } as FoodDataPoint & { id: string },
+    ],
+  });
+  await store.set(mealsAtom, {
+    meals: [
+      {
+        id: "meal-template",
+        name: "Breakfast",
+        description: "",
+        foods: [
+          { foodTemplateId: "template-123", serving: { amount: 2 } },
+          { foodTemplateId: "deleted-template", serving: { amount: 1 } },
+        ],
+      },
+    ],
+  });
+
+  const meal = await new QueryClient().fetchQuery(
+    buildMealDetailsQuery("meal-template"),
+  );
+
+  expect(mockGetDataPoint).not.toHaveBeenCalled();
+  expect(meal.mealFoods).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        foodId: "local-123",
+        name: "Oatmeal",
+        accessLevel: "PRIVATE",
+        calories: 150,
+        nutritionalValues: expect.objectContaining({
+          calories: 150,
+          carbs: 27,
+          fat: 3,
+        }),
+        amount: 2,
+      }),
+      expect.objectContaining({
+        foodId: "deleted-template",
+        foodNotFound: true,
+      }),
+    ]),
+  );
+});
+
 it("refreshes missing meal food names and preserves newer meal edits", async () => {
   resetSettingsStorageSingletonsForTests();
   const store = getDefaultStore();

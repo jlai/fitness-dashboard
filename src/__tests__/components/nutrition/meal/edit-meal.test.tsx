@@ -5,6 +5,7 @@ import { Suspense } from "react";
 
 import * as datapoints from "@/api/datapoints";
 import { EditMeal } from "@/components/nutrition/meal/edit-meal";
+import { nutritionPopoverFoodAtom } from "@/components/nutrition/label/nutrition-popover";
 import type { Meal } from "@/api/nutrition";
 import {
   resetSettingsStorageSingletonsForTests,
@@ -97,5 +98,45 @@ describe("EditMeal missing-food recovery", () => {
     expect(templateFields.getByLabelText(/Calories/)).toBeTruthy();
     expect(templateFields.queryByLabelText(/Brand/)).toBeNull();
     expect(templateFields.queryByLabelText(/Description/)).toBeNull();
+  });
+
+  it("uses the resolved meal food for its nutrition label", async () => {
+    const meal: Meal = {
+      id: "meal-123",
+      name: "Breakfast",
+      description: "",
+      mealFoods: [
+        {
+          accessLevel: "PRIVATE",
+          foodId: "local-123",
+          name: "Oatmeal",
+          calories: 150,
+          nutritionalValues: { calories: 150, protein: 5 },
+          units: [],
+          amount: 1,
+          unit: { id: "304", name: "serving", plural: "servings" },
+        },
+      ],
+    };
+
+    await act(async () => {
+      render(
+        <QueryClientProvider client={new QueryClient()}>
+          <Suspense fallback="Loading">
+            <EditMeal
+              draftMeal={meal}
+              onDeleteMeal={jest.fn()}
+              onSaveMeal={jest.fn()}
+            />
+          </Suspense>
+        </QueryClientProvider>,
+      );
+    });
+
+    fireEvent.click(screen.getByTitle("Nutrition facts"));
+
+    expect(getDefaultStore().get(nutritionPopoverFoodAtom)).toMatchObject({
+      food: meal.mealFoods[0],
+    });
   });
 });

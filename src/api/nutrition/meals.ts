@@ -80,15 +80,24 @@ async function resolveMealFood(
   item: ClientOnlyMealFood,
   clientOnlyFoods: FoodDataPoint[],
 ): Promise<MealFood> {
-  const foodId =
-    item.foodId ??
-    (item.food ? getDataPointIdFromName(item.food) : undefined) ??
-    (item.foodTemplateId ? item.foodTemplateId : undefined);
   const local = findLocalFood(clientOnlyFoods, item);
 
   if (local) {
     return mealFoodFromResolvedFood(mapFoodDataPoint(local), item);
   }
+
+  // Template IDs identify data saved locally, never Google Health foods.
+  // A deleted template should be replaceable in the meal editor rather than
+  // issuing a request for its opaque local ID.
+  if (item.foodTemplateId) {
+    return {
+      ...mealFoodFromResolvedFood(placeholderFood(item.foodTemplateId), item),
+      foodNotFound: true,
+    };
+  }
+
+  const foodId =
+    item.foodId ?? (item.food ? getDataPointIdFromName(item.food) : undefined);
 
   if (foodId && isValidDataPointId(foodId)) {
     try {
