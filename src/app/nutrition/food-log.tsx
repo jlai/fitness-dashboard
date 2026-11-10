@@ -165,6 +165,9 @@ export default function FoodLog({ day }: { day: Dayjs }) {
   const hasNonOwnedSelected = selectedFoodLogs.some(
     (foodLog) => !isDataPointFromThisApp(foodLog),
   );
+  const hasAnonymousSelected = selectedFoodLogs.some(
+    (foodLog) => !foodLog.nutritionLog.food,
+  );
   const areSelectedAllFavorites = selectedFoodLogs.every((foodLog) =>
     favoriteFoodIds.has(getDataPointIdFromName(foodLog.nutritionLog.food)),
   );
@@ -267,7 +270,10 @@ export default function FoodLog({ day }: { day: Dayjs }) {
               <ListItemText>Remove from favorites</ListItemText>{" "}
             </MenuItem>
           ) : (
-            <MenuItem onClick={handleAddToFavoritesClick}>
+            <MenuItem
+              disabled={hasAnonymousSelected}
+              onClick={handleAddToFavoritesClick}
+            >
               <ListItemIcon>
                 <Star />
               </ListItemIcon>

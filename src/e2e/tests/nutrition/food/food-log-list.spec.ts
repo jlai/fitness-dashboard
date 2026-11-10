@@ -180,6 +180,25 @@ test("can favorite logged foods", async ({
   await expect(foodPage.addToFavoritesAction).toBeVisible();
 });
 
+test("cannot favorite anonymous logged foods", async ({
+  page,
+  pageObjects: { foodPage },
+  nutritionApi,
+}) => {
+  const anonymousFoods = produce(BREAKFAST_NUTRITION_LOGS, (draft) => {
+    delete draft[0]!.nutritionLog!.food;
+  });
+  await nutritionApi.setFoodLogsResponse(anonymousFoods);
+
+  await page.goto("/nutrition");
+
+  const eggsCheckbox = page.getByRole("checkbox", { name: "Scrambled Eggs" });
+  await eggsCheckbox.click();
+
+  await foodPage.openMoreActionsMenu();
+  await expect(foodPage.addToFavoritesAction).toBeDisabled();
+});
+
 test("can copy logged foods to another day", async ({
   page,
   pageObjects: { foodPage, toasts },
