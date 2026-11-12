@@ -41,7 +41,10 @@ import {
   DEFAULT_SERVING_UNIT_ID,
   foodToDataPoint,
 } from "@/api/nutrition";
-import { foodTemplateToFood } from "@/api/nutrition/food-templates";
+import {
+  foodTemplateToFood,
+  hasSuspiciousServingMultipliers,
+} from "@/api/nutrition/food-templates";
 import { clientOnlyFoodsAtom } from "@/storage/client-only-foods";
 import { formatFoodName } from "@/utils/other-formats";
 import NutritionPopover, {
@@ -266,11 +269,22 @@ function FoodRow({
                   >
                     <ArticleOutlined />
                   </IconButton>
-                ) : (
+                ) : null}
+                {(food.foodNotFound ||
+                  hasSuspiciousServingMultipliers(food)) && (
                   <IconButton
-                    aria-label="Replace missing food"
-                    title="Replace missing food"
+                    aria-label={
+                      food.foodNotFound
+                        ? "Replace missing food"
+                        : "Incorrect serving size"
+                    }
+                    title={
+                      food.foodNotFound
+                        ? "Replace missing food"
+                        : "Incorrect serving size"
+                    }
                     color="warning"
+                    aria-expanded={showReplacement}
                     onClick={() => setShowReplacement((shown) => !shown)}
                   >
                     <WarningAmberIcon />
@@ -282,27 +296,31 @@ function FoodRow({
               </Toolbar>
             </TableCell>
           </TableRow>
-          {food.foodNotFound && showReplacement && (
-            <TableRow>
-              <TableCell colSpan={3}>
-                <MissingFoodReplacement
-                  onReplace={(replacement) => {
-                    onChange(replacement);
-                    setShowReplacement(false);
-                  }}
-                />
-              </TableCell>
-            </TableRow>
-          )}
+          {(food.foodNotFound || hasSuspiciousServingMultipliers(food)) &&
+            showReplacement && (
+              <TableRow>
+                <TableCell colSpan={3}>
+                  <FoodReplacement
+                    foodNotFound={Boolean(food.foodNotFound)}
+                    onReplace={(replacement) => {
+                      onChange(replacement);
+                      setShowReplacement(false);
+                    }}
+                  />
+                </TableCell>
+              </TableRow>
+            )}
         </>
       )}
     />
   );
 }
 
-function MissingFoodReplacement({
+function FoodReplacement({
+  foodNotFound,
   onReplace,
 }: {
+  foodNotFound: boolean;
   onReplace: (food: MealFood) => void;
 }) {
   const queryClient = useQueryClient();
@@ -360,7 +378,9 @@ function MissingFoodReplacement({
   return (
     <Stack spacing={2} className="py-2">
       <Alert severity="warning">
-        The associated food could not be found. Replace with another food?
+        {foodNotFound
+          ? "The associated food could not be found. Replace with another food?"
+          : "This food template might have been corrupted during migration but we do not have enough information to tell for sure. Exercise caution and consider replacing it in any meals and using a food from the Google Health database instead."}
       </Alert>
       <div className="flex flex-row items-center gap-x-4">
         <SearchFoods
@@ -384,37 +404,43 @@ function MissingFoodReplacement({
           Replace food
         </Button>
       </div>
-      <Divider />
-      <Typography variant="subtitle1">Create a new food template</Typography>
-      <div className="flex flex-row items-center gap-x-4">
-        <TextField
-          required
-          label="Name"
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          className="flex-1"
-        />
-        <TextField
-          required
-          label="Calories"
-          type="number"
-          value={calories}
-          onChange={(event) => setCalories(event.target.value)}
-          slotProps={{ htmlInput: { min: 0, step: "any" } }}
-        />
-        <Button
-          type="button"
-          disabled={
-            !name.trim() ||
-            calories === "" ||
-            !Number.isFinite(Number(calories)) ||
-            Number(calories) < 0
-          }
-          onClick={createTemplate}
-        >
-          Create and replace
-        </Button>
-      </div>
+      {foodNotFound && (
+        <>
+          <Divider />
+          <Typography variant="subtitle1">
+            Create a new food template
+          </Typography>
+          <div className="flex flex-row items-center gap-x-4">
+            <TextField
+              required
+              label="Name"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              className="flex-1"
+            />
+            <TextField
+              required
+              label="Calories"
+              type="number"
+              value={calories}
+              onChange={(event) => setCalories(event.target.value)}
+              slotProps={{ htmlInput: { min: 0, step: "any" } }}
+            />
+            <Button
+              type="button"
+              disabled={
+                !name.trim() ||
+                calories === "" ||
+                !Number.isFinite(Number(calories)) ||
+                Number(calories) < 0
+              }
+              onClick={createTemplate}
+            >
+              Create and replace
+            </Button>
+          </div>
+        </>
+      )}
     </Stack>
   );
 }

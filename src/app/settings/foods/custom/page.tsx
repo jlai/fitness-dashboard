@@ -44,6 +44,7 @@ import NutritionPopover, {
   ShowLabelAction,
 } from "@/components/nutrition/label/nutrition-popover";
 import NutritionLabel from "@/components/nutrition/label/nutrition-label";
+import ServingSizeWarning from "@/components/nutrition/food/serving-size-warning";
 import { showSuccessToast, withErrorToaster } from "@/components/toast";
 import { clientOnlyFoodsAtom } from "@/storage/client-only-foods";
 import {
@@ -168,7 +169,13 @@ export default function ManageCustomFoods() {
   });
   const selected = clientOnlyFoods.find((food) => food.id === editing);
   const columns: GridColDef<Food>[] = [
-    { field: "name", headerName: "Food", flex: 2, minWidth: 140 },
+    {
+      field: "name",
+      headerName: "Food",
+      flex: 2,
+      minWidth: 140,
+      renderCell: ({ row }) => <FoodTemplateName food={row} />,
+    },
     { field: "brand", headerName: "Brand", flex: 1, minWidth: 100 },
     {
       field: "actions",
@@ -305,6 +312,15 @@ export default function ManageCustomFoods() {
           />
         )
       )}
+    </div>
+  );
+}
+
+function FoodTemplateName({ food }: { food: Food }) {
+  return (
+    <div className="flex items-center gap-x-2 h-full">
+      <span className="truncate">{food.name}</span>
+      <ServingSizeWarning food={food} />
     </div>
   );
 }

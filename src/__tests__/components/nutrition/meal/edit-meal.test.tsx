@@ -139,4 +139,70 @@ describe("EditMeal missing-food recovery", () => {
       food: meal.mealFoods[0],
     });
   });
+
+  it.each([
+    { units: ["serving", "gram"], multipliers: [1, 1], warns: true },
+    { units: ["serving", "gram"], multipliers: [1, 0.01], warns: false },
+    { units: ["serving", "gram"], multipliers: [1, undefined], warns: false },
+    { units: ["serving"], multipliers: [1], warns: false },
+    { units: ["serving", "serving"], multipliers: [1, 1], warns: false },
+    { units: [], multipliers: [], warns: false },
+  ])(
+    "checks serving multipliers: $units / $multipliers",
+    async ({ units, multipliers, warns }) => {
+      const meal: Meal = {
+        id: "meal-123",
+        name: "Lunch",
+        description: "",
+        mealFoods: [
+          {
+            accessLevel: "PRIVATE",
+            foodId: "template-123",
+            name: "Oatmeal",
+            calories: 150,
+            amount: 1,
+            units,
+            servings: units.map((id, index) => ({
+              unit: { id, name: id, plural: id },
+              servingSize: 1,
+              multiplier: multipliers[index],
+            })),
+          },
+        ],
+      };
+
+      await act(async () => {
+        render(
+          <QueryClientProvider client={new QueryClient()}>
+            <Suspense fallback="Loading">
+              <EditMeal
+                draftMeal={meal}
+                onDeleteMeal={jest.fn()}
+                onSaveMeal={jest.fn()}
+              />
+            </Suspense>
+          </QueryClientProvider>,
+        );
+      });
+
+      const warningButton = screen.queryByRole("button", {
+        name: "Incorrect serving size",
+      });
+      expect(Boolean(warningButton)).toBe(warns);
+      expect(screen.getByTitle("Nutrition facts")).toBeTruthy();
+      const warningText =
+        "This food template might have been corrupted during migration but we do not have enough information to tell for sure. Exercise caution and consider replacing it in any meals and using a food from the Google Health database instead.";
+      expect(screen.queryByText(warningText)).toBeNull();
+      if (warningButton) {
+        fireEvent.click(warningButton);
+        expect(await screen.findByText(warningText)).toBeTruthy();
+        expect(
+          screen.getByRole("button", { name: "Replace food" }),
+        ).toBeTruthy();
+        expect(screen.queryByText("Create a new food template")).toBeNull();
+        fireEvent.click(warningButton);
+        expect(screen.queryByText(warningText)).toBeNull();
+      }
+    },
+  );
 });

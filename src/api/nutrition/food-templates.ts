@@ -10,6 +10,14 @@ export type FoodTemplate = {
   customFood?: string;
 };
 
+export function hasSuspiciousServingMultipliers(food: Food): boolean {
+  const servings = food.servings ?? [];
+  return (
+    new Set(servings.map((serving) => serving.unit.id)).size > 1 &&
+    servings.every((serving) => serving.multiplier === 1)
+  );
+}
+
 export function foodTemplateToFood(template: FoodTemplate): Food {
   return mapFoodDataPoint({
     name: foodResourceName(template.id),

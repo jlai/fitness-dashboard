@@ -41,6 +41,8 @@ import { clientOnlyFavoriteFoodsAtom } from "@/storage/client-only-favorite-food
 import { settingsStorageEpochAtom } from "@/storage/settings-storage";
 import { useAtomValue } from "jotai";
 
+import ServingSizeWarning from "./serving-size-warning";
+
 type FoodOption = Food & {
   recent?: boolean;
   favorite?: boolean;
@@ -101,6 +103,7 @@ function FoodOptionDisplay({
         </span>
       </div>
       <div className="text-slate-500 flex flex-row md:gap-x-2 items-center">
+        <ServingSizeWarning food={option} />
         {option.favorite && (
           <ShrinkingChip label="Favorite" icon={<FavoriteIcon />} />
         )}
