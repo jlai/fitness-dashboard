@@ -1,4 +1,5 @@
 import { DEV_MODE_ENABLED } from "@/config";
+import { log } from "@/utils/client-logger";
 
 /**
  * Log an error to the console. When DEV_MODE is disabled, only
@@ -7,14 +8,14 @@ import { DEV_MODE_ENABLED } from "@/config";
  */
 export function logError(message: string, error?: unknown): void {
   if (error === undefined) {
-    console.error(message);
+    log(message);
     return;
   }
 
   if (DEV_MODE_ENABLED) {
-    console.error(message, error);
+    log(message, error);
     return;
   }
 
-  console.error(message, error instanceof Error ? error.message : error);
+  log(message, error instanceof Error ? error.message : error);
 }

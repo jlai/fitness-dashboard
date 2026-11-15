@@ -9,6 +9,7 @@ import { ScopeProvider } from "jotai-scope";
 
 import { DayjsRange } from "@/components/calendar/period-navigator";
 import { todayOrEarlier } from "@/utils/date-utils";
+import { log } from "@/utils/client-logger";
 
 import { CHART_RESOURCE_CONFIGS, ChartResource } from "./resources";
 import { ChartSeriesConfig } from "./series-config";
@@ -92,7 +93,7 @@ export function useSaveAsCSV(resource: ChartResource, range: DayjsRange) {
 
   const saveAsCSV = useCallback(() => {
     if (!exportData) {
-      console.log("no data to save");
+      log("no data to save");
       return;
     }
 

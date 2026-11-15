@@ -2,6 +2,7 @@ import { atom } from "jotai";
 import dayjs from "dayjs";
 import { atomEffect } from "jotai-effect";
 import { atomFamily } from "jotai-family";
+import { log } from "@/utils/client-logger";
 
 import { DayjsRange } from "../calendar/period-navigator";
 
@@ -59,7 +60,7 @@ export const resourceChangedEffect = atomEffect((get, set) => {
   }
 
   if (resourceMaxDays < rangeMaxDays) {
-    console.log("resource max days too high");
+    log("resource max days too high");
     set(selectedRangeTypeAtom, "week");
   }
 });

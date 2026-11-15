@@ -340,7 +340,7 @@ describe("Troubleshooting settings", () => {
     await waitFor(() => expect(option.textContent).toContain("2 items"));
     fireEvent.click(option);
     await waitFor(() => expect(screen.queryByRole("listbox")).toBeNull());
-    const log = jest.spyOn(console, "error").mockImplementation();
+    const log = jest.spyOn(console, "log").mockImplementation();
     mockGet.mockRejectedValue(new Error("storage failed"));
     fireEvent.click(screen.getByRole("button", { name: "Download" }));
     await waitFor(() =>
@@ -391,7 +391,7 @@ describe("Troubleshooting settings", () => {
       if (key === "meals") throw new Error("storage failed");
       return stored(dataByKey[key]);
     });
-    const log = jest.spyOn(console, "error").mockImplementation();
+    const log = jest.spyOn(console, "log").mockImplementation();
     render(
       <SettingsTable>
         <TroubleshootingSettings />

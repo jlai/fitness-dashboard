@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import {
   Button,
   Chip,
@@ -8,6 +14,7 @@ import {
   MenuItem,
   Select,
   Stack,
+  TextField,
 } from "@mui/material";
 import { useAtomValue } from "jotai";
 import { unwrap } from "jotai/utils";
@@ -24,6 +31,7 @@ import {
 } from "@/storage/settings-storage";
 import { getMealsWithMissingFoodNames, mealsAtom } from "@/storage/meals";
 import { logError } from "@/utils/log-error";
+import { getLogMessages, subscribeToLogs } from "@/utils/client-logger";
 
 import { SettingsRow } from "../common";
 
@@ -98,6 +106,11 @@ function itemCount(
 type CountState = { count: number | null } | { error: true };
 
 export function TroubleshootingSettings() {
+  const logMessages = useSyncExternalStore(
+    subscribeToLogs,
+    getLogMessages,
+    () => [],
+  );
   const storage = useAtomValue(settingsStorageAtom);
   const epoch = useAtomValue(settingsStorageEpochAtom);
   const meals = useAtomValue(mealsWithoutSuspenseAtom);
@@ -222,6 +235,17 @@ export function TroubleshootingSettings() {
     }
   };
 
+  const copyLogs = async () => {
+    try {
+      await navigator.clipboard.writeText(
+        `\`\`\`\n${logMessages.join("\n")}\n\`\`\``,
+      );
+      toast.success("Log messages copied.");
+    } catch {
+      toast.error("Failed to copy log messages.");
+    }
+  };
+
   return (
     <>
       <SettingsRow title="Troubleshooting">
@@ -229,6 +253,31 @@ export function TroubleshootingSettings() {
         The data exported might contain sensitive information and should be
         reviewed (in a text editor) before uploading to a public website like
         Github.
+      </SettingsRow>
+      <SettingsRow
+        title="Recent debug logs"
+        action={
+          <Button onClick={copyLogs} disabled={logMessages.length === 0}>
+            Copy as markdown
+          </Button>
+        }
+        component="div"
+      >
+        This shows recent internal errors and logs which can be useful in bug
+        reports. Please review for sensitive data before posting on a public
+        website like Github.
+        <TextField
+          aria-label="Recent debug logs"
+          value={logMessages.join("\n")}
+          multiline
+          minRows={4}
+          fullWidth
+          sx={{ mt: 2 }}
+          slotProps={{
+            htmlInput: { readOnly: true },
+            input: { sx: { maxHeight: 280, overflowY: "auto" } },
+          }}
+        />
       </SettingsRow>
       <SettingsRow title="Debug export" component="div">
         Download the selected stored data as a text file containing JSON.

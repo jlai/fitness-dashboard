@@ -1,5 +1,6 @@
 import { QueryClient } from "@tanstack/query-core";
 import { Dayjs } from "dayjs";
+import { log } from "@/utils/client-logger";
 
 import {
   DataSourceRecordingMethod,
@@ -140,7 +141,7 @@ function writableServing(serving?: Serving): Serving | undefined {
   let foodMeasurementUnit = serving.foodMeasurementUnit;
 
   if (!foodMeasurementUnit) {
-    console.warn(
+    log(
       `Nutrition log serving is missing a food measurement unit; using ${DEFAULT_SERVING_UNIT_ID}`,
     );
     foodMeasurementUnit = foodMeasurementUnitResourceName(

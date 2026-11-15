@@ -10,34 +10,32 @@ jest.mock("@/config", () => ({
 }));
 
 describe("logError", () => {
-  const consoleError = jest
-    .spyOn(console, "error")
-    .mockImplementation(() => {});
+  const consoleLog = jest.spyOn(console, "log").mockImplementation(() => {});
 
   afterEach(() => {
-    consoleError.mockClear();
+    consoleLog.mockClear();
     configMock.DEV_MODE_ENABLED = true;
   });
 
   afterAll(() => {
-    consoleError.mockRestore();
+    consoleLog.mockRestore();
   });
 
   it("logs the full error object when DEV_MODE is enabled", () => {
     const error = new Error("boom");
     logError("something failed", error);
-    expect(consoleError).toHaveBeenCalledWith("something failed", error);
+    expect(consoleLog).toHaveBeenCalledWith("something failed", error);
   });
 
   it("logs only error.message when DEV_MODE is disabled", () => {
     configMock.DEV_MODE_ENABLED = false;
     const error = new Error("boom");
     logError("something failed", error);
-    expect(consoleError).toHaveBeenCalledWith("something failed", "boom");
+    expect(consoleLog).toHaveBeenCalledWith("something failed", "boom");
   });
 
   it("logs the message alone when no error is provided", () => {
     logError("something failed");
-    expect(consoleError).toHaveBeenCalledWith("something failed");
+    expect(consoleLog).toHaveBeenCalledWith("something failed");
   });
 });
