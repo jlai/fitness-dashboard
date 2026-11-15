@@ -20,13 +20,16 @@ function formatLogPart(value: unknown): string {
   }
 }
 
-export function log(...values: unknown[]): void {
-  console.log(...values);
+function appendToLogBuffer(values: unknown[]): void {
   if (typeof window === "undefined") return;
-
   const message = `${new Date().toISOString()} ${values.map(formatLogPart).join(" ")}`;
   logBuffer = [...logBuffer, message].slice(-LOG_BUFFER_LIMIT);
   listeners.forEach((listener) => listener());
+}
+
+export function log(...values: unknown[]): void {
+  console.log(...values);
+  appendToLogBuffer(values);
 }
 
 export function getLogMessages(): readonly string[] {
@@ -36,4 +39,16 @@ export function getLogMessages(): readonly string[] {
 export function subscribeToLogs(listener: LogListener): () => void {
   listeners.add(listener);
   return () => listeners.delete(listener);
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener("error", (event: ErrorEvent) => {
+    appendToLogBuffer([
+      "Uncaught error:",
+      event.error ?? event.message,
+      event.filename
+        ? `(${event.filename}:${event.lineno}:${event.colno})`
+        : "",
+    ]);
+  });
 }
