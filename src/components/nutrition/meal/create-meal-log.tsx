@@ -4,7 +4,6 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { FormContainer, useForm } from "react-hook-form-mui";
 import { useAtomValue } from "jotai";
-import NextLink from "next/link";
 import { useState } from "react";
 
 import {
@@ -19,7 +18,6 @@ import {
 import LinkedDayElement, { DaySelectorSource } from "@/components/linked-day";
 import { selectedDayForPageAtom } from "@/state";
 import { FormRow, FormRows } from "@/components/forms/form-row";
-import { DividedStack } from "@/components/layout/flex";
 import { showSuccessToast, withErrorToaster } from "@/components/toast";
 
 import { MealTypeElement } from "../food/meal-type-element";
@@ -103,7 +101,7 @@ export default function CreateMealLog() {
       formContext={formContext}
       onSuccess={logMeal}
     >
-      <DividedStack>
+      <div>
         <div className="flex-1">
           <FormRows>
             <FormRow flexWrap="nowrap" className="gap-x-2">
@@ -149,12 +147,7 @@ export default function CreateMealLog() {
             </FormRow>
           </FormRows>
         </div>
-        <div>
-          <Button href="/settings/meals" LinkComponent={NextLink}>
-            Manage meals
-          </Button>
-        </div>
-      </DividedStack>
+      </div>
     </FormContainer>
   );
 }

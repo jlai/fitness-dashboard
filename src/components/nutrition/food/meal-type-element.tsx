@@ -21,10 +21,12 @@ export function MealTypeElement({
   name,
   fullWidth,
   disabled,
+  width,
 }: {
   name: string;
   fullWidth?: boolean;
   disabled?: boolean;
+  width?: number;
 }) {
   return (
     <SelectElement
@@ -33,6 +35,7 @@ export function MealTypeElement({
       options={options}
       fullWidth={fullWidth}
       disabled={disabled}
+      sx={width ? { width, maxWidth: "100%" } : undefined}
     />
   );
 }

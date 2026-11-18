@@ -15,7 +15,6 @@ import {
   DialogContentText,
   DialogTitle,
   IconButton,
-  Stack,
   Typography,
 } from "@mui/material";
 import { useEffect, useRef, useState } from "react";
@@ -25,7 +24,6 @@ import { TimePickerElement } from "react-hook-form-mui/date-pickers";
 import { useAtomValue, useSetAtom } from "jotai";
 import { usePopupState } from "material-ui-popup-state/hooks";
 import dayjs, { type Dayjs } from "dayjs";
-import NextLink from "next/link";
 
 import {
   Food,
@@ -40,7 +38,6 @@ import LinkedDayElement, { DaySelectorSource } from "@/components/linked-day";
 import { selectedDayForPageAtom } from "@/state";
 import { FormRow, FormRows } from "@/components/forms/form-row";
 import { ServingSize } from "@/utils/food-amounts";
-import { DividedStack } from "@/components/layout/flex";
 import { showSuccessToast, withErrorToaster } from "@/components/toast";
 import NutritionPopover, {
   nutritionPopoverFoodAtom,
@@ -570,7 +567,7 @@ export function CreateFoodLogForm() {
               rules={{ required: true }}
             />
           )}
-          <MealTypeElement name="mealType" />
+          <MealTypeElement name="mealType" width={200} />
           <TimePickerElement
             name="time"
             label="Time"
@@ -666,19 +663,5 @@ export function CreateFoodLogForm() {
 }
 
 export default function CreateFoodLog() {
-  return (
-    <DividedStack>
-      <div className="flex-1">
-        <CreateFoodLogForm />
-      </div>
-      <Stack direction="column" rowGap={2}>
-        <Button href="/settings/foods/favorite" LinkComponent={NextLink}>
-          Favorites
-        </Button>
-        <Button href="/settings/foods/custom" LinkComponent={NextLink}>
-          Food templates
-        </Button>
-      </Stack>
-    </DividedStack>
-  );
+  return <CreateFoodLogForm />;
 }
