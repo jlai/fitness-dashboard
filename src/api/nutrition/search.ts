@@ -49,6 +49,10 @@ function normalizeFoodLanguage(language?: string) {
   return (language || DEFAULT_FOOD_LANGUAGE).replaceAll("-", "_");
 }
 
+function foodLanguagesMatch(foodLanguage: string, preferredLanguage: string) {
+  return foodLanguage.split("_")[0] === preferredLanguage.split("_")[0];
+}
+
 async function listAvailableFoods() {
   if (!ENABLE_LIST_AVAILABLE_FOODS) {
     return [];
@@ -62,8 +66,9 @@ function escapeFilterValue(value: string) {
   return value.replaceAll("\\", "\\\\").replaceAll('"', '\\"');
 }
 
-function foodDisplayNameFilter(query: string) {
-  return `food.display_name = "${escapeFilterValue(query.trim())}"`;
+function foodSearchFilter(query: string, languageCode: string) {
+  const apiLanguageCode = languageCode.replaceAll("_", "-");
+  return `food.display_name = "${escapeFilterValue(query.trim())}" AND food.language_code = "${escapeFilterValue(apiLanguageCode)}"`;
 }
 
 async function searchAvailableFoods(
@@ -75,23 +80,21 @@ async function searchAvailableFoods(
   }
 
   const queryClient = getDefaultStore().get(queryClientAtom);
-  const [settings, { dataPoints }] = await Promise.all([
-    queryClient.fetchQuery(buildUserSettingsQuery()),
-    listDataPointsPage(
-      "food",
-      foodDisplayNameFilter(needle),
-      undefined,
-      FOOD_SEARCH_PAGE_SIZE,
-    ),
-  ]);
+  const settings = await queryClient.fetchQuery(buildUserSettingsQuery());
   const foodLanguage = normalizeFoodLanguage(settings.foodLanguageCode);
+  const { dataPoints } = await listDataPointsPage(
+    "food",
+    foodSearchFilter(needle, foodLanguage),
+    undefined,
+    FOOD_SEARCH_PAGE_SIZE,
+  );
   const foods = await mapFoodDataPoints(dataPoints);
 
   return {
     foods: foods.filter(
       (food) =>
         Boolean(food.locale) &&
-        normalizeFoodLanguage(food.locale) === foodLanguage,
+        foodLanguagesMatch(normalizeFoodLanguage(food.locale), foodLanguage),
     ),
   };
 }

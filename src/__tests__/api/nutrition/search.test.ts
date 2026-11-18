@@ -59,7 +59,7 @@ describe("food search language filtering", () => {
     expect(buildUserSettingsQuery).toHaveBeenCalled();
     expect(list).toHaveBeenCalledWith(
       "food",
-      'food.display_name = "soup"',
+      'food.display_name = "soup" AND food.language_code = "fr-FR"',
       undefined,
       50,
     );
@@ -83,8 +83,15 @@ describe("food search language filtering", () => {
 
     const result = await queryClient.fetchQuery(buildSearchFoodsQuery("soup"));
 
+    expect(datapoints.listDataPointsPage).toHaveBeenCalledWith(
+      "food",
+      'food.display_name = "soup" AND food.language_code = "en-US"',
+      undefined,
+      50,
+    );
     expect(result.foods.map(({ foodId }) => foodId)).toEqual([
       "default-language",
+      "other-language",
     ]);
   });
 });

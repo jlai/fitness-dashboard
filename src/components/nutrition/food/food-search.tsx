@@ -138,7 +138,7 @@ function SearchOptionDisplay({
       <div className="flex-1">
         {noResults ? (
           <Alert severity="info">
-            No results found. This may be a bug in the Fitbit Web API.
+            No results found. This may be a bug in the Google Health API.
           </Alert>
         ) : (
           option.name
