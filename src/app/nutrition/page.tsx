@@ -16,7 +16,7 @@ import { HeaderBar } from "@/components/layout/rows";
 import { buildFoodLogQuery } from "@/api/nutrition";
 import { NUTRITION_READONLY } from "@/config/google-health-scopes";
 
-import FoodLog from "./food-log";
+import FoodLog, { FoodLogLoading } from "./food-log";
 
 function NutritionPageContent() {
   const [selectedDay, setSelectedDay] = useAtom(selectedDayForPageAtom);
@@ -33,7 +33,7 @@ function NutritionPageContent() {
         <div className="flex-1"></div>
         <FoodQuickSummary selectedDay={selectedDay} />
       </HeaderBar>
-      <Suspense>
+      <Suspense fallback={<FoodLogLoading />}>
         <FoodLog day={selectedDay} />
       </Suspense>
     </div>

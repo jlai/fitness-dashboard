@@ -7,9 +7,12 @@ import {
   Menu,
   MenuItem,
   Paper,
+  Skeleton,
   Table,
   TableBody,
+  TableCell,
   TableHead,
+  TableRow,
 } from "@mui/material";
 import {
   Delete as DeleteIcon,
@@ -196,7 +199,14 @@ export default function FoodLog({ day }: { day: Dayjs }) {
   return (
     <section aria-label="Logged foods">
       <Paper className="max-w-full overflow-x-auto">
-        <Table size="small">
+        <Table size="small" sx={{ tableLayout: "fixed", width: "100%" }}>
+          <colgroup>
+            <col style={{ width: "30%" }} />
+            <col style={{ width: "14%" }} />
+            {Array.from({ length: 6 }, (_, index) => (
+              <col key={index} style={{ width: "9.33%" }} />
+            ))}
+          </colgroup>
           <TableHead>
             <FoodLogTableHeaderRows />
           </TableHead>
@@ -307,6 +317,36 @@ export default function FoodLog({ day }: { day: Dayjs }) {
       <CreateMealFromFoodLogsDialog />
       <CopyFoodLogsDialog />
       <div className="sm:mb-8"></div>
+    </section>
+  );
+}
+
+export function FoodLogLoading() {
+  return (
+    <section aria-label="Logged foods" aria-busy="true">
+      <Paper className="max-w-full overflow-x-auto">
+        <Table size="small" sx={{ tableLayout: "fixed", width: "100%" }}>
+          <colgroup>
+            <col style={{ width: "30%" }} />
+            <col style={{ width: "14%" }} />
+            {Array.from({ length: 6 }, (_, index) => (
+              <col key={index} style={{ width: "9.33%" }} />
+            ))}
+          </colgroup>
+          <TableHead>
+            <FoodLogTableHeaderRows />
+          </TableHead>
+          <TableBody>
+            <TableRow>
+              {Array.from({ length: 8 }, (_, index) => (
+                <TableCell key={index}>
+                  <Skeleton />
+                </TableCell>
+              ))}
+            </TableRow>
+          </TableBody>
+        </Table>
+      </Paper>
     </section>
   );
 }
