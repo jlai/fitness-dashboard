@@ -30,6 +30,7 @@ export const THIRD_PARTY_CLIENT_NAMES: Record<string, string> = {
 export const FITBIT_WEB_API_CLIENT_NAMES: Record<string, string> = {
   "229HT3": "Cronometer (Fitbit API)",
   "23PKGH": "Fitness Dashboard (Fitbit API)",
+  "228VC7": "MyFitnessPal (Fitbit API)",
 };
 
 function getAppName(foodLog: NutritionLogDataPoint): string {
