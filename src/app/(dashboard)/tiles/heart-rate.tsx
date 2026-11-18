@@ -127,6 +127,7 @@ function HeartRateIntraday() {
       yAxis={[
         {
           label: "BPM",
+          valueFormatter: FRACTION_DIGITS_0.format,
           colorMap:
             heartRateZones && createHeartRateZoneColorMap(heartRateZones),
         },
@@ -135,7 +136,8 @@ function HeartRateIntraday() {
         {
           dataKey: "value",
           showMark: false,
-          valueFormatter: (value) => `${value} BPM`,
+          valueFormatter: (value) =>
+            value == null ? "" : `${FRACTION_DIGITS_0.format(value)} BPM`,
         },
       ]}
     >

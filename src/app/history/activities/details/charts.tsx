@@ -405,6 +405,7 @@ export function HeartRateChart({
       yAxis={[
         {
           scaleType: "linear",
+          valueFormatter: NumberFormats.FRACTION_DIGITS_0.format,
           colorMap:
             heartRateZones && createHeartRateZoneColorMap(heartRateZones),
         },

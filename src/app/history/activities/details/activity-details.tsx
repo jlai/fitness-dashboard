@@ -95,7 +95,9 @@ function ActivityOverview({
           </Typography>
         )}
         {averageHeartRate && (
-          <Typography variant="h6">{averageHeartRate} bpm</Typography>
+          <Typography variant="h6">
+            {NumberFormats.FRACTION_DIGITS_0.format(averageHeartRate)} bpm
+          </Typography>
         )}
         {calories && <Typography variant="h6">{calories} calories</Typography>}
         <Button
