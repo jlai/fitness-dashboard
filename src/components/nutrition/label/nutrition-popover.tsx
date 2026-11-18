@@ -133,6 +133,7 @@ const NutritionPopover = function ({
       {food && (
         <Popper
           {...bindPopper(popupState)}
+          sx={{ zIndex: (theme) => theme.zIndex.modal + 1 }}
           placement={placement || "left"}
           anchorEl={popupState.anchorEl}
           modifiers={[
