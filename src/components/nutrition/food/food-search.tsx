@@ -24,6 +24,7 @@ import {
   useState,
 } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { unwrap } from "jotai/utils";
 import { useController, UseControllerProps } from "react-hook-form";
 import { uniqBy } from "es-toolkit";
 
@@ -55,6 +56,9 @@ type SearchOption = {
   search: true;
   name: string;
 };
+
+const clientOnlyFoodsValueAtom = unwrap(clientOnlyFoodsAtom);
+const clientOnlyFavoriteFoodsValueAtom = unwrap(clientOnlyFavoriteFoodsAtom);
 
 function isSearchOption(
   option: FoodOption | SearchOption | null,
@@ -172,8 +176,12 @@ export default function SearchFoods({
     }
   }, [value]);
 
-  const { clientOnlyFavoriteFoods } = useAtomValue(clientOnlyFavoriteFoodsAtom);
-  const { clientOnlyFoods } = useAtomValue(clientOnlyFoodsAtom);
+  const favoriteFoodsData = useAtomValue(clientOnlyFavoriteFoodsValueAtom);
+  const foodsData = useAtomValue(clientOnlyFoodsValueAtom);
+  const clientOnlyFavoriteFoods =
+    favoriteFoodsData?.clientOnlyFavoriteFoods ?? [];
+  const clientOnlyFoods = foodsData?.clientOnlyFoods ?? [];
+  const settingsLoading = !favoriteFoodsData || !foodsData;
   const storageEpoch = useAtomValue(settingsStorageEpochAtom);
   const { data: favoriteFoods, isError: favoriteFoodsError } = useQuery(
     buildFavoriteFoodsQuery(
@@ -267,7 +275,7 @@ export default function SearchFoods({
         <Alert severity="error">Could not load recent foods.</Alert>
       )}
       <Autocomplete<FoodOption | SearchOption | null>
-        loading={searchPending}
+        loading={searchPending || settingsLoading}
         value={value}
         onKeyDown={handleEnter}
         inputValue={inputValue}

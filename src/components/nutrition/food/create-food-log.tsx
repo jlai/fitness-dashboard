@@ -22,6 +22,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { FormContainer, TextFieldElement, useForm } from "react-hook-form-mui";
 import { TimePickerElement } from "react-hook-form-mui/date-pickers";
 import { useAtomValue, useSetAtom } from "jotai";
+import { unwrap } from "jotai/utils";
 import { usePopupState } from "material-ui-popup-state/hooks";
 import dayjs, { type Dayjs } from "dayjs";
 
@@ -42,7 +43,11 @@ import { showSuccessToast, withErrorToaster } from "@/components/toast";
 import NutritionPopover, {
   nutritionPopoverFoodAtom,
 } from "@/components/nutrition/label/nutrition-popover";
-import { macroGoalsAtom, presetMealClockTimesAtom } from "@/storage/settings";
+import {
+  DEFAULT_FDA_MACRO_GOALS,
+  macroGoalsAtom,
+  presetMealClockTimesAtom,
+} from "@/storage/settings";
 
 import { SearchFoodsElement } from "./food-search";
 import {
@@ -71,6 +76,14 @@ const SERVING_UNIT = commonFoodUnits.find((unit) => unit.name === "serving")!;
 const DEFAULT_CUSTOM_SERVING: ServingSize = { amount: 1, unit: SERVING_UNIT };
 const COMMON_SERVING_OPTIONS: Array<ServingSize> = commonFoodUnits.map(
   (unit) => ({ amount: 1, unit }),
+);
+const macroGoalsValueAtom = unwrap(
+  macroGoalsAtom,
+  (previous) => previous ?? DEFAULT_FDA_MACRO_GOALS,
+);
+const presetMealClockTimesValueAtom = unwrap(
+  presetMealClockTimesAtom,
+  (previous) => previous ?? { enabled: false, times: {} },
 );
 
 function defaultCustomLogName(
@@ -182,8 +195,8 @@ export function CreateFoodLogForm() {
   );
 
   const linkedDay = useAtomValue(selectedDayForPageAtom);
-  const macroGoals = useAtomValue(macroGoalsAtom);
-  const presetMealClockTimes = useAtomValue(presetMealClockTimesAtom);
+  const macroGoals = useAtomValue(macroGoalsValueAtom);
+  const presetMealClockTimes = useAtomValue(presetMealClockTimesValueAtom);
   const setPopoverFood = useSetAtom(nutritionPopoverFoodAtom);
   const nutritionPopupState = usePopupState({
     popupId: "food-logger-nutrition-info",
