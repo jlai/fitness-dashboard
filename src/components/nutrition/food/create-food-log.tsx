@@ -379,6 +379,7 @@ export function CreateFoodLogForm() {
         customCalories: "",
         customNutrients: {},
         mealType,
+        time: values.time,
         daySource,
       });
       return;
@@ -409,6 +410,7 @@ export function CreateFoodLogForm() {
 
       // Stay on existing day and mealType
       mealType: values.mealType,
+      time: values.time,
       daySource,
     });
   }, "Error logging food");

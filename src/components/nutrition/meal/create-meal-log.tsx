@@ -1,10 +1,11 @@
 import { EditNote } from "@mui/icons-material";
 import { Button, IconButton, Typography } from "@mui/material";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import dayjs from "dayjs";
+import dayjs, { type Dayjs } from "dayjs";
 import { FormContainer, useForm } from "react-hook-form-mui";
 import { useAtomValue } from "jotai";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { TimePickerElement } from "react-hook-form-mui/date-pickers";
 
 import {
   CreateFoodLogOptions,
@@ -19,6 +20,7 @@ import LinkedDayElement, { DaySelectorSource } from "@/components/linked-day";
 import { selectedDayForPageAtom } from "@/state";
 import { FormRow, FormRows } from "@/components/forms/form-row";
 import { showSuccessToast, withErrorToaster } from "@/components/toast";
+import { presetMealClockTimesAtom } from "@/storage/settings";
 
 import { MealTypeElement } from "../food/meal-type-element";
 
@@ -28,17 +30,22 @@ import { SearchMealsElement } from "./meal-search";
 interface CreateMealLogFormData {
   meal: MealSummary | null;
   mealType: NutritionLogMealType;
+  time: Dayjs | null;
   daySource: DaySelectorSource;
   foods: Array<MealFood>;
 }
 
 export default function CreateMealLog() {
+  const [currentTime, setCurrentTime] = useState(() => dayjs());
+  const timeWasCleared = useRef(false);
+  const presetTimeWasApplied = useRef(false);
   const [mealEditorMode, setMealEditorMode] = useState(false);
   const formContext = useForm<CreateMealLogFormData>({
     defaultValues: {
       daySource: "today",
       meal: null,
       mealType: NutritionLogMealType.ANYTIME,
+      time: null,
       foods: [],
     },
   });
@@ -51,6 +58,55 @@ export default function CreateMealLog() {
   );
 
   const linkedDay = useAtomValue(selectedDayForPageAtom);
+  const presetMealClockTimes = useAtomValue(presetMealClockTimesAtom);
+  const mealType = watch("mealType");
+
+  useEffect(() => {
+    if (timeWasCleared.current) {
+      formContext.setValue("time", null);
+      return;
+    }
+
+    const time = presetMealClockTimes.enabled
+      ? presetMealClockTimes.times[mealType]
+      : undefined;
+    if (!time) {
+      if (presetTimeWasApplied.current) {
+        formContext.setValue("time", null);
+        presetTimeWasApplied.current = false;
+      }
+      return;
+    }
+
+    const [hours, minutes] = time.split(":").map(Number);
+    formContext.setValue(
+      "time",
+      (formContext.getValues("time") ?? dayjs())
+        .hour(hours)
+        .minute(minutes)
+        .second(0)
+        .millisecond(0),
+    );
+    presetTimeWasApplied.current = true;
+  }, [formContext, mealType, presetMealClockTimes]);
+
+  useEffect(() => {
+    const updateCurrentTime = () => setCurrentTime(dayjs());
+    const untilNextMinute =
+      60_000 - dayjs().second() * 1_000 - dayjs().millisecond();
+    let interval: ReturnType<typeof setInterval> | undefined;
+    const timeout = setTimeout(() => {
+      updateCurrentTime();
+      interval = setInterval(updateCurrentTime, 60_000);
+    }, untilNextMinute);
+
+    return () => {
+      clearTimeout(timeout);
+      if (interval !== undefined) {
+        clearInterval(interval);
+      }
+    };
+  }, []);
 
   const toggleMealEditor = withErrorToaster(async () => {
     if (mealEditorMode) {
@@ -73,7 +129,12 @@ export default function CreateMealLog() {
       return;
     }
 
-    const day = daySource === "today" ? dayjs() : linkedDay;
+    const time = values.time ?? dayjs();
+    const day = (daySource === "today" ? dayjs() : linkedDay)
+      .hour(time.hour())
+      .minute(time.minute())
+      .second(time.second())
+      .millisecond(time.millisecond());
     const mealFoods = mealEditorMode
       ? values.foods
       : (await queryClient.fetchQuery(buildMealDetailsQuery(meal!.id)))
@@ -91,6 +152,7 @@ export default function CreateMealLog() {
     formContext.reset({
       daySource, // keep same
       mealType, // keep same
+      time: values.time,
       meal: null,
       foods: [],
     });
@@ -134,6 +196,18 @@ export default function CreateMealLog() {
             )}
             <FormRow>
               <MealTypeElement name="mealType" />
+              <TimePickerElement
+                name="time"
+                label="Time"
+                onChange={(value) => {
+                  timeWasCleared.current = value === null;
+                  presetTimeWasApplied.current = false;
+                }}
+                inputProps={{
+                  InputLabelProps: { shrink: true },
+                  placeholder: currentTime.format("h:mm A"),
+                }}
+              />
               <LinkedDayElement name="daySource" />
               <div className="flex-grow min-w-0"></div>
               <Button
