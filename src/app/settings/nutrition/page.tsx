@@ -9,12 +9,14 @@ import {
 } from "@mui/material";
 import { useAtom } from "jotai";
 
+import { MEAL_TYPE_NAMES, NutritionLogMealType } from "@/api/nutrition";
 import { NutritionalValues } from "@/api/nutrition/types";
 import {
   foodLogGoalsPositionAtom,
   foodLogShowCopyIndividualButtonAtom,
   foodLogTotalsPositionAtom,
   macroGoalsAtom,
+  presetMealClockTimesAtom,
   showNutritionLabelAtom,
   useNutritionGoalsForLabelAtom,
 } from "@/storage/settings";
@@ -102,6 +104,69 @@ function FoodSettings() {
         }
       />
     </>
+  );
+}
+
+const MEAL_TYPES_WITH_CLOCK_TIMES = [
+  NutritionLogMealType.BEFORE_BREAKFAST,
+  NutritionLogMealType.BREAKFAST,
+  NutritionLogMealType.BEFORE_LUNCH,
+  NutritionLogMealType.LUNCH,
+  NutritionLogMealType.BEFORE_DINNER,
+  NutritionLogMealType.DINNER,
+  NutritionLogMealType.AFTER_DINNER,
+];
+
+function FoodLoggingSettings() {
+  const [presetMealClockTimes, setPresetMealClockTimes] = useAtom(
+    presetMealClockTimesAtom,
+  );
+
+  const updateTime = (mealType: NutritionLogMealType, time: string) => {
+    setPresetMealClockTimes((current) => ({
+      ...current,
+      times: { ...current.times, [mealType]: time },
+    }));
+  };
+
+  return (
+    <SettingsTable>
+      <SettingsRow title="Food logging" />
+      <SettingsRow
+        title="Set time of day when selecting a meal time"
+        action={
+          <Switch
+            checked={presetMealClockTimes.enabled}
+            onChange={(_event, enabled) =>
+              setPresetMealClockTimes((current) => ({ ...current, enabled }))
+            }
+          />
+        }
+      >
+        When picking a meal time like lunch, record the log time as a specific
+        time instead of the current time.
+      </SettingsRow>
+      {presetMealClockTimes.enabled &&
+        MEAL_TYPES_WITH_CLOCK_TIMES.map((mealType) => (
+          <SettingsRow
+            key={mealType}
+            title={MEAL_TYPE_NAMES[mealType]}
+            action={
+              <TextField
+                type="time"
+                value={presetMealClockTimes.times[mealType] ?? ""}
+                onChange={(event) => updateTime(mealType, event.target.value)}
+                slotProps={{
+                  inputLabel: { shrink: true },
+                  htmlInput: {
+                    "aria-label": `${MEAL_TYPE_NAMES[mealType]} time`,
+                  },
+                }}
+              />
+            }
+          />
+        ))}
+    </SettingsTable>
   );
 }
 
@@ -237,6 +302,7 @@ function MacroGoals() {
 export default function NutritionSettingsPage() {
   return (
     <>
+      <FoodLoggingSettings />
       <SettingsTable>
         <FoodSettings />
       </SettingsTable>

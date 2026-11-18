@@ -223,6 +223,11 @@ export const foodLogShowCopyIndividualButtonAtom = createSettingsFieldAtom(
   false,
 );
 
+export const presetMealClockTimesAtom = createSettingsFieldAtom(
+  "presetMealClockTimes",
+  { enabled: false, times: {} },
+);
+
 export const mapStyleAtom = createSettingsFieldAtom("mapStyle", "white");
 
 export const increasedTileLimitsAtom = createSettingsFieldAtom(

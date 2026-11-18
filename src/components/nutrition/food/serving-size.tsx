@@ -122,6 +122,7 @@ export function FoodServingSizeInput({
   onChange,
   error,
   label = "Amount",
+  minWidth = "300px",
   options: optionsOverride,
 }: {
   food: Food | null;
@@ -129,6 +130,7 @@ export function FoodServingSizeInput({
   onChange: (servingSize: ServingSize | null) => void;
   error?: FieldError;
   label?: string;
+  minWidth?: string;
   /** Use these options instead of deriving them from the food */
   options?: Array<ServingSize>;
 }) {
@@ -203,7 +205,7 @@ export function FoodServingSizeInput({
         }}
         loading={options === undefined}
         disabled={options && options.length === 0}
-        sx={{ minWidth: "300px" }}
+        sx={{ minWidth }}
         options={options ?? []}
         getOptionLabel={(option) => formatServing(option)}
         renderInput={(props) => (
@@ -256,9 +258,11 @@ function validateServingSize(servingSize: ServingSize | null) {
 
 export function FoodServingSizeElement({
   foodFieldName,
+  minWidth,
   ...controllerProps
 }: {
   foodFieldName: string;
+  minWidth?: string;
 } & UseControllerProps) {
   const { watch } = useFormContext();
   const { field, fieldState } = useController({
@@ -272,6 +276,7 @@ export function FoodServingSizeElement({
       value={field.value}
       onChange={field.onChange}
       error={fieldState.error}
+      minWidth={minWidth}
     />
   );
 }

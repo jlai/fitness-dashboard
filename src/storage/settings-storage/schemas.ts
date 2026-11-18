@@ -192,6 +192,10 @@ export type SettingsPrefs = {
   showNutritionLabel?: boolean;
   useNutritionGoalsForLabel?: boolean;
   foodLogShowCopyIndividualButton?: boolean;
+  presetMealClockTimes?: {
+    enabled: boolean;
+    times: Record<string, string>;
+  };
   mapStyle?: string;
   increasedTileLimits?: boolean;
   clockHourCycle?: Intl.DateTimeFormatOptions["hourCycle"];
@@ -214,6 +218,12 @@ export const settingsPrefsSchema = z
     showNutritionLabel: z.boolean().optional(),
     useNutritionGoalsForLabel: z.boolean().optional(),
     foodLogShowCopyIndividualButton: z.boolean().optional(),
+    presetMealClockTimes: z
+      .object({
+        enabled: z.boolean(),
+        times: z.record(z.string(), z.string()),
+      })
+      .optional(),
     mapStyle: z.string().optional(),
     increasedTileLimits: z.boolean().optional(),
     clockHourCycle: z.enum(["h11", "h12", "h23", "h24"]).optional(),

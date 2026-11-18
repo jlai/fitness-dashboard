@@ -18,12 +18,13 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { FormContainer, TextFieldElement, useForm } from "react-hook-form-mui";
+import { TimePickerElement } from "react-hook-form-mui/date-pickers";
 import { useAtomValue, useSetAtom } from "jotai";
 import { usePopupState } from "material-ui-popup-state/hooks";
-import dayjs from "dayjs";
+import dayjs, { type Dayjs } from "dayjs";
 import NextLink from "next/link";
 
 import {
@@ -44,7 +45,7 @@ import { showSuccessToast, withErrorToaster } from "@/components/toast";
 import NutritionPopover, {
   nutritionPopoverFoodAtom,
 } from "@/components/nutrition/label/nutrition-popover";
-import { macroGoalsAtom } from "@/storage/settings";
+import { macroGoalsAtom, presetMealClockTimesAtom } from "@/storage/settings";
 
 import { SearchFoodsElement } from "./food-search";
 import {
@@ -59,6 +60,7 @@ interface CreateFoodLogFormData {
   daySource: DaySelectorSource;
   food: Food | null;
   mealType: NutritionLogMealType;
+  time: Dayjs | null;
   servingSize: ServingSize | null;
   customName: string;
   customCalories: string;
@@ -144,6 +146,9 @@ function hasMultipleServings(food: Food) {
 }
 
 export function CreateFoodLogForm() {
+  const [currentTime, setCurrentTime] = useState(() => dayjs());
+  const timeWasCleared = useRef(false);
+  const presetTimeWasApplied = useRef(false);
   const [customMode, setCustomMode] = useState(false);
   const [showMoreNutrients, setShowMoreNutrients] = useState(false);
   const [showOtherNutrients, setShowOtherNutrients] = useState(false);
@@ -159,6 +164,7 @@ export function CreateFoodLogForm() {
       daySource: "today",
       food: null,
       mealType: NutritionLogMealType.ANYTIME,
+      time: null,
       servingSize: null,
       customName: "",
       customCalories: "",
@@ -180,6 +186,7 @@ export function CreateFoodLogForm() {
 
   const linkedDay = useAtomValue(selectedDayForPageAtom);
   const macroGoals = useAtomValue(macroGoalsAtom);
+  const presetMealClockTimes = useAtomValue(presetMealClockTimesAtom);
   const setPopoverFood = useSetAtom(nutritionPopoverFoodAtom);
   const nutritionPopupState = usePopupState({
     popupId: "food-logger-nutrition-info",
@@ -187,6 +194,54 @@ export function CreateFoodLogForm() {
   });
   const food = watch("food");
   const servingSize = watch("servingSize");
+  const mealType = watch("mealType");
+
+  useEffect(() => {
+    if (timeWasCleared.current) {
+      formContext.setValue("time", null);
+      return;
+    }
+
+    const time = presetMealClockTimes.enabled
+      ? presetMealClockTimes.times[mealType]
+      : undefined;
+    if (!time) {
+      if (presetTimeWasApplied.current) {
+        formContext.setValue("time", null);
+        presetTimeWasApplied.current = false;
+      }
+      return;
+    }
+
+    const [hours, minutes] = time.split(":").map(Number);
+    formContext.setValue(
+      "time",
+      (formContext.getValues("time") ?? dayjs())
+        .hour(hours)
+        .minute(minutes)
+        .second(0)
+        .millisecond(0),
+    );
+    presetTimeWasApplied.current = true;
+  }, [formContext, mealType, presetMealClockTimes]);
+
+  useEffect(() => {
+    const updateCurrentTime = () => setCurrentTime(dayjs());
+    const untilNextMinute =
+      60_000 - dayjs().second() * 1_000 - dayjs().millisecond();
+    let interval: ReturnType<typeof setInterval> | undefined;
+    const timeout = setTimeout(() => {
+      updateCurrentTime();
+      interval = setInterval(updateCurrentTime, 60_000);
+    }, untilNextMinute);
+
+    return () => {
+      clearTimeout(timeout);
+      if (interval !== undefined) {
+        clearInterval(interval);
+      }
+    };
+  }, []);
 
   const loadFoodIntoCustomLog = (food: Food, serving: ServingSize) => {
     const multiplier =
@@ -262,6 +317,12 @@ export function CreateFoodLogForm() {
   };
   const logFood = withErrorToaster(async (values: CreateFoodLogFormData) => {
     const { food, servingSize, mealType, daySource } = values;
+    const logTime = values.time ?? dayjs();
+    const day = (daySource === "today" ? dayjs() : linkedDay)
+      .hour(logTime.hour())
+      .minute(logTime.minute())
+      .second(logTime.second())
+      .millisecond(logTime.millisecond());
 
     if (customMode) {
       const rawCalories = String(values.customCalories ?? "").trim();
@@ -297,7 +358,7 @@ export function CreateFoodLogForm() {
           totalFat: fields.totalFat,
           nutrients: fields.nutrients,
         },
-        day: daySource === "today" ? dayjs() : linkedDay,
+        day,
       });
       showSuccessToast(`Logged food: ${name}`);
       resetCustomServing();
@@ -326,7 +387,7 @@ export function CreateFoodLogForm() {
               (servingSize.multiplier ?? 1)
           : undefined,
       ),
-      day: daySource === "today" ? dayjs() : linkedDay,
+      day,
     });
     showSuccessToast(`Logged food: ${food.name}`);
     reset({
@@ -348,7 +409,7 @@ export function CreateFoodLogForm() {
       formContext={formContext}
     >
       <FormRows>
-        <FormRow flexWrap="nowrap" className="gap-x-2">
+        <FormRow flexWrap="nowrap" columnGap={1}>
           <div className="flex-1 min-w-0">
             <SearchFoodsElement
               name="food"
@@ -499,15 +560,30 @@ export function CreateFoodLogForm() {
               label="Amount (display only)"
               value={customServing}
               onChange={setCustomServing}
+              minWidth="180px"
             />
           ) : (
             <FoodServingSizeElement
               name="servingSize"
               foodFieldName="food"
+              minWidth="180px"
               rules={{ required: true }}
             />
           )}
           <MealTypeElement name="mealType" />
+          <TimePickerElement
+            name="time"
+            label="Time"
+            onChange={(value) => {
+              timeWasCleared.current = value === null;
+              presetTimeWasApplied.current = false;
+            }}
+            inputProps={{
+              InputLabelProps: { shrink: true },
+              placeholder: currentTime.format("h:mm A"),
+              sx: { width: 150 },
+            }}
+          />
           <LinkedDayElement name="daySource" />
           <div className="flex-1"></div>
           <Button
