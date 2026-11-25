@@ -53,3 +53,9 @@ Set `CF_BINDING_WORKER_SELF_REFERENCE` to the same Worker name, and configure
 `CF_BINDING_SESSION_REVOCATION` and `CF_BINDING_SECRETS_STORE_ID` as described
 above. The deployment config generator requires all three binding variables.
 `npm run deploy` and `npm run upload` also generate and use this configuration.
+
+Set up the following build-time variables:
+
+```
+NEXT_DEPLOYMENT_ADAPTER=cloudflare
+```
