@@ -1,5 +1,6 @@
 import dayjs from "dayjs";
 import DOMPurify from "dompurify";
+import { withBasePath } from "./base-path";
 
 export { BASE_PATH, withBasePath } from "./base-path";
 
@@ -26,9 +27,26 @@ export const GOOGLE_HEALTH_API_URL =
   process.env.NEXT_PUBLIC_GOOGLE_HEALTH_API_URL ??
   "https://health.googleapis.com";
 
-export const GOOGLE_OAUTH_CLIENT_ID = requiredVar(
-  process.env.NEXT_PUBLIC_GOOGLE_OAUTH_CLIENT_ID,
-);
+export let GOOGLE_OAUTH_CLIENT_ID =
+  process.env.NEXT_PUBLIC_GOOGLE_OAUTH_CLIENT_ID?.trim() || "";
+
+export async function loadGoogleClientId() {
+  if (GOOGLE_OAUTH_CLIENT_ID) return GOOGLE_OAUTH_CLIENT_ID;
+
+  const response = await fetch(withBasePath("/auth/config"));
+  if (!response.ok) throw new Error("Unable to load Google client ID");
+
+  const config = await response.json();
+  if (
+    typeof config?.googleClientId !== "string" ||
+    !config.googleClientId.trim()
+  ) {
+    throw new Error("Missing Google client ID");
+  }
+
+  GOOGLE_OAUTH_CLIENT_ID = config.googleClientId.trim();
+  return GOOGLE_OAUTH_CLIENT_ID;
+}
 
 /** URL for MapLibre style JSON (usually contains API key) */
 export const MAPLIBRE_STYLE_URL = process.env.NEXT_PUBLIC_MAPLIBRE_STYLE_URL;

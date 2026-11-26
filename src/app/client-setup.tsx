@@ -5,7 +5,11 @@ import { ThemeProvider, useMediaQuery } from "@mui/material";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { ConfirmProvider } from "material-ui-confirm";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  QueryClient,
+  QueryClientProvider,
+  useQuery,
+} from "@tanstack/react-query";
 import { useHydrateAtoms } from "jotai/utils";
 import { Toaster } from "mui-sonner";
 import { getDefaultStore, useAtom, Provider as JotaiProvider } from "jotai";
@@ -19,7 +23,7 @@ import {
 } from "@/api/request";
 import { FitbitMigrationLoginRedirect } from "@/components/login/fitbit-migration-login-redirect";
 import { GoogleIdentityProvider } from "@/components/login/google-identity";
-import { GOOGLE_OAUTH_CLIENT_ID } from "@/config";
+import { GOOGLE_OAUTH_CLIENT_ID, loadGoogleClientId } from "@/config";
 import "@/config/zod";
 import { analyticsPingEffect } from "@/storage/analytics";
 import {
@@ -73,12 +77,30 @@ export default function ClientSideSetup({
   // Keep the document nonce from the first paint. Client navigations can
   // receive a new x-nonce on RSC requests, but the document CSP does not change.
   const documentNonce = React.useRef(nonce).current;
+  const config = useQuery(
+    {
+      queryKey: ["googleClientId"],
+      queryFn: loadGoogleClientId,
+      initialData: GOOGLE_OAUTH_CLIENT_ID || undefined,
+      staleTime: Infinity,
+    },
+    queryClient,
+  );
+
+  if (config.isError) {
+    return (
+      <div role="alert">
+        Unable to load sign-in configuration.{" "}
+        <button onClick={() => void config.refetch()}>Retry</button>
+      </div>
+    );
+  }
+  if (!config.data) {
+    return <div role="status">Loading sign-in configuration…</div>;
+  }
 
   return (
-    <GoogleIdentityProvider
-      clientId={GOOGLE_OAUTH_CLIENT_ID}
-      nonce={documentNonce}
-    >
+    <GoogleIdentityProvider clientId={config.data} nonce={documentNonce}>
       <ThemeProvider theme={theme}>
         <JotaiProvider store={getDefaultStore()}>
           <LocalizationProvider dateAdapter={AdapterDayjs}>

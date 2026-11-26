@@ -25,6 +25,11 @@ if (process.env.NEXT_PUBLIC_DEV_MODE === "true") {
 }
 
 const nextConfig: NextConfig = {
+  output: process.env.NEXT_STANDALONE === "true" ? "standalone" : undefined,
+  env: {
+    NEXT_PUBLIC_GOOGLE_OAUTH_CLIENT_ID:
+      process.env.NEXT_PUBLIC_GOOGLE_OAUTH_CLIENT_ID ?? "",
+  },
   distDir: process.env.NEXT_DIST_DIR || ".next",
   pageExtensions,
   ...(basePath ? { basePath } : {}),

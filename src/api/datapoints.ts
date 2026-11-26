@@ -309,8 +309,9 @@ export function isDataPointFromThisApp(
   dataPoint: Pick<DataPoint, "dataSource">,
 ) {
   return (
+    Boolean(GOOGLE_OAUTH_CLIENT_ID) &&
     dataPoint.dataSource?.application?.googleWebClientId ===
-    GOOGLE_OAUTH_CLIENT_ID
+      GOOGLE_OAUTH_CLIENT_ID
   );
 }
 
